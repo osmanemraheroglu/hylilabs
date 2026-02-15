@@ -1,13 +1,15 @@
 import { create } from 'zustand'
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
-const ACCESS_TOKEN = 'thisisjustarandomstring'
+const ACCESS_TOKEN = 'hylilabs_token'
 
 interface AuthUser {
   accountNo: string
   email: string
   role: string[]
   exp: number
+  ad_soyad?: string
+  company_id?: number
 }
 
 interface AuthState {
@@ -33,16 +35,19 @@ export const useAuthStore = create<AuthState>()((set) => {
       setAccessToken: (accessToken) =>
         set((state) => {
           setCookie(ACCESS_TOKEN, JSON.stringify(accessToken))
+          localStorage.setItem('access_token', accessToken)
           return { ...state, auth: { ...state.auth, accessToken } }
         }),
       resetAccessToken: () =>
         set((state) => {
           removeCookie(ACCESS_TOKEN)
+          localStorage.removeItem('access_token')
           return { ...state, auth: { ...state.auth, accessToken: '' } }
         }),
       reset: () =>
         set((state) => {
           removeCookie(ACCESS_TOKEN)
+          localStorage.removeItem('access_token')
           return {
             ...state,
             auth: { ...state.auth, user: null, accessToken: '' },
