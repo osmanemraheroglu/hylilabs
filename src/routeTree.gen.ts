@@ -26,8 +26,10 @@ import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_aut
 import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
+import { Route as AuthenticatedUserManagementIndexRouteImport } from './routes/_authenticated/user-management/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSettingsPageIndexRouteImport } from './routes/_authenticated/settings-page/index'
 import { Route as AuthenticatedKeywordsIndexRouteImport } from './routes/_authenticated/keywords/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
@@ -124,6 +126,12 @@ const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   path: '/users/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedUserManagementIndexRoute =
+  AuthenticatedUserManagementIndexRouteImport.update({
+    id: '/user-management/',
+    path: '/user-management/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
   id: '/tasks/',
   path: '/tasks/',
@@ -134,6 +142,12 @@ const AuthenticatedSettingsIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsPageIndexRoute =
+  AuthenticatedSettingsPageIndexRouteImport.update({
+    id: '/settings-page/',
+    path: '/settings-page/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedKeywordsIndexRoute =
   AuthenticatedKeywordsIndexRouteImport.update({
@@ -230,8 +244,10 @@ export interface FileRoutesByFullPath {
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/keywords': typeof AuthenticatedKeywordsIndexRoute
+  '/settings-page': typeof AuthenticatedSettingsPageIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
+  '/user-management': typeof AuthenticatedUserManagementIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -259,8 +275,10 @@ export interface FileRoutesByTo {
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/keywords': typeof AuthenticatedKeywordsIndexRoute
+  '/settings-page': typeof AuthenticatedSettingsPageIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
+  '/user-management': typeof AuthenticatedUserManagementIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
 }
 export interface FileRoutesById {
@@ -293,8 +311,10 @@ export interface FileRoutesById {
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/keywords/': typeof AuthenticatedKeywordsIndexRoute
+  '/_authenticated/settings-page/': typeof AuthenticatedSettingsPageIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/_authenticated/user-management/': typeof AuthenticatedUserManagementIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
 }
 export interface FileRouteTypes {
@@ -325,8 +345,10 @@ export interface FileRouteTypes {
     | '/chats'
     | '/help-center'
     | '/keywords'
+    | '/settings-page'
     | '/settings/'
     | '/tasks'
+    | '/user-management'
     | '/users'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -354,8 +376,10 @@ export interface FileRouteTypes {
     | '/chats'
     | '/help-center'
     | '/keywords'
+    | '/settings-page'
     | '/settings'
     | '/tasks'
+    | '/user-management'
     | '/users'
   id:
     | '__root__'
@@ -387,8 +411,10 @@ export interface FileRouteTypes {
     | '/_authenticated/chats/'
     | '/_authenticated/help-center/'
     | '/_authenticated/keywords/'
+    | '/_authenticated/settings-page/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
+    | '/_authenticated/user-management/'
     | '/_authenticated/users/'
   fileRoutesById: FileRoutesById
 }
@@ -528,6 +554,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/user-management/': {
+      id: '/_authenticated/user-management/'
+      path: '/user-management'
+      fullPath: '/user-management'
+      preLoaderRoute: typeof AuthenticatedUserManagementIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tasks/': {
       id: '/_authenticated/tasks/'
       path: '/tasks'
@@ -541,6 +574,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings-page/': {
+      id: '/_authenticated/settings-page/'
+      path: '/settings-page'
+      fullPath: '/settings-page'
+      preLoaderRoute: typeof AuthenticatedSettingsPageIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/keywords/': {
       id: '/_authenticated/keywords/'
@@ -660,7 +700,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedKeywordsIndexRoute: typeof AuthenticatedKeywordsIndexRoute
+  AuthenticatedSettingsPageIndexRoute: typeof AuthenticatedSettingsPageIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
+  AuthenticatedUserManagementIndexRoute: typeof AuthenticatedUserManagementIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
 }
 
@@ -672,7 +714,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedKeywordsIndexRoute: AuthenticatedKeywordsIndexRoute,
+  AuthenticatedSettingsPageIndexRoute: AuthenticatedSettingsPageIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
+  AuthenticatedUserManagementIndexRoute: AuthenticatedUserManagementIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
 }
 
