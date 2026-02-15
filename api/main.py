@@ -4,6 +4,8 @@ from database import get_connection
 from routes.auth import router as auth_router
 from routes.dashboard import router as dashboard_router
 from routes.keywords import router as keywords_router
+from routes.users import router as users_router
+from routes.settings import router as settings_router
 
 app = FastAPI(title="HyliAI API", version="1.0.0")
 
@@ -20,6 +22,8 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(dashboard_router)
 app.include_router(keywords_router)
+app.include_router(users_router)
+app.include_router(settings_router)
 
 @app.get("/api/health")
 def health_check():
