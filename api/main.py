@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import get_connection
+from routes.auth import router as auth_router
 
 app = FastAPI(title="HyliAI API", version="1.0.0")
 
@@ -12,6 +13,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Router'ları ekle
+app.include_router(auth_router)
 
 @app.get("/api/health")
 def health_check():
