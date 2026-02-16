@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Monitor,
   Bug,
+  CalendarClock,
   ListTodo,
   FileX,
   HelpCircle,
@@ -24,7 +25,6 @@ import {
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
-
 export const sidebarData: SidebarData = {
   user: {
     name: 'satnaing',
@@ -56,6 +56,11 @@ export const sidebarData: SidebarData = {
           title: 'Dashboard',
           url: '/',
           icon: LayoutDashboard,
+        },
+        {
+          title: 'Mulakat Takvimi',
+          url: '/mulakat-takvimi',
+          icon: CalendarClock,
         },
         {
           title: 'Tasks',

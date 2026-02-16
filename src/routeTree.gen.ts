@@ -30,6 +30,7 @@ import { Route as AuthenticatedUserManagementIndexRouteImport } from './routes/_
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedSettingsPageIndexRouteImport } from './routes/_authenticated/settings-page/index'
+import { Route as AuthenticatedMulakatTakvimiIndexRouteImport } from './routes/_authenticated/mulakat-takvimi/index'
 import { Route as AuthenticatedKeywordsIndexRouteImport } from './routes/_authenticated/keywords/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedCvCollectIndexRouteImport } from './routes/_authenticated/cv-collect/index'
@@ -151,6 +152,12 @@ const AuthenticatedSettingsPageIndexRoute =
     path: '/settings-page/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMulakatTakvimiIndexRoute =
+  AuthenticatedMulakatTakvimiIndexRouteImport.update({
+    id: '/mulakat-takvimi/',
+    path: '/mulakat-takvimi/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedKeywordsIndexRoute =
   AuthenticatedKeywordsIndexRouteImport.update({
     id: '/keywords/',
@@ -260,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/cv-collect': typeof AuthenticatedCvCollectIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/keywords': typeof AuthenticatedKeywordsIndexRoute
+  '/mulakat-takvimi': typeof AuthenticatedMulakatTakvimiIndexRoute
   '/settings-page': typeof AuthenticatedSettingsPageIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
@@ -293,6 +301,7 @@ export interface FileRoutesByTo {
   '/cv-collect': typeof AuthenticatedCvCollectIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/keywords': typeof AuthenticatedKeywordsIndexRoute
+  '/mulakat-takvimi': typeof AuthenticatedMulakatTakvimiIndexRoute
   '/settings-page': typeof AuthenticatedSettingsPageIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
@@ -331,6 +340,7 @@ export interface FileRoutesById {
   '/_authenticated/cv-collect/': typeof AuthenticatedCvCollectIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/keywords/': typeof AuthenticatedKeywordsIndexRoute
+  '/_authenticated/mulakat-takvimi/': typeof AuthenticatedMulakatTakvimiIndexRoute
   '/_authenticated/settings-page/': typeof AuthenticatedSettingsPageIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
@@ -367,6 +377,7 @@ export interface FileRouteTypes {
     | '/cv-collect'
     | '/help-center'
     | '/keywords'
+    | '/mulakat-takvimi'
     | '/settings-page'
     | '/settings/'
     | '/tasks'
@@ -400,6 +411,7 @@ export interface FileRouteTypes {
     | '/cv-collect'
     | '/help-center'
     | '/keywords'
+    | '/mulakat-takvimi'
     | '/settings-page'
     | '/settings'
     | '/tasks'
@@ -437,6 +449,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cv-collect/'
     | '/_authenticated/help-center/'
     | '/_authenticated/keywords/'
+    | '/_authenticated/mulakat-takvimi/'
     | '/_authenticated/settings-page/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
@@ -608,6 +621,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPageIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mulakat-takvimi/': {
+      id: '/_authenticated/mulakat-takvimi/'
+      path: '/mulakat-takvimi'
+      fullPath: '/mulakat-takvimi'
+      preLoaderRoute: typeof AuthenticatedMulakatTakvimiIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/keywords/': {
       id: '/_authenticated/keywords/'
       path: '/keywords'
@@ -742,6 +762,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCvCollectIndexRoute: typeof AuthenticatedCvCollectIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedKeywordsIndexRoute: typeof AuthenticatedKeywordsIndexRoute
+  AuthenticatedMulakatTakvimiIndexRoute: typeof AuthenticatedMulakatTakvimiIndexRoute
   AuthenticatedSettingsPageIndexRoute: typeof AuthenticatedSettingsPageIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUserManagementIndexRoute: typeof AuthenticatedUserManagementIndexRoute
@@ -758,6 +779,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCvCollectIndexRoute: AuthenticatedCvCollectIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedKeywordsIndexRoute: AuthenticatedKeywordsIndexRoute,
+  AuthenticatedMulakatTakvimiIndexRoute: AuthenticatedMulakatTakvimiIndexRoute,
   AuthenticatedSettingsPageIndexRoute: AuthenticatedSettingsPageIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUserManagementIndexRoute: AuthenticatedUserManagementIndexRoute,
