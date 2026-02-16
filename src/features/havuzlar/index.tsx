@@ -101,6 +101,14 @@ export default function Havuzlar() {
   const [editKeywords, setEditKeywords] = useState<string[]>([])
   const [keywordLoading, setKeywordLoading] = useState(false)
 
+  // Akıllı Havuz - Title Mappings
+  const [approvedTitles, setApprovedTitles] = useState<Record<string, Array<{id: number; related_title: string; match_level: string; source: string}>> | null>(null)
+  const [pendingTitles, setPendingTitles] = useState<Record<string, Array<{id: number; related_title: string; match_level: string; source: string}>> | null>(null)
+  const [selectedPending, setSelectedPending] = useState<Set<number>>(new Set())
+  const [titlesLoading, setTitlesLoading] = useState(false)
+  const [approving, setApproving] = useState(false)
+  const [titlesExpanded, setTitlesExpanded] = useState(true)
+
   const loadTree = useCallback(() => {
     setLoading(true)
     fetch(`${API}/api/pools/hierarchical`, { headers: H() })
@@ -297,6 +305,72 @@ export default function Havuzlar() {
           loadCandidates(selectedPoolId)
         } else { alert(res.detail || 'Hata') }
       }).catch(console.error).finally(() => setKeywordLoading(false))
+  }
+
+  // Akıllı Havuz - Title Mappings yükle
+  const loadTitles = useCallback((poolId: number) => {
+    setTitlesLoading(true)
+    setApprovedTitles(null)
+    setPendingTitles(null)
+    setSelectedPending(new Set())
+
+    Promise.all([
+      fetch(`${API}/api/pools/${poolId}/approved-titles`, { headers: H() }).then(r => r.json()),
+      fetch(`${API}/api/pools/${poolId}/pending-titles`, { headers: H() }).then(r => r.json())
+    ]).then(([approvedRes, pendingRes]) => {
+      if (approvedRes.success) setApprovedTitles(approvedRes.data)
+      if (pendingRes.success) {
+        setPendingTitles(pendingRes.data)
+        // exact olanları varsayılan seçili yap
+        const exactIds = new Set<number>()
+        if (pendingRes.data?.exact) {
+          pendingRes.data.exact.forEach((t: {id: number}) => exactIds.add(t.id))
+        }
+        setSelectedPending(exactIds)
+      }
+    }).catch(console.error).finally(() => setTitlesLoading(false))
+  }, [])
+
+  // Load titles when position pool is selected
+  useEffect(() => {
+    if (selectedPoolId && poolInfo?.pool_type === 'position') {
+      loadTitles(selectedPoolId)
+    } else {
+      setApprovedTitles(null)
+      setPendingTitles(null)
+      setSelectedPending(new Set())
+    }
+  }, [selectedPoolId, poolInfo?.pool_type, loadTitles])
+
+  // Başlıkları onayla
+  const handleApproveTitles = () => {
+    if (!selectedPoolId || selectedPending.size === 0) return
+    setApproving(true)
+    fetch(`${API}/api/pools/${selectedPoolId}/approve-titles`, {
+      method: 'POST',
+      headers: H(),
+      body: JSON.stringify({ approved_ids: Array.from(selectedPending), rejected_ids: [] })
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          alert(`${res.approved} başlık onaylandı, ${res.transferred} aday eşleştirildi`)
+          loadTitles(selectedPoolId)
+          loadCandidates(selectedPoolId)
+        } else { alert(res.detail || 'Hata') }
+      })
+      .catch(console.error)
+      .finally(() => setApproving(false))
+  }
+
+  // Toggle pending title selection
+  const togglePendingTitle = (id: number) => {
+    setSelectedPending(prev => {
+      const n = new Set(prev)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
   }
 
   // Filtering & Sorting
@@ -588,6 +662,91 @@ export default function Havuzlar() {
                       })}
                     </TableBody>
                   </Table>
+                </div>
+              )}
+
+              {/* Akıllı Havuz - Title Mappings Panel */}
+              {poolInfo?.pool_type === 'position' && (
+                <div className="border rounded-md p-4 mt-4 bg-muted/30">
+                  <div className="flex items-center justify-between mb-3 cursor-pointer" onClick={() => setTitlesExpanded(!titlesExpanded)}>
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                      <Brain className="h-4 w-4" />
+                      Akilli Havuz Basliklari
+                    </h4>
+                    {titlesExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+
+                  {titlesExpanded && (
+                    <div className="space-y-4">
+                      {titlesLoading ? (
+                        <div className="text-center py-4 text-muted-foreground text-sm"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yukleniyor...</div>
+                      ) : (
+                        <>
+                          {/* Onaylı Başlıklar */}
+                          <div className="space-y-2">
+                            <div className="text-xs font-medium text-muted-foreground">Onayli Basliklar</div>
+                            {approvedTitles && (approvedTitles.exact?.length > 0 || approvedTitles.similar?.length > 0 || approvedTitles.related?.length > 0) ? (
+                              <div className="space-y-1">
+                                {approvedTitles.exact?.length > 0 && (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xs">🎯 Tam:</span>
+                                    {approvedTitles.exact.map(t => <Badge key={t.id} variant="secondary" className="text-[10px]">{t.related_title}</Badge>)}
+                                  </div>
+                                )}
+                                {approvedTitles.similar?.length > 0 && (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xs">🔄 Benzer:</span>
+                                    {approvedTitles.similar.map(t => <Badge key={t.id} variant="secondary" className="text-[10px]">{t.related_title}</Badge>)}
+                                  </div>
+                                )}
+                                {approvedTitles.related?.length > 0 && (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xs">🔗 Iliskili:</span>
+                                    {approvedTitles.related.map(t => <Badge key={t.id} variant="secondary" className="text-[10px]">{t.related_title}</Badge>)}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-muted-foreground">Henuz onayli baslik yok</div>
+                            )}
+                          </div>
+
+                          {/* Onay Bekleyen */}
+                          <div className="space-y-2 border-t pt-3">
+                            <div className="text-xs font-medium text-muted-foreground">Onay Bekleyen</div>
+                            {pendingTitles && (pendingTitles.exact?.length > 0 || pendingTitles.similar?.length > 0 || pendingTitles.related?.length > 0) ? (
+                              <div className="space-y-2">
+                                {[...pendingTitles.exact || [], ...pendingTitles.similar || [], ...pendingTitles.related || []].map(t => (
+                                  <div key={t.id} className="flex items-center gap-2">
+                                    <Checkbox
+                                      checked={selectedPending.has(t.id)}
+                                      onCheckedChange={() => togglePendingTitle(t.id)}
+                                    />
+                                    <span className="text-xs">
+                                      {t.match_level === 'exact' ? '🎯' : t.match_level === 'similar' ? '🔄' : '🔗'}
+                                    </span>
+                                    <span className="text-sm">{t.related_title}</span>
+                                    <Badge variant="outline" className="text-[9px]">{t.match_level}</Badge>
+                                  </div>
+                                ))}
+                                <Button
+                                  size="sm"
+                                  onClick={handleApproveTitles}
+                                  disabled={approving || selectedPending.size === 0}
+                                  className="mt-2"
+                                >
+                                  {approving ? <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+                                  Secilenleri Onayla ({selectedPending.size})
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="text-xs text-muted-foreground">Onay bekleyen baslik yok</div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent></Card>

@@ -666,3 +666,147 @@ def update_keywords(pool_id: int, data: dict, current_user: dict = Depends(get_c
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ AKILLI HAVUZ - TITLE MAPPINGS ============
+
+@router.get("/{pool_id}/approved-titles")
+def get_approved_titles(pool_id: int, current_user: dict = Depends(get_current_user)):
+    """Onaylanmis baslik eslesmelerini getir"""
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, related_title, match_level, source
+                FROM position_title_mappings
+                WHERE position_id = ? AND approved = 1
+                ORDER BY match_level, related_title
+            """, (pool_id,))
+            rows = cursor.fetchall()
+
+        # match_level bazli grupla
+        result = {"exact": [], "similar": [], "related": []}
+        for row in rows:
+            item = {
+                "id": row["id"],
+                "related_title": row["related_title"],
+                "match_level": row["match_level"],
+                "source": row["source"]
+            }
+            level = row["match_level"] or "related"
+            if level in result:
+                result[level].append(item)
+            else:
+                result["related"].append(item)
+
+        return {"success": True, "data": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{pool_id}/pending-titles")
+def get_pending_titles(pool_id: int, current_user: dict = Depends(get_current_user)):
+    """Onay bekleyen baslik onerilerini getir"""
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, related_title, match_level, source
+                FROM position_title_mappings
+                WHERE position_id = ? AND approved = 0
+                ORDER BY match_level, related_title
+            """, (pool_id,))
+            rows = cursor.fetchall()
+
+        # match_level bazli grupla
+        result = {"exact": [], "similar": [], "related": []}
+        for row in rows:
+            item = {
+                "id": row["id"],
+                "related_title": row["related_title"],
+                "match_level": row["match_level"],
+                "source": row["source"]
+            }
+            level = row["match_level"] or "related"
+            if level in result:
+                result[level].append(item)
+            else:
+                result["related"].append(item)
+
+        return {"success": True, "data": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{pool_id}/approve-titles")
+def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_current_user)):
+    """Baslik onerilerini onayla veya reddet"""
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        approved_ids = data.get("approved_ids", [])
+        rejected_ids = data.get("rejected_ids", [])
+
+        approved_count = 0
+        rejected_count = 0
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Onaylananlar
+            if approved_ids:
+                placeholders = ",".join("?" * len(approved_ids))
+                cursor.execute(f"""
+                    UPDATE position_title_mappings
+                    SET approved = 1
+                    WHERE id IN ({placeholders}) AND position_id = ?
+                """, (*approved_ids, pool_id))
+                approved_count = cursor.rowcount
+
+            # Reddedilenler (sil)
+            if rejected_ids:
+                placeholders = ",".join("?" * len(rejected_ids))
+                cursor.execute(f"""
+                    DELETE FROM position_title_mappings
+                    WHERE id IN ({placeholders}) AND position_id = ?
+                """, (*rejected_ids, pool_id))
+                rejected_count = cursor.rowcount
+
+            conn.commit()
+
+        # Onay sonrasi aday eslestir
+        transferred = 0
+        try:
+            from database import pull_matching_candidates_to_position
+            result = pull_matching_candidates_to_position(pool_id, company_id)
+            transferred = result.get("transferred", 0)
+        except Exception as pull_err:
+            print(f"pull_matching hatasi (devam ediliyor): {pull_err}")
+
+        return {
+            "success": True,
+            "approved": approved_count,
+            "rejected": rejected_count,
+            "transferred": transferred
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
