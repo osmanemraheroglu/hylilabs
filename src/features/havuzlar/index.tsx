@@ -9,10 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   FolderTree, Plus, Edit, Trash2, RefreshCw, ChevronRight, ChevronDown,
   Archive, Inbox, Building2, Target, UserPlus, ArrowRightLeft, Search,
-  Download, ChevronUp, Brain, FileText
+  Download, ChevronUp, Brain, FileText, Link, X
 } from 'lucide-react'
 
 const API = 'http://***REMOVED***:8000'
@@ -85,6 +86,21 @@ export default function Havuzlar() {
   const [statusValue, setStatusValue] = useState('')
   const [allPools, setAllPools] = useState<Array<{ id: number; name: string; pool_type: string }>>([])
 
+  // Position Add with URL/Manual
+  const [urlInput, setUrlInput] = useState('')
+  const [parseLoading, setParseLoading] = useState(false)
+  const [parsedData, setParsedData] = useState<Record<string, unknown> | null>(null)
+  const [positionForm, setPositionForm] = useState({
+    pozisyon_adi: '', lokasyon: '', deneyim_yil: '0', egitim_seviyesi: '',
+    keywords: '', aranan_nitelikler: '', is_tanimi: ''
+  })
+  const [savingPosition, setSavingPosition] = useState(false)
+
+  // Keyword Management
+  const [newKeyword, setNewKeyword] = useState('')
+  const [editKeywords, setEditKeywords] = useState<string[]>([])
+  const [keywordLoading, setKeywordLoading] = useState(false)
+
   const loadTree = useCallback(() => {
     setLoading(true)
     fetch(`${API}/api/pools/hierarchical`, { headers: H() })
@@ -126,6 +142,17 @@ export default function Havuzlar() {
   const openEdit = () => {
     if (!poolInfo) return
     setPoolForm({ name: poolInfo.name || '', pool_type: poolInfo.pool_type || 'department', parent_id: '', icon: '', keywords: poolInfo.keywords || '', description: poolInfo.description || '', gerekli_deneyim_yil: '0', gerekli_egitim: '', lokasyon: '' })
+    // Keywords'u parse et
+    const kwStr = poolInfo.keywords || ''
+    let kwArr: string[] = []
+    try {
+      const parsed = JSON.parse(kwStr)
+      if (Array.isArray(parsed)) kwArr = parsed.map(k => String(k).trim()).filter(Boolean)
+    } catch {
+      kwArr = kwStr.split(',').map(k => k.trim()).filter(Boolean)
+    }
+    setEditKeywords(kwArr)
+    setNewKeyword('')
     setEditDialogOpen(true)
   }
 
@@ -197,6 +224,79 @@ export default function Havuzlar() {
         a.href = url; a.download = `${poolInfo?.name || 'havuz'}_adaylar.csv`
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
       }).catch(console.error)
+  }
+
+  // URL ile Pozisyon Parse
+  const handleParseUrl = () => {
+    if (!urlInput) return
+    setParseLoading(true); setParsedData(null)
+    fetch(`${API}/api/pools/position/from-url`, { method: 'POST', headers: H(), body: JSON.stringify({ url: urlInput }) })
+      .then(r => r.json()).then(res => {
+        if (res.basarili) {
+          setParsedData(res)
+          setPositionForm({
+            pozisyon_adi: res.pozisyon_adi || '',
+            lokasyon: res.lokasyon || '',
+            deneyim_yil: String(res.deneyim_yil || 0),
+            egitim_seviyesi: res.egitim_seviyesi || '',
+            keywords: Array.isArray(res.keywords) ? res.keywords.join(', ') : (res.keywords || ''),
+            aranan_nitelikler: res.aranan_nitelikler || '',
+            is_tanimi: res.is_tanimi || ''
+          })
+        } else { alert(res.hata || res.detail || 'Parse hatasi') }
+      }).catch(e => alert('Hata: ' + e)).finally(() => setParseLoading(false))
+  }
+
+  // Parse Sonucu veya Manuel Kaydet
+  const handleSaveParsed = () => {
+    if (!positionForm.pozisyon_adi || !poolForm.parent_id) return
+    setSavingPosition(true)
+    const payload = {
+      parent_id: Number(poolForm.parent_id),
+      pozisyon_adi: positionForm.pozisyon_adi,
+      lokasyon: positionForm.lokasyon,
+      deneyim_yil: Number(positionForm.deneyim_yil) || 0,
+      egitim_seviyesi: positionForm.egitim_seviyesi,
+      keywords: positionForm.keywords.split(',').map(k => k.trim()).filter(Boolean),
+      aranan_nitelikler: positionForm.aranan_nitelikler,
+      is_tanimi: positionForm.is_tanimi
+    }
+    fetch(`${API}/api/pools/position/save-parsed`, { method: 'POST', headers: H(), body: JSON.stringify(payload) })
+      .then(r => r.json()).then(res => {
+        if (res.success) {
+          setCreateDialogOpen(false); resetPoolForm(); setUrlInput(''); setParsedData(null)
+          setPositionForm({ pozisyon_adi: '', lokasyon: '', deneyim_yil: '0', egitim_seviyesi: '', keywords: '', aranan_nitelikler: '', is_tanimi: '' })
+          loadTree(); loadAllPools()
+          alert('Pozisyon basariyla eklendi!')
+        } else { alert(res.detail || 'Kayit hatasi') }
+      }).catch(e => alert('Hata: ' + e)).finally(() => setSavingPosition(false))
+  }
+
+  // Keyword Ekle
+  const handleAddKeyword = () => {
+    if (!selectedPoolId || !newKeyword.trim()) return
+    setKeywordLoading(true)
+    fetch(`${API}/api/pools/${selectedPoolId}/keywords`, { method: 'PUT', headers: H(), body: JSON.stringify({ action: 'add', keyword: newKeyword.trim() }) })
+      .then(r => r.json()).then(res => {
+        if (res.success) {
+          setEditKeywords(res.keywords || [])
+          setNewKeyword('')
+          loadCandidates(selectedPoolId)
+        } else { alert(res.detail || 'Hata') }
+      }).catch(console.error).finally(() => setKeywordLoading(false))
+  }
+
+  // Keyword Sil
+  const handleRemoveKeyword = (kw: string) => {
+    if (!selectedPoolId) return
+    setKeywordLoading(true)
+    fetch(`${API}/api/pools/${selectedPoolId}/keywords`, { method: 'PUT', headers: H(), body: JSON.stringify({ action: 'remove', keyword: kw }) })
+      .then(r => r.json()).then(res => {
+        if (res.success) {
+          setEditKeywords(res.keywords || [])
+          loadCandidates(selectedPoolId)
+        } else { alert(res.detail || 'Hata') }
+      }).catch(console.error).finally(() => setKeywordLoading(false))
   }
 
   // Filtering & Sorting
@@ -496,32 +596,153 @@ export default function Havuzlar() {
       </div>
 
       {/* Dialogs */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-md">
+      <Dialog open={createDialogOpen} onOpenChange={(o) => { setCreateDialogOpen(o); if (!o) { setUrlInput(''); setParsedData(null); setPositionForm({ pozisyon_adi: '', lokasyon: '', deneyim_yil: '0', egitim_seviyesi: '', keywords: '', aranan_nitelikler: '', is_tanimi: '' }) } }}>
+        <DialogContent className={poolForm.pool_type === 'position' ? 'max-w-2xl max-h-[85vh] overflow-y-auto' : 'max-w-md'}>
           <DialogHeader><DialogTitle>{poolForm.pool_type === 'position' ? 'Yeni Pozisyon' : 'Yeni Departman'}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} placeholder="Ornek: Yazilim Gelistirme" /></div>
-            {poolForm.pool_type === 'position' && (<>
-              <div><Label className="text-sm">Anahtar Kelimeler (virgul ile)</Label><Input value={poolForm.keywords} onChange={e => setPoolForm({...poolForm, keywords: e.target.value})} placeholder="react, typescript, node.js" /></div>
-              <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={poolForm.gerekli_deneyim_yil} onChange={e => setPoolForm({...poolForm, gerekli_deneyim_yil: e.target.value})} /></div>
-                <div><Label className="text-sm">Lokasyon</Label><Input value={poolForm.lokasyon} onChange={e => setPoolForm({...poolForm, lokasyon: e.target.value})} /></div>
-              </div>
-              <div><Label className="text-sm">Egitim</Label><Input value={poolForm.gerekli_egitim} onChange={e => setPoolForm({...poolForm, gerekli_egitim: e.target.value})} placeholder="Lisans, Yuksek Lisans" /></div>
-            </>)}
-            <div><Label className="text-sm">Aciklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
-          </div>
-          <DialogFooter><Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Iptal</Button><Button onClick={handleCreatePool} disabled={!poolForm.name}>Olustur</Button></DialogFooter>
+
+          {poolForm.pool_type === 'position' ? (
+            <Tabs defaultValue="url" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="url"><Link className="h-3.5 w-3.5 mr-1" />URL ile Ekle</TabsTrigger>
+                <TabsTrigger value="manual"><Edit className="h-3.5 w-3.5 mr-1" />Manuel Giris</TabsTrigger>
+              </TabsList>
+
+              {/* TAB 1: URL ile Ekle */}
+              <TabsContent value="url" className="space-y-3 mt-3">
+                <div>
+                  <Label className="text-sm">Kariyer.net Ilan URL</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://www.kariyer.net/is-ilani/..." className="flex-1" />
+                    <Button onClick={handleParseUrl} disabled={parseLoading || !urlInput}>
+                      {parseLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                      <span className="ml-1">Analiz</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {parsedData && (
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-sm font-medium text-green-600">Analiz basarili! Asagidaki bilgileri duzenleyebilirsiniz:</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} /></div>
+                      <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
+                      <div>
+                        <Label className="text-sm">Egitim Seviyesi</Label>
+                        <Select value={positionForm.egitim_seviyesi} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v})}>
+                          <SelectTrigger><SelectValue placeholder="Secin..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">-</SelectItem>
+                            <SelectItem value="Lise">Lise</SelectItem>
+                            <SelectItem value="On Lisans">On Lisans</SelectItem>
+                            <SelectItem value="Lisans">Lisans</SelectItem>
+                            <SelectItem value="Yuksek Lisans">Yuksek Lisans</SelectItem>
+                            <SelectItem value="Doktora">Doktora</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div><Label className="text-sm">Anahtar Kelimeler (virgul ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} /></div>
+                    <div><Label className="text-sm">Aranan Nitelikler</Label><Textarea value={positionForm.aranan_nitelikler} onChange={e => setPositionForm({...positionForm, aranan_nitelikler: e.target.value})} rows={3} /></div>
+                    <div><Label className="text-sm">Is Tanimi</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} /></div>
+                    <Button onClick={handleSaveParsed} disabled={savingPosition || !positionForm.pozisyon_adi} className="w-full">
+                      {savingPosition ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : null}Kaydet
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* TAB 2: Manuel Giris */}
+              <TabsContent value="manual" className="space-y-3 mt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} placeholder="Ornek: Frontend Developer" /></div>
+                  <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} placeholder="Istanbul" /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
+                  <div>
+                    <Label className="text-sm">Egitim Seviyesi</Label>
+                    <Select value={positionForm.egitim_seviyesi} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v})}>
+                      <SelectTrigger><SelectValue placeholder="Secin..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">-</SelectItem>
+                        <SelectItem value="Lise">Lise</SelectItem>
+                        <SelectItem value="On Lisans">On Lisans</SelectItem>
+                        <SelectItem value="Lisans">Lisans</SelectItem>
+                        <SelectItem value="Yuksek Lisans">Yuksek Lisans</SelectItem>
+                        <SelectItem value="Doktora">Doktora</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div><Label className="text-sm">Anahtar Kelimeler (virgul ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} placeholder="react, typescript, node.js" /></div>
+                <div><Label className="text-sm">Aranan Nitelikler</Label><Textarea value={positionForm.aranan_nitelikler} onChange={e => setPositionForm({...positionForm, aranan_nitelikler: e.target.value})} rows={3} placeholder="Gerekli beceriler ve nitelikler..." /></div>
+                <div><Label className="text-sm">Is Tanimi</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} placeholder="Pozisyon hakkinda detaylar..." /></div>
+                <Button onClick={handleSaveParsed} disabled={savingPosition || !positionForm.pozisyon_adi} className="w-full">
+                  {savingPosition ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : null}Kaydet
+                </Button>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            /* Departman ekleme (eski basit form) */
+            <div className="space-y-3">
+              <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} placeholder="Ornek: Yazilim Gelistirme" /></div>
+              <div><Label className="text-sm">Aciklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
+              <DialogFooter><Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Iptal</Button><Button onClick={handleCreatePool} disabled={!poolForm.name}>Olustur</Button></DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Havuz Duzenle</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} /></div>
-            <div><Label className="text-sm">Anahtar Kelimeler</Label><Input value={poolForm.keywords} onChange={e => setPoolForm({...poolForm, keywords: e.target.value})} /></div>
             <div><Label className="text-sm">Aciklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
+
+            {/* Keyword Yonetimi */}
+            {poolInfo?.pool_type === 'position' && (
+              <div className="border rounded-md p-3 space-y-3">
+                <Label className="text-sm font-medium">Anahtar Kelimeler</Label>
+                {/* Mevcut Keywords */}
+                <div className="flex flex-wrap gap-1.5">
+                  {editKeywords.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">Henuz keyword yok</span>
+                  ) : (
+                    editKeywords.map((kw, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs pr-1 flex items-center gap-1">
+                        {kw}
+                        <button
+                          onClick={() => handleRemoveKeyword(kw)}
+                          disabled={keywordLoading}
+                          className="ml-1 hover:bg-muted-foreground/20 rounded p-0.5"
+                          title="Kaldir"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))
+                  )}
+                </div>
+                {/* Yeni Keyword Ekle */}
+                <div className="flex gap-2">
+                  <Input
+                    value={newKeyword}
+                    onChange={e => setNewKeyword(e.target.value)}
+                    placeholder="Yeni keyword..."
+                    className="flex-1 h-8 text-sm"
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddKeyword() } }}
+                  />
+                  <Button size="sm" onClick={handleAddKeyword} disabled={keywordLoading || !newKeyword.trim()}>
+                    {keywordLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                    <span className="ml-1">Ekle</span>
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setEditDialogOpen(false)}>Iptal</Button><Button onClick={handleUpdatePool} disabled={!poolForm.name}>Kaydet</Button></DialogFooter>
         </DialogContent>

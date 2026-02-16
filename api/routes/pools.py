@@ -519,3 +519,150 @@ def export_candidates(pool_id: int, current_user: dict = Depends(get_current_use
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/position/from-url")
+def parse_position_from_url(data: dict, current_user: dict = Depends(get_current_user)):
+    """URL'den pozisyon parse et (kariyer.net)"""
+    try:
+        url = data.get("url", "").strip()
+        if not url:
+            raise HTTPException(status_code=400, detail="URL gerekli")
+
+        from job_scraper import process_job_url
+        result = process_job_url(url)
+
+        if not result.get("basarili"):
+            raise HTTPException(status_code=400, detail=result.get("hata", "Parse hatasi"))
+
+        return {"success": True, "data": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/position/from-document")
+async def parse_position_from_document(current_user: dict = Depends(get_current_user)):
+    """Dokumandan pozisyon parse et (PDF/Word/Image)"""
+    from fastapi import UploadFile, File, Form
+    # Manuel olarak request'ten dosya al
+    from starlette.requests import Request
+    try:
+        from fastapi import Request as Req
+        raise HTTPException(status_code=501, detail="Dokusman upload henuz aktif degil - Manuel giris kullanin")
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/position/save-parsed")
+def save_parsed_position(data: dict, current_user: dict = Depends(get_current_user)):
+    """Parse edilmis pozisyonu kaydet + otomatik eslestir"""
+    try:
+        company_id = current_user["company_id"]
+        parent_id = data.get("parent_id")
+        if not parent_id:
+            raise HTTPException(status_code=400, detail="parent_id gerekli")
+        if not data.get("pozisyon_adi"):
+            raise HTTPException(status_code=400, detail="pozisyon_adi gerekli")
+
+        # Verify parent ownership
+        if not verify_department_pool_ownership(parent_id, company_id):
+            raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        # Create position pool
+        keywords = data.get("keywords", [])
+        if isinstance(keywords, str):
+            keywords = [k.strip() for k in keywords.split(",") if k.strip()]
+
+        description_parts = []
+        if data.get("aranan_nitelikler"):
+            description_parts.append(f"Aranan Nitelikler: {data['aranan_nitelikler']}")
+        if data.get("is_tanimi"):
+            description_parts.append(f"Is Tanimi: {data['is_tanimi']}")
+
+        pool_data = {
+            "name": data["pozisyon_adi"],
+            "pool_type": "position",
+            "parent_id": parent_id,
+            "icon": "\U0001F3AF",
+            "keywords": keywords,
+            "description": "\n".join(description_parts) if description_parts else None,
+            "gerekli_deneyim_yil": float(data.get("deneyim_yil", 0) or 0),
+            "gerekli_egitim": data.get("egitim_seviyesi", ""),
+            "lokasyon": data.get("lokasyon", ""),
+            "company_id": company_id
+        }
+
+        pool_id = create_department_pool(pool_data)
+        if not pool_id:
+            raise HTTPException(status_code=500, detail="Pozisyon olusturulamadi")
+
+        # categorize_and_save - v2 tablolarini doldur
+        position_text = f"{data.get('pozisyon_adi','')} {data.get('aranan_nitelikler','')} {data.get('is_tanimi','')}"
+        try:
+            from scoring_v2 import categorize_and_save
+            categorize_and_save(pool_id, data["pozisyon_adi"], position_text, keywords)
+        except Exception as cat_err:
+            print(f"categorize_and_save hatasi (devam ediliyor): {cat_err}")
+
+        # Otomatik CV Cek
+        transferred = 0
+        try:
+            from database import pull_matching_candidates_to_position
+            result = pull_matching_candidates_to_position(pool_id, company_id)
+            transferred = result.get("transferred", 0)
+        except Exception as pull_err:
+            print(f"pull_matching hatasi (devam ediliyor): {pull_err}")
+
+        return {
+            "success": True,
+            "pool_id": pool_id,
+            "transferred": transferred,
+            "message": f"Pozisyon olusturuldu, {transferred} aday eslestirildi"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/{pool_id}/keywords")
+def update_keywords(pool_id: int, data: dict, current_user: dict = Depends(get_current_user)):
+    """Keyword ekle/sil"""
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        action = data.get("action")  # "add" or "remove"
+        keyword = data.get("keyword", "").strip()
+        if not action or not keyword:
+            raise HTTPException(status_code=400, detail="action ve keyword gerekli")
+
+        pool = get_department_pool(pool_id)
+        if not pool:
+            raise HTTPException(status_code=404, detail="Havuz bulunamadi")
+
+        current_keywords = pool.get("keywords") or []
+        if isinstance(current_keywords, str):
+            current_keywords = [k.strip() for k in current_keywords.split(",") if k.strip()]
+
+        if action == "add" and keyword not in current_keywords:
+            current_keywords.append(keyword)
+        elif action == "remove" and keyword in current_keywords:
+            current_keywords.remove(keyword)
+
+        update_department_pool(pool_id, company_id=company_id, keywords=current_keywords)
+
+        return {"success": True, "keywords": current_keywords}
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
