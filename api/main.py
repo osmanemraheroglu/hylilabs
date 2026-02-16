@@ -7,6 +7,7 @@ from routes.keywords import router as keywords_router
 from routes.users import router as users_router
 from routes.settings import router as settings_router
 from routes.cv import router as cv_router
+from routes.candidates import router as candidates_router
 
 app = FastAPI(title="HyliAI API", version="1.0.0")
 
@@ -26,6 +27,7 @@ app.include_router(keywords_router)
 app.include_router(users_router)
 app.include_router(settings_router)
 app.include_router(cv_router)
+app.include_router(candidates_router)
 
 @app.get("/api/health")
 def health_check():
