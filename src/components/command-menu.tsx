@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, ChevronRight, Laptop, Moon, Sun } from 'lucide-react'
 import { useSearch } from '@/context/search-provider'
 import { useTheme } from '@/context/theme-provider'
+import { useAuthStore } from '@/stores/auth-store'
 import {
   CommandDialog,
   CommandEmpty,
@@ -12,13 +13,17 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
-import { sidebarData } from './layout/data/sidebar-data'
+import { getSidebarData } from './layout/data/sidebar-data'
 import { ScrollArea } from './ui/scroll-area'
 
 export function CommandMenu() {
   const navigate = useNavigate()
   const { setTheme } = useTheme()
   const { open, setOpen } = useSearch()
+  const { auth } = useAuthStore()
+  
+  const userRole = auth.user?.role?.[0] || 'user'
+  const sidebarData = getSidebarData(userRole)
 
   const runCommand = React.useCallback(
     (command: () => unknown) => {

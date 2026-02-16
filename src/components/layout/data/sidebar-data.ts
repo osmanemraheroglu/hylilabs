@@ -1,234 +1,82 @@
 import {
   Building2,
   Cog,
-  Construction,
   LayoutDashboard,
-  Monitor,
-  Bug,
   CalendarClock,
   Mail,
   FolderTree,
-  ListTodo,
-  FileX,
-  HelpCircle,
-  Lock,
-  Bell,
-  Package,
-  Palette,
-  ServerOff,
   Settings,
-  Wrench,
-  UserCog,
-  UserX,
   Users,
-  MessagesSquare,
-  ShieldCheck,
+  UserCog,
+  FileUp,
+  BarChart3,
   AudioWaveform,
   Command,
   GalleryVerticalEnd,
 } from 'lucide-react'
-import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
-export const sidebarData: SidebarData = {
-  user: {
-    name: 'satnaing',
-    email: 'satnaingdev@gmail.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
-  teams: [
-    {
-      name: 'Shadcn Admin',
-      logo: Command,
-      plan: 'Vite + ShadcnUI',
-    },
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
-    },
-  ],
-  navGroups: [
-    {
-      title: 'General',
-      items: [
-        {
-          title: 'Dashboard',
-          url: '/',
-          icon: LayoutDashboard,
-        },
-        {
-          title: 'Firma Yonetimi',
-          url: '/firma-yonetimi',
-          icon: Building2,
-        },
-        {
-          title: 'Admin Panel',
-          url: '/admin-panel',
-          icon: Cog,
-        },
-        {
-          title: 'Mulakat Takvimi',
-          url: '/mulakat-takvimi',
-          icon: CalendarClock,
-        },
-        {
-          title: 'Email Hesaplari',
-          url: '/email-hesaplari',
-          icon: Mail,
-        },
-        {
-          title: 'Havuzlar',
-          url: '/havuzlar',
-          icon: FolderTree,
-        },
-        {
-          title: 'Tasks',
-          url: '/tasks',
-          icon: ListTodo,
-        },
-        {
-          title: 'Apps',
-          url: '/apps',
-          icon: Package,
-        },
-        {
-          title: 'Chats',
-          url: '/chats',
-          badge: '3',
-          icon: MessagesSquare,
-        },
-        {
-          title: 'Users',
-          url: '/users',
-          icon: Users,
-        },
-        {
-          title: 'Secured by Clerk',
-          icon: ClerkLogo,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/clerk/sign-in',
-            },
-            {
-              title: 'Sign Up',
-              url: '/clerk/sign-up',
-            },
-            {
-              title: 'User Management',
-              url: '/clerk/user-management',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      title: 'Pages',
-      items: [
-        {
-          title: 'Auth',
-          icon: ShieldCheck,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/sign-in',
-            },
-            {
-              title: 'Sign In (2 Col)',
-              url: '/sign-in-2',
-            },
-            {
-              title: 'Sign Up',
-              url: '/sign-up',
-            },
-            {
-              title: 'Forgot Password',
-              url: '/forgot-password',
-            },
-            {
-              title: 'OTP',
-              url: '/otp',
-            },
-          ],
-        },
-        {
-          title: 'Errors',
-          icon: Bug,
-          items: [
-            {
-              title: 'Unauthorized',
-              url: '/errors/unauthorized',
-              icon: Lock,
-            },
-            {
-              title: 'Forbidden',
-              url: '/errors/forbidden',
-              icon: UserX,
-            },
-            {
-              title: 'Not Found',
-              url: '/errors/not-found',
-              icon: FileX,
-            },
-            {
-              title: 'Internal Server Error',
-              url: '/errors/internal-server-error',
-              icon: ServerOff,
-            },
-            {
-              title: 'Maintenance Error',
-              url: '/errors/maintenance-error',
-              icon: Construction,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      title: 'Other',
-      items: [
-        {
-          title: 'Settings',
-          icon: Settings,
-          items: [
-            {
-              title: 'Profile',
-              url: '/settings',
-              icon: UserCog,
-            },
-            {
-              title: 'Account',
-              url: '/settings/account',
-              icon: Wrench,
-            },
-            {
-              title: 'Appearance',
-              url: '/settings/appearance',
-              icon: Palette,
-            },
-            {
-              title: 'Notifications',
-              url: '/settings/notifications',
-              icon: Bell,
-            },
-            {
-              title: 'Display',
-              url: '/settings/display',
-              icon: Monitor,
-            },
-          ],
-        },
-        {
-          title: 'Help Center',
-          url: '/help-center',
-          icon: HelpCircle,
-        },
-      ],
-    },
-  ],
+
+// Menü öğeleri tanımları
+const MENU_ITEMS: Record<string, { title: string; url: string; icon: React.ElementType }> = {
+  dashboard: { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  cvTopla: { title: 'CV Topla', url: '/cv-collect', icon: FileUp },
+  adaylar: { title: 'Adaylar', url: '/candidates', icon: Users },
+  havuzlar: { title: 'Havuzlar', url: '/havuzlar', icon: FolderTree },
+  mulakatTakvimi: { title: 'Mulakat Takvimi', url: '/mulakat-takvimi', icon: CalendarClock },
+  keywords: { title: 'Keyword Istatistikleri', url: '/keywords', icon: BarChart3 },
+  emailHesaplari: { title: 'Email Hesaplari', url: '/email-hesaplari', icon: Mail },
+  kullaniciYonetimi: { title: 'Kullanici Yonetimi', url: '/user-management', icon: UserCog },
+  firmaYonetimi: { title: 'Firma Yonetimi', url: '/firma-yonetimi', icon: Building2 },
+  adminPanel: { title: 'Admin Panel', url: '/admin-panel', icon: Cog },
+  ayarlar: { title: 'Ayarlar', url: '/settings', icon: Settings },
 }
+
+// Rol bazlı menü tanımları
+const ROLE_MENUS: Record<string, string[]> = {
+  super_admin: ['dashboard', 'firmaYonetimi', 'adminPanel', 'ayarlar'],
+  company_admin: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi', 'keywords', 'emailHesaplari', 'kullaniciYonetimi', 'ayarlar'],
+  user: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi', 'keywords'],
+}
+
+// Varsayılan teams
+const defaultTeams = [
+  {
+    name: 'HyliLabs',
+    logo: Command,
+    plan: 'AI HR Platform',
+  },
+  {
+    name: 'Acme Inc',
+    logo: GalleryVerticalEnd,
+    plan: 'Enterprise',
+  },
+  {
+    name: 'Acme Corp.',
+    logo: AudioWaveform,
+    plan: 'Startup',
+  },
+]
+
+// Dinamik sidebar data fonksiyonu
+export function getSidebarData(role: string, userName?: string, userEmail?: string): SidebarData {
+  const menuKeys = ROLE_MENUS[role] || ROLE_MENUS['user']
+  const items = menuKeys.map(key => MENU_ITEMS[key]).filter(Boolean)
+
+  return {
+    user: {
+      name: userName || 'Kullanici',
+      email: userEmail || '',
+      avatar: '',
+    },
+    teams: defaultTeams,
+    navGroups: [
+      {
+        title: 'Menu',
+        items: items,
+      },
+    ],
+  }
+}
+
+// Geriye uyumluluk için varsayılan export
+export const sidebarData = getSidebarData('user')
