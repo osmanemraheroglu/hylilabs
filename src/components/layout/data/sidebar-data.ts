@@ -1,4 +1,6 @@
 import {
+  Building2,
+  Cog,
   Construction,
   LayoutDashboard,
   Monitor,
@@ -58,6 +60,16 @@ export const sidebarData: SidebarData = {
           title: 'Dashboard',
           url: '/',
           icon: LayoutDashboard,
+        },
+        {
+          title: 'Firma Yonetimi',
+          url: '/firma-yonetimi',
+          icon: Building2,
+        },
+        {
+          title: 'Admin Panel',
+          url: '/admin-panel',
+          icon: Cog,
         },
         {
           title: 'Mulakat Takvimi',

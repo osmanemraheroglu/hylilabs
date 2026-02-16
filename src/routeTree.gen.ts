@@ -34,11 +34,13 @@ import { Route as AuthenticatedMulakatTakvimiIndexRouteImport } from './routes/_
 import { Route as AuthenticatedKeywordsIndexRouteImport } from './routes/_authenticated/keywords/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedHavuzlarIndexRouteImport } from './routes/_authenticated/havuzlar/index'
+import { Route as AuthenticatedFirmaYonetimiIndexRouteImport } from './routes/_authenticated/firma-yonetimi/index'
 import { Route as AuthenticatedEmailHesaplariIndexRouteImport } from './routes/_authenticated/email-hesaplari/index'
 import { Route as AuthenticatedCvCollectIndexRouteImport } from './routes/_authenticated/cv-collect/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedCandidatesIndexRouteImport } from './routes/_authenticated/candidates/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
+import { Route as AuthenticatedAdminPanelIndexRouteImport } from './routes/_authenticated/admin-panel/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
@@ -178,6 +180,12 @@ const AuthenticatedHavuzlarIndexRoute =
     path: '/havuzlar/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFirmaYonetimiIndexRoute =
+  AuthenticatedFirmaYonetimiIndexRouteImport.update({
+    id: '/firma-yonetimi/',
+    path: '/firma-yonetimi/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEmailHesaplariIndexRoute =
   AuthenticatedEmailHesaplariIndexRouteImport.update({
     id: '/email-hesaplari/',
@@ -206,6 +214,12 @@ const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexRouteImport.update({
   path: '/apps/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminPanelIndexRoute =
+  AuthenticatedAdminPanelIndexRouteImport.update({
+    id: '/admin-panel/',
+    path: '/admin-panel/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ClerkAuthenticatedUserManagementRoute =
   ClerkAuthenticatedUserManagementRouteImport.update({
     id: '/user-management',
@@ -275,11 +289,13 @@ export interface FileRoutesByFullPath {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/admin-panel': typeof AuthenticatedAdminPanelIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/candidates': typeof AuthenticatedCandidatesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/cv-collect': typeof AuthenticatedCvCollectIndexRoute
   '/email-hesaplari': typeof AuthenticatedEmailHesaplariIndexRoute
+  '/firma-yonetimi': typeof AuthenticatedFirmaYonetimiIndexRoute
   '/havuzlar': typeof AuthenticatedHavuzlarIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/keywords': typeof AuthenticatedKeywordsIndexRoute
@@ -311,11 +327,13 @@ export interface FileRoutesByTo {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/admin-panel': typeof AuthenticatedAdminPanelIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/candidates': typeof AuthenticatedCandidatesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/cv-collect': typeof AuthenticatedCvCollectIndexRoute
   '/email-hesaplari': typeof AuthenticatedEmailHesaplariIndexRoute
+  '/firma-yonetimi': typeof AuthenticatedFirmaYonetimiIndexRoute
   '/havuzlar': typeof AuthenticatedHavuzlarIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/keywords': typeof AuthenticatedKeywordsIndexRoute
@@ -352,11 +370,13 @@ export interface FileRoutesById {
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/_authenticated/admin-panel/': typeof AuthenticatedAdminPanelIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/candidates/': typeof AuthenticatedCandidatesIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/cv-collect/': typeof AuthenticatedCvCollectIndexRoute
   '/_authenticated/email-hesaplari/': typeof AuthenticatedEmailHesaplariIndexRoute
+  '/_authenticated/firma-yonetimi/': typeof AuthenticatedFirmaYonetimiIndexRoute
   '/_authenticated/havuzlar/': typeof AuthenticatedHavuzlarIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/keywords/': typeof AuthenticatedKeywordsIndexRoute
@@ -391,11 +411,13 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/admin-panel'
     | '/apps'
     | '/candidates'
     | '/chats'
     | '/cv-collect'
     | '/email-hesaplari'
+    | '/firma-yonetimi'
     | '/havuzlar'
     | '/help-center'
     | '/keywords'
@@ -427,11 +449,13 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/admin-panel'
     | '/apps'
     | '/candidates'
     | '/chats'
     | '/cv-collect'
     | '/email-hesaplari'
+    | '/firma-yonetimi'
     | '/havuzlar'
     | '/help-center'
     | '/keywords'
@@ -467,11 +491,13 @@ export interface FileRouteTypes {
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
+    | '/_authenticated/admin-panel/'
     | '/_authenticated/apps/'
     | '/_authenticated/candidates/'
     | '/_authenticated/chats/'
     | '/_authenticated/cv-collect/'
     | '/_authenticated/email-hesaplari/'
+    | '/_authenticated/firma-yonetimi/'
     | '/_authenticated/havuzlar/'
     | '/_authenticated/help-center/'
     | '/_authenticated/keywords/'
@@ -675,6 +701,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHavuzlarIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/firma-yonetimi/': {
+      id: '/_authenticated/firma-yonetimi/'
+      path: '/firma-yonetimi'
+      fullPath: '/firma-yonetimi'
+      preLoaderRoute: typeof AuthenticatedFirmaYonetimiIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/email-hesaplari/': {
       id: '/_authenticated/email-hesaplari/'
       path: '/email-hesaplari'
@@ -708,6 +741,13 @@ declare module '@tanstack/react-router' {
       path: '/apps'
       fullPath: '/apps'
       preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-panel/': {
+      id: '/_authenticated/admin-panel/'
+      path: '/admin-panel'
+      fullPath: '/admin-panel'
+      preLoaderRoute: typeof AuthenticatedAdminPanelIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/clerk/_authenticated/user-management': {
@@ -796,11 +836,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedAdminPanelIndexRoute: typeof AuthenticatedAdminPanelIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedCandidatesIndexRoute: typeof AuthenticatedCandidatesIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedCvCollectIndexRoute: typeof AuthenticatedCvCollectIndexRoute
   AuthenticatedEmailHesaplariIndexRoute: typeof AuthenticatedEmailHesaplariIndexRoute
+  AuthenticatedFirmaYonetimiIndexRoute: typeof AuthenticatedFirmaYonetimiIndexRoute
   AuthenticatedHavuzlarIndexRoute: typeof AuthenticatedHavuzlarIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedKeywordsIndexRoute: typeof AuthenticatedKeywordsIndexRoute
@@ -815,11 +857,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedAdminPanelIndexRoute: AuthenticatedAdminPanelIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedCandidatesIndexRoute: AuthenticatedCandidatesIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedCvCollectIndexRoute: AuthenticatedCvCollectIndexRoute,
   AuthenticatedEmailHesaplariIndexRoute: AuthenticatedEmailHesaplariIndexRoute,
+  AuthenticatedFirmaYonetimiIndexRoute: AuthenticatedFirmaYonetimiIndexRoute,
   AuthenticatedHavuzlarIndexRoute: AuthenticatedHavuzlarIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedKeywordsIndexRoute: AuthenticatedKeywordsIndexRoute,
