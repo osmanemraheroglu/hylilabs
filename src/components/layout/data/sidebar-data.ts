@@ -5,6 +5,7 @@ import {
   Bug,
   CalendarClock,
   Mail,
+  FolderTree,
   ListTodo,
   FileX,
   HelpCircle,
@@ -67,6 +68,11 @@ export const sidebarData: SidebarData = {
           title: 'Email Hesaplari',
           url: '/email-hesaplari',
           icon: Mail,
+        },
+        {
+          title: 'Havuzlar',
+          url: '/havuzlar',
+          icon: FolderTree,
         },
         {
           title: 'Tasks',
