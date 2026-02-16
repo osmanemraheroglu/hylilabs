@@ -104,6 +104,8 @@ export default function Havuzlar() {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [transferDialogOpen, setTransferDialogOpen] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [pulling, setPulling] = useState(false)
 
   // Forms
   const [poolForm, setPoolForm] = useState({
@@ -332,6 +334,37 @@ export default function Havuzlar() {
       })
   }
 
+  const handleSyncAll = () => {
+    setSyncing(true)
+    fetch(`${API_URL}/api/pools/sync-all`, { method: "POST", headers: getHeaders() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          const d = res.data
+          alert(`${d.positions_scanned} pozisyon tarandi, ${d.total_transferred} aday aktarildi`)
+          loadTree(); loadAllPools(); if (selectedPoolId) loadCandidates(selectedPoolId)
+        } else alert(res.detail || "Hata")
+      })
+      .catch(err => console.error("Sync hatasi:", err))
+      .finally(() => setSyncing(false))
+  }
+
+  const handlePullCandidates = () => {
+    if (!selectedPoolId) return
+    setPulling(true)
+    fetch(`${API_URL}/api/pools/${selectedPoolId}/pull-candidates`, { method: "POST", headers: getHeaders() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          const d = res.data
+          alert(`${d.total_scanned} aday tarandi, ${d.matched} eslesti, ${d.transferred} aktarildi`)
+          loadCandidates(selectedPoolId); loadTree()
+        } else alert(res.detail || "Hata")
+      })
+      .catch(err => console.error("Pull hatasi:", err))
+      .finally(() => setPulling(false))
+  }
+
   // Filtered candidates
   const filteredCandidates = candidates.filter(c => {
     if (!searchQuery) return true
@@ -360,6 +393,7 @@ export default function Havuzlar() {
           <Button variant="outline" size="sm" onClick={() => { loadTree(); loadAllPools(); if (selectedPoolId) loadCandidates(selectedPoolId) }} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} /> Yenile
           </Button>
+          <Button size="sm" variant="outline" onClick={handleSyncAll} disabled={syncing}>{syncing ? <RefreshCw className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}Eslestir</Button>
           <Button size="sm" onClick={() => openCreate('department')}>
             <Plus className="h-4 w-4 mr-1" /> Departman
           </Button>
@@ -463,6 +497,9 @@ export default function Havuzlar() {
                         <Button variant="outline" size="sm" onClick={openEdit}><Edit className="h-3.5 w-3.5 mr-1" />Duzenle</Button>
                         <Button variant="outline" size="sm" className="text-red-500" onClick={() => setDeleteConfirm(selectedPoolId)}><Trash2 className="h-3.5 w-3.5 mr-1" />Sil</Button>
                       </>
+                    )}
+                    {poolInfo && poolInfo.pool_type === "position" && !poolInfo.is_system && (
+                      <Button variant="default" size="sm" onClick={handlePullCandidates} disabled={pulling}>{pulling ? <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1" />}CV Cek</Button>
                     )}
                     <Button variant="outline" size="sm" onClick={() => setAssignDialogOpen(true)}><UserPlus className="h-3.5 w-3.5 mr-1" />Aday Ata</Button>
                   </div>

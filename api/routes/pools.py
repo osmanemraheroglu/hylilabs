@@ -337,3 +337,42 @@ def update_candidates_status(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{pool_id}/pull-candidates")
+def pull_candidates(pool_id: int, current_user: dict = Depends(get_current_user)):
+    """Pozisyon icin eslesen adaylari cek (CV Cek)"""
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Bu havuza erisim yetkiniz yok")
+
+        from database import pull_matching_candidates_to_position
+        result = pull_matching_candidates_to_position(pool_id, company_id)
+        return {
+            "success": True,
+            "data": result,
+            "message": f"{result.get('transferred', 0)} aday eslesti ve aktarildi"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sync-all")
+def sync_all_positions(current_user: dict = Depends(get_current_user)):
+    """Tum pozisyonlar icin aday eslestirmesi yap"""
+    try:
+        company_id = current_user["company_id"]
+        from database import sync_candidates_to_all_positions
+        result = sync_candidates_to_all_positions(company_id)
+        return {
+            "success": True,
+            "data": result,
+            "message": f"{result['positions_scanned']} pozisyon taranidi, {result['total_transferred']} aday aktarildi"
+        }
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
