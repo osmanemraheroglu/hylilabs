@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from routes.auth import get_current_user
 from database import (
+    get_connection,
     get_department_pools, get_department_pool, get_department_pool_stats,
     get_hierarchical_pool_stats, get_department_pool_candidates,
     get_pool_candidates_with_days, get_pool_by_name,
@@ -373,6 +374,148 @@ def sync_all_positions(current_user: dict = Depends(get_current_user)):
             "data": result,
             "message": f"{result['positions_scanned']} pozisyon taranidi, {result['total_transferred']} aday aktarildi"
         }
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@router.get("/{pool_id}/candidates/{candidate_id}/detail")
+def get_candidate_detail(pool_id: int, candidate_id: int, current_user: dict = Depends(get_current_user)):
+    """Aday detay karti"""
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT id, ad_soyad, email, telefon, lokasyon, egitim, universite, bolum,
+                       toplam_deneyim_yil, mevcut_pozisyon, mevcut_sirket, deneyim_detay,
+                       teknik_beceriler, diller, sertifikalar, cv_dosya_adi,
+                       linkedin, egitim_detay, olusturma_tarihi
+                FROM candidates WHERE id = ? AND company_id = ?
+            """, (candidate_id, company_id))
+            row = cursor.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Aday bulunamadi")
+
+            cols = [d[0] for d in cursor.description]
+            candidate = dict(zip(cols, row))
+
+            cursor.execute("""
+                SELECT detayli_analiz, uyum_puani
+                FROM matches WHERE candidate_id = ? AND position_id = ?
+            """, (candidate_id, pool_id))
+            match_row = cursor.fetchone()
+            v2_detail = None
+            if match_row and match_row[0]:
+                try:
+                    v2_detail = json.loads(match_row[0]) if str(match_row[0]).startswith('{') else {"text": str(match_row[0])}
+                except Exception:
+                    v2_detail = {"text": str(match_row[0])}
+                v2_detail["uyum_puani"] = match_row[1]
+
+            cursor.execute("""
+                SELECT match_score, status FROM candidate_positions
+                WHERE candidate_id = ? AND position_id = ?
+            """, (candidate_id, pool_id))
+            cp_row = cursor.fetchone()
+
+            cursor.execute("""
+                SELECT evaluation_text, v2_score, created_at FROM ai_evaluations
+                WHERE candidate_id = ? AND position_id = ?
+                ORDER BY created_at DESC LIMIT 1
+            """, (candidate_id, pool_id))
+            ai_row = cursor.fetchone()
+            ai_eval = None
+            if ai_row:
+                ai_eval = {"text": ai_row[0], "v2_score": ai_row[1], "date": ai_row[2]}
+
+        return {
+            "success": True,
+            "candidate": candidate,
+            "position_score": cp_row[0] if cp_row else None,
+            "position_status": cp_row[1] if cp_row else None,
+            "v2_detail": v2_detail,
+            "ai_evaluation": ai_eval
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{pool_id}/candidates/export")
+def export_candidates(pool_id: int, current_user: dict = Depends(get_current_user)):
+    """CSV export"""
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        pool = get_department_pool(pool_id)
+        pool_type = pool.get("pool_type", "department") if pool else "department"
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            if pool and pool.get("is_system"):
+                cursor.execute("""
+                    SELECT c.ad_soyad, c.email, c.telefon, c.mevcut_pozisyon,
+                           c.toplam_deneyim_yil, c.lokasyon, c.egitim, c.teknik_beceriler,
+                           cpa.match_score, cpa.assignment_type
+                    FROM candidate_pool_assignments cpa
+                    JOIN candidates c ON cpa.candidate_id = c.id
+                    WHERE cpa.department_pool_id = ?
+                    ORDER BY cpa.match_score DESC
+                """, (pool_id,))
+            elif pool_type == "position":
+                cursor.execute("""
+                    SELECT c.ad_soyad, c.email, c.telefon, c.mevcut_pozisyon,
+                           c.toplam_deneyim_yil, c.lokasyon, c.egitim, c.teknik_beceriler,
+                           cp.match_score, cp.status
+                    FROM candidate_positions cp
+                    JOIN candidates c ON cp.candidate_id = c.id
+                    WHERE cp.position_id = ?
+                    ORDER BY cp.match_score DESC
+                """, (pool_id,))
+            else:
+                cursor.execute("""
+                    SELECT c.ad_soyad, c.email, c.telefon, c.mevcut_pozisyon,
+                           c.toplam_deneyim_yil, c.lokasyon, c.egitim, c.teknik_beceriler,
+                           cpa.match_score, cpa.assignment_type
+                    FROM candidate_pool_assignments cpa
+                    JOIN candidates c ON cpa.candidate_id = c.id
+                    WHERE cpa.department_pool_id = ?
+                    ORDER BY cpa.match_score DESC
+                """, (pool_id,))
+            rows = cursor.fetchall()
+
+        import csv, io
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter=';')
+        writer.writerow(["Ad Soyad", "Email", "Telefon", "Mevcut Pozisyon",
+                         "Deneyim (Yil)", "Lokasyon", "Egitim", "Teknik Beceriler",
+                         "Uyum Puani", "Durum"])
+        for row in rows:
+            writer.writerow([str(v) if v is not None else '' for v in row])
+
+        from fastapi.responses import Response
+        csv_bytes = b'\xef\xbb\xbf' + output.getvalue().encode('utf-8')
+        import unicodedata, re
+        pool_name = pool.get("name", "havuz") if pool else "havuz"
+        safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', unicodedata.normalize('NFKD', pool_name).encode('ascii', 'ignore').decode('ascii'))
+        if not safe_name: safe_name = "havuz"
+        return Response(
+            content=csv_bytes,
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f"attachment; filename={safe_name}_adaylar.csv"}
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
