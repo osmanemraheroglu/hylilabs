@@ -408,6 +408,20 @@ export default function Havuzlar() {
       .catch(e => alert('Hata: ' + e))
   }
 
+  const handleViewCV = (candidateId: number) => {
+    if (!selectedPoolId) return
+    fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/cv`, { headers: H() })
+      .then(r => {
+        if (!r.ok) throw new Error('CV bulunamadi')
+        return r.blob()
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob)
+        window.open(url, '_blank')
+      })
+      .catch(() => alert('CV dosyasi bulunamadi'))
+  }
+
   // Filtering & Sorting
   const filteredCandidates = candidates.filter(c => {
     if (searchQuery) {
@@ -685,6 +699,9 @@ export default function Havuzlar() {
                                         <div className="flex items-center justify-between mb-2">
                                           <div className="text-xs font-medium flex items-center gap-1"><Brain className="h-3 w-3" />AI Degerlendirme {aie ? `(v2: ${String((aie)?.v2_score || '-')})` : ''}</div>
                                           <div className="flex gap-1">
+                                            <Button size="sm" variant="outline" onClick={() => handleViewCV(cd.id)} disabled={!cd?.cv_dosya_adi} className="h-6 text-[10px] px-2" title={cd?.cv_dosya_adi ? 'CV Goruntule' : 'CV yok'}>
+                                              <FileText className="h-3 w-3 mr-1" />CV
+                                            </Button>
                                             <Button size="sm" variant="outline" onClick={() => handleEvaluate(cd.id)} disabled={evaluating} className="h-6 text-[10px] px-2">
                                               {evaluating ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Brain className="h-3 w-3 mr-1" />}
                                               {aie ? 'Yeniden Degerlendir' : 'AI Degerlendir'}

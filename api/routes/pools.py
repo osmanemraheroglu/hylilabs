@@ -1051,3 +1051,66 @@ def get_candidate_report(pool_id: int, candidate_id: int, current_user: dict = D
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ CV GÖRÜNTÜLEME ============
+
+@router.get("/{pool_id}/candidates/{candidate_id}/cv")
+def get_candidate_cv(pool_id: int, candidate_id: int, current_user: dict = Depends(get_current_user)):
+    """Aday CV dosyasını döndür"""
+    from fastapi.responses import Response
+    import os
+
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT cv_dosya_yolu, cv_dosya_adi
+                FROM candidates WHERE id = ? AND company_id = ?
+            """, (candidate_id, company_id))
+            row = cursor.fetchone()
+
+            if not row:
+                raise HTTPException(status_code=404, detail="Aday bulunamadi")
+
+            cv_path = row["cv_dosya_yolu"]
+            cv_filename = row["cv_dosya_adi"] or "cv.pdf"
+
+            if not cv_path:
+                raise HTTPException(status_code=404, detail="CV dosyasi bulunamadi")
+
+            # Güvenlik: path traversal önleme
+            if not cv_path.startswith("/var/www/hylilabs/api/data/cvs/"):
+                raise HTTPException(status_code=403, detail="Gecersiz dosya yolu")
+
+            if not os.path.exists(cv_path):
+                raise HTTPException(status_code=404, detail="CV dosyasi fiziksel olarak bulunamadi")
+
+            with open(cv_path, "rb") as f:
+                file_bytes = f.read()
+
+            # MIME type belirle
+            if cv_path.lower().endswith('.pdf'):
+                media_type = "application/pdf"
+            elif cv_path.lower().endswith('.docx'):
+                media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            else:
+                media_type = "application/octet-stream"
+
+            return Response(
+                content=file_bytes,
+                media_type=media_type,
+                headers={
+                    "Content-Disposition": f'inline; filename="{cv_filename}"'
+                }
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
