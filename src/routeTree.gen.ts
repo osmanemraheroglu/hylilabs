@@ -33,6 +33,7 @@ import { Route as AuthenticatedSettingsPageIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedMulakatTakvimiIndexRouteImport } from './routes/_authenticated/mulakat-takvimi/index'
 import { Route as AuthenticatedKeywordsIndexRouteImport } from './routes/_authenticated/keywords/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
+import { Route as AuthenticatedEmailHesaplariIndexRouteImport } from './routes/_authenticated/email-hesaplari/index'
 import { Route as AuthenticatedCvCollectIndexRouteImport } from './routes/_authenticated/cv-collect/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedCandidatesIndexRouteImport } from './routes/_authenticated/candidates/index'
@@ -170,6 +171,12 @@ const AuthenticatedHelpCenterIndexRoute =
     path: '/help-center/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEmailHesaplariIndexRoute =
+  AuthenticatedEmailHesaplariIndexRouteImport.update({
+    id: '/email-hesaplari/',
+    path: '/email-hesaplari/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCvCollectIndexRoute =
   AuthenticatedCvCollectIndexRouteImport.update({
     id: '/cv-collect/',
@@ -265,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/candidates': typeof AuthenticatedCandidatesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/cv-collect': typeof AuthenticatedCvCollectIndexRoute
+  '/email-hesaplari': typeof AuthenticatedEmailHesaplariIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/keywords': typeof AuthenticatedKeywordsIndexRoute
   '/mulakat-takvimi': typeof AuthenticatedMulakatTakvimiIndexRoute
@@ -299,6 +307,7 @@ export interface FileRoutesByTo {
   '/candidates': typeof AuthenticatedCandidatesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/cv-collect': typeof AuthenticatedCvCollectIndexRoute
+  '/email-hesaplari': typeof AuthenticatedEmailHesaplariIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/keywords': typeof AuthenticatedKeywordsIndexRoute
   '/mulakat-takvimi': typeof AuthenticatedMulakatTakvimiIndexRoute
@@ -338,6 +347,7 @@ export interface FileRoutesById {
   '/_authenticated/candidates/': typeof AuthenticatedCandidatesIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/cv-collect/': typeof AuthenticatedCvCollectIndexRoute
+  '/_authenticated/email-hesaplari/': typeof AuthenticatedEmailHesaplariIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/keywords/': typeof AuthenticatedKeywordsIndexRoute
   '/_authenticated/mulakat-takvimi/': typeof AuthenticatedMulakatTakvimiIndexRoute
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/candidates'
     | '/chats'
     | '/cv-collect'
+    | '/email-hesaplari'
     | '/help-center'
     | '/keywords'
     | '/mulakat-takvimi'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/candidates'
     | '/chats'
     | '/cv-collect'
+    | '/email-hesaplari'
     | '/help-center'
     | '/keywords'
     | '/mulakat-takvimi'
@@ -447,6 +459,7 @@ export interface FileRouteTypes {
     | '/_authenticated/candidates/'
     | '/_authenticated/chats/'
     | '/_authenticated/cv-collect/'
+    | '/_authenticated/email-hesaplari/'
     | '/_authenticated/help-center/'
     | '/_authenticated/keywords/'
     | '/_authenticated/mulakat-takvimi/'
@@ -642,6 +655,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHelpCenterIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/email-hesaplari/': {
+      id: '/_authenticated/email-hesaplari/'
+      path: '/email-hesaplari'
+      fullPath: '/email-hesaplari'
+      preLoaderRoute: typeof AuthenticatedEmailHesaplariIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cv-collect/': {
       id: '/_authenticated/cv-collect/'
       path: '/cv-collect'
@@ -760,6 +780,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCandidatesIndexRoute: typeof AuthenticatedCandidatesIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedCvCollectIndexRoute: typeof AuthenticatedCvCollectIndexRoute
+  AuthenticatedEmailHesaplariIndexRoute: typeof AuthenticatedEmailHesaplariIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedKeywordsIndexRoute: typeof AuthenticatedKeywordsIndexRoute
   AuthenticatedMulakatTakvimiIndexRoute: typeof AuthenticatedMulakatTakvimiIndexRoute
@@ -777,6 +798,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCandidatesIndexRoute: AuthenticatedCandidatesIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedCvCollectIndexRoute: AuthenticatedCvCollectIndexRoute,
+  AuthenticatedEmailHesaplariIndexRoute: AuthenticatedEmailHesaplariIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedKeywordsIndexRoute: AuthenticatedKeywordsIndexRoute,
   AuthenticatedMulakatTakvimiIndexRoute: AuthenticatedMulakatTakvimiIndexRoute,

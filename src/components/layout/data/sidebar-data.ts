@@ -4,6 +4,7 @@ import {
   Monitor,
   Bug,
   CalendarClock,
+  Mail,
   ListTodo,
   FileX,
   HelpCircle,
@@ -61,6 +62,11 @@ export const sidebarData: SidebarData = {
           title: 'Mulakat Takvimi',
           url: '/mulakat-takvimi',
           icon: CalendarClock,
+        },
+        {
+          title: 'Email Hesaplari',
+          url: '/email-hesaplari',
+          icon: Mail,
         },
         {
           title: 'Tasks',
