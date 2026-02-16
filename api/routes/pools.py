@@ -810,3 +810,244 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ AI DEĞERLENDİRME ============
+
+@router.post("/{pool_id}/candidates/{candidate_id}/evaluate")
+def evaluate_candidate(pool_id: int, candidate_id: int, current_user: dict = Depends(get_current_user)):
+    """AI ile aday değerlendirmesi yap"""
+    import anthropic
+    import os
+    import json as json_lib
+    
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Aday bilgileri
+            cursor.execute("""
+                SELECT ad_soyad, mevcut_pozisyon, toplam_deneyim_yil, egitim, 
+                       teknik_beceriler, deneyim_detay, lokasyon
+                FROM candidates WHERE id = ?
+            """, (candidate_id,))
+            cand = cursor.fetchone()
+            if not cand:
+                raise HTTPException(status_code=404, detail="Aday bulunamadi")
+            
+            # Pozisyon bilgileri
+            cursor.execute("SELECT name, keywords FROM department_pools WHERE id = ?", (pool_id,))
+            pos = cursor.fetchone()
+            if not pos:
+                raise HTTPException(status_code=404, detail="Pozisyon bulunamadi")
+            
+            # v2 skor bilgileri
+            cursor.execute("""
+                SELECT uyum_puani, detayli_analiz 
+                FROM matches 
+                WHERE candidate_id = ? AND position_id = ?
+                ORDER BY id DESC LIMIT 1
+            """, (candidate_id, pool_id))
+            match_row = cursor.fetchone()
+            
+            # Varsayılan değerler
+            total_v2 = 0
+            pos_score = 0
+            title_match_level = "-"
+            technical_score = 0
+            critical_matched = []
+            critical_missing = []
+            experience_score = 0
+            education_score = 0
+            knockout = False
+            knockout_reason = ""
+            
+            if match_row:
+                total_v2 = match_row["uyum_puani"] or 0
+                if match_row["detayli_analiz"]:
+                    try:
+                        detail = json_lib.loads(match_row["detayli_analiz"])
+                        pos_score = detail.get("position_score", 0)
+                        title_match_level = detail.get("title_match_level", "-")
+                        technical_score = detail.get("technical_score", 0)
+                        critical_matched = detail.get("critical_matched", [])[:5]
+                        critical_missing = detail.get("critical_missing", [])[:5]
+                        experience_score = detail.get("experience_score", 0)
+                        education_score = detail.get("education_score", 0)
+                        knockout = detail.get("knockout", False)
+                        knockout_reason = detail.get("knockout_reason", "")
+                    except:
+                        pass
+            
+            # Prompt oluştur (TalentFlow formatı)
+            crit_matched_str = ", ".join(critical_matched) if critical_matched else "Yok"
+            crit_missing_str = ", ".join(critical_missing) if critical_missing else "Yok"
+            ko_str = f"KNOCKOUT: {knockout_reason}" if knockout else ""
+            
+            eval_prompt = f"""Asagidaki adayi belirtilen pozisyon icin degerlendir. Turkce yanit ver.
+
+ADAY: {cand["ad_soyad"]}
+Mevcut Pozisyon: {cand["mevcut_pozisyon"] or "-"}
+Deneyim: {cand["toplam_deneyim_yil"] or 0} yil
+Egitim: {cand["egitim"] or "-"}
+Teknik Beceriler: {cand["teknik_beceriler"] or "-"}
+Deneyim Detay: {(cand["deneyim_detay"] or "-")[:500]}
+Lokasyon: {cand["lokasyon"] or "-"}
+
+POZISYON: {pos["name"]}
+Keywords: {pos["keywords"] or ""}
+
+V2 SKOR: {total_v2}/100
+Pozisyon Uyumu: {pos_score}/33 (baslik: {title_match_level})
+Teknik Yetkinlik: {technical_score}/37
+Kritik eslesen: {crit_matched_str}
+Kritik eksik: {crit_missing_str}
+Deneyim: {experience_score}/10, Egitim: {education_score}/10
+{ko_str}
+
+Asagidaki formatta yanit ver (kisa ve oz, her baslik 2-3 madde):
+
+**Guclu Yonleri:**
+- ...
+
+**Eksiklikleri:**
+- ...
+
+**Genel Degerlendirme:**
+(2-3 cumle)
+
+**Alternatif Pozisyonlar:**
+- ...
+"""
+        
+        # Claude API çağır
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY ayarlanmamis")
+        
+        try:
+            client = anthropic.Anthropic(api_key=api_key, timeout=60.0)
+            message = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=1024,
+                messages=[{"role": "user", "content": eval_prompt}]
+            )
+            ai_result = message.content[0].text
+        except anthropic.APITimeoutError:
+            raise HTTPException(status_code=504, detail="Claude API zaman asimi")
+        except anthropic.APIConnectionError:
+            raise HTTPException(status_code=503, detail="Claude API baglanti hatasi")
+        except Exception as api_err:
+            raise HTTPException(status_code=500, detail=f"Claude API hatasi: {str(api_err)}")
+        
+        # DB'ye kaydet
+        from database import save_ai_evaluation
+        save_ai_evaluation(candidate_id, pool_id, ai_result, total_v2, eval_prompt)
+        
+        return {
+            "success": True,
+            "evaluation": {
+                "text": ai_result,
+                "v2_score": total_v2
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{pool_id}/candidates/{candidate_id}/report")
+def get_candidate_report(pool_id: int, candidate_id: int, current_user: dict = Depends(get_current_user)):
+    """AI değerlendirme raporu (HTML)"""
+    from fastapi.responses import HTMLResponse
+    import json as json_lib
+    
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # AI evaluation
+            cursor.execute("""
+                SELECT evaluation_text, v2_score, created_at 
+                FROM ai_evaluations 
+                WHERE candidate_id = ? AND position_id = ?
+                ORDER BY created_at DESC LIMIT 1
+            """, (candidate_id, pool_id))
+            ai_row = cursor.fetchone()
+            if not ai_row:
+                raise HTTPException(status_code=404, detail="AI degerlendirme bulunamadi. Once degerlendirme yapin.")
+            
+            # Aday adı
+            cursor.execute("SELECT ad_soyad FROM candidates WHERE id = ?", (candidate_id,))
+            cand = cursor.fetchone()
+            candidate_name = cand["ad_soyad"] if cand else "Bilinmeyen"
+            
+            # Pozisyon adı
+            cursor.execute("SELECT name FROM department_pools WHERE id = ?", (pool_id,))
+            pos = cursor.fetchone()
+            position_name = pos["name"] if pos else "Bilinmeyen"
+            
+            # v2 detay
+            cursor.execute("""
+                SELECT detayli_analiz FROM matches 
+                WHERE candidate_id = ? AND position_id = ?
+                ORDER BY id DESC LIMIT 1
+            """, (candidate_id, pool_id))
+            match_row = cursor.fetchone()
+            
+            v2_data = {
+                "total": ai_row["v2_score"] or 0,
+                "pos_score": 0, "technical_score": 0, "experience_score": 0,
+                "education_score": 0, "elimination_score": 0, "title_match_level": "-",
+                "matched_title": "", "sector_detail": "", "location_detail": "",
+                "critical_matched": [], "critical_missing": [],
+                "knockout": False, "knockout_reason": ""
+            }
+            
+            if match_row and match_row["detayli_analiz"]:
+                try:
+                    detail = json_lib.loads(match_row["detayli_analiz"])
+                    v2_data.update({
+                        "pos_score": detail.get("position_score", 0),
+                        "technical_score": detail.get("technical_score", 0),
+                        "experience_score": detail.get("experience_score", 0),
+                        "education_score": detail.get("education_score", 0),
+                        "elimination_score": detail.get("elimination_score", 0),
+                        "title_match_level": detail.get("title_match_level", "-"),
+                        "matched_title": detail.get("matched_title", ""),
+                        "sector_detail": detail.get("sector_detail", ""),
+                        "location_detail": detail.get("location_detail", ""),
+                        "critical_matched": detail.get("critical_matched", []),
+                        "critical_missing": detail.get("critical_missing", []),
+                        "knockout": detail.get("knockout", False),
+                        "knockout_reason": detail.get("knockout_reason", "")
+                    })
+                except:
+                    pass
+        
+        # HTML rapor oluştur
+        from eval_report import generate_eval_html
+        html = generate_eval_html(
+            candidate_name=candidate_name,
+            position_name=position_name,
+            v2_data=v2_data,
+            ai_text=ai_row["evaluation_text"],
+            eval_date=str(ai_row["created_at"])[:16] if ai_row["created_at"] else None
+        )
+        
+        return HTMLResponse(content=html, media_type="text/html")
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

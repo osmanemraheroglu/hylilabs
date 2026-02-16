@@ -109,6 +109,9 @@ export default function Havuzlar() {
   const [approving, setApproving] = useState(false)
   const [titlesExpanded, setTitlesExpanded] = useState(true)
 
+  // AI Evaluation
+  const [evaluating, setEvaluating] = useState(false)
+
   const loadTree = useCallback(() => {
     setLoading(true)
     fetch(`${API}/api/pools/hierarchical`, { headers: H() })
@@ -371,6 +374,38 @@ export default function Havuzlar() {
       else n.add(id)
       return n
     })
+  }
+
+  // AI Değerlendirme
+  const handleEvaluate = (candidateId: number) => {
+    if (!selectedPoolId) return
+    setEvaluating(true)
+    fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/evaluate`, { method: 'POST', headers: H() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          alert('AI degerlendirme tamamlandi!')
+          loadDetail(candidateId)
+        } else { alert(res.detail || 'Hata') }
+      })
+      .catch(e => alert('Hata: ' + e))
+      .finally(() => setEvaluating(false))
+  }
+
+  // Rapor İndir
+  const handleDownloadReport = (candidateId: number) => {
+    if (!selectedPoolId) return
+    fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/report`, { headers: H() })
+      .then(r => {
+        if (!r.ok) throw new Error('Rapor alinamadi')
+        return r.text()
+      })
+      .then(html => {
+        const blob = new Blob([html], { type: 'text/html' })
+        const url = URL.createObjectURL(blob)
+        window.open(url, '_blank')
+      })
+      .catch(e => alert('Hata: ' + e))
   }
 
   // Filtering & Sorting
@@ -646,12 +681,25 @@ export default function Havuzlar() {
                                         </div>
                                       )}
                                       {/* AI Evaluation */}
-                                      {aie && (
-                                        <div className="border rounded p-3 bg-white">
-                                          <div className="text-xs font-medium mb-1 flex items-center gap-1"><Brain className="h-3 w-3" />AI Degerlendirme (v2: {String((aie)?.v2_score || '-')})</div>
-                                          <div className="text-xs whitespace-pre-line text-muted-foreground">{String((aie)?.text || '')}</div>
+                                      <div className="border rounded p-3 bg-white">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="text-xs font-medium flex items-center gap-1"><Brain className="h-3 w-3" />AI Degerlendirme {aie ? `(v2: ${String((aie)?.v2_score || '-')})` : ''}</div>
+                                          <div className="flex gap-1">
+                                            <Button size="sm" variant="outline" onClick={() => handleEvaluate(cd.id)} disabled={evaluating} className="h-6 text-[10px] px-2">
+                                              {evaluating ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Brain className="h-3 w-3 mr-1" />}
+                                              {aie ? 'Yeniden Degerlendir' : 'AI Degerlendir'}
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={() => handleDownloadReport(cd.id)} disabled={!aie} className="h-6 text-[10px] px-2">
+                                              <FileText className="h-3 w-3 mr-1" />Rapor
+                                            </Button>
+                                          </div>
                                         </div>
-                                      )}
+                                        {aie ? (
+                                          <div className="text-xs whitespace-pre-line text-muted-foreground">{String((aie)?.text || '')}</div>
+                                        ) : (
+                                          <div className="text-xs text-muted-foreground italic">Henuz AI degerlendirme yapilmamis</div>
+                                        )}
+                                      </div>
                                     </div>
                                   ); })() : <div className="text-center text-muted-foreground text-xs">Detay yuklenemedi</div>}
                                 </TableCell>
