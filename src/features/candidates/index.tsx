@@ -79,7 +79,7 @@ export default function Candidates() {
     fetch(`${API_URL}/api/candidates/${candidate.id}`, { headers: getHeaders() })
       .then(r => r.json())
       .then(res => {
-        if (res.success) setDetailData(res.data)
+        if (res.success) setDetailData(res.data.candidate || res.data)
       })
       .catch(err => console.error('Detail hatasi:', err))
       .finally(() => setDetailLoading(false))
