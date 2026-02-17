@@ -7,6 +7,44 @@ from database import (
 )
 import traceback
 import imaplib
+import base64
+
+
+def decode_imap_folder(folder_name: str) -> str:
+    """IMAP modified UTF-7 klasor ismini UTF-8 ye cevir (RFC 3501)"""
+    if not folder_name or '&' not in folder_name:
+        return folder_name
+    
+    result = []
+    i = 0
+    while i < len(folder_name):
+        if folder_name[i] == '&':
+            end = folder_name.find('-', i + 1)
+            if end == -1:
+                result.append(folder_name[i])
+                i += 1
+                continue
+            
+            encoded = folder_name[i + 1:end]
+            if encoded == '':
+                result.append('&')
+            else:
+                try:
+                    b64 = encoded.replace(',', '/')
+                    padding = 4 - (len(b64) % 4)
+                    if padding < 4:
+                        b64 += '=' * padding
+                    decoded_bytes = base64.b64decode(b64)
+                    decoded_str = decoded_bytes.decode('utf-16be')
+                    result.append(decoded_str)
+                except Exception:
+                    result.append(folder_name[i:end + 1])
+            i = end + 1
+        else:
+            result.append(folder_name[i])
+            i += 1
+    
+    return ''.join(result)
 
 router = APIRouter(prefix="/api/emails", tags=["emails"])
 
@@ -211,6 +249,7 @@ def get_email_folders(
                         
                         # Clean up folder name
                         folder_name = folder_name.strip().strip('"')
+                        folder_name = decode_imap_folder(folder_name)  # IMAP UTF-7 decode
                         if folder_name:
                             display_name = folder_name.replace("INBOX.", "").replace("[Gmail]/", "")
                             folders.append({
