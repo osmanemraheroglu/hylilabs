@@ -37,3 +37,37 @@ Dosya kilitlenmeden önce:
 ## CLAUDE CODE TALİMATI
 - Kilitli dosyada değişiklik talebi → "Bu dosya kilitli, EMRAHFC onayı gerekli" de ve DUR.
 - Yeni kilit talebi → 3x kontrol yap, raporla, onay bekle.
+
+---
+
+## GÜVENLİK KONTROLLERİ (17.02.2026)
+
+### 1. GitLeaks — Secret/Key Sızıntı Taraması ✅
+- **Araç:** Manuel 8 nokta tarama scripti
+- **Sonuç:** 3 bulgu tespit, 3/3 düzeltildi
+- **Düzeltme 1:** JWT SECRET_KEY hardcoded → os.getenv("JWT_SECRET") — Commit: 89a6f2d
+- **Düzeltme 2:** admin123/demo123 → production'da değiştirilecek (seed data)
+- **Dosya:** api/routes/auth.py (SECRET_KEY satırı KİLİTLİ — tekrar hardcoded yapılmamalı)
+- **Kontroller:** .env git'te yok ✅, API key kodda yok ✅, DB git'te yok ✅, hassas dosya yok ✅
+
+### 2. Nikto — Sunucu/Nginx Güvenlik Taraması ✅
+- **Araç:** Nikto v2 (localhost:3000 + localhost:8000)
+- **Sonuç:** 7 bulgu tespit, 7/7 düzeltildi
+- **Düzeltme:** Security headers middleware eklendi — Commit: 6370d84
+- **Düzeltme:** Swagger UI, ReDoc, OpenAPI JSON production'da kapatıldı — Commit: 6370d84
+- **Dosya:** api/main.py (FastAPI docs_url=None + security headers middleware KİLİTLİ)
+- **Headers:** X-Frame-Options ✅, X-Content-Type-Options ✅, X-XSS-Protection ✅, Referrer-Policy ✅, Permissions-Policy ✅
+
+### 3. OWASP ZAP — API Güvenlik Taraması ✅
+- **Araç:** OWASP ZAP Baseline Scan + Manuel kontroller
+- **Sonuç:** 0 High, 0 Medium, 0 Low, 0 Informational
+- **Rapor:** /var/www/hylilabs/zap_report.html
+- **Kontroller:** Auth koruması ✅, CORS ✅, 404 temiz ✅, Stack trace yok ✅, Docs kapalı ✅
+
+### KİLİTLENEN GÜVENLİK KURALLARI
+> ⚠️ Aşağıdaki kurallar ASLA değiştirilmemeli:
+> 1. SECRET_KEY her zaman os.getenv() ile okunmalı, ASLA hardcoded olmamalı
+> 2. FastAPI docs_url, redoc_url, openapi_url production'da None olmalı
+> 3. Security headers middleware kaldırılmamalı veya zayıflatılmamalı
+> 4. .env dosyası ASLA git'e eklenmemeli
+> 5. API endpoint'leri auth olmadan erişilebilir olmamalı (public endpoint'ler hariç)
