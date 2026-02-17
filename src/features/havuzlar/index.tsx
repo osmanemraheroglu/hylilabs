@@ -525,8 +525,8 @@ export default function Havuzlar() {
             {tree?.system_pools && tree.system_pools.length > 0 && <div className="border-t my-2" />}
             {tree?.departments?.map(dept => (
               <div key={dept.id}>
-                <div className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-muted`}>
-                  <div className="flex items-center gap-2 flex-1" onClick={() => toggleDept(dept.id)}>
+                <div className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-muted ${selectedPoolId === dept.id ? "bg-muted border border-primary" : ""}`}>
+                  <div className="flex items-center gap-2 flex-1" onClick={() => { toggleDept(dept.id); setSelectedPoolId(dept.id) }}>
                     {expandedDepts.has(dept.id) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     <Building2 className="h-4 w-4 text-indigo-500" /><span className="text-sm font-medium">{dept.name}</span>
                   </div>
