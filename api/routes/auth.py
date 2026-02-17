@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+import os
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import jwt
@@ -11,7 +12,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer()
 
 # JWT ayarları
-SECRET_KEY = "hylilabs-secret-key-2026"
+SECRET_KEY = os.getenv("JWT_SECRET", "fallback-dev-only")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
