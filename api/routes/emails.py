@@ -172,3 +172,68 @@ def set_default_account(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{account_id}/folders")
+def get_email_folders(
+    account_id: int, current_user: dict = Depends(get_current_user)
+):
+    """IMAP klasorlerini listele"""
+    try:
+        company_id = current_user["company_id"]
+        if not verify_email_account_ownership(account_id, company_id):
+            raise HTTPException(status_code=403, detail="Bu hesaba erisim yetkiniz yok")
+
+        # Hesap bilgilerini al
+        accounts = get_all_email_accounts(only_active=False, company_id=company_id)
+        account = next((a for a in accounts if a["id"] == account_id), None)
+        if not account:
+            raise HTTPException(status_code=404, detail="Hesap bulunamadi")
+
+        # IMAP baglantisi
+        try:
+            mail = imaplib.IMAP4_SSL(account["imap_server"], account["imap_port"], timeout=10)
+            mail.login(account["email"], account["sifre"])
+            status, folder_data = mail.list()
+            
+            folders = []
+            if folder_data:
+                for item in folder_data:
+                    if isinstance(item, bytes):
+                        # Parse folder info: (\HasNoChildren) "/" "INBOX"
+                        decoded = item.decode("utf-8", errors="ignore")
+                        # Extract folder name (last part in quotes or after last space)
+                        parts = decoded.split('"')
+                        if len(parts) >= 2:
+                            folder_name = parts[-2] if parts[-1].strip() == "" else parts[-1]
+                        else:
+                            folder_name = decoded.split()[-1]
+                        
+                        # Clean up folder name
+                        folder_name = folder_name.strip().strip('"')
+                        if folder_name:
+                            display_name = folder_name.replace("INBOX.", "").replace("[Gmail]/", "")
+                            folders.append({
+                                "name": folder_name,
+                                "display_name": display_name or folder_name
+                            })
+            
+            mail.logout()
+            
+            return {
+                "success": True,
+                "data": folders,
+                "total": len(folders)
+            }
+        except imaplib.IMAP4.error as imap_err:
+            return {"success": False, "message": f"IMAP hatasi: {str(imap_err)}", "data": []}
+        except TimeoutError:
+            return {"success": False, "message": "Baglanti zaman asimina ugradi", "data": []}
+        except Exception as conn_err:
+            return {"success": False, "message": f"Baglanti hatasi: {str(conn_err)}", "data": []}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
