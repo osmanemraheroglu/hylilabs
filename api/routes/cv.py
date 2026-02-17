@@ -255,6 +255,14 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
         except Exception:
             pass  # Loglama hatasi ana islemi etkilemesin
         
+        # AUTO-MATCH: Yeni CV'ler parse edildikten sonra eslestirmeyi tetikle
+        if results["success"] > 0:
+            try:
+                from database import sync_candidates_to_all_positions
+                sync_candidates_to_all_positions(company_id)
+            except Exception:
+                pass  # Eslestirme hatasi CV islemini bozmamali
+
         return {
             "success": True,
             "message": f"Tarama tamamlandi: {results['success']} yeni aday, {results['duplicate']} mevcut, {results['error']} hata",
