@@ -16,6 +16,12 @@ from routes.auth import get_current_user
 router = APIRouter(prefix="/api/candidates", tags=["candidates"])
 
 
+def require_company_user(current_user: dict):
+    """Firma kullanicisi kontrolu - super_admin bu endpointe erisemez"""
+    if current_user.get("company_id") is None:
+        raise HTTPException(status_code=403, detail="Bu islem firma kullanicilarina ozeldir. Lutfen firma secin.")
+
+
 class UpdateCandidateRequest(BaseModel):
     ad_soyad: Optional[str] = None
     email: Optional[str] = None
@@ -36,6 +42,7 @@ def list_candidates(
     current_user: dict = Depends(get_current_user)
 ):
     """Aday listesi - filtreleme ve pagination destekli"""
+    require_company_user(current_user)
     company_id = current_user["company_id"]
     try:
         candidates_raw = get_all_candidates(
@@ -55,9 +62,9 @@ def list_candidates(
 
         candidates = []
         for c in candidates_raw:
-            d = c.model_dump() if hasattr(c, 'model_dump') else c.__dict__
-            d.pop('password_hash', None)
-            d.pop('cv_raw_text', None)
+            d = c.model_dump() if hasattr(c, "model_dump") else c.__dict__
+            d.pop("password_hash", None)
+            d.pop("cv_raw_text", None)
             candidates.append(d)
 
         return {
@@ -69,6 +76,8 @@ def list_candidates(
                 "offset": offset
             }
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -76,13 +85,14 @@ def list_candidates(
 @router.get("/{candidate_id}")
 def get_candidate_detail(candidate_id: int, current_user: dict = Depends(get_current_user)):
     """Aday detay bilgileri"""
+    require_company_user(current_user)
     company_id = current_user["company_id"]
     try:
         data = get_candidate_full_data(candidate_id=candidate_id, company_id=company_id)
         if not data:
             raise HTTPException(status_code=404, detail="Aday bulunamadi")
 
-        data.pop('password_hash', None)
+        data.pop("password_hash", None)
         return {"success": True, "data": data}
     except HTTPException:
         raise
@@ -93,6 +103,7 @@ def get_candidate_detail(candidate_id: int, current_user: dict = Depends(get_cur
 @router.put("/{candidate_id}")
 def update_candidate_info(candidate_id: int, request: UpdateCandidateRequest, current_user: dict = Depends(get_current_user)):
     """Aday bilgilerini guncelle"""
+    require_company_user(current_user)
     company_id = current_user["company_id"]
     fields = {k: v for k, v in request.model_dump().items() if v is not None}
     if not fields:
@@ -115,6 +126,7 @@ def delete_candidate(candidate_id: int, current_user: dict = Depends(get_current
     if current_user["rol"] not in ["super_admin", "company_admin"]:
         raise HTTPException(status_code=403, detail="Yetkiniz yok")
 
+    require_company_user(current_user)
     company_id = current_user["company_id"]
     try:
         from database import get_connection, verify_candidate_ownership
@@ -140,6 +152,7 @@ def delete_candidate(candidate_id: int, current_user: dict = Depends(get_current
 @router.get("/{candidate_id}/positions")
 def candidate_positions(candidate_id: int, current_user: dict = Depends(get_current_user)):
     """Adayin eslestigi pozisyonlar"""
+    require_company_user(current_user)
     company_id = current_user["company_id"]
     try:
         from database import verify_candidate_ownership

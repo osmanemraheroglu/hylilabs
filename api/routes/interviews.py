@@ -12,9 +12,16 @@ import traceback
 router = APIRouter(prefix="/api/interviews", tags=["interviews"])
 
 
+def require_company_user(current_user: dict):
+    """Firma kullanicisi kontrolu - super_admin bu endpointe erisemez"""
+    if current_user.get("company_id") is None:
+        raise HTTPException(status_code=403, detail="Bu islem firma kullanicilarina ozeldir. Lutfen firma secin.")
+
+
 @router.get("/dropdown-data")
 def dropdown_data(current_user: dict = Depends(get_current_user)):
     """Mulakat formu icin aday ve pozisyon listeleri"""
+    require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
 
@@ -33,6 +40,8 @@ def dropdown_data(current_user: dict = Depends(get_current_user)):
             candidates = [dict(row) for row in cursor.fetchall()]
 
         return {"success": True, "data": {"positions": position_list, "candidates": candidates}}
+    except HTTPException:
+        raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -47,6 +56,7 @@ def list_interviews(
     current_user: dict = Depends(get_current_user)
 ):
     """Mulakatlari listele"""
+    require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
         sd = datetime.fromisoformat(start_date) if start_date else None
@@ -66,6 +76,8 @@ def list_interviews(
                 r["olusturma_tarihi"] = r["olusturma_tarihi"].isoformat()
 
         return {"success": True, "data": results, "total": len(results)}
+    except HTTPException:
+        raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -77,6 +89,7 @@ def create_new_interview(
     current_user: dict = Depends(get_current_user)
 ):
     """Yeni mulakat olustur"""
+    require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
 
@@ -94,6 +107,8 @@ def create_new_interview(
 
         new_id = create_interview(interview, company_id=company_id)
         return {"success": True, "id": new_id, "message": "Mulakat olusturuldu"}
+    except HTTPException:
+        raise
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
@@ -108,6 +123,7 @@ def update_existing_interview(
     current_user: dict = Depends(get_current_user)
 ):
     """Mulakat guncelle"""
+    require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
 
@@ -119,10 +135,10 @@ def update_existing_interview(
         if not success:
             raise HTTPException(status_code=404, detail="Mulakat bulunamadi veya degisiklik yok")
         return {"success": True, "message": "Mulakat guncellendi"}
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
     except HTTPException:
         raise
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -134,16 +150,17 @@ def delete_existing_interview(
     current_user: dict = Depends(get_current_user)
 ):
     """Mulakat sil"""
+    require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
         success = delete_interview(interview_id, company_id=company_id)
         if not success:
             raise HTTPException(status_code=404, detail="Mulakat bulunamadi")
         return {"success": True, "message": "Mulakat silindi"}
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
     except HTTPException:
         raise
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
