@@ -14,8 +14,8 @@ from database import (
     get_all_positions, log_email, auto_assign_candidate_to_pool
 )
 from email_reader import EmailReader
-from cv_parser import parse_cv, save_cv_file
-from candidate_matcher import match_candidate_to_positions_ai
+from core.cv_parser import parse_cv, save_cv_file
+from core.candidate_matcher import match_candidate_to_positions_ai
 from models import Application, EmailLog
 from events import trigger_event
 
