@@ -21,11 +21,12 @@
 |---|-------|-------------|-----|
 | 7 | routes/cv.py | 17.02.2026 | CV upload + scan-emails + auto-match — 6x doğrulandı |
 | 8 | routes/emails.py | 17.02.2026 | Email hesap CRUD + folders endpoint — 3x doğrulandı |
+| 9 | routes/candidates.py | 17.02.2026 | CASCADE delete + orphan onleme — 3x dogrulandi |
 
 ### Frontend — /var/www/hylilabs/src/features/
 | # | Dosya | Kilit Tarihi | Not |
 |---|-------|-------------|-----|
-| 9 | cv-collect/index.tsx | 17.02.2026 | 3 sekmeli CV Topla sayfası — 3x doğrulandı |
+| 10 | cv-collect/index.tsx | 17.02.2026 | 3 sekmeli CV Topla sayfası — 3x doğrulandı |
 
 ## DOĞRULAMA SİSTEMİ (3x Kontrol)
 Dosya kilitlenmeden önce:
