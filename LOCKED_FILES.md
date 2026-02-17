@@ -19,7 +19,7 @@
 ### Routes — /var/www/hylilabs/api/routes/
 | # | Dosya | Kilit Tarihi | Not |
 |---|-------|-------------|-----|
-| 7 | routes/cv.py | 17.02.2026 | CV upload + scan-emails endpoint — 3x doğrulandı |
+| 7 | routes/cv.py | 17.02.2026 | CV upload + scan-emails + auto-match — 6x doğrulandı |
 | 8 | routes/emails.py | 17.02.2026 | Email hesap CRUD + folders endpoint — 3x doğrulandı |
 
 ### Frontend — /var/www/hylilabs/src/features/
