@@ -658,7 +658,10 @@ export default function Havuzlar() {
                                   : c.assignment_type ? <Badge variant="secondary" className="text-[10px]">{c.assignment_type}</Badge> : null}
                               </TableCell>
                               <TableCell onClick={e => e.stopPropagation()}>
-                                <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRemoveCandidate(c.id)} title="Cikar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                                <div className="flex items-center gap-1">
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEvaluate(c.id)} disabled={evaluating} title="AI Degerlendir"><Brain className="h-3.5 w-3.5 text-purple-500" /></Button>
+                                  <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRemoveCandidate(c.id)} title="Cikar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                             {/* Expanded Detail Row */}
