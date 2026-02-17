@@ -621,17 +621,17 @@ export default function Havuzlar() {
                 <div className="text-center py-8 text-muted-foreground">Bu havuzda aday bulunmuyor</div>
               ) : (
                 <div className="border rounded-md overflow-auto max-h-[600px]">
-                  <Table className="table-auto w-full">
+                  <Table className="table-fixed w-full">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-8"><Checkbox checked={selectedCandidates.size === filteredCandidates.length && filteredCandidates.length > 0} onCheckedChange={toggleAllCandidates} /></TableHead>
-                        <TableHead className="min-w-[150px]">Ad Soyad</TableHead>
-                        <TableHead className="min-w-[120px]">Pozisyon</TableHead>
-                        <TableHead className="w-[70px]">Deneyim</TableHead>
-                        <TableHead className="min-w-[80px]">Lokasyon</TableHead>
-                        <TableHead className="w-[60px]">Skor</TableHead>
-                        <TableHead className="w-[60px]">Durum</TableHead>
-                        <TableHead className="w-16"></TableHead>
+                        <TableHead className="w-[220px]">Ad Soyad</TableHead>
+                        <TableHead className="w-[180px]">Pozisyon</TableHead>
+                        <TableHead className="w-[80px]">Deneyim</TableHead>
+                        <TableHead className="w-[120px]">Lokasyon</TableHead>
+                        <TableHead className="w-[80px]">Skor</TableHead>
+                        <TableHead className="w-[80px]">Durum</TableHead>
+                        <TableHead className="w-20"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
