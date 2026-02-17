@@ -137,6 +137,11 @@ def delete_candidate(candidate_id: int, current_user: dict = Depends(get_current
 
         with get_connection() as conn:
             cursor = conn.cursor()
+            # CASCADE: Önce bağımlı tabloları temizle (orphan önleme)
+            cursor.execute("DELETE FROM candidate_pool_assignments WHERE candidate_id = ?", (candidate_id,))
+            cursor.execute("DELETE FROM matches WHERE candidate_id = ?", (candidate_id,))
+            cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
+            # Ana kaydı sil
             cursor.execute("DELETE FROM candidates WHERE id = ? AND company_id = ?", (candidate_id, company_id))
             conn.commit()
             if cursor.rowcount == 0:
