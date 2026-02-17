@@ -621,16 +621,16 @@ export default function Havuzlar() {
                 <div className="text-center py-8 text-muted-foreground">Bu havuzda aday bulunmuyor</div>
               ) : (
                 <div className="border rounded-md overflow-auto max-h-[600px]">
-                  <Table>
+                  <Table className="table-fixed w-full">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-8"><Checkbox checked={selectedCandidates.size === filteredCandidates.length && filteredCandidates.length > 0} onCheckedChange={toggleAllCandidates} /></TableHead>
-                        <TableHead>Ad Soyad</TableHead>
-                        <TableHead>Pozisyon</TableHead>
-                        <TableHead>Deneyim</TableHead>
-                        <TableHead>Lokasyon</TableHead>
-                        <TableHead>Skor</TableHead>
-                        <TableHead>Durum</TableHead>
+                        <TableHead className="w-[220px]">Ad Soyad</TableHead>
+                        <TableHead className="w-[180px]">Pozisyon</TableHead>
+                        <TableHead className="w-[80px]">Deneyim</TableHead>
+                        <TableHead className="w-[120px]">Lokasyon</TableHead>
+                        <TableHead className="w-[80px]">Skor</TableHead>
+                        <TableHead className="w-[80px]">Durum</TableHead>
                         <TableHead className="w-20"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -645,9 +645,9 @@ export default function Havuzlar() {
                                 <div className="font-medium text-sm flex items-center gap-1">{expandedCandidate === c.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}{c.ad_soyad}</div>
                                 {c.email && <div className="text-xs text-muted-foreground ml-4">{c.email}</div>}
                               </TableCell>
-                              <TableCell className="text-sm">{c.mevcut_pozisyon || '-'}</TableCell>
+                              <TableCell className="text-sm truncate">{c.mevcut_pozisyon || '-'}</TableCell>
                               <TableCell className="text-sm">{c.toplam_deneyim_yil ? `${c.toplam_deneyim_yil} yil` : '-'}</TableCell>
-                              <TableCell className="text-sm">{c.lokasyon || '-'}</TableCell>
+                              <TableCell className="text-sm truncate">{c.lokasyon || '-'}</TableCell>
                               <TableCell>
                                 {c.match_score ? <Badge variant="outline" className="text-xs">{si?.icon} {c.match_score}</Badge>
                                   : c.remaining_days !== undefined ? <Badge className={`text-xs ${dayColor(c.remaining_days)}`}>{c.remaining_days}g</Badge>
