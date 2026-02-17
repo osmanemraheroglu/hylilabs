@@ -671,12 +671,12 @@ export default function Havuzlar() {
                                   {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yukleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const v2d = (candidateDetail as any).v2_detail; const aie = (candidateDetail as any).ai_evaluation; return (
                                     <div className="space-y-3">
                                       {/* Kisisel Bilgiler */}
-                                      <div className="grid grid-cols-3 gap-3 text-xs">
-                                        <div><span className="font-medium">Email:</span> {String(cd?.email || '-')}</div>
+                                      <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-xs">
+                                        <div className="min-w-0 truncate"><span className="font-medium">Email:</span> {String(cd?.email || '-')}</div>
                                         <div><span className="font-medium">Telefon:</span> {String(cd?.telefon || '-')}</div>
-                                        <div><span className="font-medium">Lokasyon:</span> {String(cd?.lokasyon || '-')}</div>
-                                        <div><span className="font-medium">Sirket:</span> {String(cd?.mevcut_sirket || '-')}</div>
-                                        <div><span className="font-medium">Egitim:</span> {String(cd?.egitim || '-')} {cd?.universite ? `/ ${cd?.universite as string}` : ''}</div>
+                                        <div className="min-w-0 truncate"><span className="font-medium">Lokasyon:</span> {String(cd?.lokasyon || '-')}</div>
+                                        <div className="min-w-0 truncate"><span className="font-medium">Sirket:</span> {String(cd?.mevcut_sirket || '-')}</div>
+                                        <div className="min-w-0 truncate col-span-2"><span className="font-medium">Egitim:</span> {String(cd?.egitim || '-')} {cd?.universite ? `/ ${cd?.universite as string}` : ''}</div>
                                         <div><span className="font-medium">Deneyim:</span> {String(cd?.toplam_deneyim_yil || '-')} yil</div>
                                       </div>
                                       {/* Teknik Beceriler */}
