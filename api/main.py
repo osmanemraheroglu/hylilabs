@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import get_connection
@@ -14,7 +15,13 @@ from routes.pools import router as pools_router
 from routes.companies import router as companies_router
 from routes.admin import router as admin_router
 
-app = FastAPI(title="HyliAI API", version="1.0.0")
+app = FastAPI(
+    title="HyliAI API",
+    version="1.0.0",
+    docs_url=None if os.getenv("ENV") == "production" else "/docs",
+    redoc_url=None if os.getenv("ENV") == "production" else "/redoc",
+    openapi_url=None if os.getenv("ENV") == "production" else "/openapi.json"
+)
 
 # CORS ayarları
 app.add_middleware(
@@ -24,6 +31,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security headers middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
 
 # Router'ları ekle
 app.include_router(auth_router)
