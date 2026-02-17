@@ -2283,7 +2283,20 @@ def create_candidate(candidate: Candidate, company_id: int) -> int:
             candidate.cv_raw_text, candidate.cv_dosya_adi, candidate.cv_dosya_yolu,
             candidate.havuz, candidate.durum, candidate.notlar
         ))
-        return cursor.lastrowid
+        
+        # AUTO-ASSIGN: Yeni adayı otomatik olarak Genel Havuz'a ata
+        new_candidate_id = cursor.lastrowid
+        genel_havuz = cursor.execute(
+            "SELECT id FROM department_pools WHERE name = 'Genel Havuz' AND company_id = ?",
+            (company_id,)
+        ).fetchone()
+        if genel_havuz:
+            cursor.execute(
+                "INSERT OR IGNORE INTO candidate_pool_assignments (candidate_id, department_pool_id, assignment_type, assigned_at) VALUES (?, ?, 'auto', datetime('now'))",
+                (new_candidate_id, genel_havuz[0])
+            )
+        
+        return new_candidate_id
 
 
 def update_candidate(candidate_id: int, company_id: int = None, **fields) -> bool:
