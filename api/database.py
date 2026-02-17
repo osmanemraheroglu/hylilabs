@@ -4040,9 +4040,8 @@ def delete_department_pool(pool_id: int, company_id: int = None) -> bool:
             WHERE department_pool_id = ?
         """, (pool_id,))
 
-        # Havuzu sil (safe_delete_with_fk zaten bağımlı tabloları temizledi)
-        cursor.execute("DELETE FROM department_pools WHERE id = ? AND is_system = 0", (pool_id,))
-        return cursor.rowcount > 0
+        # safe_delete_with_fk zaten havuzu sildi, sonucunu dön
+        return delete_result.get("success", False) and delete_result.get("deleted_from_main", 0) > 0
 
 
 def get_department_pool_candidates(pool_id: int) -> list[dict]:
