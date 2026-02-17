@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from routes.auth import get_current_user
 from database import (
     get_connection,
@@ -544,14 +544,29 @@ def parse_position_from_url(data: dict, current_user: dict = Depends(get_current
 
 
 @router.post("/position/from-document")
-async def parse_position_from_document(current_user: dict = Depends(get_current_user)):
+async def parse_position_from_document(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
     """Dokumandan pozisyon parse et (PDF/Word/Image)"""
-    from fastapi import UploadFile, File, Form
-    # Manuel olarak request'ten dosya al
-    from starlette.requests import Request
+    from fastapi import UploadFile, File
     try:
-        from fastapi import Request as Req
-        raise HTTPException(status_code=501, detail="Dokusman upload henuz aktif degil - Manuel giris kullanin")
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="Dosya adi bos")
+        
+        # Dosya icerigi oku
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Dosya bos")
+        
+        # job_scraper.process_job_document kullan (KILITLI - sadece import)
+        from job_scraper import process_job_document
+        result = process_job_document(content, file.filename)
+        
+        if not result.get("basarili"):
+            raise HTTPException(status_code=400, detail=result.get("hata", "Parse hatasi"))
+        
+        return {"success": True, "data": result}
     except HTTPException:
         raise
     except Exception as e:
@@ -598,7 +613,7 @@ def save_parsed_position(data: dict, current_user: dict = Depends(get_current_us
             "company_id": company_id
         }
 
-        pool_id = create_department_pool(pool_data)
+        pool_id = create_department_pool(**pool_data)
         if not pool_id:
             raise HTTPException(status_code=500, detail="Pozisyon olusturulamadi")
 

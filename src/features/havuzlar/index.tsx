@@ -826,8 +826,9 @@ export default function Havuzlar() {
 
           {poolForm.pool_type === 'position' ? (
             <Tabs defaultValue="url" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="url"><Link className="h-3.5 w-3.5 mr-1" />URL ile Ekle</TabsTrigger>
+                <TabsTrigger value="document"><FileText className="h-3.5 w-3.5 mr-1" />Dokumandan Ekle</TabsTrigger>
                 <TabsTrigger value="manual"><Edit className="h-3.5 w-3.5 mr-1" />Manuel Giris</TabsTrigger>
               </TabsList>
 
@@ -878,7 +879,92 @@ export default function Havuzlar() {
                 )}
               </TabsContent>
 
-              {/* TAB 2: Manuel Giris */}
+              {/* TAB 2: Dokumandan Ekle */}
+              <TabsContent value="document" className="space-y-3 mt-3">
+                <div>
+                  <Label className="text-sm">Ilan Dokumani (PDF, Word, JPEG)</Label>
+                  <Input 
+                    type="file" 
+                    accept=".pdf,.docx,.doc,.jpg,.jpeg,.png"
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setParseLoading(true)
+                        setParsedData(null)
+                        const formData = new FormData()
+                        formData.append('file', file)
+                        fetch(API + '/api/pools/position/from-document', {
+                          method: 'POST',
+                          headers: { 'Authorization': H()['Authorization'] },
+                          body: formData
+                        })
+                          .then(r => r.json())
+                          .then(res => {
+                            if (res.success && res.data) {
+                              setParsedData(res.data)
+                              setPositionForm({
+                                pozisyon_adi: res.data.pozisyon_adi || '',
+                                lokasyon: res.data.lokasyon || '',
+                                deneyim_yil: String(res.data.deneyim_yil || 0),
+                                egitim_seviyesi: res.data.egitim_seviyesi || '',
+                                keywords: Array.isArray(res.data.keywords) ? res.data.keywords.join(', ') : (res.data.keywords || ''),
+                                aranan_nitelikler: res.data.aranan_nitelikler || '',
+                                is_tanimi: res.data.is_tanimi || ''
+                              })
+                            } else {
+                              alert(res.detail || res.message || 'Parse hatasi')
+                            }
+                          })
+                          .catch(err => alert('Hata: ' + err.message))
+                          .finally(() => setParseLoading(false))
+                      }
+                    }}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">PDF, DOCX, DOC, JPG, JPEG, PNG desteklenir</p>
+                </div>
+
+                {parseLoading && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <RefreshCw className="h-4 w-4 animate-spin" /> Dokuman analiz ediliyor...
+                  </div>
+                )}
+
+                {parsedData && (
+                  <div className="space-y-3 border-t pt-3">
+                    <div className="text-sm font-medium text-green-600">Analiz basarili! Asagidaki bilgileri duzenleyebilirsiniz:</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} /></div>
+                      <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
+                      <div>
+                        <Label className="text-sm">Egitim Seviyesi</Label>
+                        <Select value={positionForm.egitim_seviyesi} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v})}>
+                          <SelectTrigger><SelectValue placeholder="Secin..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">-</SelectItem>
+                            <SelectItem value="Lise">Lise</SelectItem>
+                            <SelectItem value="On Lisans">On Lisans</SelectItem>
+                            <SelectItem value="Lisans">Lisans</SelectItem>
+                            <SelectItem value="Yuksek Lisans">Yuksek Lisans</SelectItem>
+                            <SelectItem value="Doktora">Doktora</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div><Label className="text-sm">Anahtar Kelimeler (virgul ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} /></div>
+                    <div><Label className="text-sm">Aranan Nitelikler</Label><Textarea value={positionForm.aranan_nitelikler} onChange={e => setPositionForm({...positionForm, aranan_nitelikler: e.target.value})} rows={3} /></div>
+                    <div><Label className="text-sm">Is Tanimi</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} /></div>
+                    <Button onClick={handleSaveParsed} disabled={savingPosition || !positionForm.pozisyon_adi} className="w-full">
+                      {savingPosition ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : null}Kaydet
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* TAB 3: Manuel Giris */}
               <TabsContent value="manual" className="space-y-3 mt-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} placeholder="Ornek: Frontend Developer" /></div>
