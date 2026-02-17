@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Fragment } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -260,7 +260,8 @@ export default function Havuzlar() {
 
   // Parse Sonucu veya Manuel Kaydet
   const handleSaveParsed = () => {
-    if (!positionForm.pozisyon_adi || !poolForm.parent_id) return
+    if (!positionForm.pozisyon_adi) { alert("Pozisyon adi gerekli"); return }
+    if (!poolForm.parent_id) { alert("Departman secilmedi"); return }
     setSavingPosition(true)
     const payload = {
       parent_id: Number(poolForm.parent_id),
@@ -268,7 +269,7 @@ export default function Havuzlar() {
       lokasyon: positionForm.lokasyon,
       deneyim_yil: Number(positionForm.deneyim_yil) || 0,
       egitim_seviyesi: positionForm.egitim_seviyesi,
-      keywords: positionForm.keywords.split(',').map(k => k.trim()).filter(Boolean),
+      keywords: (typeof positionForm.keywords === 'string' ? positionForm.keywords : '').split(',').map(k => k.trim()).filter(Boolean),
       aranan_nitelikler: positionForm.aranan_nitelikler,
       is_tanimi: positionForm.is_tanimi
     }
@@ -637,8 +638,8 @@ export default function Havuzlar() {
                       {filteredCandidates.map(c => {
                         const si = c.match_score ? scoreIcon(c.match_score) : null
                         return (
-                          <>
-                            <TableRow key={c.id} className={`${selectedCandidates.has(c.id) ? 'bg-muted/50' : ''} cursor-pointer`} onClick={() => loadDetail(c.id)}>
+                          <Fragment key={c.id}>
+                            <TableRow className={`${selectedCandidates.has(c.id) ? 'bg-muted/50' : ''} cursor-pointer`} onClick={() => loadDetail(c.id)}>
                               <TableCell onClick={e => e.stopPropagation()}><Checkbox checked={selectedCandidates.has(c.id)} onCheckedChange={() => toggleCandidate(c.id)} /></TableCell>
                               <TableCell>
                                 <div className="font-medium text-sm flex items-center gap-1">{expandedCandidate === c.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}{c.ad_soyad}</div>
@@ -722,7 +723,8 @@ export default function Havuzlar() {
                                 </TableCell>
                               </TableRow>
                             )}
-                          </>
+                          </Fragment>
+
                         )
                       })}
                     </TableBody>

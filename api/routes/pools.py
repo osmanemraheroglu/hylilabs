@@ -576,7 +576,6 @@ async def parse_position_from_document(
 
 @router.post("/position/save-parsed")
 def save_parsed_position(data: dict, current_user: dict = Depends(get_current_user)):
-    """Parse edilmis pozisyonu kaydet + otomatik eslestir"""
     try:
         company_id = current_user["company_id"]
         parent_id = data.get("parent_id")
