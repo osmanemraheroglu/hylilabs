@@ -58,7 +58,17 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
 
         # Adayi veritabanina kaydet
         company_id = current_user["company_id"]
-        candidate_id = create_candidate(result.candidate, company_id)
+        candidate_result = create_candidate(result.candidate, company_id)
+        
+        # Duplicate kontrolu
+        if isinstance(candidate_result, dict) and candidate_result.get("duplicate"):
+            return {
+                "success": False,
+                "message": candidate_result["message"],
+                "data": {"existing_id": candidate_result["candidate_id"]}
+            }
+        
+        candidate_id = candidate_result
 
         return {
             "success": True,

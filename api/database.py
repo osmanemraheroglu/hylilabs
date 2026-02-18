@@ -2250,6 +2250,7 @@ def create_candidate(candidate: Candidate, company_id: int) -> int:
 
     Returns:
         int: Oluşturulan aday ID
+        dict: Duplicate bulunursa {"duplicate": True, "candidate_id": int, "message": str}
 
     Raises:
         ValueError: company_id verilmezse
@@ -2257,6 +2258,43 @@ def create_candidate(candidate: Candidate, company_id: int) -> int:
     """
     if not company_id:
         raise ValueError("company_id zorunludur - veri izolasyonu için firma ID gereklidir")
+
+    # DUPLICATE KONTROL — Email veya telefon ile mevcut aday kontrolü
+    email = getattr(candidate, 'email', None)
+    telefon = getattr(candidate, 'telefon', None)
+    
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Email ile kontrol
+        if email and email.strip():
+            cursor.execute(
+                "SELECT id, ad_soyad FROM candidates WHERE company_id = ? AND LOWER(TRIM(email)) = LOWER(TRIM(?))",
+                (company_id, email.strip())
+            )
+            existing = cursor.fetchone()
+            if existing:
+                return {
+                    "duplicate": True,
+                    "candidate_id": existing[0],
+                    "message": f"Bu aday zaten mevcut: {existing[1]} (ID: {existing[0]}). Email: {email}"
+                }
+        
+        # Telefon ile kontrol
+        if telefon and telefon.strip():
+            clean_tel = ''.join(c for c in telefon if c.isdigit())
+            if len(clean_tel) >= 10:
+                cursor.execute(
+                    "SELECT id, ad_soyad FROM candidates WHERE company_id = ? AND REPLACE(REPLACE(REPLACE(REPLACE(telefon, ' ', ''), '-', ''), '+', ''), '(', '') LIKE ?",
+                    (company_id, f'%{clean_tel[-10:]}')
+                )
+                existing = cursor.fetchone()
+                if existing:
+                    return {
+                        "duplicate": True,
+                        "candidate_id": existing[0],
+                        "message": f"Bu aday zaten mevcut: {existing[1]} (ID: {existing[0]}). Telefon eslesti."
+                    }
 
     # Limit kontrolü
     check_and_raise_limit(company_id, 'cvs')
