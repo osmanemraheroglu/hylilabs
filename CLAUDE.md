@@ -49,6 +49,7 @@ Bu dosyalar 3+ kez doğrulanmış, DEĞİŞTİRİLMEZ:
 11. Reset-data endpoint güvenlik kontrolleri (şifre + SIFIRLA + role) değiştirilmemeli
 12. Adaylar filtre sistemi (genel/departman/pozisyon/arsiv) candidate_pool_assignments JOIN mantığı korunmalı
 13. create_candidate() duplicate kontrolü (email + telefon) kaldırılamaz
+14. CV dosyalari firma bazli izole: /data/cvs/{company_id}/. save_cv_file() company_id zorunlu. validate_cv_access() okuma kontrolu zorunlu. Flat yapiya geri donulemez. 2x3 guvenlik kontrolu DEGISTIRILEMEZ
 
 ## Stil
 - Fonksiyon ve değişken: snake_case (Python), camelCase (TypeScript)

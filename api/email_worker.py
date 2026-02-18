@@ -95,8 +95,8 @@ def check_emails_for_account(account: dict) -> dict:
                         stats["duplicate"] += 1
                         continue
 
-                    # CV dosyasini kaydet
-                    cv_path = save_cv_file(attachment.content, attachment.filename, candidate.email)
+                    # CV dosyasini kaydet (firma bazli klasore)
+                    cv_path = save_cv_file(attachment.content, attachment.filename, company_id, candidate.email)
                     if cv_path:
                         candidate.cv_dosya_yolu = cv_path
 

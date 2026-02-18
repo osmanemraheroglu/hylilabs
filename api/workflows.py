@@ -166,8 +166,8 @@ def workflow_process_cv(file_content: bytes, filename: str, company_id: int,
         scores = parse_result.get("scores")
         warnings = parse_result.get("warnings", [])
 
-        # 2. CV dosyasını kaydet
-        cv_path = save_cv_file(file_content, filename, candidate.email)
+        # 2. CV dosyasını kaydet (firma bazli klasore)
+        cv_path = save_cv_file(file_content, filename, company_id, candidate.email)
         if cv_path:
             candidate.cv_dosya_yolu = cv_path
 
@@ -292,8 +292,8 @@ def workflow_full_application(file_content: bytes, filename: str, company_id: in
         ai_analysis = parse_result.get("ai_analysis")
         scores = parse_result.get("scores")
 
-        # 2. CV dosyasını kaydet
-        cv_path = save_cv_file(file_content, filename, candidate.email)
+        # 2. CV dosyasını kaydet (firma bazli klasore)
+        cv_path = save_cv_file(file_content, filename, company_id, candidate.email)
         if cv_path:
             candidate.cv_dosya_yolu = cv_path
             candidate.cv_dosya_adi = filename  # Duplicate kontrolü için

@@ -12,6 +12,7 @@ from database import (
     get_candidate_positions
 )
 from routes.auth import get_current_user
+from core.cv_parser import validate_cv_access
 
 router = APIRouter(prefix="/api/candidates", tags=["candidates"])
 
@@ -322,6 +323,10 @@ def download_cvs(
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for cand_id, ad_soyad, cv_path in candidates:
             if not cv_path or not os.path.exists(cv_path):
+                continue
+            
+            # Guvenlik: CV erisim kontrolu
+            if not validate_cv_access(cv_path, company_id):
                 continue
             
             file_size = os.path.getsize(cv_path)

@@ -50,14 +50,18 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
                 "data": None
             }
 
-        # CV dosyasini kaydet
-        cv_path = save_cv_file(content, file.filename, result.candidate.email)
+        # Firma ID al
+        company_id = current_user["company_id"]
+        if not company_id:
+            raise HTTPException(status_code=400, detail="Firma secilmeli")
+        
+        # CV dosyasini kaydet (firma bazli klasore)
+        cv_path = save_cv_file(content, file.filename, company_id, result.candidate.email)
         if cv_path:
             result.candidate.cv_dosya_yolu = cv_path
             result.candidate.cv_dosya_adi = file.filename
 
         # Adayi veritabanina kaydet
-        company_id = current_user["company_id"]
         candidate_result = create_candidate(result.candidate, company_id)
         
         # Duplicate kontrolu
@@ -209,8 +213,8 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
                         results["duplicate"] += 1
                         continue
                     
-                    # CV dosyasini kaydet
-                    cv_path = save_cv_file(attachment.content, attachment.filename, candidate.email)
+                    # CV dosyasini kaydet (firma bazli klasore)
+                    cv_path = save_cv_file(attachment.content, attachment.filename, company_id, candidate.email)
                     if cv_path:
                         candidate.cv_dosya_yolu = cv_path
                         candidate.cv_dosya_adi = attachment.filename

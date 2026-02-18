@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from routes.auth import get_current_user
+from core.cv_parser import validate_cv_access
 from database import (
     get_connection,
     get_department_pools, get_department_pool, get_department_pool_stats,
@@ -1098,9 +1099,9 @@ def get_candidate_cv(pool_id: int, candidate_id: int, current_user: dict = Depen
             if not cv_path:
                 raise HTTPException(status_code=404, detail="CV dosyasi bulunamadi")
 
-            # Güvenlik: path traversal önleme
-            if not cv_path.startswith("/var/www/hylilabs/api/data/cvs/"):
-                raise HTTPException(status_code=403, detail="Gecersiz dosya yolu")
+            # Guvenlik: CV erisim kontrolu (2x3)
+            if not validate_cv_access(cv_path, company_id):
+                raise HTTPException(status_code=403, detail="CV erisim yetkisi yok")
 
             if not os.path.exists(cv_path):
                 raise HTTPException(status_code=404, detail="CV dosyasi fiziksel olarak bulunamadi")

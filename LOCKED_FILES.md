@@ -116,3 +116,12 @@ Dosya kilitlenmeden önce:
 
 ### Commit
 - 5a9f608 fix: add duplicate check to create_candidate + clean existing duplicate
+
+### 14. CV Dosya Izolasyonu (Kilitlenme: 18.02.2026)
+- **core/cv_parser.py → save_cv_file()**: company_id ZORUNLU parametre. 3 guvenlik kontrolu (K1: company_id zorunlu, K2: firma klasoru dogrulama, K3: path traversal). BU FONKSIYON DEGISTIRILEMEZ.
+- **core/cv_parser.py → validate_cv_access()**: CV okuma guvenlik kontrolu. 3 kontrol (K1: yol icinde company_id, K2: resolved path, K3: path traversal). BU FONKSIYON DEGISTIRILEMEZ.
+- **CV klasor yapisi**: /data/cvs/{company_id}/ — Her firma kendi klasorunde. FLAT yapiya GERI DONULEMEZ.
+- **routes/cv.py**: Tum save_cv_file() cagrilari company_id icermeli. company_id olmadan CV kaydetme IMKANSIZ olmali.
+- **email_worker.py**: Email CV toplama company_id ile calismali.
+- **workflows.py**: Tum CV islemleri company_id ile calismali.
+- **routes/candidates.py + routes/pools.py**: CV download validate_cv_access() kullanmali.

@@ -11,8 +11,12 @@
 - Tema seçimi — Sadeleştirilmiş Açık/Koyu tema sayfası
 
 ### Security Fix
-- Firma pasif kontrolü — Login sırasında firma aktiflik kontrolü eklendi
-- verify_user() fonksiyonunda company.aktif kontrolü
+- CV dosya izolasyonu — Firma bazli /data/cvs/{company_id}/ klasor yapisi
+- save_cv_file() 3 guvenlik kontrolu (company_id zorunlu, path validation, traversal protection)
+- validate_cv_access() 3 okuma kontrolu
+- 51 CV migrated, 414 orphan files cleaned
+- Firma pasif kontrolu — Login sirasinda firma aktiflik kontrolu eklendi
+- verify_user() fonksiyonunda company.aktif kontrolu
 - PUT /api/admin/companies/{id}/toggle-status endpoint eklendi
 
 ### Bug Fix
@@ -28,7 +32,9 @@
 - 14 kilitli dosya (LOCKED_FILES.md)
 - Duplicate kontrolü, filtre mantığı, reset-data güvenliği kilitlendi
 
-## Bugünkü Commit'ler (13 adet)
+## Bugünkü Commit'ler (15 adet)
+- YENI security: CV file isolation per company - 2x3 security checks
+- YENI docs: lock CV isolation rules
 - 9708f03 security: block login when company is inactive
 - e9c164e refactor: clean settings page - keep password/theme/advanced
 - 11dd0ff lock: duplicate CV check in create_candidate

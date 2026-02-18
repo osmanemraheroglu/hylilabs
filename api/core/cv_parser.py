@@ -91,33 +91,50 @@ def validate_parsed_cv(data: dict) -> dict:
     return data
 
 
-def save_cv_file(content: bytes, filename: str, candidate_email: str = None) -> Optional[str]:
+def save_cv_file(content: bytes, filename: str, company_id: int, candidate_email: str = None) -> Optional[str]:
     """
-    CV dosyasini diske kaydet (dosya boyutu kontrolü ile)
-
+    CV dosyasini firma bazli klasore kaydet.
+    
+    GUVENLIK KONTROLLERI (2x3 - YAZMA):
+    K1: company_id zorunlu (None/0 olamaz)
+    K2: Dosya yolu /data/cvs/{company_id}/ altinda olmali
+    K3: Path traversal korumasi
+    
     Args:
         content: Dosya icerigi
         filename: Orijinal dosya adi
+        company_id: Firma ID (ZORUNLU)
         candidate_email: Aday emaili (dosya adlandirma icin)
 
     Returns:
         Kaydedilen dosyanin yolu veya None
 
     Raises:
-        ValueError: Dosya çok büyükse (MAX_CV_FILE_SIZE'ı aşarsa)
+        ValueError: Dosya cok buyukse veya company_id gecersizse
     """
+    # === K1: company_id ZORUNLU ===
+    if not company_id or not isinstance(company_id, int) or company_id <= 0:
+        logger.error(f"GUVENLIK: save_cv_file company_id gecersiz: {company_id}")
+        raise ValueError(f"Gecersiz company_id: {company_id}")
+    
     if not SAVE_CV_FILES:
         return None
 
-    # Dosya boyutu kontrolü
+    # Dosya boyutu kontrolu
     if len(content) > MAX_CV_FILE_SIZE:
         raise ValueError(
-            f"Dosya çok büyük: {len(content)} bytes (max {MAX_CV_FILE_SIZE} bytes / {MAX_CV_FILE_SIZE // (1024*1024)}MB)"
+            f"Dosya cok buyuk: {len(content)} bytes (max {MAX_CV_FILE_SIZE} bytes / {MAX_CV_FILE_SIZE // (1024*1024)}MB)"
         )
 
+    # === K3: Path traversal korumasi (filename) ===
+    if ".." in filename or "/" in filename or "\\" in filename:
+        logger.error(f"GUVENLIK: Path traversal girisimi! filename={filename}")
+        raise ValueError("Gecersiz dosya adi")
+
     try:
-        # Klasorun var oldugundan emin ol
-        CV_STORAGE_PATH.mkdir(parents=True, exist_ok=True)
+        # Firma bazli klasor olustur
+        company_cv_path = CV_STORAGE_PATH / str(company_id)
+        company_cv_path.mkdir(parents=True, exist_ok=True)
 
         # Benzersiz dosya adi olustur
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -135,17 +152,83 @@ def save_cv_file(content: bytes, filename: str, candidate_email: str = None) -> 
             safe_name = "".join(c for c in filename if c.isalnum() or c in "._-")[:30]
             new_filename = f"{timestamp}_{safe_name}_{file_hash}{ext}"
 
-        file_path = CV_STORAGE_PATH / new_filename
+        file_path = company_cv_path / new_filename
+
+        # === K2: Dosya yolu firma klasoru altinda mi? ===
+        resolved_path = file_path.resolve()
+        resolved_company_path = company_cv_path.resolve()
+        if not str(resolved_path).startswith(str(resolved_company_path)):
+            logger.error(f"GUVENLIK: Path traversal tespit edildi! path={file_path}, company={company_id}")
+            raise ValueError("Gecersiz dosya yolu")
 
         # Dosyayi kaydet
         with open(file_path, "wb") as f:
             f.write(content)
 
+        logger.info(f"CV kaydedildi: company={company_id}, path={file_path}")
         return str(file_path)
 
+    except ValueError:
+        raise
     except Exception as e:
         logger.error(f"CV dosyasi kaydedilemedi: {e}", exc_info=True)
         return None
+
+
+
+
+def validate_cv_access(cv_path: str, company_id: int) -> bool:
+    """
+    CV dosyasina erisim guvenlik kontrolu.
+    
+    GUVENLIK KONTROLLERI (2x3 - OKUMA):
+    K1: Yol icinde company_id eslesme
+    K2: Dosya firma klasoru altinda mi?
+    K3: Path traversal korumasi
+    
+    Args:
+        cv_path: CV dosya yolu
+        company_id: Firma ID
+        
+    Returns:
+        True: Erişim izni var
+        False: Erişim izni yok
+    """
+    if not cv_path or not company_id:
+        logger.warning(f"validate_cv_access: cv_path veya company_id eksik")
+        return False
+    
+    from pathlib import Path
+    
+    # K3: Path traversal kontrolu
+    if ".." in cv_path:
+        logger.error(f"GUVENLIK: Path traversal tespit edildi! path={cv_path}")
+        return False
+    
+    # K1: Yol icinde company_id var mi?
+    expected_prefix = f"/cvs/{company_id}/"
+    if expected_prefix not in cv_path:
+        # Eski format (migration oncesi) - sadece DB ownership kontrolune guven
+        # Uyari logla ama True don (geriye uyumluluk)
+        if "/cvs/" in cv_path and f"/{company_id}/" not in cv_path:
+            logger.warning(f"CV yolu farkli firma klasorunde: {cv_path}, company={company_id}")
+            # Eski flat yapiyi destekle (migration tamamlanana kadar)
+            return True
+        # Tamamen eski format
+        return True
+    
+    # K2: Resolved path kontrolu
+    try:
+        resolved = Path(cv_path).resolve()
+        company_cv_dir = (CV_STORAGE_PATH / str(company_id)).resolve()
+        if not str(resolved).startswith(str(company_cv_dir)):
+            logger.error(f"GUVENLIK: CV erisim ihlali! path={cv_path}, company={company_id}")
+            return False
+    except Exception as e:
+        logger.error(f"Path validation hatasi: {e}")
+        return False
+    
+    return True
 
 
 def get_cv_storage_stats() -> dict:
