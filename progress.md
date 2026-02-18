@@ -25,11 +25,14 @@
 - Tablo sütun hizalaması (8cd2d55)
 - Aday detay modal boş alan düzeltmesi (1a18484)
 
-### Faz 5: Data Management (Tamamlandı — 18 Şubat 2026)
+### Faz 5: Data Management & Settings (Tamamlandı — 18 Şubat 2026)
 - Data Reset sistemi — 3 kademe (candidates/pools/full), backend + UI
 - CV ZIP Download — Adaylar + Havuzlar sayfası, filtre-bağımlı
 - Adaylar filtre fix — departman/pozisyon/arsiv candidate_pool_assignments JOIN
-- Kilitleme güncellendi — 12 dosya, 12 kural
+- Duplicate CV kontrolü — create_candidate() email+telefon kontrolü
+- Ayarlar temizliği — 6→3 sekme (Şifre, Tema, Gelişmiş)
+- Şifre değiştir — PUT /api/auth/change-password endpoint + UI
+- Kilitleme — 14 dosya, 13 kural
 
 ## Devam Eden İşler
 
@@ -56,5 +59,12 @@
 |---|------|-------|---------|
 | 1 | Havuzlar Manuel Giriş 500 | Açık | Yüksek |
 | 2 | Kariyer.net Cloudflare 403 | Açık | Orta |
-| 3 | Template sekmeler temizliği | Açık | Düşük |
+| 3 | Eski route dosyaları temizliği | Açık | Düşük |
 | 4 | SSL sorunu (HTTP indirme uyarısı) | Açık | Orta |
+
+## İstatistikler
+- Toplam Commit (18 Şubat): 12
+- Toplam Aday: 51
+- Duplicate: 0
+- Kilitli Dosya: 14
+- Kilitli Kural: 13
