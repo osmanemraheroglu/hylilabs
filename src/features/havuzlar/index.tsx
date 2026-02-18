@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -111,6 +112,7 @@ export default function Havuzlar() {
 
   // AI Evaluation
   const [evaluating, setEvaluating] = useState(false)
+  const [downloadingCVs, setDownloadingCVs] = useState(false)
 
   const loadTree = useCallback(() => {
     setLoading(true)
@@ -235,6 +237,36 @@ export default function Havuzlar() {
         a.href = url; a.download = `${poolInfo?.name || 'havuz'}_adaylar.csv`
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
       }).catch(console.error)
+  }
+
+  const handleDownloadPoolCVs = async () => {
+    if (!selectedPoolId) return
+    setDownloadingCVs(true)
+    try {
+      const token = localStorage.getItem("access_token")
+      const response = await fetch(`${API}/api/candidates/export/download-cvs?pool_id=${selectedPoolId}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.detail || "Indirme hatasi")
+      }
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `havuz_${selectedPoolId}_cvler.zip`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      toast.success("CV dosyalari indirildi")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Bilinmeyen hata"
+      toast.error(message)
+    } finally {
+      setDownloadingCVs(false)
+    }
   }
 
   // URL ile Pozisyon Parse
@@ -610,6 +642,7 @@ export default function Havuzlar() {
                   </>
                 )}
                 <div className="flex-1" />
+                <Button size="sm" variant="outline" onClick={handleDownloadPoolCVs} disabled={downloadingCVs || filteredCandidates.length === 0}>{downloadingCVs ? <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}CV Indir</Button>
                 <Button size="sm" variant="ghost" onClick={handleExport}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
                 <Badge variant="outline">{filteredCandidates.length} aday</Badge>
               </div>
