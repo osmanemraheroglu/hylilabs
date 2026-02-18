@@ -79,3 +79,39 @@ def get_me(current_user: dict = Depends(get_current_user)):
         "rol": current_user["rol"],
         "company_id": current_user["company_id"]
     }
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.put("/change-password")
+def change_password(request: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
+    """Kullanici sifresini degistir"""
+    from database import verify_password, hash_password, get_connection
+    
+    if len(request.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Yeni sifre en az 8 karakter olmali")
+    
+    # Mevcut sifreyi dogrula
+    stored_hash = current_user.get("password_hash")
+    if not stored_hash:
+        # password_hash yoksa veritabanından al
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT password_hash FROM users WHERE id = ?", (current_user["id"],))
+            row = cursor.fetchone()
+            if row:
+                stored_hash = row[0]
+    
+    if not verify_password(request.current_password, stored_hash):
+        raise HTTPException(status_code=403, detail="Mevcut sifre yanlis")
+    
+    # Yeni sifreyi kaydet
+    new_hash = hash_password(request.new_password)
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, current_user["id"]))
+    
+    return {"success": True, "message": "Sifre basariyla degistirildi"}
