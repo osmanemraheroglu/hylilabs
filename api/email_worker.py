@@ -212,7 +212,7 @@ def check_emails_for_account(account: dict) -> dict:
                             general_pool = get_pool_by_name(company_id, 'Genel Havuz')
                             if general_pool:
                                 assign_candidate_to_department_pool(
-                                    candidate_id, general_pool['id'], 'auto', 0, 'Yeni aday - değerlendirme bekliyor'
+                                    candidate_id, general_pool['id'], company_id, 'auto', 0, 'Yeni aday - değerlendirme bekliyor'
                                 )
                                 logger.info(f"Aday Genel Havuz'a atandı (pozisyon eşleşmesi yok): {candidate.ad_soyad}")
                         else:

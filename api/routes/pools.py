@@ -248,6 +248,7 @@ def assign_candidate(pool_id: int, body: dict, current_user: dict = Depends(get_
         assign_id = assign_candidate_to_department_pool(
             candidate_id=candidate_id,
             pool_id=pool_id,
+            company_id=company_id,
             assignment_type="manual",
             match_score=body.get("match_score", 0),
             match_reason=body.get("reason", "Manuel atama")

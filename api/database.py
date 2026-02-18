@@ -2330,8 +2330,8 @@ def create_candidate(candidate: Candidate, company_id: int) -> int:
         ).fetchone()
         if genel_havuz:
             cursor.execute(
-                "INSERT OR IGNORE INTO candidate_pool_assignments (candidate_id, department_pool_id, assignment_type, assigned_at) VALUES (?, ?, 'auto', datetime('now'))",
-                (new_candidate_id, genel_havuz[0])
+                "INSERT OR IGNORE INTO candidate_pool_assignments (candidate_id, department_pool_id, assignment_type, assigned_at, company_id) VALUES (?, ?, 'auto', datetime('now'), ?)",
+                (new_candidate_id, genel_havuz[0], company_id)
             )
         
         return new_candidate_id
@@ -3247,7 +3247,7 @@ def get_pool_by_name(company_id: int, name: str, conn=None) -> Optional[dict]:
             conn.close()
 
 
-def assign_candidate_to_department_pool(candidate_id: int, pool_id: int,
+def assign_candidate_to_department_pool(candidate_id: int, pool_id: int, company_id: int,
                                         assignment_type: str = 'auto',
                                         match_score: int = 0, match_reason: str = '', conn=None) -> int:
     """Adayı departman/pozisyon havuzuna ata (çoklu atama destekli)
@@ -3295,9 +3295,9 @@ def assign_candidate_to_department_pool(candidate_id: int, pool_id: int,
             # Yoksa ekle
             cursor.execute("""
                 INSERT INTO candidate_pool_assignments
-                (candidate_id, department_pool_id, assignment_type, match_score, match_reason)
-                VALUES (?, ?, ?, ?, ?)
-            """, (candidate_id, pool_id, assignment_type, match_score, match_reason))
+                (candidate_id, department_pool_id, assignment_type, match_score, match_reason, company_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (candidate_id, pool_id, assignment_type, match_score, match_reason, company_id))
             result = cursor.lastrowid
         
         # Commit işlemi (sadece yeni bağlantı açıldıysa)
@@ -3478,7 +3478,7 @@ def auto_assign_candidate_to_pool(candidate_id: int, company_id: int, position_i
     general_pool = get_pool_by_name(company_id, 'Genel Havuz')
     if general_pool:
         assign_candidate_to_department_pool(
-            candidate_id, general_pool['id'], 'auto', 0, 'Yeni aday - değerlendirme bekliyor'
+            candidate_id, general_pool['id'], company_id, 'auto', 0, 'Yeni aday - değerlendirme bekliyor'
         )
 
     # Eşleşen pozisyonları bul
@@ -3493,7 +3493,7 @@ def auto_assign_candidate_to_pool(candidate_id: int, company_id: int, position_i
         for match in matches:
             reason = f"{', '.join(match['keywords'][:3])} eslesti"
             assign_id = assign_candidate_to_department_pool(
-                candidate_id, match['pool_id'], 'auto', match['score'], reason
+                candidate_id, match['pool_id'], company_id, 'auto', match['score'], reason
             )
             assignments.append({
                 'type': 'position',
@@ -4258,10 +4258,10 @@ def get_hierarchical_pool_stats(company_id: int) -> list[dict]:
         return departments
 
 
-def move_candidate_to_department_pool(candidate_id: int, target_pool_id: int, reason: str = 'Manuel taşıma') -> int:
+def move_candidate_to_department_pool(candidate_id: int, target_pool_id: int, company_id: int, reason: str = 'Manuel taşıma') -> int:
     """Adayı başka bir departman havuzuna taşı"""
     return assign_candidate_to_department_pool(
-        candidate_id, target_pool_id, 'manual', 0, reason
+        candidate_id, target_pool_id, company_id, 'manual', 0, reason
     )
 
 
@@ -4292,7 +4292,7 @@ def reassign_all_candidates_to_positions(company_id: int) -> dict:
             for match in matches:
                 reason = f"{', '.join(match['keywords'][:3])} eslesti"
                 assign_candidate_to_department_pool(
-                    candidate_id, match['pool_id'], 'auto', match['score'], reason
+                    candidate_id, match['pool_id'], company_id, 'auto', match['score'], reason
                 )
                 stats['assignments'] += 1
 
@@ -4554,7 +4554,7 @@ def create_application(application: Application, company_id: int = None) -> int:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO applications (candidate_id, position_id, kaynak, email_id, basvuru_tarihi)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
             application.candidate_id, application.position_id,
             application.kaynak, application.email_id,
@@ -4674,15 +4674,20 @@ def save_match(match: Match) -> int:
     """Eslestirme sonucu kaydet"""
     with get_connection() as conn:
         cursor = conn.cursor()
+        # Get company_id from candidate
+        cursor.execute("SELECT company_id FROM candidates WHERE id = ?", (match.candidate_id,))
+        row = cursor.fetchone()
+        company_id = row[0] if row else None
+        
         cursor.execute("""
             INSERT OR REPLACE INTO matches (
                 candidate_id, position_id, uyum_puani, detayli_analiz,
-                deneyim_puani, egitim_puani, beceri_puani
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                deneyim_puani, egitim_puani, beceri_puani, company_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             match.candidate_id, match.position_id, match.uyum_puani,
             match.detayli_analiz, match.deneyim_puani,
-            match.egitim_puani, match.beceri_puani
+            match.egitim_puani, match.beceri_puani, company_id
         ))
         return cursor.lastrowid
 
@@ -6201,7 +6206,7 @@ def create_user(email: str, password: str, ad_soyad: str,
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO users (email, password_hash, ad_soyad, company_id, rol)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (email, hash_password(password), ad_soyad, company_id, rol))
         return cursor.lastrowid
 
@@ -8325,7 +8330,7 @@ def create_department_template(company_id: int, name: str, icon: str = '📁',
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO department_templates (company_id, name, icon, description, display_order)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (company_id, name.strip(), icon, description, display_order))
         return cursor.lastrowid
 
@@ -8383,7 +8388,7 @@ def seed_default_department_templates(company_id: int):
             try:
                 cursor.execute("""
                     INSERT OR IGNORE INTO department_templates (company_id, name, icon, description, display_order)
-                    VALUES (?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 """, (company_id, dept["name"], dept["icon"], dept["description"], i))
             except Exception as e:
                 logger.debug(f"Departman template ekleme hatası (zaten var olabilir): {e}")
@@ -8626,13 +8631,13 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
                 # 30 günden yeni mi?
                 if days_old < 30 and general_pool:
                     assign_candidate_to_department_pool(
-                        candidate_id, general_pool['id'], 'auto', 0,
+                        candidate_id, general_pool['id'], company_id, 'auto', 0,
                         'Pozisyon silindi - Genel Havuz\'a taşındı', conn=conn
                     )
                     stats['to_general'] += 1
                 elif archive_pool:
                     assign_candidate_to_department_pool(
-                        candidate_id, archive_pool['id'], 'auto', 0,
+                        candidate_id, archive_pool['id'], company_id, 'auto', 0,
                         'Pozisyon silindi - Arşiv\'e taşındı', conn=conn
                     )
                     stats['to_archive'] += 1
