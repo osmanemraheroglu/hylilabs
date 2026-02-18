@@ -125,3 +125,19 @@ Dosya kilitlenmeden önce:
 - **email_worker.py**: Email CV toplama company_id ile calismali.
 - **workflows.py**: Tum CV islemleri company_id ile calismali.
 - **routes/candidates.py + routes/pools.py**: CV download validate_cv_access() kullanmali.
+
+### 15. DB CASCADE DELETE (Kilitlenme: 18.02.2026)
+- **6 tablo FOREIGN KEY + ON DELETE CASCADE ile yeniden oluşturuldu**
+- applications.candidate_id → candidates(id) ON DELETE CASCADE
+- matches.candidate_id → candidates(id) ON DELETE CASCADE
+- matches.position_id → department_pools(id) ON DELETE CASCADE
+- candidate_pool_assignments.candidate_id → candidates(id) ON DELETE CASCADE
+- candidate_pool_assignments.department_pool_id → department_pools(id) ON DELETE CASCADE
+- position_pools.candidate_id → candidates(id) ON DELETE CASCADE
+- position_pools.position_id → department_pools(id) ON DELETE CASCADE
+- ai_evaluations.candidate_id → candidates(id) ON DELETE CASCADE
+- ai_evaluations.position_id → department_pools(id) ON DELETE CASCADE
+- position_keywords_v2.position_id → department_pools(id) ON DELETE CASCADE
+- **PRAGMA foreign_keys=ON** her DB connection'da zorunlu (database.py get_connection())
+- CASCADE DELETE kaldırılamaz, tablo yapıları değiştirilemez
+- Indexler: 16 index oluşturuldu (candidate_id, position_id, company_id bazlı)

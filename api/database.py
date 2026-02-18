@@ -3231,6 +3231,7 @@ def get_pool_by_name(company_id: int, name: str, conn=None) -> Optional[dict]:
         ensure_data_dir()
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
     try:
@@ -3272,6 +3273,7 @@ def assign_candidate_to_department_pool(candidate_id: int, pool_id: int, company
         ensure_data_dir()
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
     try:
@@ -8516,6 +8518,7 @@ def get_candidate_position_count(candidate_id: int, conn=None) -> int:
         ensure_data_dir()
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
     try:
@@ -8577,6 +8580,7 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
         ensure_data_dir()
         conn = sqlite3.connect(DATABASE_PATH)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
     try:

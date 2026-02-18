@@ -56,3 +56,5 @@ Bu dosyalar 3+ kez doğrulanmış, DEĞİŞTİRİLMEZ:
 - API response: {"success": true, "data": ...} veya {"detail": "hata mesajı"}
 - Frontend: shadcn/ui + Tailwind
 - Hata mesajları Türkçe
+
+15. DB CASCADE DELETE aktif: applications, matches, candidate_pool_assignments, position_pools, ai_evaluations → candidates ON DELETE CASCADE. position_keywords_v2 → department_pools ON DELETE CASCADE. PRAGMA foreign_keys=ON her connection'da zorunlu. Tablo yapıları DEĞİŞTİRİLEMEZ. CASCADE kaldırılamaz.
