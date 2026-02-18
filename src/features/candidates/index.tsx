@@ -5,7 +5,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { RefreshCw, Search, Users, ChevronLeft, ChevronRight, Eye, X } from 'lucide-react'
+import { RefreshCw, Search, Users, ChevronLeft, ChevronRight, Eye, X, Download } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { toast } from 'sonner'
 
 const API_URL = 'http://***REMOVED***:8000'
 
@@ -45,7 +47,13 @@ export default function Candidates() {
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateItem | null>(null)
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const limit = 20
+
+  const { auth } = useAuthStore()
+  
+  const userRole = auth.user?.role?.[0] || 'user'
+  const canDownload = userRole === 'super_admin' || userRole === 'company_admin'
 
   const loadCandidates = useCallback(() => {
     setLoading(true)
@@ -71,6 +79,35 @@ export default function Candidates() {
   useEffect(() => { loadCandidates() }, [loadCandidates])
 
   const handleSearch = () => { setOffset(0); loadCandidates() }
+
+  const handleDownloadCVs = async () => {
+    setDownloading(true)
+    try {
+      const token = localStorage.getItem('access_token')
+      const response = await fetch(`${API_URL}/api/candidates/export/download-cvs?all=true`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Indirme hatasi')
+      }
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'cvler.zip'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      toast.success('CV dosyalari indirildi')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Bilinmeyen hata'
+      toast.error(message)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const loadDetail = (candidate: CandidateItem) => {
     setSelectedCandidate(candidate)
@@ -107,9 +144,26 @@ export default function Candidates() {
           <h2 className='text-2xl font-bold tracking-tight'>Adaylar</h2>
           <p className='text-muted-foreground'>Toplam {total} aday</p>
         </div>
-        <div className='flex items-center gap-2'>
-          <Users className='h-5 w-5 text-muted-foreground' />
-          <span className='text-lg font-semibold'>{total}</span>
+        <div className='flex items-center gap-3'>
+          {canDownload && (
+            <Button 
+              variant='outline' 
+              size='sm' 
+              onClick={handleDownloadCVs} 
+              disabled={downloading || total === 0}
+            >
+              {downloading ? (
+                <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4 mr-2' />
+              )}
+              CV Indir
+            </Button>
+          )}
+          <div className='flex items-center gap-2'>
+            <Users className='h-5 w-5 text-muted-foreground' />
+            <span className='text-lg font-semibold'>{total}</span>
+          </div>
         </div>
       </div>
 
