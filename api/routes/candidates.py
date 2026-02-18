@@ -170,3 +170,112 @@ def candidate_positions(candidate_id: int, current_user: dict = Depends(get_curr
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
+# CV ZIP Download Endpoint (appended - locked file policy)
+# ============================================================
+
+@router.get("/export/download-cvs")
+def download_cvs(
+    ids: str = Query(None, description="Comma separated candidate IDs"),
+    pool_id: int = Query(None, description="Pool ID to filter"),
+    all: bool = Query(False, description="Download all candidates"),
+    current_user: dict = Depends(get_current_user)
+):
+    """CV dosyalarini ZIP olarak indir"""
+    import os
+    import io
+    import zipfile
+    from fastapi.responses import StreamingResponse
+    from database import get_connection
+    
+    # Yetki kontrolu
+    if current_user.get("rol") not in ["super_admin", "company_admin"]:
+        raise HTTPException(status_code=403, detail="Bu islem icin yetkiniz yok")
+    
+    company_id = current_user.get("company_id")
+    
+    # Aday listesini olustur
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        
+        if ids:
+            # Belirli IDler
+            id_list = [int(i.strip()) for i in ids.split(",") if i.strip().isdigit()]
+            if not id_list:
+                raise HTTPException(status_code=400, detail="Gecersiz ID listesi")
+            placeholders = ",".join("?" * len(id_list))
+            if company_id:
+                cursor.execute(f"SELECT id, ad_soyad, cv_dosya_yolu FROM candidates WHERE id IN ({placeholders}) AND company_id = ?", id_list + [company_id])
+            else:
+                cursor.execute(f"SELECT id, ad_soyad, cv_dosya_yolu FROM candidates WHERE id IN ({placeholders})", id_list)
+        
+        elif pool_id:
+            # Havuza gore
+            if company_id:
+                cursor.execute("""
+                    SELECT c.id, c.ad_soyad, c.cv_dosya_yolu 
+                    FROM candidates c
+                    JOIN candidate_pool_assignments cpa ON c.id = cpa.candidate_id
+                    WHERE cpa.department_pool_id = ? AND c.company_id = ?
+                """, (pool_id, company_id))
+            else:
+                cursor.execute("""
+                    SELECT c.id, c.ad_soyad, c.cv_dosya_yolu 
+                    FROM candidates c
+                    JOIN candidate_pool_assignments cpa ON c.id = cpa.candidate_id
+                    WHERE cpa.department_pool_id = ?
+                """, (pool_id,))
+        
+        elif all:
+            # Tum adaylar
+            if company_id:
+                cursor.execute("SELECT id, ad_soyad, cv_dosya_yolu FROM candidates WHERE company_id = ? AND cv_dosya_yolu IS NOT NULL", (company_id,))
+            else:
+                cursor.execute("SELECT id, ad_soyad, cv_dosya_yolu FROM candidates WHERE cv_dosya_yolu IS NOT NULL")
+        
+        else:
+            raise HTTPException(status_code=400, detail="ids, pool_id veya all parametresi gerekli")
+        
+        candidates = cursor.fetchall()
+    
+    if not candidates:
+        raise HTTPException(status_code=404, detail="Aday bulunamadi")
+    
+    # ZIP olustur
+    zip_buffer = io.BytesIO()
+    total_size = 0
+    max_size = 100 * 1024 * 1024  # 100MB limit
+    file_count = 0
+    
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for cand_id, ad_soyad, cv_path in candidates:
+            if not cv_path or not os.path.exists(cv_path):
+                continue
+            
+            file_size = os.path.getsize(cv_path)
+            if total_size + file_size > max_size:
+                break
+            
+            # Dosya adini temizle
+            safe_name = "".join(c if c.isalnum() or c in " _-" else "_" for c in (ad_soyad or "unknown"))
+            ext = os.path.splitext(cv_path)[1] or ".pdf"
+            zip_filename = f"{cand_id}_{safe_name}{ext}"
+            
+            zf.write(cv_path, zip_filename)
+            total_size += file_size
+            file_count += 1
+    
+    if file_count == 0:
+        raise HTTPException(status_code=404, detail="Indirilecek CV dosyasi bulunamadi")
+    
+    zip_buffer.seek(0)
+    
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f"attachment; filename=cv_export_{file_count}_dosya.zip"
+        }
+    )
