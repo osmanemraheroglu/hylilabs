@@ -5,7 +5,7 @@ Sistem yonetimi ve istatistikler
 
 from fastapi import APIRouter, HTTPException, Depends, Request
 from routes.auth import get_current_user
-from database import get_connection, get_super_admin_stats, get_company_wise_stats, verify_password
+from database import get_connection, get_super_admin_stats, get_company_wise_stats, verify_password, toggle_company_status
 import traceback
 import os
 
@@ -241,3 +241,19 @@ async def reset_data(request: Request, current_user: dict = Depends(get_current_
         except Exception as e:
             conn.rollback()
             raise HTTPException(500, f"Sifirlama hatasi: {str(e)}")
+
+@router.put("/companies/{company_id}/toggle-status")
+def toggle_company_active_status(company_id: int, current_user: dict = Depends(get_current_user)):
+    """Firma aktiflik durumunu degistir"""
+    require_super_admin(current_user)
+    
+    try:
+        result = toggle_company_status(company_id)
+        if not result["success"]:
+            raise HTTPException(status_code=404, detail=result["error"])
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

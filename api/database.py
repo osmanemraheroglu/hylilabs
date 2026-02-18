@@ -5364,6 +5364,32 @@ def get_company_by_slug(slug: str) -> Optional[dict]:
         return dict(row) if row else None
 
 
+def toggle_company_status(company_id: int) -> dict:
+    """Firma aktiflik durumunu degistir"""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        # Mevcut durumu al
+        cursor.execute("SELECT aktif, ad FROM companies WHERE id = ?", (company_id,))
+        row = cursor.fetchone()
+        if not row:
+            return {"success": False, "error": "Firma bulunamadi"}
+        
+        current_status = row[0]
+        company_name = row[1]
+        new_status = 0 if current_status else 1
+        
+        # Durumu guncelle
+        cursor.execute("UPDATE companies SET aktif = ? WHERE id = ?", (new_status, company_id))
+        conn.commit()
+        
+        return {
+            "success": True,
+            "company_id": company_id,
+            "company_name": company_name,
+            "aktif": bool(new_status)
+        }
+
+
 def get_all_companies(only_active: bool = True) -> list[dict]:
     """Tum firmalari getir"""
     with get_connection() as conn:
@@ -6202,6 +6228,12 @@ def verify_user(email: str, password: str) -> Optional[dict]:
     """Kullanici dogrula ve bilgilerini getir"""
     user = get_user_by_email(email)
     if user and user["aktif"]:
+        # Firma aktiflik kontrolu (super_admin harici)
+        if user.get("company_id"):
+            company = get_company(user["company_id"])
+            if not company or not company.get("aktif"):
+                return None  # Firma pasif - login engelle
+        
         stored_hash = user["password_hash"]
 
         # Sifre dogrulama
