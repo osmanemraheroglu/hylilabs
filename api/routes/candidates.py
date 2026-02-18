@@ -180,6 +180,7 @@ def candidate_positions(candidate_id: int, current_user: dict = Depends(get_curr
 def download_cvs(
     ids: str = Query(None, description="Comma separated candidate IDs"),
     pool_id: int = Query(None, description="Pool ID to filter"),
+    havuz: str = Query(None, description="Havuz filter: genel_havuz, departman_havuzu, pozisyon_havuzu, arsiv"),
     all: bool = Query(False, description="Download all candidates"),
     current_user: dict = Depends(get_current_user)
 ):
@@ -227,6 +228,75 @@ def download_cvs(
                     JOIN candidate_pool_assignments cpa ON c.id = cpa.candidate_id
                     WHERE cpa.department_pool_id = ?
                 """, (pool_id,))
+        
+        elif havuz:
+            # Havuz filtresine gore
+            if havuz == "genel_havuz":
+                if company_id:
+                    cursor.execute("SELECT id, ad_soyad, cv_dosya_yolu FROM candidates WHERE company_id = ? AND havuz = 'genel_havuz' AND cv_dosya_yolu IS NOT NULL", (company_id,))
+                else:
+                    cursor.execute("SELECT id, ad_soyad, cv_dosya_yolu FROM candidates WHERE havuz = 'genel_havuz' AND cv_dosya_yolu IS NOT NULL")
+            elif havuz == "departman_havuzu":
+                if company_id:
+                    cursor.execute("""
+                        SELECT c.id, c.ad_soyad, c.cv_dosya_yolu FROM candidates c
+                        WHERE c.company_id = ? AND c.cv_dosya_yolu IS NOT NULL AND c.id IN (
+                            SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                            JOIN department_pools pos ON cpa.department_pool_id = pos.id
+                            JOIN department_pools dept ON pos.parent_id = dept.id
+                            WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0
+                        )
+                    """, (company_id,))
+                else:
+                    cursor.execute("""
+                        SELECT c.id, c.ad_soyad, c.cv_dosya_yolu FROM candidates c
+                        WHERE c.cv_dosya_yolu IS NOT NULL AND c.id IN (
+                            SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                            JOIN department_pools pos ON cpa.department_pool_id = pos.id
+                            JOIN department_pools dept ON pos.parent_id = dept.id
+                            WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0
+                        )
+                    """)
+            elif havuz == "pozisyon_havuzu":
+                if company_id:
+                    cursor.execute("""
+                        SELECT c.id, c.ad_soyad, c.cv_dosya_yolu FROM candidates c
+                        WHERE c.company_id = ? AND c.cv_dosya_yolu IS NOT NULL AND c.id IN (
+                            SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                            JOIN department_pools dp ON cpa.department_pool_id = dp.id
+                            WHERE dp.pool_type = 'position'
+                        )
+                    """, (company_id,))
+                else:
+                    cursor.execute("""
+                        SELECT c.id, c.ad_soyad, c.cv_dosya_yolu FROM candidates c
+                        WHERE c.cv_dosya_yolu IS NOT NULL AND c.id IN (
+                            SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                            JOIN department_pools dp ON cpa.department_pool_id = dp.id
+                            WHERE dp.pool_type = 'position'
+                        )
+                    """)
+            elif havuz == "arsiv":
+                if company_id:
+                    cursor.execute("""
+                        SELECT c.id, c.ad_soyad, c.cv_dosya_yolu FROM candidates c
+                        WHERE c.company_id = ? AND c.cv_dosya_yolu IS NOT NULL AND c.id IN (
+                            SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                            JOIN department_pools dp ON cpa.department_pool_id = dp.id
+                            WHERE dp.name = 'Arşiv' AND dp.is_system = 1
+                        )
+                    """, (company_id,))
+                else:
+                    cursor.execute("""
+                        SELECT c.id, c.ad_soyad, c.cv_dosya_yolu FROM candidates c
+                        WHERE c.cv_dosya_yolu IS NOT NULL AND c.id IN (
+                            SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                            JOIN department_pools dp ON cpa.department_pool_id = dp.id
+                            WHERE dp.name = 'Arşiv' AND dp.is_system = 1
+                        )
+                    """)
+            else:
+                raise HTTPException(status_code=400, detail=f"Gecersiz havuz: {havuz}")
         
         elif all:
             # Tum adaylar

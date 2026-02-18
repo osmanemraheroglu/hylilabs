@@ -84,7 +84,7 @@ export default function Candidates() {
     setDownloading(true)
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/candidates/export/download-cvs?all=true`, {
+      const response = await fetch(`${API_URL}/api/candidates/export/download-cvs${havuz !== 'all' ? '?havuz=' + havuz : '?all=true'}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       if (!response.ok) {
@@ -201,6 +201,7 @@ export default function Candidates() {
                 <SelectItem value='genel_havuz'>Genel Havuz</SelectItem>
                 <SelectItem value='departman_havuzu'>Departman</SelectItem>
                 <SelectItem value='pozisyon_havuzu'>Pozisyon</SelectItem>
+                <SelectItem value='arsiv'>Arsiv</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={handleSearch} variant='outline'>

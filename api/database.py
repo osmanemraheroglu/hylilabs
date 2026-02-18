@@ -2466,6 +2466,12 @@ def get_all_candidates(
                     JOIN department_pools dp ON cpa.department_pool_id = dp.id
                     WHERE dp.pool_type = 'position'
                 )"""
+            elif havuz == "arsiv":
+                query += """ AND candidates.id IN (
+                    SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                    JOIN department_pools dp ON cpa.department_pool_id = dp.id
+                    WHERE dp.name = 'Arşiv' AND dp.is_system = 1
+                )"""
             else:
                 query += " AND havuz = ?"
                 params.append(havuz)
@@ -2529,6 +2535,12 @@ def get_candidates_count(
                     SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
                     JOIN department_pools dp ON cpa.department_pool_id = dp.id
                     WHERE dp.pool_type = 'position'
+                )"""
+            elif havuz == "arsiv":
+                query += """ AND candidates.id IN (
+                    SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                    JOIN department_pools dp ON cpa.department_pool_id = dp.id
+                    WHERE dp.name = 'Arşiv' AND dp.is_system = 1
                 )"""
             else:
                 query += " AND havuz = ?"
