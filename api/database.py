@@ -2449,8 +2449,26 @@ def get_all_candidates(
         params = [company_id]
 
         if havuz:
-            query += " AND havuz = ?"
-            params.append(havuz)
+            if havuz == "genel_havuz":
+                query += " AND havuz = ?"
+                params.append("genel_havuz")
+            elif havuz == "departman_havuzu":
+                # Departman altindaki pozisyonlara atanmis adaylar
+                query += """ AND candidates.id IN (
+                    SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                    JOIN department_pools pos ON cpa.department_pool_id = pos.id
+                    JOIN department_pools dept ON pos.parent_id = dept.id
+                    WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0
+                )"""
+            elif havuz == "pozisyon_havuzu":
+                query += """ AND candidates.id IN (
+                    SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                    JOIN department_pools dp ON cpa.department_pool_id = dp.id
+                    WHERE dp.pool_type = 'position'
+                )"""
+            else:
+                query += " AND havuz = ?"
+                params.append(havuz)
 
         if durum:
             query += " AND durum = ?"
@@ -2495,8 +2513,26 @@ def get_candidates_count(
         params = [company_id]
 
         if havuz:
-            query += " AND havuz = ?"
-            params.append(havuz)
+            if havuz == "genel_havuz":
+                query += " AND havuz = ?"
+                params.append("genel_havuz")
+            elif havuz == "departman_havuzu":
+                # Departman altindaki pozisyonlara atanmis adaylar
+                query += """ AND candidates.id IN (
+                    SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                    JOIN department_pools pos ON cpa.department_pool_id = pos.id
+                    JOIN department_pools dept ON pos.parent_id = dept.id
+                    WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0
+                )"""
+            elif havuz == "pozisyon_havuzu":
+                query += """ AND candidates.id IN (
+                    SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
+                    JOIN department_pools dp ON cpa.department_pool_id = dp.id
+                    WHERE dp.pool_type = 'position'
+                )"""
+            else:
+                query += " AND havuz = ?"
+                params.append(havuz)
 
         if durum:
             query += " AND durum = ?"
