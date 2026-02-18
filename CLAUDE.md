@@ -32,6 +32,8 @@ Bu dosyalar 3+ kez doğrulanmış, DEĞİŞTİRİLMEZ:
 8. routes/emails.py — Email yönetimi
 9. routes/candidates.py — CASCADE delete
 10. cv-collect/index.tsx — CV toplama UI
+11. routes/admin.py — reset-data endpoint
+12. settings/advanced/index.tsx — Gelişmiş ayarlar UI
 
 ## KİLİTLİ KURALLAR — İHLAL ETME
 1. SECRET_KEY her zaman os.getenv() ile okunmalı
@@ -42,6 +44,10 @@ Bu dosyalar 3+ kez doğrulanmış, DEĞİŞTİRİLMEZ:
 6. v2 eşleştirme: Fuzzy 70→85, 85→92. Partial devre dışı. Max 1 pozisyon/aday. DEĞİŞMEMELİ
 7. Akıllı Havuz Önerisi v2 korunmalı, değiştirilmemeli
 8. Scoring v2.1: dynamic knockout(%50), junior/senior penaltı, eğitim kademeli. DEĞİŞMEMELİ
+9. Ayarlar Gelişmiş sekmesi 3 kart yapısı korunmalı
+10. CV İndir butonları filtre-bağımlı çalışmalı (Adaylar + Havuzlar)
+11. Reset-data endpoint güvenlik kontrolleri (şifre + SIFIRLA + role) değiştirilmemeli
+12. Adaylar filtre sistemi (genel/departman/pozisyon/arsiv) candidate_pool_assignments JOIN mantığı korunmalı
 
 ## Stil
 - Fonksiyon ve değişken: snake_case (Python), camelCase (TypeScript)

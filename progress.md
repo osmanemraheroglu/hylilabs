@@ -25,9 +25,15 @@
 - Tablo sütun hizalaması (8cd2d55)
 - Aday detay modal boş alan düzeltmesi (1a18484)
 
+### Faz 5: Data Management (Tamamlandı — 18 Şubat 2026)
+- Data Reset sistemi — 3 kademe (candidates/pools/full), backend + UI
+- CV ZIP Download — Adaylar + Havuzlar sayfası, filtre-bağımlı
+- Adaylar filtre fix — departman/pozisyon/arsiv candidate_pool_assignments JOIN
+- Kilitleme güncellendi — 12 dosya, 12 kural
+
 ## Devam Eden İşler
 
-### Faz 5: Production Geçişi (Devam Ediyor)
+### Faz 6: Production Geçişi (Devam Ediyor)
 - [ ] Türkiye VPS seçimi ve kurulumu
 - [ ] DNS ayarları (hylilabs.com → Türkiye IP)
 - [ ] SSL sertifikası (Let's Encrypt)
@@ -35,12 +41,12 @@
 - [ ] Database backup otomasyonu
 - [ ] admin123/demo123 şifre değişikliği
 
-### Faz 6: Company Switcher (Planlandı)
+### Faz 7: Company Switcher (Planlandı)
 - [ ] Görev 1: Dynamic company list from API
 - [ ] Görev 2: Auth store company ID
 - [ ] Görev 3: Super admin context switch
 
-### Faz 7: Kariyer Sayfası (TODO)
+### Faz 8: Kariyer Sayfası (TODO)
 - [ ] Pozisyon bazlı dış başvuru formu
 - [ ] CV upload + otomatik parse
 - [ ] llms.txt + AEO optimizasyonu
@@ -50,3 +56,5 @@
 |---|------|-------|---------|
 | 1 | Havuzlar Manuel Giriş 500 | Açık | Yüksek |
 | 2 | Kariyer.net Cloudflare 403 | Açık | Orta |
+| 3 | Template sekmeler temizliği | Açık | Düşük |
+| 4 | SSL sorunu (HTTP indirme uyarısı) | Açık | Orta |

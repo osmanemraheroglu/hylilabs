@@ -71,3 +71,36 @@ Dosya kilitlenmeden önce:
 > 3. Security headers middleware kaldırılmamalı veya zayıflatılmamalı
 > 4. .env dosyası ASLA git'e eklenmemeli
 > 5. API endpoint'leri auth olmadan erişilebilir olmamalı (public endpoint'ler hariç)
+
+---
+
+## 18.02.2026 — Data Management & Bug Fixes
+
+### Yeni Kilitli Endpoint'ler
+| # | Endpoint | Kilit Tarihi | Not |
+|---|----------|-------------|-----|
+| 11 | POST /api/admin/reset-data | 18.02.2026 | 3 kademeli veri sıfırlama (candidates/pools/full). Şifre + "SIFIRLA" onayı zorunlu. Otomatik backup. Bu endpoint'in güvenlik kontrolleri DEĞİŞTİRİLMEMELİ. |
+| 12 | GET /api/candidates/export/download-cvs | 18.02.2026 | CV toplu indirme (ZIP). Parametreler: all, ids, pool_id, havuz. 100MB limit. Auth zorunlu. Bu endpoint DEĞİŞTİRİLMEMELİ. |
+
+### Yeni Kilitli Kurallar
+| # | Kural | Not |
+|---|-------|-----|
+| 9 | Ayarlar > Gelişmiş sekmesi | 3 kart yapısı (Aday Sıfırla, Havuz Sıfırla, Tam Sıfırla). super_admin kartı role kontrolü frontend'de de yapılmalı. DEĞİŞTİRİLMEMELİ. |
+| 10 | CV İndir butonu (Adaylar) | Seçili havuz filtresine göre indirme. Filtre parametresi backend'e gönderilmeli. DEĞİŞTİRİLMEMELİ. |
+| 11 | CV İndir butonu (Havuzlar) | pool_id parametresi ile havuz bazlı indirme. DEĞİŞTİRİLMEMELİ. |
+| 12 | Adaylar filtre sistemi | genel_havuz, departman_havuzu, pozisyon_havuzu, arsiv filtreleri candidate_pool_assignments JOIN ile çalışır. database.py'deki bu filtre mantığı DEĞİŞTİRİLMEMELİ. |
+
+### Yeni Kilitli Dosyalar
+| # | Dosya | Kilit Tarihi | Not |
+|---|-------|-------------|-----|
+| 13 | src/features/settings/advanced/index.tsx | 18.02.2026 | Gelişmiş ayarlar (veri sıfırlama UI) |
+| 14 | src/routes/_authenticated/settings/advanced.tsx | 18.02.2026 | Gelişmiş route |
+
+### Commit'ler (18.02.2026)
+- d6cddfd feat: add reset-data endpoint with backup + password validation
+- d45abf2 feat: add CV download as ZIP endpoint (append only, locked file)
+- 16efbf8 feat: add Gelismis (Advanced) settings tab with data reset functionality
+- a7214e4 feat: add CV download ZIP button to candidates page
+- 8f3ecf3 feat: add pool CV download ZIP button to havuzlar page
+- 039bfea fix: candidates filter - departman/pozisyon now queries pool assignments
+- b373b60 fix: CV download respects filter + add arsiv filter option
