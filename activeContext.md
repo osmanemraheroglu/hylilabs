@@ -11,6 +11,8 @@
 - CV ZIP Download (backend + UI) — Adaylar + Havuzlar sayfası
 - Filtre bug fix — departman/pozisyon/arsiv filtreleri düzeltildi
 - Kilitleme güncellendi — LOCKED_FILES.md, CLAUDE.md
+- Duplicate CV kontrolü eklendi (create_candidate scope, tüm entry point korumalı)
+- Taner Baransel duplicate temizlendi (51 aday)
 
 ## Bugünkü Commit'ler
 - d6cddfd feat: add reset-data endpoint with backup + password validation

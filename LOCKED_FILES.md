@@ -104,3 +104,15 @@ Dosya kilitlenmeden önce:
 - 8f3ecf3 feat: add pool CV download ZIP button to havuzlar page
 - 039bfea fix: candidates filter - departman/pozisyon now queries pool assignments
 - b373b60 fix: CV download respects filter + add arsiv filter option
+
+---
+
+## 18.02.2026 — Duplicate CV Kontrolü
+
+### Yeni Kilitli Kural
+| # | Kural | Not |
+|---|-------|-----|
+| 13 | create_candidate() duplicate kontrolü | Email + telefon ile duplicate kontrol. Company_id scope'unda çalışır. TÜM giriş noktalarını korur (upload, scan-emails, workflows). DEĞİŞTİRİLMEMELİ, KALDIRILMAMALI. |
+
+### Commit
+- 5a9f608 fix: add duplicate check to create_candidate + clean existing duplicate

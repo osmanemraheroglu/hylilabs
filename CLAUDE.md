@@ -48,6 +48,7 @@ Bu dosyalar 3+ kez doğrulanmış, DEĞİŞTİRİLMEZ:
 10. CV İndir butonları filtre-bağımlı çalışmalı (Adaylar + Havuzlar)
 11. Reset-data endpoint güvenlik kontrolleri (şifre + SIFIRLA + role) değiştirilmemeli
 12. Adaylar filtre sistemi (genel/departman/pozisyon/arsiv) candidate_pool_assignments JOIN mantığı korunmalı
+13. create_candidate() duplicate kontrolü (email + telefon) kaldırılamaz
 
 ## Stil
 - Fonksiyon ve değişken: snake_case (Python), camelCase (TypeScript)
