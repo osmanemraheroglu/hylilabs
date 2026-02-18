@@ -63,3 +63,15 @@
 - Reset-data endpoint güvenlik mantığı
 - Adaylar filtre JOIN mantığı
 - create_candidate() duplicate kontrolü
+
+## 18 Şubat 2026 - Güvenlik Denetimi Final
+
+### 5 Güvenlik Düzeltmesi Doğrulandı
+1. ✅ Firma login kontrolü - pasif firma login engelliyor
+2. ✅ CV dosya izolasyonu - 2x3 güvenlik kontrolü aktif  
+3. ✅ Tablolara company_id - 5 tablo, 0 NULL
+4. ✅ Yetim kayıt temizliği - 0 yetim kayıt
+5. ✅ DB CASCADE DELETE - 10 FK, otomatik temizlik
+
+### Kilitli Kurallar: 15 adet
+### Toplam Commit (bugün): ~18
