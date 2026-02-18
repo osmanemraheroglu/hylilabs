@@ -10,6 +10,11 @@
 - Şifre Değiştir — PUT /api/auth/change-password endpoint + UI
 - Tema seçimi — Sadeleştirilmiş Açık/Koyu tema sayfası
 
+### Security Fix
+- Firma pasif kontrolü — Login sırasında firma aktiflik kontrolü eklendi
+- verify_user() fonksiyonunda company.aktif kontrolü
+- PUT /api/admin/companies/{id}/toggle-status endpoint eklendi
+
 ### Bug Fix
 - Adaylar filtre sistemi — departman/pozisyon/arsiv artık doğru çalışıyor
 - CV İndir butonu — Seçili havuz filtresine göre indirme
@@ -23,7 +28,8 @@
 - 14 kilitli dosya (LOCKED_FILES.md)
 - Duplicate kontrolü, filtre mantığı, reset-data güvenliği kilitlendi
 
-## Bugünkü Commit'ler (12 adet)
+## Bugünkü Commit'ler (13 adet)
+- 9708f03 security: block login when company is inactive
 - e9c164e refactor: clean settings page - keep password/theme/advanced
 - 11dd0ff lock: duplicate CV check in create_candidate
 - 5a9f608 fix: add duplicate check to create_candidate
