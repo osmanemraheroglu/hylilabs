@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
 const ACCESS_TOKEN = 'hylilabs_token'
+const API_URL = 'http://***REMOVED***:8000'
 
 interface AuthUser {
   accountNo: string
@@ -56,3 +57,52 @@ export const useAuthStore = create<AuthState>()((set) => {
     },
   }
 })
+
+/**
+ * Uygulama baslarken token varsa /api/auth/me ile kullanici bilgisini yukler.
+ * Token gecersizse veya hata olursa logout yapar.
+ */
+export async function initAuth(): Promise<boolean> {
+  const token = localStorage.getItem('access_token')
+  
+  if (!token) {
+    return false
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/auth/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      // Token gecersiz veya suresi dolmus
+      useAuthStore.getState().auth.reset()
+      return false
+    }
+
+    const userData = await response.json()
+    
+    // User bilgisini store'a kaydet
+    const user: AuthUser = {
+      accountNo: String(userData.id),
+      email: userData.email,
+      role: [userData.rol],
+      exp: Date.now() + 24 * 60 * 60 * 1000,
+      ad_soyad: userData.ad_soyad,
+      company_id: userData.company_id,
+    }
+
+    useAuthStore.getState().auth.setUser(user)
+    return true
+
+  } catch (error) {
+    // Network hatasi veya diger sorunlar
+    console.error('Auth initialization failed:', error)
+    useAuthStore.getState().auth.reset()
+    return false
+  }
+}
