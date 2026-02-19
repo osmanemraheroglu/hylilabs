@@ -45,9 +45,8 @@ curl http://localhost:8000  # HTTP 401 (normal, auth gerekli)
 ```
 
 ## Onemli Notlar
-- DB dosyasi: `/var/www/hylilabs/api/data/talentflow.db`
-- CV dosyalari: `/var/www/hylilabs/api/data/cvs/`
-- Bu iki klasor yeni sunucuya manuel tasinmali (git'te yok)
+- Canliya geciste DB bos baslar, firmalar kendi verilerini girer
+- CV'ler firmalar tarafindan sisteme yuklenecek
 - KVKK uyumu icin Turkiye lokasyonlu sunucu zorunlu
 
 ## Servis Yonetimi
