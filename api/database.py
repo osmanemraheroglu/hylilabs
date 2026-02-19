@@ -885,7 +885,7 @@ def init_database():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_approved_titles_position ON approved_title_mappings(position_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_approved_titles_approved ON approved_title_mappings(is_approved)")
 
-        # Varsayilan email sablonlarini ekle (company_id NULL = global sablonlar)
+        # Varsayilan email sablonlarini ekle (company_id = 1)
         _init_default_email_templates(cursor)
 
     # Email şifrelerini migrate et (düz metin -> şifreli)
@@ -1035,11 +1035,11 @@ Saygılarımızla,
     ]
 
     for template in default_templates:
-        # Global sablon olarak ekle (company_id = NULL)
+        # Varsayilan sablon (company_id = 1, INSERT OR IGNORE ile duplikasyon engellenir)
         cursor.execute("""
             INSERT OR IGNORE INTO email_templates
             (company_id, sablon_kodu, sablon_adi, konu, icerik, degiskenler)
-            VALUES (NULL, ?, ?, ?, ?, ?)
+            VALUES (1, ?, ?, ?, ?, ?)
         """, (
             template["sablon_kodu"],
             template["sablon_adi"],

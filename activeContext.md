@@ -56,6 +56,9 @@ Son guncelleme: 19.02.2026
 - transfer_candidates_to_position() company_id eklendi (candidate'dan turetiliyor)
 - 9 tabloya CASCADE DELETE eklendi (ai_analyses, hr_evaluations, position_requirements, position_sector_preferences, position_title_mappings, candidate_merge_logs, company_settings, email_accounts, email_templates)
 - audit_logs INSERT'e company_id eklendi
+- email_templates 56.544 duplike kayit silindi (56.550 -> 6)
+- email_templates UNIQUE(company_id, sablon_kodu) constraint eklendi
+- email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
 f11aeac - ui: clarify date labels and add relative time tooltip
