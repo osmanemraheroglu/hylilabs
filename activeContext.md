@@ -19,7 +19,7 @@ Son guncelleme: 19.02.2026
 3. Claude CV parsing: %100 basarili. Parse sistemi bozulmamali.
 4. categorize_and_save(): Pozisyon ekleme akisina entegre. DEGISMEZ.
 5. Akilli Havuz Onerisi v2: approved_title_mappings tablosu. DEGISMEZ.
-6. DB CASCADE DELETE: 6 tablo, 10 FK, 16 index. KALDIRILMAZ.
+6. DB CASCADE DELETE: 7 tablo (interviews dahil), 13 FK, 20 index. KALDIRILMAZ.
 7. company_id guvenlik katmani: Tum tablolarda. ZORUNLU.
 8. CV dosya izolasyonu: /data/cvs/{company_id}/. GERI DONULEMEZ.
 9. Firma login kontrolu: verify_user() aktiflik kontrolu. DEGISMEZ.
@@ -50,6 +50,8 @@ Son guncelleme: 19.02.2026
 - .cursorrules SQL kurali eklendi -> commit 2627a12
 - Dashboard "Son Email Basvurulari" etiketi + tooltip -> commit f11aeac
 - Adaylar "CV Yukleme Tarihi" etiketi + tooltip -> commit f11aeac
+- interviews tablosu CASCADE DELETE eklendi (3 FK)
+- create_interview() company_id guvenlik eklendi
 
 ## Son Commitler
 f11aeac - ui: clarify date labels and add relative time tooltip
@@ -59,7 +61,7 @@ ea98465 - fix: restore user session on page refresh via /api/auth/me
 47a97ac - fix: clean super admin panel
 
 ## Sonraki Gorev
-Mulakat Takvimi menusu incelenecek. Once kesif raporu alinacak.
+Mulakat Takvimi kesif tamamlandi. Entegrasyon opsiyonlari degerlendirilecek.
 
 ## Bilinen Acik Konular
 - pm2 kurulu degil, vite preview ile calisiyor

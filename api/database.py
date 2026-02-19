@@ -4755,12 +4755,12 @@ def create_interview(interview: Interview, company_id: int = None) -> int:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO interviews (
-                candidate_id, position_id, tarih, sure_dakika,
+                candidate_id, position_id, tarih, sure_dakika, company_id,
                 tur, lokasyon, mulakatci, durum, notlar
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             interview.candidate_id, interview.position_id,
-            interview.tarih.isoformat(), interview.sure_dakika,
+            interview.tarih.isoformat(), interview.sure_dakika, company_id,
             interview.tur, interview.lokasyon, interview.mulakatci,
             interview.durum, interview.notlar
         ))
