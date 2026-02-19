@@ -3606,9 +3606,9 @@ def auto_delete_expired_candidates(company_id: int) -> dict:
 
                 # Audit log (anonim)
                 cursor.execute("""
-                    INSERT INTO audit_logs (action, entity_type, entity_id, details, created_at)
-                    VALUES ('AUTO_DELETE', 'candidate', ?, ?, datetime('now'))
-                """, (candidate_id, f"Arşiv süresi doldu. Adı: {name[:3]}***, Email: ***@***"))
+                    INSERT INTO audit_logs (action, entity_type, entity_id, details, created_at, company_id)
+                    VALUES ('AUTO_DELETE', 'candidate', ?, ?, datetime('now'), ?)
+                """, (candidate_id, f"Arşiv süresi doldu. Adı: {name[:3]}***, Email: ***@***", company_id))
 
                 # FK Constraint Güvenliği: delete_candidate() kullanarak tüm bağımlı tabloları temizle
                 # Bu fonksiyon safe_delete_with_fk() kullanarak dinamik olarak tüm FK bağımlılıklarını temizler
@@ -3901,7 +3901,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
             try:
                 cursor.execute("""
                     INSERT OR IGNORE INTO candidate_pool_assignments
-                    (candidate_id, department_pool_id, assignment_type, match_score, match_reason, assigned_at)
+                    (candidate_id, department_pool_id, assignment_type, match_score, match_reason, assigned_at, company_id)
                     VALUES (?, ?, 'auto', ?, 'Title eşleşmesi (v2)', datetime('now'))
                 """, (candidate_id, position_pool_id, match_score))
             except Exception as e:
@@ -3978,7 +3978,7 @@ def move_candidate_to_pool(candidate_id: int, from_position_id: int, to_position
                 # Yeni kaydı ekle
                 cursor.execute("""
                     INSERT OR REPLACE INTO candidate_pool_assignments
-                    (candidate_id, department_pool_id, assignment_type, match_score, match_reason, assigned_at)
+                    (candidate_id, department_pool_id, assignment_type, match_score, match_reason, assigned_at, company_id)
                     VALUES (?, ?, 'auto', ?, 'Pozisyon değişikliği', datetime('now'))
                 """, (candidate_id, to_position_id, match_score))
             except Exception as e:
@@ -4320,11 +4320,16 @@ def transfer_candidates_to_position(candidate_ids: list[int], target_pool_id: in
                     stats['already_exists'] += 1
                     continue
 
+                # Get company_id from candidate
+                cursor.execute("SELECT company_id FROM candidates WHERE id = ?", (candidate_id,))
+                row = cursor.fetchone()
+                cmp_id = row[0] if row else None
+                
                 cursor.execute("""
                     INSERT INTO candidate_pool_assignments
-                    (candidate_id, department_pool_id, assignment_type, match_score, match_reason, assigned_at)
-                    VALUES (?, ?, 'manual', 0, 'Manuel transfer', datetime('now'))
-                """, (candidate_id, target_pool_id))
+                    (candidate_id, department_pool_id, assignment_type, match_score, match_reason, assigned_at, company_id)
+                    VALUES (?, ?, 'manual', 0, 'Manuel transfer', datetime('now'), ?)
+                """, (candidate_id, target_pool_id, cmp_id))
 
                 cursor.execute("""
                     DELETE FROM candidate_pool_assignments
@@ -4555,12 +4560,12 @@ def create_application(application: Application, company_id: int = None) -> int:
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO applications (candidate_id, position_id, kaynak, email_id, basvuru_tarihi)
+            INSERT INTO applications (candidate_id, position_id, kaynak, email_id, basvuru_tarihi, company_id)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (
             application.candidate_id, application.position_id,
             application.kaynak, application.email_id,
-            application.basvuru_tarihi.isoformat() if application.basvuru_tarihi else datetime.now().isoformat()
+            application.basvuru_tarihi.isoformat() if application.basvuru_tarihi else datetime.now().isoformat(), company_id
         ))
         return cursor.lastrowid
 
