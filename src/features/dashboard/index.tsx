@@ -15,6 +15,18 @@ import { Users, Briefcase, FileText, Clock, Calendar, UserCheck } from 'lucide-r
 
 const API_URL = 'http://***REMOVED***:8000'
 
+function getRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  if (minutes < 1) return 'Az once'
+  if (minutes < 60) return `${minutes} dakika once`
+  if (hours < 24) return `${hours} saat once`
+  if (days < 30) return `${days} gun once`
+  return new Date(dateStr).toLocaleDateString('tr-TR')
+}
+
 interface DashboardStats {
   toplam_aday: number
   aktif_pozisyon: number
@@ -232,8 +244,8 @@ export function Dashboard() {
           {/* Son Aktiviteler */}
           <Card>
             <CardHeader>
-              <CardTitle>Son Basvurular</CardTitle>
-              <CardDescription>Son 10 basvuru</CardDescription>
+              <CardTitle>Son Email Basvurulari</CardTitle>
+              <CardDescription>Email ile gelen son basvurular</CardDescription>
             </CardHeader>
             <CardContent>
               <div className='space-y-4 max-h-[300px] overflow-y-auto'>
@@ -247,7 +259,12 @@ export function Dashboard() {
                       <div className='text-right'>
                         <p className='text-xs'>{app.pozisyon || 'Genel Basvuru'}</p>
                         <p className='text-xs text-muted-foreground'>
-                          {new Date(app.basvuru_tarihi).toLocaleDateString('tr-TR')}
+                          <span 
+                            title={new Date(app.basvuru_tarihi).toLocaleString('tr-TR')}
+                            style={{cursor: 'default'}}
+                          >
+                            {getRelativeTime(app.basvuru_tarihi)}
+                          </span>
                         </p>
                       </div>
                     </div>

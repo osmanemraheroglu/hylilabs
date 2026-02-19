@@ -11,6 +11,18 @@ import { toast } from 'sonner'
 
 const API_URL = 'http://***REMOVED***:8000'
 
+function getRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+  if (minutes < 1) return 'Az once'
+  if (minutes < 60) return `${minutes} dakika once`
+  if (hours < 24) return `${hours} saat once`
+  if (days < 30) return `${days} gun once`
+  return new Date(dateStr).toLocaleDateString('tr-TR')
+}
+
 function getHeaders() {
   const token = localStorage.getItem('access_token')
   return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
@@ -227,7 +239,7 @@ export default function Candidates() {
                     <TableHead>Lokasyon</TableHead>
                     <TableHead>Deneyim</TableHead>
                     <TableHead>Durum</TableHead>
-                    <TableHead>Tarih</TableHead>
+                    <TableHead>CV Yukleme Tarihi</TableHead>
                     <TableHead className='text-right'>Detay</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -252,7 +264,7 @@ export default function Candidates() {
                           <Badge variant={durumVariant(c.durum)}>{durumLabel(c.durum)}</Badge>
                         </TableCell>
                         <TableCell className='text-sm text-muted-foreground'>
-                          {c.olusturma_tarihi ? new Date(c.olusturma_tarihi).toLocaleDateString('tr-TR') : '-'}
+                          {c.olusturma_tarihi ? <span title={new Date(c.olusturma_tarihi).toLocaleString('tr-TR')} style={{cursor: 'default'}}>{getRelativeTime(c.olusturma_tarihi)}</span> : '-'}
                         </TableCell>
                         <TableCell className='text-right'>
                           <Button variant='ghost' size='sm' onClick={e => { e.stopPropagation(); loadDetail(c) }}>
