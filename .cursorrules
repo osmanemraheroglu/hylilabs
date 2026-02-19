@@ -1,0 +1,26 @@
+# HyliLabs — Cursor Kurallari
+
+## SQL Kurallari
+
+### company_id Kullanimi
+JOIN iceren tum SQL sorgularinda company_id her zaman tablo prefixiyle yazilmali.
+
+DOGRU:
+- SELECT * FROM applications a JOIN candidates c ON a.candidate_id = c.id WHERE c.company_id = ?
+- SELECT * FROM hr_evaluations e JOIN candidates c ON e.candidate_id = c.id WHERE c.company_id = ?
+- AND c.company_id = ?
+- AND a.company_id = ?
+
+YANLIS (YASAK):
+- SELECT * FROM applications a JOIN candidates c ON ... WHERE company_id = ?
+- AND company_id = ?  (prefix yok!)
+
+### Neden?
+- SQLite JOIN sorgularinda prefixsiz company_id "ambiguous column name" hatasi verir
+- Bu hata runtimeda 500 Internal Server Error olarak gorunur
+- Debugging zordur cunku hata mesaji frontende ulasmaz
+
+### Kural
+- Tek tablo sorgularinda prefix opsiyonel
+- JOIN sorgularinda prefix ZORUNLU
+- Dinamik query builder kullanirken: "AND c.company_id = ?" veya "AND a.company_id = ?"
