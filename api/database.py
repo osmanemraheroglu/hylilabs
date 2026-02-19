@@ -5209,7 +5209,7 @@ def get_dashboard_stats(company_id: int = None) -> dict:
     with get_connection() as conn:
         cursor = conn.cursor()
         company_filter = "WHERE company_id = ?" if company_id else ""
-        company_and = "AND company_id = ?" if company_id else ""
+        company_and_c = "AND c.company_id = ?" if company_id else ""
         params = [company_id] if company_id else []
 
         # Bugun gelen basvuru
@@ -5217,7 +5217,7 @@ def get_dashboard_stats(company_id: int = None) -> dict:
             SELECT COUNT(*) FROM applications a
             JOIN candidates c ON a.candidate_id = c.id
             WHERE date(a.basvuru_tarihi) = date('now')
-            {company_and}
+            {company_and_c}
         """, params)
         bugun_basvuru = cursor.fetchone()[0]
 
@@ -5226,17 +5226,16 @@ def get_dashboard_stats(company_id: int = None) -> dict:
             SELECT COUNT(DISTINCT pp.candidate_id) FROM position_pools pp
             JOIN candidates c ON pp.candidate_id = c.id
             WHERE pp.durum = 'beklemede'
-            {company_and}
+            {company_and_c}
         """, params)
         bekleyen = cursor.fetchone()[0]
 
         # Aktif pozisyon sayisi (department_pools tablosundan)
-        # Güvenlik: company_and hardcoded string (" AND company_id = ?" veya ""), replace sadece alan adını değiştiriyor
-        # Parametreler params listesinden geliyor (parametreli sorgu)
+        company_and_dp = "AND department_pools.company_id = ?" if company_id else ""
         cursor.execute(f"""
             SELECT COUNT(*) FROM department_pools
             WHERE pool_type = 'position' AND is_active = 1
-            {company_and.replace('company_id', 'department_pools.company_id') if company_id else ''}
+            {company_and_dp}
         """, params)
         aktif_pozisyon = cursor.fetchone()[0]
 
@@ -5246,13 +5245,11 @@ def get_dashboard_stats(company_id: int = None) -> dict:
             JOIN candidates c ON e.candidate_id = c.id
             WHERE e.durum = 'ise_alindi'
             AND strftime('%Y-%m', e.guncelleme_tarihi) = strftime('%Y-%m', 'now')
-            {company_and}
+            {company_and_c}
         """, params)
         bu_ay_ise_alinan = cursor.fetchone()[0]
 
         # Toplam aday
-        # Güvenlik: company_filter sadece "WHERE company_id = ?" veya "" olabilir (hardcoded)
-        # Parametreler params listesinden geliyor (parametreli sorgu)
         cursor.execute(f"SELECT COUNT(*) FROM candidates {company_filter}", params)
         toplam_aday = cursor.fetchone()[0]
 
@@ -5260,15 +5257,16 @@ def get_dashboard_stats(company_id: int = None) -> dict:
         cursor.execute(f"""
             SELECT COUNT(*) FROM applications a
             JOIN candidates c ON a.candidate_id = c.id
-            WHERE 1=1 {company_and}
+            WHERE 1=1 {company_and_c}
         """, params)
         toplam_basvuru = cursor.fetchone()[0]
 
-        # Mülakat bekleyen (durum='mulakat' olan adaylar)
+        # Mulakat bekleyen (durum='mulakat' olan adaylar)
+        company_and_cand = "AND candidates.company_id = ?" if company_id else ""
         cursor.execute(f"""
             SELECT COUNT(*) FROM candidates
             WHERE durum = 'mulakat'
-            {company_and.replace('company_id', 'candidates.company_id') if company_id else ''}
+            {company_and_cand}
         """, params)
         mulakat_bekleyen = cursor.fetchone()[0]
 
