@@ -137,7 +137,8 @@ def create_new_interview(
 
         # Onay token'i olustur ve kaydet
         confirm_token = secrets.token_urlsafe(32)
-        confirm_expires = datetime.now() + timedelta(days=7)
+        onay_suresi = body.get("onay_suresi", 3)  # varsayilan 3 gun
+        confirm_expires = datetime.now() + timedelta(days=onay_suresi)
 
         with get_connection() as conn:
             cursor = conn.cursor()

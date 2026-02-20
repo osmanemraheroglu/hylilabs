@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 20.02.2026
+Son guncelleme: 21.02.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -48,6 +48,11 @@ Son guncelleme: 20.02.2026
 - Email gonderimi: veritabani hesabi kullanimi (email_accounts tablosu, varsayilan_gonderim=1)
 - send_interview_invite() account parametresi eklendi
 - Mulakat onaylama linki sistemi: token uretimi, public /confirm/{token} endpoint, email'de onay linki
+- Mulakat formu onay suresi secimi eklendi (1/3/7/14/30 gun, varsayilan 3)
+
+### 21.02.2026
+- Mulakat formu onay suresi Select alani eklendi (frontend)
+- Backend: onay_suresi parametresi aliniyor, token suresi dinamik
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)

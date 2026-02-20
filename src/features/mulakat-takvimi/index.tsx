@@ -117,6 +117,7 @@ export default function MulakatTakvimi() {
     lokasyon: 'online',
     mulakatci: '',
     notlar: '',
+    onay_suresi: '3',
   })
 
   // Eval form
@@ -161,7 +162,7 @@ export default function MulakatTakvimi() {
   const resetForm = () => {
     setForm({
       candidate_id: '', position_id: '', tarih: '', saat: '10:00',
-      sure_dakika: '60', tur: 'teknik', lokasyon: 'online', mulakatci: '', notlar: '',
+      sure_dakika: '60', tur: 'teknik', lokasyon: 'online', mulakatci: '', notlar: '', onay_suresi: '3',
     })
     setEditingId(null)
     setSendEmail(true)
@@ -181,6 +182,7 @@ export default function MulakatTakvimi() {
       lokasyon: item.lokasyon,
       mulakatci: item.mulakatci || '',
       notlar: item.notlar || '',
+      onay_suresi: '3',
     })
     setEditingId(item.id)
     setDialogOpen(true)
@@ -199,6 +201,7 @@ export default function MulakatTakvimi() {
       lokasyon: form.lokasyon,
       mulakatci: form.mulakatci || null,
       notlar: form.notlar || null,
+      onay_suresi: parseInt(form.onay_suresi) || 3,
     }
 
     // Kaydetmeden önce email preview gösterilecek mi kontrol et
@@ -608,6 +611,19 @@ export default function MulakatTakvimi() {
             <div>
               <Label className="text-sm">Mülakatçı</Label>
               <Input value={form.mulakatci} onChange={e => setForm({...form, mulakatci: e.target.value})} placeholder="Mülakatçı adı" />
+            </div>
+            <div>
+              <Label className="text-sm">Onay Süresi</Label>
+              <Select value={form.onay_suresi} onValueChange={v => setForm({...form, onay_suresi: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 gün</SelectItem>
+                  <SelectItem value="3">3 gün</SelectItem>
+                  <SelectItem value="7">7 gün</SelectItem>
+                  <SelectItem value="14">14 gün</SelectItem>
+                  <SelectItem value="30">30 gün</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label className="text-sm">Notlar</Label>
