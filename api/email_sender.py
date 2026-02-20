@@ -230,10 +230,14 @@ def generate_interview_invite_content(
     location: str,
     position_title: str,
     interviewer: Optional[str] = None,
-    notes: Optional[str] = None
+    notes: Optional[str] = None,
+    confirm_url: Optional[str] = None
 ) -> dict:
     """
     Mulakat davet emaili icerigi olustur (gondermeden)
+
+    Args:
+        confirm_url: Mulakat onay linki (opsiyonel)
 
     Returns:
         {"konu": str, "icerik": str}
@@ -265,6 +269,14 @@ def generate_interview_invite_content(
         company_contact=company_contact.strip()
     )
 
+    # Onay linki ekle
+    if confirm_url:
+        body += "\n\nMULAKATI ONAYLA\n"
+        body += "---------------\n"
+        body += "Mulakata katilacaginizi onaylamak icin asagidaki linke tiklayin:\n"
+        body += f"{confirm_url}\n"
+        body += "(Link 7 gun gecerlidir)\n"
+
     subject = f"Mulakat Daveti - {COMPANY_INFO['name']} - {position_title or 'Genel Basvuru'}"
 
     return {"konu": subject, "icerik": body}
@@ -281,13 +293,15 @@ def send_interview_invite(
     interviewer: Optional[str] = None,
     notes: Optional[str] = None,
     cc_interviewer: Optional[str] = None,
-    account: Optional[dict] = None
+    account: Optional[dict] = None,
+    confirm_url: Optional[str] = None
 ) -> tuple[bool, str]:
     """
     Mulakat davet emaili gonder
 
     Args:
         account: Email hesabi (veritabanindan). None ise SMTP_CONFIG kullanilir.
+        confirm_url: Mulakat onay linki (opsiyonel)
 
     Returns:
         (basarili, mesaj) tuple
@@ -300,7 +314,8 @@ def send_interview_invite(
         location=location,
         position_title=position_title,
         interviewer=interviewer,
-        notes=notes
+        notes=notes,
+        confirm_url=confirm_url
     )
 
     return send_email(candidate_email, content["konu"], content["icerik"], cc=cc_interviewer, account=account)

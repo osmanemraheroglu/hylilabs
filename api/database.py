@@ -331,11 +331,33 @@ def init_database():
                 notlar TEXT,
                 degerlendirme TEXT,
                 puan INTEGER,
+                confirm_token TEXT UNIQUE,
+                confirm_token_expires TIMESTAMP,
+                confirmed_at TIMESTAMP,
+                confirmation_status TEXT DEFAULT 'pending',
                 olusturma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (candidate_id) REFERENCES candidates(id),
                 FOREIGN KEY (position_id) REFERENCES positions(id)
             )
         """)
+
+        # interviews tablosu migration (mevcut tabloya kolon ekle)
+        try:
+            cursor.execute("ALTER TABLE interviews ADD COLUMN confirm_token TEXT UNIQUE")
+        except sqlite3.OperationalError:
+            pass  # Kolon zaten var
+        try:
+            cursor.execute("ALTER TABLE interviews ADD COLUMN confirm_token_expires TIMESTAMP")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cursor.execute("ALTER TABLE interviews ADD COLUMN confirmed_at TIMESTAMP")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cursor.execute("ALTER TABLE interviews ADD COLUMN confirmation_status TEXT DEFAULT 'pending'")
+        except sqlite3.OperationalError:
+            pass
 
         # AI Analiz tablosu
         cursor.execute("""

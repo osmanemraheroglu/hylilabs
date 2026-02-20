@@ -1,14 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse
 from routes.auth import get_current_user
 from database import (
     create_interview, update_interview, get_interviews,
     delete_interview, get_connection
 )
 from models import Interview
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 import traceback
 import logging
+import secrets
 
 from email_sender import send_interview_invite, generate_interview_invite_content
 
@@ -133,6 +135,20 @@ def create_new_interview(
 
         new_id = create_interview(interview, company_id=company_id)
 
+        # Onay token'i olustur ve kaydet
+        confirm_token = secrets.token_urlsafe(32)
+        confirm_expires = datetime.now() + timedelta(days=7)
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """UPDATE interviews
+                   SET confirm_token = ?, confirm_token_expires = ?
+                   WHERE id = ?""",
+                (confirm_token, confirm_expires.isoformat(), new_id)
+            )
+            conn.commit()
+
         return {
             "success": True,
             "id": new_id,
@@ -231,6 +247,11 @@ def get_email_preview(
             if isinstance(tarih, str):
                 tarih = datetime.fromisoformat(tarih)
 
+            # Onay linki olustur
+            confirm_url = None
+            if interview.get("confirm_token"):
+                confirm_url = f"http://***REMOVED***:8000/api/interviews/confirm/{interview['confirm_token']}"
+
             # Email icerigini olustur
             content = generate_interview_invite_content(
                 candidate_name=interview["ad_soyad"],
@@ -240,7 +261,8 @@ def get_email_preview(
                 location=interview.get("lokasyon", "online"),
                 position_title=interview.get("position_title") or "Genel Basvuru",
                 interviewer=interview.get("mulakatci"),
-                notes=interview.get("notlar")
+                notes=interview.get("notlar"),
+                confirm_url=confirm_url
             )
 
             return {
@@ -308,6 +330,11 @@ def send_interview_email(
             if isinstance(tarih, str):
                 tarih = datetime.fromisoformat(tarih)
 
+            # Onay linki olustur
+            confirm_url = None
+            if interview.get("confirm_token"):
+                confirm_url = f"http://***REMOVED***:8000/api/interviews/confirm/{interview['confirm_token']}"
+
             # Email gonder
             success, msg = send_interview_invite(
                 candidate_name=interview["ad_soyad"],
@@ -319,7 +346,8 @@ def send_interview_email(
                 position_title=interview.get("position_title") or "Genel Basvuru",
                 interviewer=interview.get("mulakatci"),
                 notes=interview.get("notlar"),
-                account=email_account
+                account=email_account,
+                confirm_url=confirm_url
             )
 
             if not success:
@@ -334,3 +362,93 @@ def send_interview_email(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/confirm/{token}")
+def confirm_interview(token: str):
+    """Mulakat onay linki - public endpoint (auth gerektirmez)"""
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Token'i bul
+            cursor.execute(
+                """SELECT id, company_id, candidate_id, confirmation_status, confirm_token_expires
+                   FROM interviews WHERE confirm_token = ?""",
+                (token,)
+            )
+            interview = cursor.fetchone()
+
+            if not interview:
+                return HTMLResponse("""
+                <html>
+                <head><meta charset="UTF-8"><title>Hata</title></head>
+                <body style="font-family:Arial;text-align:center;padding:50px">
+                <h1 style="color:#dc2626">Gecersiz Onay Linki</h1>
+                <p>Bu link gecersiz veya bulunamadi.</p>
+                </body>
+                </html>
+                """, status_code=404)
+
+            interview = dict(interview)
+
+            # Zaten onaylanmis mi?
+            if interview.get('confirmation_status') == 'confirmed':
+                return HTMLResponse("""
+                <html>
+                <head><meta charset="UTF-8"><title>Zaten Onaylandi</title></head>
+                <body style="font-family:Arial;text-align:center;padding:50px">
+                <h1 style="color:#16a34a">✅ Bu Mulakat Zaten Onaylandi</h1>
+                <p>Mulakatiniz daha once onaylanmistir.</p>
+                <p>Gorusmek uzere!</p>
+                </body>
+                </html>
+                """)
+
+            # Sure dolmus mu?
+            if interview.get('confirm_token_expires'):
+                expires = datetime.fromisoformat(interview['confirm_token_expires'])
+                if datetime.now() > expires:
+                    return HTMLResponse("""
+                    <html>
+                    <head><meta charset="UTF-8"><title>Sure Doldu</title></head>
+                    <body style="font-family:Arial;text-align:center;padding:50px">
+                    <h1 style="color:#dc2626">Onay Linki Suresi Dolmus</h1>
+                    <p>Bu onay linkinin suresi dolmustur.</p>
+                    <p>Lutfen firma ile iletisime gecin.</p>
+                    </body>
+                    </html>
+                    """, status_code=410)
+
+            # Onayla
+            cursor.execute(
+                """UPDATE interviews
+                   SET confirmation_status = 'confirmed', confirmed_at = datetime('now')
+                   WHERE confirm_token = ?""",
+                (token,)
+            )
+            conn.commit()
+
+            return HTMLResponse("""
+            <html>
+            <head><meta charset="UTF-8"><title>Onaylandi</title></head>
+            <body style="font-family:Arial;text-align:center;padding:50px;background:#f0fdf4">
+            <h1 style="color:#16a34a">✅ Mulakatiniz Onaylandi!</h1>
+            <p style="font-size:18px">Mulakat davetinizi onayladiginiz icin tesekkur ederiz.</p>
+            <p style="margin-top:30px">Gorusmek uzere!</p>
+            </body>
+            </html>
+            """)
+
+    except Exception as e:
+        logger.error(f"Mulakat onay hatasi: {e}")
+        traceback.print_exc()
+        return HTMLResponse("""
+        <html>
+        <head><meta charset="UTF-8"><title>Hata</title></head>
+        <body style="font-family:Arial;text-align:center;padding:50px">
+        <h1 style="color:#dc2626">Bir Hata Olustu</h1>
+        <p>Lutfen daha sonra tekrar deneyin.</p>
+        </body>
+        </html>
+        """, status_code=500)
