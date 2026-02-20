@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from routes.auth import get_current_user
 from database import (
     create_interview, update_interview, get_interviews,
-    delete_interview, get_all_positions
+    delete_interview, get_connection
 )
 from models import Interview
 from datetime import datetime
@@ -20,26 +20,32 @@ def require_company_user(current_user: dict):
 
 @router.get("/dropdown-data")
 def dropdown_data(current_user: dict = Depends(get_current_user)):
-    """Mulakat formu icin aday ve pozisyon listeleri"""
+    """Mülakat formu için aday ve pozisyon listeleri"""
     require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
 
-        # Pozisyonlari getir
-        positions = get_all_positions(company_id, only_active=True)
-        position_list = [{"id": p.id, "baslik": p.baslik} for p in positions]
-
-        # Adaylari getir (basit liste)
-        from database import get_connection
         with get_connection() as conn:
             cursor = conn.cursor()
+
+            # Pozisyonları department_pools tablosundan getir (pool_type='position')
+            cursor.execute(
+                """SELECT id, name as baslik
+                   FROM department_pools
+                   WHERE company_id = ? AND pool_type = 'position' AND is_active = 1
+                   ORDER BY name""",
+                (company_id,)
+            )
+            positions = [dict(row) for row in cursor.fetchall()]
+
+            # Adayları getir (basit liste)
             cursor.execute(
                 "SELECT id, ad_soyad, email FROM candidates WHERE company_id = ? ORDER BY ad_soyad",
                 (company_id,)
             )
             candidates = [dict(row) for row in cursor.fetchall()]
 
-        return {"success": True, "data": {"positions": position_list, "candidates": candidates}}
+        return {"success": True, "data": {"positions": positions, "candidates": candidates}}
     except HTTPException:
         raise
     except Exception as e:

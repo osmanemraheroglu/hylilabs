@@ -54,23 +54,23 @@ const DURUM_BADGE: Record<string, string> = {
 }
 
 const DURUM_LABEL: Record<string, string> = {
-  planlanmis: 'Planlanmis',
-  tamamlandi: 'Tamamlandi',
-  iptal: 'Iptal',
+  planlanmis: 'Planlanmış',
+  tamamlandi: 'Tamamlandı',
+  iptal: 'İptal',
   ertelendi: 'Ertelendi',
 }
 
 const TUR_LABEL: Record<string, string> = {
   teknik: 'Teknik',
-  hr: 'IK',
-  yonetici: 'Yonetici',
+  hr: 'İK',
+  yonetici: 'Yönetici',
   genel: 'Genel',
 }
 
 const DAYS = ['Pzt', 'Sal', 'Car', 'Per', 'Cum', 'Cmt', 'Paz']
 const MONTHS = [
-  'Ocak', 'Subat', 'Mart', 'Nisan', 'Mayis', 'Haziran',
-  'Temmuz', 'Agustos', 'Eylul', 'Ekim', 'Kasim', 'Aralik'
+  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
 ]
 
 function formatDate(dateStr: string): string {
@@ -311,16 +311,16 @@ export default function MulakatTakvimi() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <CalendarClock className="h-6 w-6" /> Mulakat Takvimi
+            <CalendarClock className="h-6 w-6" /> Mülakat Takvimi
           </h2>
-          <p className="text-muted-foreground text-sm">Mulakatlari planlayin ve takip edin</p>
+          <p className="text-muted-foreground text-sm">Mülakatları planlayın ve takip edin</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={loadInterviews} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} /> Yenile
           </Button>
           <Button size="sm" onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-1" /> Yeni Mulakat
+            <Plus className="h-4 w-4 mr-1" /> Yeni Mülakat
           </Button>
         </div>
       </div>
@@ -328,9 +328,9 @@ export default function MulakatTakvimi() {
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3">
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold">{stats.total}</div><div className="text-xs text-muted-foreground">Toplam</div></CardContent></Card>
-        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-blue-600">{stats.planlanmis}</div><div className="text-xs text-muted-foreground">Planlanmis</div></CardContent></Card>
-        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-green-600">{stats.tamamlandi}</div><div className="text-xs text-muted-foreground">Tamamlandi</div></CardContent></Card>
-        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-red-600">{stats.iptal}</div><div className="text-xs text-muted-foreground">Iptal</div></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-blue-600">{stats.planlanmis}</div><div className="text-xs text-muted-foreground">Planlanmış</div></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-green-600">{stats.tamamlandi}</div><div className="text-xs text-muted-foreground">Tamamlandı</div></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-red-600">{stats.iptal}</div><div className="text-xs text-muted-foreground">İptal</div></CardContent></Card>
       </div>
 
       {/* Filter + Tabs */}
@@ -344,10 +344,10 @@ export default function MulakatTakvimi() {
         <Select value={filterDurum} onValueChange={setFilterDurum}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tum Durumlar</SelectItem>
-            <SelectItem value="planlanmis">Planlanmis</SelectItem>
-            <SelectItem value="tamamlandi">Tamamlandi</SelectItem>
-            <SelectItem value="iptal">Iptal</SelectItem>
+            <SelectItem value="all">Tüm Durumlar</SelectItem>
+            <SelectItem value="planlanmis">Planlanmış</SelectItem>
+            <SelectItem value="tamamlandi">Tamamlandı</SelectItem>
+            <SelectItem value="iptal">İptal</SelectItem>
             <SelectItem value="ertelendi">Ertelendi</SelectItem>
           </SelectContent>
         </Select>
@@ -379,17 +379,17 @@ export default function MulakatTakvimi() {
                   <TableHead>Aday</TableHead>
                   <TableHead>Pozisyon</TableHead>
                   <TableHead>Tarih / Saat</TableHead>
-                  <TableHead>Tur</TableHead>
+                  <TableHead>Tür</TableHead>
                   <TableHead>Lokasyon</TableHead>
-                  <TableHead>Mulakatci</TableHead>
+                  <TableHead>Mülakatçı</TableHead>
                   <TableHead>Durum</TableHead>
                   <TableHead>Puan</TableHead>
-                  <TableHead className="text-right">Islemler</TableHead>
+                  <TableHead className="text-right">İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {interviews.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Mulakat bulunamadi</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Mülakat bulunamadı</TableCell></TableRow>
                 ) : interviews.map(iv => (
                   <TableRow key={iv.id}>
                     <TableCell>
@@ -413,7 +413,7 @@ export default function MulakatTakvimi() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         {iv.durum === 'planlanmis' && (
-                          <Button variant="ghost" size="sm" onClick={() => openEval(iv)} title="Degerlendir"><Star className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => openEval(iv)} title="Değerlendir"><Star className="h-3.5 w-3.5" /></Button>
                         )}
                         <Button variant="ghost" size="sm" onClick={() => openEdit(iv)}><Edit className="h-3.5 w-3.5" /></Button>
                         <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(iv.id)} className="text-red-500 hover:text-red-700"><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -431,13 +431,13 @@ export default function MulakatTakvimi() {
       <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) { setDialogOpen(false); resetForm() } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Mulakat Duzenle' : 'Yeni Mulakat'}</DialogTitle>
+            <DialogTitle>{editingId ? 'Mülakat Düzenle' : 'Yeni Mülakat'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label className="text-sm">Aday *</Label>
               <Select value={form.candidate_id} onValueChange={v => setForm({...form, candidate_id: v})}>
-                <SelectTrigger><SelectValue placeholder="Aday secin" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Aday seçin" /></SelectTrigger>
                 <SelectContent>
                   {dropdown.candidates.map(c => (
                     <SelectItem key={c.id} value={String(c.id)}>{c.ad_soyad} ({c.email})</SelectItem>
@@ -448,7 +448,7 @@ export default function MulakatTakvimi() {
             <div>
               <Label className="text-sm">Pozisyon</Label>
               <Select value={form.position_id} onValueChange={v => setForm({...form, position_id: v})}>
-                <SelectTrigger><SelectValue placeholder="Pozisyon secin (opsiyonel)" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pozisyon seçin (opsiyonel)" /></SelectTrigger>
                 <SelectContent>
                   {dropdown.positions.map(p => (
                     <SelectItem key={p.id} value={String(p.id)}>{p.baslik}</SelectItem>
@@ -481,13 +481,13 @@ export default function MulakatTakvimi() {
                 </Select>
               </div>
               <div>
-                <Label className="text-sm">Tur</Label>
+                <Label className="text-sm">Tür</Label>
                 <Select value={form.tur} onValueChange={v => setForm({...form, tur: v})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="teknik">Teknik</SelectItem>
-                    <SelectItem value="hr">IK</SelectItem>
-                    <SelectItem value="yonetici">Yonetici</SelectItem>
+                    <SelectItem value="hr">İK</SelectItem>
+                    <SelectItem value="yonetici">Yönetici</SelectItem>
                     <SelectItem value="genel">Genel</SelectItem>
                   </SelectContent>
                 </Select>
@@ -505,8 +505,8 @@ export default function MulakatTakvimi() {
               </div>
             </div>
             <div>
-              <Label className="text-sm">Mulakatci</Label>
-              <Input value={form.mulakatci} onChange={e => setForm({...form, mulakatci: e.target.value})} placeholder="Mulakatci adi" />
+              <Label className="text-sm">Mülakatçı</Label>
+              <Input value={form.mulakatci} onChange={e => setForm({...form, mulakatci: e.target.value})} placeholder="Mülakatçı adı" />
             </div>
             <div>
               <Label className="text-sm">Notlar</Label>
@@ -514,7 +514,7 @@ export default function MulakatTakvimi() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>Iptal</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>İptal</Button>
             <Button onClick={handleSave} disabled={!form.candidate_id || !form.tarih || !form.saat}>Kaydet</Button>
           </DialogFooter>
         </DialogContent>
@@ -524,11 +524,11 @@ export default function MulakatTakvimi() {
       <Dialog open={evalDialogOpen} onOpenChange={o => { if (!o) setEvalDialogOpen(false) }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Mulakat Degerlendirmesi</DialogTitle>
+            <DialogTitle>Mülakat Değerlendirmesi</DialogTitle>
           </DialogHeader>
           {evalTarget && (
             <div className="space-y-3">
-              <div className="text-sm"><span className="font-medium">{evalTarget.ad_soyad}</span> - {evalTarget.pozisyon_baslik || 'Pozisyon belirtilmemis'}</div>
+              <div className="text-sm"><span className="font-medium">{evalTarget.ad_soyad}</span> - {evalTarget.pozisyon_baslik || 'Pozisyon belirtilmemiş'}</div>
               <div>
                 <Label className="text-sm">Puan (1-5)</Label>
                 <div className="flex gap-1 mt-1">
@@ -540,13 +540,13 @@ export default function MulakatTakvimi() {
                 </div>
               </div>
               <div>
-                <Label className="text-sm">Degerlendirme</Label>
-                <Textarea value={evalForm.degerlendirme} onChange={e => setEvalForm({...evalForm, degerlendirme: e.target.value})} placeholder="Mulakat degerlendirmesi..." rows={4} />
+                <Label className="text-sm">Değerlendirme</Label>
+                <Textarea value={evalForm.degerlendirme} onChange={e => setEvalForm({...evalForm, degerlendirme: e.target.value})} placeholder="Mülakat değerlendirmesi..." rows={4} />
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEvalDialogOpen(false)}>Iptal</Button>
+            <Button variant="outline" onClick={() => setEvalDialogOpen(false)}>İptal</Button>
             <Button onClick={handleEvalSave}>Tamamla</Button>
           </DialogFooter>
         </DialogContent>
@@ -556,11 +556,11 @@ export default function MulakatTakvimi() {
       <Dialog open={deleteConfirm !== null} onOpenChange={o => { if (!o) setDeleteConfirm(null) }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Mulakati Sil</DialogTitle>
+            <DialogTitle>Mülakatı Sil</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Bu mulakati silmek istediginizden emin misiniz? Bu islem geri alinamaz.</p>
+          <p className="text-sm text-muted-foreground">Bu mülakatı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Iptal</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>İptal</Button>
             <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>Sil</Button>
           </DialogFooter>
         </DialogContent>
