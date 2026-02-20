@@ -44,6 +44,7 @@ Son guncelleme: 20.02.2026
 - email_sender.py: generate_interview_invite_content helper fonksiyonu eklendi
 - Frontend: Email onizleme dialog'u (duzenlenebilir alici email, konu/icerik onizleme)
 - Email preview dialog DOM crash fix (setTimeout 150ms delay between dialogs)
+- Email preview dialog state fix (reorder state updates, loadInterviews en sona alindi)
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -80,6 +81,7 @@ Son guncelleme: 20.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+2cbf52b - fix: email preview dialog state fix - reorder state updates and API calls
 90de6f9 - fix: email preview dialog DOM crash - add setTimeout delay between dialogs
 4e3a926 - feat: email onizleme akisi eklendi (Kaydet -> Onizle -> Gonder)
 a35032c - feat: mulakat olusturulunca adaya email gonder
