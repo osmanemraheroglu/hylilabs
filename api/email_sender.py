@@ -222,23 +222,21 @@ def get_interview_type_label(tur: str) -> str:
     return labels.get(tur, tur.title())
 
 
-def send_interview_invite(
+def generate_interview_invite_content(
     candidate_name: str,
-    candidate_email: str,
     interview_date: datetime,
     duration: int,
     interview_type: str,
     location: str,
     position_title: str,
     interviewer: Optional[str] = None,
-    notes: Optional[str] = None,
-    cc_interviewer: Optional[str] = None
-) -> tuple[bool, str]:
+    notes: Optional[str] = None
+) -> dict:
     """
-    Mulakat davet emaili gonder
+    Mulakat davet emaili icerigi olustur (gondermeden)
 
     Returns:
-        (basarili, mesaj) tuple
+        {"konu": str, "icerik": str}
     """
     # Interviewer bilgisi
     interviewer_info = ""
@@ -269,7 +267,39 @@ def send_interview_invite(
 
     subject = f"Mulakat Daveti - {COMPANY_INFO['name']} - {position_title or 'Genel Basvuru'}"
 
-    return send_email(candidate_email, subject, body, cc=cc_interviewer)
+    return {"konu": subject, "icerik": body}
+
+
+def send_interview_invite(
+    candidate_name: str,
+    candidate_email: str,
+    interview_date: datetime,
+    duration: int,
+    interview_type: str,
+    location: str,
+    position_title: str,
+    interviewer: Optional[str] = None,
+    notes: Optional[str] = None,
+    cc_interviewer: Optional[str] = None
+) -> tuple[bool, str]:
+    """
+    Mulakat davet emaili gonder
+
+    Returns:
+        (basarili, mesaj) tuple
+    """
+    content = generate_interview_invite_content(
+        candidate_name=candidate_name,
+        interview_date=interview_date,
+        duration=duration,
+        interview_type=interview_type,
+        location=location,
+        position_title=position_title,
+        interviewer=interviewer,
+        notes=notes
+    )
+
+    return send_email(candidate_email, content["konu"], content["icerik"], cc=cc_interviewer)
 
 
 def send_interview_reminder(

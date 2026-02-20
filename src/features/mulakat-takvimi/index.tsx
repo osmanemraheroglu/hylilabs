@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   CalendarClock, Plus, Edit, Trash2, RefreshCw, ChevronLeft, ChevronRight,
-  Clock, MapPin, Star, List, CalendarDays, Info
+  Clock, MapPin, Star, List, CalendarDays, Info, Mail, Send, Loader2
 } from 'lucide-react'
 
 const API_URL = 'http://***REMOVED***:8000'
@@ -125,6 +125,13 @@ export default function MulakatTakvimi() {
   // Email gönder checkbox (yeni mülakat için)
   const [sendEmail, setSendEmail] = useState(true)
 
+  // Email preview state
+  const [emailPreviewOpen, setEmailPreviewOpen] = useState(false)
+  const [emailPreview, setEmailPreview] = useState<{konu: string; icerik: string; to_email: string; aday_adi: string} | null>(null)
+  const [emailToSend, setEmailToSend] = useState('')
+  const [emailSending, setEmailSending] = useState(false)
+  const [newInterviewId, setNewInterviewId] = useState<number | null>(null)
+
   const loadInterviews = useCallback(() => {
     setLoading(true)
     const params = new URLSearchParams()
@@ -179,7 +186,7 @@ export default function MulakatTakvimi() {
     setDialogOpen(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.candidate_id || !form.tarih || !form.saat) return
 
     const tarihStr = `${form.tarih}T${form.saat}:00`
@@ -194,22 +201,68 @@ export default function MulakatTakvimi() {
       notlar: form.notlar || null,
     }
 
-    // Yeni mülakat için email gönderme seçeneği
-    if (!editingId) {
-      payload.send_email = sendEmail
-    }
-
     const url = editingId
       ? `${API_URL}/api/interviews/${editingId}`
       : `${API_URL}/api/interviews`
     const method = editingId ? 'PUT' : 'POST'
 
-    fetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) })
-      .then(r => r.json())
-      .then(res => {
-        if (res.success) { setDialogOpen(false); resetForm(); loadInterviews() }
+    try {
+      const res = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) })
+      const data = await res.json()
+
+      if (data.success) {
+        setDialogOpen(false)
+        resetForm()
+        loadInterviews()
+
+        // Yeni mülakat ve email gönderme seçili ise preview göster
+        if (!editingId && sendEmail && data.id) {
+          setNewInterviewId(data.id)
+          try {
+            const previewRes = await fetch(`${API_URL}/api/interviews/${data.id}/email-preview`, { headers: getHeaders() })
+            const previewData = await previewRes.json()
+            if (previewData.success) {
+              setEmailPreview(previewData.data)
+              setEmailToSend(previewData.data.to_email)
+              setEmailPreviewOpen(true)
+            }
+          } catch (err) {
+            console.error('Email preview hatasi:', err)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Save hatasi:', err)
+    }
+  }
+
+  const handleSendEmail = async () => {
+    if (!newInterviewId || !emailToSend) return
+
+    setEmailSending(true)
+    try {
+      const res = await fetch(`${API_URL}/api/interviews/${newInterviewId}/send-email`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ to_email: emailToSend })
       })
-      .catch(err => console.error('Save hatasi:', err))
+      const data = await res.json()
+
+      if (data.success) {
+        setEmailPreviewOpen(false)
+        setEmailPreview(null)
+        setNewInterviewId(null)
+        setEmailToSend('')
+      } else {
+        console.error('Email gonderme hatasi:', data.detail)
+        alert(`Email gönderilemedi: ${data.detail}`)
+      }
+    } catch (err) {
+      console.error('Email gonderme hatasi:', err)
+      alert('Email gönderilemedi')
+    } finally {
+      setEmailSending(false)
+    }
   }
 
   const handleDelete = (id: number) => {
@@ -609,6 +662,69 @@ export default function MulakatTakvimi() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>İptal</Button>
             <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>Sil</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Preview Dialog */}
+      <Dialog open={emailPreviewOpen} onOpenChange={o => {
+        if (!o) {
+          setEmailPreviewOpen(false)
+          setEmailPreview(null)
+          setNewInterviewId(null)
+          setEmailToSend('')
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" /> Email Önizleme
+            </DialogTitle>
+          </DialogHeader>
+          {emailPreview && (
+            <div className="space-y-4 flex-1 overflow-auto">
+              <div>
+                <Label className="text-sm font-medium">Alıcı Email</Label>
+                <Input
+                  value={emailToSend}
+                  onChange={e => setEmailToSend(e.target.value)}
+                  placeholder="aday@email.com"
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Aday: {emailPreview.aday_adi}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Konu</Label>
+                <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
+                  {emailPreview.konu}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">İçerik</Label>
+                <div className="mt-1 p-3 bg-gray-50 rounded border text-sm whitespace-pre-wrap font-mono text-xs max-h-64 overflow-auto">
+                  {emailPreview.icerik}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => {
+              setEmailPreviewOpen(false)
+              setEmailPreview(null)
+              setNewInterviewId(null)
+              setEmailToSend('')
+            }}>
+              Gönderme
+            </Button>
+            <Button onClick={handleSendEmail} disabled={emailSending || !emailToSend}>
+              {emailSending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Gönderiliyor...</>
+              ) : (
+                <><Send className="h-4 w-4 mr-2" /> Gönder</>
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

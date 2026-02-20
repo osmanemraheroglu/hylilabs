@@ -39,6 +39,10 @@ Son guncelleme: 20.02.2026
 - Mulakat Form SelectItem value="" crash duzeltildi (value="none")
 - Mulakat Form tarih input placeholder="GG.AA.YYYY" eklendi
 - Mulakat olusturulunca adaya email gonderme ozelligi eklendi
+- Mulakat email onizleme akisi eklendi (Kaydet -> Onizle -> Gonder)
+- Backend: email-preview ve send-email endpointleri (/api/interviews/{id}/email-preview, /api/interviews/{id}/send-email)
+- email_sender.py: generate_interview_invite_content helper fonksiyonu eklendi
+- Frontend: Email onizleme dialog'u (duzenlenebilir alici email, konu/icerik onizleme)
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)

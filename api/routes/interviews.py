@@ -10,7 +10,7 @@ from typing import Optional
 import traceback
 import logging
 
-from email_sender import send_interview_invite
+from email_sender import send_interview_invite, generate_interview_invite_content
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,6 @@ def create_new_interview(
     require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
-        send_email = body.get("send_email", True)
 
         interview_date = datetime.fromisoformat(body["tarih"])
         interview = Interview(
@@ -134,54 +133,10 @@ def create_new_interview(
 
         new_id = create_interview(interview, company_id=company_id)
 
-        # Email gönder
-        email_sent = False
-        if send_email:
-            try:
-                with get_connection() as conn:
-                    cursor = conn.cursor()
-                    # Aday bilgisini al
-                    cursor.execute(
-                        "SELECT ad_soyad, email FROM candidates WHERE id = ? AND company_id = ?",
-                        (body["candidate_id"], company_id)
-                    )
-                    candidate = cursor.fetchone()
-
-                    # Pozisyon bilgisini al
-                    position_title = None
-                    if body.get("position_id"):
-                        cursor.execute(
-                            "SELECT name FROM department_pools WHERE id = ? AND company_id = ?",
-                            (body["position_id"], company_id)
-                        )
-                        pos_row = cursor.fetchone()
-                        if pos_row:
-                            position_title = pos_row["name"]
-
-                if candidate and candidate["email"]:
-                    success, msg = send_interview_invite(
-                        candidate_name=candidate["ad_soyad"],
-                        candidate_email=candidate["email"],
-                        interview_date=interview_date,
-                        duration=body.get("sure_dakika", 60),
-                        interview_type=body.get("tur", "teknik"),
-                        location=body.get("lokasyon", "online"),
-                        position_title=position_title or "Genel Başvuru",
-                        interviewer=body.get("mulakatci"),
-                        notes=body.get("notlar")
-                    )
-                    email_sent = success
-                    if not success:
-                        logger.warning(f"Email gonderilemedi: {msg}")
-            except Exception as e:
-                logger.error(f"Email gonderme hatasi: {e}")
-                email_sent = False
-
         return {
             "success": True,
             "id": new_id,
-            "message": "Mulakat olusturuldu",
-            "email_sent": email_sent
+            "message": "Mulakat olusturuldu"
         }
     except HTTPException:
         raise
@@ -237,6 +192,134 @@ def delete_existing_interview(
         raise
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{interview_id}/email-preview")
+def get_email_preview(
+    interview_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """Mulakat davet emaili onizleme"""
+    require_company_user(current_user)
+    try:
+        company_id = current_user["company_id"]
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Mulakat bilgilerini al
+            cursor.execute(
+                """SELECT i.*, c.ad_soyad, c.email as candidate_email, dp.name as position_title
+                   FROM interviews i
+                   JOIN candidates c ON c.id = i.candidate_id
+                   LEFT JOIN department_pools dp ON dp.id = i.position_id
+                   WHERE i.id = ? AND i.company_id = ?""",
+                (interview_id, company_id)
+            )
+            interview = cursor.fetchone()
+
+            if not interview:
+                raise HTTPException(status_code=404, detail="Mulakat bulunamadi")
+
+            interview = dict(interview)
+
+            # tarih string ise datetime'a cevir
+            tarih = interview["tarih"]
+            if isinstance(tarih, str):
+                tarih = datetime.fromisoformat(tarih)
+
+            # Email icerigini olustur
+            content = generate_interview_invite_content(
+                candidate_name=interview["ad_soyad"],
+                interview_date=tarih,
+                duration=interview.get("sure_dakika", 60),
+                interview_type=interview.get("tur", "teknik"),
+                location=interview.get("lokasyon", "online"),
+                position_title=interview.get("position_title") or "Genel Basvuru",
+                interviewer=interview.get("mulakatci"),
+                notes=interview.get("notlar")
+            )
+
+            return {
+                "success": True,
+                "data": {
+                    "konu": content["konu"],
+                    "icerik": content["icerik"],
+                    "to_email": interview["candidate_email"],
+                    "aday_adi": interview["ad_soyad"]
+                }
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{interview_id}/send-email")
+def send_interview_email(
+    interview_id: int,
+    body: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Mulakat davet emaili gonder"""
+    require_company_user(current_user)
+    try:
+        company_id = current_user["company_id"]
+        to_email = body.get("to_email")
+
+        if not to_email:
+            raise HTTPException(status_code=400, detail="Email adresi gerekli")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Mulakat bilgilerini al
+            cursor.execute(
+                """SELECT i.*, c.ad_soyad, dp.name as position_title
+                   FROM interviews i
+                   JOIN candidates c ON c.id = i.candidate_id
+                   LEFT JOIN department_pools dp ON dp.id = i.position_id
+                   WHERE i.id = ? AND i.company_id = ?""",
+                (interview_id, company_id)
+            )
+            interview = cursor.fetchone()
+
+            if not interview:
+                raise HTTPException(status_code=404, detail="Mulakat bulunamadi")
+
+            interview = dict(interview)
+
+            # tarih string ise datetime'a cevir
+            tarih = interview["tarih"]
+            if isinstance(tarih, str):
+                tarih = datetime.fromisoformat(tarih)
+
+            # Email gonder
+            success, msg = send_interview_invite(
+                candidate_name=interview["ad_soyad"],
+                candidate_email=to_email,
+                interview_date=tarih,
+                duration=interview.get("sure_dakika", 60),
+                interview_type=interview.get("tur", "teknik"),
+                location=interview.get("lokasyon", "online"),
+                position_title=interview.get("position_title") or "Genel Basvuru",
+                interviewer=interview.get("mulakatci"),
+                notes=interview.get("notlar")
+            )
+
+            if not success:
+                raise HTTPException(status_code=500, detail=f"Email gonderilemedi: {msg}")
+
+            return {
+                "success": True,
+                "message": "Email basariyla gonderildi"
+            }
+    except HTTPException:
+        raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
