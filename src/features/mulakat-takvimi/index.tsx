@@ -211,24 +211,30 @@ export default function MulakatTakvimi() {
       const data = await res.json()
 
       if (data.success) {
+        const shouldShowEmailPreview = !editingId && sendEmail && data.id
+        const interviewId = data.id
+
         setDialogOpen(false)
         resetForm()
         loadInterviews()
 
         // Yeni mülakat ve email gönderme seçili ise preview göster
-        if (!editingId && sendEmail && data.id) {
-          setNewInterviewId(data.id)
-          try {
-            const previewRes = await fetch(`${API_URL}/api/interviews/${data.id}/email-preview`, { headers: getHeaders() })
-            const previewData = await previewRes.json()
-            if (previewData.success) {
-              setEmailPreview(previewData.data)
-              setEmailToSend(previewData.data.to_email)
-              setEmailPreviewOpen(true)
+        // setTimeout ile DOM'un ilk dialog'u tamamen kaldırmasını bekle
+        if (shouldShowEmailPreview) {
+          setTimeout(async () => {
+            setNewInterviewId(interviewId)
+            try {
+              const previewRes = await fetch(`${API_URL}/api/interviews/${interviewId}/email-preview`, { headers: getHeaders() })
+              const previewData = await previewRes.json()
+              if (previewData.success) {
+                setEmailPreview(previewData.data)
+                setEmailToSend(previewData.data.to_email)
+                setEmailPreviewOpen(true)
+              }
+            } catch (err) {
+              console.error('Email preview hatasi:', err)
             }
-          } catch (err) {
-            console.error('Email preview hatasi:', err)
-          }
+          }, 150)
         }
       }
     } catch (err) {
