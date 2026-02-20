@@ -201,6 +201,9 @@ export default function MulakatTakvimi() {
       notlar: form.notlar || null,
     }
 
+    // Kaydetmeden önce email preview gösterilecek mi kontrol et
+    const shouldShowEmailPreview = !editingId && sendEmail
+
     const url = editingId
       ? `${API_URL}/api/interviews/${editingId}`
       : `${API_URL}/api/interviews`
@@ -211,31 +214,37 @@ export default function MulakatTakvimi() {
       const data = await res.json()
 
       if (data.success) {
-        const shouldShowEmailPreview = !editingId && sendEmail && data.id
         const interviewId = data.id
 
+        // Önce form dialog'u kapat
         setDialogOpen(false)
         resetForm()
-        loadInterviews()
 
-        // Yeni mülakat ve email gönderme seçili ise preview göster
-        // setTimeout ile DOM'un ilk dialog'u tamamen kaldırmasını bekle
-        if (shouldShowEmailPreview) {
-          setTimeout(async () => {
-            setNewInterviewId(interviewId)
-            try {
-              const previewRes = await fetch(`${API_URL}/api/interviews/${interviewId}/email-preview`, { headers: getHeaders() })
-              const previewData = await previewRes.json()
-              if (previewData.success) {
-                setEmailPreview(previewData.data)
-                setEmailToSend(previewData.data.to_email)
+        // Email preview gösterilecekse
+        if (shouldShowEmailPreview && interviewId) {
+          // Önce email preview verisini çek
+          try {
+            const previewRes = await fetch(`${API_URL}/api/interviews/${interviewId}/email-preview`, { headers: getHeaders() })
+            const previewData = await previewRes.json()
+
+            if (previewData.success && previewData.data) {
+              // State'leri set et
+              setNewInterviewId(interviewId)
+              setEmailPreview(previewData.data)
+              setEmailToSend(previewData.data.to_email)
+
+              // Dialog'un açılması için kısa bir bekleme
+              setTimeout(() => {
                 setEmailPreviewOpen(true)
-              }
-            } catch (err) {
-              console.error('Email preview hatasi:', err)
+              }, 200)
             }
-          }, 150)
+          } catch (err) {
+            console.error('Email preview hatasi:', err)
+          }
         }
+
+        // En son interview listesini yenile
+        loadInterviews()
       }
     } catch (err) {
       console.error('Save hatasi:', err)
