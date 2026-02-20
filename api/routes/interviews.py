@@ -69,7 +69,7 @@ def dropdown_data(current_user: dict = Depends(get_current_user)):
                     """SELECT c.id, c.ad_soyad, c.email
                        FROM candidates c
                        JOIN candidate_pool_assignments cpa ON cpa.candidate_id = c.id
-                       WHERE cpa.pool_id = ? AND c.company_id = ?
+                       WHERE cpa.department_pool_id = ? AND c.company_id = ?
                        ORDER BY c.ad_soyad""",
                     (pool["id"], company_id)
                 )
