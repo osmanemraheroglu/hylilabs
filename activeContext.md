@@ -54,6 +54,10 @@ Son guncelleme: 21.02.2026
 - Mulakat formu onay suresi Select alani eklendi (frontend)
 - Backend: onay_suresi parametresi aliniyor, token suresi dinamik
 - Email taslagi dinamik onay_suresi kullanimi (hardcoded 7 gun -> parametrik)
+- Email icerik Turkce karakter duzeltmeleri (25+ kelime)
+- Email tarih formati Turkce (22 Subat 2026)
+- NOTLAR bolumu kosullu (not yoksa gizle)
+- Sirket adi dinamik (companies tablosundan)
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)

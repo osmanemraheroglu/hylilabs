@@ -219,7 +219,7 @@ def get_email_preview(
     interview_id: int,
     current_user: dict = Depends(get_current_user)
 ):
-    """Mulakat davet emaili onizleme"""
+    """Mülakat davet emaili önizleme"""
     require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
@@ -227,30 +227,31 @@ def get_email_preview(
         with get_connection() as conn:
             cursor = conn.cursor()
 
-            # Mulakat bilgilerini al
+            # Mülakat bilgilerini al
             cursor.execute(
-                """SELECT i.*, c.ad_soyad, c.email as candidate_email, dp.name as position_title
+                """SELECT i.*, c.ad_soyad, c.email as candidate_email, dp.name as position_title, co.name as sirket_adi
                    FROM interviews i
                    JOIN candidates c ON c.id = i.candidate_id
                    LEFT JOIN department_pools dp ON dp.id = i.position_id
+                   LEFT JOIN companies co ON co.id = i.company_id
                    WHERE i.id = ? AND i.company_id = ?""",
                 (interview_id, company_id)
             )
             interview = cursor.fetchone()
 
             if not interview:
-                raise HTTPException(status_code=404, detail="Mulakat bulunamadi")
+                raise HTTPException(status_code=404, detail="Mülakat bulunamadı")
 
             interview = dict(interview)
 
-            # tarih string ise datetime'a cevir
+            # tarih string ise datetime'a çevir
             tarih = interview["tarih"]
             if isinstance(tarih, str):
                 tarih = datetime.fromisoformat(tarih)
 
-            # Onay linki olustur
+            # Onay linki oluştur
             confirm_url = None
-            onay_suresi = 3  # varsayilan
+            onay_suresi = 3  # varsayılan
             if interview.get("confirm_token"):
                 confirm_url = f"http://***REMOVED***:8000/api/interviews/confirm/{interview['confirm_token']}"
                 # onay_suresi hesapla (confirm_token_expires - olusturma_tarihi)
@@ -262,18 +263,19 @@ def get_email_preview(
                     except:
                         pass
 
-            # Email icerigini olustur
+            # Email içeriğini oluştur
             content = generate_interview_invite_content(
                 candidate_name=interview["ad_soyad"],
                 interview_date=tarih,
                 duration=interview.get("sure_dakika", 60),
                 interview_type=interview.get("tur", "teknik"),
                 location=interview.get("lokasyon", "online"),
-                position_title=interview.get("position_title") or "Genel Basvuru",
+                position_title=interview.get("position_title") or "Genel Başvuru",
                 interviewer=interview.get("mulakatci"),
                 notes=interview.get("notlar"),
                 confirm_url=confirm_url,
-                onay_suresi=onay_suresi
+                onay_suresi=onay_suresi,
+                sirket_adi=interview.get("sirket_adi")
             )
 
             return {
@@ -298,7 +300,7 @@ def send_interview_email(
     body: dict,
     current_user: dict = Depends(get_current_user)
 ):
-    """Mulakat davet emaili gonder"""
+    """Mülakat davet emaili gönder"""
     require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
@@ -310,23 +312,24 @@ def send_interview_email(
         with get_connection() as conn:
             cursor = conn.cursor()
 
-            # Mulakat bilgilerini al
+            # Mülakat bilgilerini al
             cursor.execute(
-                """SELECT i.*, c.ad_soyad, dp.name as position_title
+                """SELECT i.*, c.ad_soyad, dp.name as position_title, co.name as sirket_adi
                    FROM interviews i
                    JOIN candidates c ON c.id = i.candidate_id
                    LEFT JOIN department_pools dp ON dp.id = i.position_id
+                   LEFT JOIN companies co ON co.id = i.company_id
                    WHERE i.id = ? AND i.company_id = ?""",
                 (interview_id, company_id)
             )
             interview = cursor.fetchone()
 
             if not interview:
-                raise HTTPException(status_code=404, detail="Mulakat bulunamadi")
+                raise HTTPException(status_code=404, detail="Mülakat bulunamadı")
 
             interview = dict(interview)
 
-            # Email hesabini al (varsayilan gonderim hesabi)
+            # Email hesabını al (varsayılan gönderim hesabı)
             cursor.execute(
                 """SELECT * FROM email_accounts
                    WHERE company_id = ? AND aktif = 1 AND varsayilan_gonderim = 1
@@ -336,14 +339,14 @@ def send_interview_email(
             email_account = cursor.fetchone()
             email_account = dict(email_account) if email_account else None
 
-            # tarih string ise datetime'a cevir
+            # tarih string ise datetime'a çevir
             tarih = interview["tarih"]
             if isinstance(tarih, str):
                 tarih = datetime.fromisoformat(tarih)
 
-            # Onay linki olustur
+            # Onay linki oluştur
             confirm_url = None
-            onay_suresi = 3  # varsayilan
+            onay_suresi = 3  # varsayılan
             if interview.get("confirm_token"):
                 confirm_url = f"http://***REMOVED***:8000/api/interviews/confirm/{interview['confirm_token']}"
                 # onay_suresi hesapla (confirm_token_expires - olusturma_tarihi)
@@ -355,7 +358,7 @@ def send_interview_email(
                     except:
                         pass
 
-            # Email gonder
+            # Email gönder
             success, msg = send_interview_invite(
                 candidate_name=interview["ad_soyad"],
                 candidate_email=to_email,
@@ -363,16 +366,17 @@ def send_interview_email(
                 duration=interview.get("sure_dakika", 60),
                 interview_type=interview.get("tur", "teknik"),
                 location=interview.get("lokasyon", "online"),
-                position_title=interview.get("position_title") or "Genel Basvuru",
+                position_title=interview.get("position_title") or "Genel Başvuru",
                 interviewer=interview.get("mulakatci"),
                 notes=interview.get("notlar"),
                 account=email_account,
                 confirm_url=confirm_url,
-                onay_suresi=onay_suresi
+                onay_suresi=onay_suresi,
+                sirket_adi=interview.get("sirket_adi")
             )
 
             if not success:
-                raise HTTPException(status_code=500, detail=f"Email gonderilemedi: {msg}")
+                raise HTTPException(status_code=500, detail=f"Email gönderilemedi: {msg}")
 
             return {
                 "success": True,

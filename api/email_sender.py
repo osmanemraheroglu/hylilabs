@@ -14,33 +14,29 @@ from config import SMTP_CONFIG, COMPANY_INFO
 
 # Email sablonlari
 INTERVIEW_INVITE_TEMPLATE = """
-Sayin {candidate_name},
+Sayın {candidate_name},
 
-{company_name} olarak basvurunuzu degerlendirdik ve sizinle bir mulakat gerceklestirmek istiyoruz.
+{company_name} olarak başvurunuzu değerlendirdik ve sizinle bir mülakat gerçekleştirmek istiyoruz.
 
-MULAKAT DETAYLARI
+MÜLAKAT DETAYLARI
 -----------------
 Tarih: {interview_date}
 Saat: {interview_time}
-Sure: {duration} dakika
-Tur: {interview_type}
+Süre: {duration} dakika
+Tür: {interview_type}
 Lokasyon: {location}
 {location_details}
 
 {interviewer_info}
 
-POZISYON
+POZİSYON
 --------
 {position_title}
+{notes_section}
+Lütfen bu mülakat davetini onaylamak veya değişiklik talep etmek için bizimle iletişime geçin.
 
-NOTLAR
-------
-{notes}
-
-Lutfen bu mulakat davetini onaylamak veya degisiklik talep etmek icin bizimle iletisime gecin.
-
-Saygilarimizla,
-{company_name} IK Ekibi
+Saygılarımızla,
+{company_name} İK Ekibi
 {company_contact}
 """
 
@@ -198,26 +194,39 @@ def send_email(
         return False, f"Beklenmeyen hata: {str(e)}"
 
 
+# Türkçe ay isimleri
+TURKCE_AYLAR = {
+    1: 'Ocak', 2: 'Şubat', 3: 'Mart', 4: 'Nisan',
+    5: 'Mayıs', 6: 'Haziran', 7: 'Temmuz', 8: 'Ağustos',
+    9: 'Eylül', 10: 'Ekim', 11: 'Kasım', 12: 'Aralık'
+}
+
+
+def format_turkish_date(dt: datetime) -> str:
+    """Tarihi Türkçe formatta döndür (22 Şubat 2026)"""
+    return f"{dt.day} {TURKCE_AYLAR[dt.month]} {dt.year}"
+
+
 def get_location_details(location: str) -> str:
-    """Lokasyon detaylarini olustur"""
+    """Lokasyon detaylarını oluştur"""
     if location == "online":
-        return "Online mulakat linki ayri olarak gonderilecektir."
+        return "Online mülakat linki ayrı olarak gönderilecektir."
     elif location == "ofis":
         if COMPANY_INFO["address"]:
             return f"Adres: {COMPANY_INFO['address']}"
-        return "Ofis adresi ayri olarak bildirilecektir."
+        return "Ofis adresi ayrı olarak bildirilecektir."
     elif location == "telefon":
-        return "Belirtilen saatte sizi arayacagiz."
+        return "Belirtilen saatte sizi arayacağız."
     return ""
 
 
 def get_interview_type_label(tur: str) -> str:
-    """Mulakat turu etiketi"""
+    """Mülakat türü etiketi"""
     labels = {
-        "teknik": "Teknik Mulakat",
-        "hr": "IK Mulakati",
-        "yonetici": "Yonetici Mulakati",
-        "genel": "Genel Degerlendirme"
+        "teknik": "Teknik Mülakat",
+        "hr": "İK Mülakatı",
+        "yonetici": "Yönetici Mülakatı",
+        "genel": "Genel Değerlendirme"
     }
     return labels.get(tur, tur.title())
 
@@ -232,53 +241,63 @@ def generate_interview_invite_content(
     interviewer: Optional[str] = None,
     notes: Optional[str] = None,
     confirm_url: Optional[str] = None,
-    onay_suresi: int = 3
+    onay_suresi: int = 3,
+    sirket_adi: Optional[str] = None
 ) -> dict:
     """
-    Mulakat davet emaili icerigi olustur (gondermeden)
+    Mülakat davet emaili içeriği oluştur (göndermeden)
 
     Args:
-        confirm_url: Mulakat onay linki (opsiyonel)
+        confirm_url: Mülakat onay linki (opsiyonel)
+        sirket_adi: Şirket adı (opsiyonel, yoksa COMPANY_INFO kullanılır)
 
     Returns:
         {"konu": str, "icerik": str}
     """
-    # Interviewer bilgisi
+    # Şirket adı
+    company_name = sirket_adi or COMPANY_INFO["name"]
+
+    # Mülakatçı bilgisi
     interviewer_info = ""
     if interviewer:
-        interviewer_info = f"Mulakatci: {interviewer}"
+        interviewer_info = f"Mülakatçı: {interviewer}"
 
-    # Company contact
+    # Şirket iletişim
     company_contact = ""
     if COMPANY_INFO["phone"]:
         company_contact += f"Tel: {COMPANY_INFO['phone']}\n"
     if COMPANY_INFO["website"]:
         company_contact += f"Web: {COMPANY_INFO['website']}"
 
+    # Notlar bölümü (koşullu)
+    notes_section = ""
+    if notes:
+        notes_section = f"\nNOTLAR\n------\n{notes}\n"
+
     body = INTERVIEW_INVITE_TEMPLATE.format(
         candidate_name=candidate_name,
-        company_name=COMPANY_INFO["name"],
-        interview_date=interview_date.strftime("%d %B %Y"),
+        company_name=company_name,
+        interview_date=format_turkish_date(interview_date),
         interview_time=interview_date.strftime("%H:%M"),
         duration=duration,
         interview_type=get_interview_type_label(interview_type),
         location=location.title(),
         location_details=get_location_details(location),
         interviewer_info=interviewer_info,
-        position_title=position_title or "Genel Basvuru",
-        notes=notes or "Belirtilmemis",
+        position_title=position_title or "Genel Başvuru",
+        notes_section=notes_section,
         company_contact=company_contact.strip()
     )
 
     # Onay linki ekle
     if confirm_url:
-        body += "\n\nMULAKATI ONAYLA\n"
+        body += "\n\nMÜLAKATI ONAYLA\n"
         body += "---------------\n"
-        body += "Mulakata katilacaginizi onaylamak icin asagidaki linke tiklayin:\n"
+        body += "Mülakata katılacağınızı onaylamak için aşağıdaki linke tıklayın:\n"
         body += f"{confirm_url}\n"
-        body += f"(Link {onay_suresi} gun gecerlidir)\n"
+        body += f"(Link {onay_suresi} gün geçerlidir)\n"
 
-    subject = f"Mulakat Daveti - {COMPANY_INFO['name']} - {position_title or 'Genel Basvuru'}"
+    subject = f"Mülakat Daveti - {company_name} - {position_title or 'Genel Başvuru'}"
 
     return {"konu": subject, "icerik": body}
 
@@ -296,14 +315,16 @@ def send_interview_invite(
     cc_interviewer: Optional[str] = None,
     account: Optional[dict] = None,
     confirm_url: Optional[str] = None,
-    onay_suresi: int = 3
+    onay_suresi: int = 3,
+    sirket_adi: Optional[str] = None
 ) -> tuple[bool, str]:
     """
-    Mulakat davet emaili gonder
+    Mülakat davet emaili gönder
 
     Args:
-        account: Email hesabi (veritabanindan). None ise SMTP_CONFIG kullanilir.
-        confirm_url: Mulakat onay linki (opsiyonel)
+        account: Email hesabı (veritabanından). None ise SMTP_CONFIG kullanılır.
+        confirm_url: Mülakat onay linki (opsiyonel)
+        sirket_adi: Şirket adı (opsiyonel)
 
     Returns:
         (basarili, mesaj) tuple
@@ -318,7 +339,8 @@ def send_interview_invite(
         interviewer=interviewer,
         notes=notes,
         confirm_url=confirm_url,
-        onay_suresi=onay_suresi
+        onay_suresi=onay_suresi,
+        sirket_adi=sirket_adi
     )
 
     return send_email(candidate_email, content["konu"], content["icerik"], cc=cc_interviewer, account=account)
