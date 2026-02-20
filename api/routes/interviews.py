@@ -229,7 +229,7 @@ def get_email_preview(
 
             # Mülakat bilgilerini al
             cursor.execute(
-                """SELECT i.*, c.ad_soyad, c.email as candidate_email, dp.name as position_title, co.name as sirket_adi
+                """SELECT i.*, c.ad_soyad, c.email as candidate_email, dp.name as position_title, co.ad as sirket_adi
                    FROM interviews i
                    JOIN candidates c ON c.id = i.candidate_id
                    LEFT JOIN department_pools dp ON dp.id = i.position_id
@@ -314,7 +314,7 @@ def send_interview_email(
 
             # Mülakat bilgilerini al
             cursor.execute(
-                """SELECT i.*, c.ad_soyad, dp.name as position_title, co.name as sirket_adi
+                """SELECT i.*, c.ad_soyad, dp.name as position_title, co.ad as sirket_adi
                    FROM interviews i
                    JOIN candidates c ON c.id = i.candidate_id
                    LEFT JOIN department_pools dp ON dp.id = i.position_id
