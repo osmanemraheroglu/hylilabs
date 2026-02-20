@@ -32,8 +32,10 @@ Son guncelleme: 20.02.2026
 - DEPLOYMENT.md olusturuldu (yeni sunucu rehberi)
 - Mulakat Takvimi pozisyon dropdown duzeltildi (positions -> department_pools)
 - Mulakat Takvimi Turkce karakter duzeltmeleri (20+ kelime)
-- Mulakat Takvimi aday gruplari eklendi (candidateGroups: Tum Adaylar, Departman, Pozisyon)
 - Mulakat Takvimi tarih formati GG.AA.YYYY (toLocaleDateString tr-TR)
+- Mulakat Form sirasi degistirildi: Pozisyon (opsiyonel) -> Aday (zorunlu)
+- Mulakat Form pozisyon secilince aday filtreleme (positionCandidates)
+- Mulakat Form pozisyonsuz aday uyarisi eklendi
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -70,11 +72,11 @@ Son guncelleme: 20.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+e6e2c5b - fix: remove unused SelectGroup, SelectLabel imports
+2676d9d - fix: mulakat form - pozisyon once aday sonra, pozisyona gore filtre
+7dfcca6 - docs: update activeContext.md - mulakat takvimi fixes
 5a29dd5 - fix: interviews dropdown-data - use department_pool_id column
 79e4d46 - fix: mulakat takvimi - aday gruplari ve tarih formati
-239cd6a - fix: mulakat takvimi - pozisyon dropdown ve turkce karakterler
-c5401fc - docs: simplify deployment guide - no data migration needed
-7737aa4 - infra: add pm2 config + deployment guide for new server setup
 
 ## Sonraki Gorev
 Guvenlik taramasi tamamlandi. Sistem stabil.
