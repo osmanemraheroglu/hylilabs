@@ -43,6 +43,7 @@ Son guncelleme: 20.02.2026
 - Backend: email-preview ve send-email endpointleri (/api/interviews/{id}/email-preview, /api/interviews/{id}/send-email)
 - email_sender.py: generate_interview_invite_content helper fonksiyonu eklendi
 - Frontend: Email onizleme dialog'u (duzenlenebilir alici email, konu/icerik onizleme)
+- Email preview dialog DOM crash fix (setTimeout 150ms delay between dialogs)
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -79,6 +80,7 @@ Son guncelleme: 20.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+90de6f9 - fix: email preview dialog DOM crash - add setTimeout delay between dialogs
 4e3a926 - feat: email onizleme akisi eklendi (Kaydet -> Onizle -> Gonder)
 a35032c - feat: mulakat olusturulunca adaya email gonder
 8aaf655 - fix: tarih input placeholder GG.AA.YYYY eklendi
