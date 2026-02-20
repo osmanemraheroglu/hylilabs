@@ -37,6 +37,7 @@ Son guncelleme: 20.02.2026
 - Mulakat Form pozisyon secilince aday filtreleme (positionCandidates)
 - Mulakat Form pozisyonsuz aday uyarisi eklendi
 - Mulakat Form SelectItem value="" crash duzeltildi (value="none")
+- Mulakat Form tarih input placeholder="GG.AA.YYYY" eklendi
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -73,11 +74,11 @@ Son guncelleme: 20.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+8aaf655 - fix: tarih input placeholder GG.AA.YYYY eklendi
 ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 e6e2c5b - fix: remove unused SelectGroup, SelectLabel imports
 2676d9d - fix: mulakat form - pozisyon once aday sonra, pozisyona gore filtre
-7dfcca6 - docs: update activeContext.md - mulakat takvimi fixes
 
 ## Sonraki Gorev
 Guvenlik taramasi tamamlandi. Sistem stabil.
