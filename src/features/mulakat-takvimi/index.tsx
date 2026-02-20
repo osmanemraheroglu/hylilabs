@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -41,9 +41,21 @@ interface InterviewItem {
   pozisyon_baslik: string | null
 }
 
+interface CandidateItem {
+  id: number
+  ad_soyad: string
+  email: string
+}
+
+interface CandidateGroup {
+  label: string
+  candidates: CandidateItem[]
+}
+
 interface DropdownData {
   positions: Array<{ id: number; baslik: string }>
-  candidates: Array<{ id: number; ad_soyad: string; email: string }>
+  candidates: CandidateItem[]
+  candidateGroups?: CandidateGroup[]
 }
 
 const DURUM_BADGE: Record<string, string> = {
@@ -75,7 +87,7 @@ const MONTHS = [
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+  return d.toLocaleDateString('tr-TR')
 }
 
 function formatTime(dateStr: string): string {
@@ -439,9 +451,20 @@ export default function MulakatTakvimi() {
               <Select value={form.candidate_id} onValueChange={v => setForm({...form, candidate_id: v})}>
                 <SelectTrigger><SelectValue placeholder="Aday seçin" /></SelectTrigger>
                 <SelectContent>
-                  {dropdown.candidates.map(c => (
-                    <SelectItem key={c.id} value={String(c.id)}>{c.ad_soyad} ({c.email})</SelectItem>
-                  ))}
+                  {dropdown.candidateGroups && dropdown.candidateGroups.length > 0 ? (
+                    dropdown.candidateGroups.map((group, idx) => (
+                      <SelectGroup key={idx}>
+                        <SelectLabel>{group.label}</SelectLabel>
+                        {group.candidates.map(c => (
+                          <SelectItem key={c.id} value={String(c.id)}>{c.ad_soyad} ({c.email})</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))
+                  ) : (
+                    dropdown.candidates.map(c => (
+                      <SelectItem key={c.id} value={String(c.id)}>{c.ad_soyad} ({c.email})</SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
