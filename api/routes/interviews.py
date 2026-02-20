@@ -45,44 +45,21 @@ def dropdown_data(current_user: dict = Depends(get_current_user)):
             )
             candidates = [dict(row) for row in cursor.fetchall()]
 
-            # Adayları gruplu getir (departman ve pozisyon bazlı)
-            candidate_groups = []
-
-            # 1. Tüm Adaylar grubu
-            candidate_groups.append({
-                "label": "Tüm Adaylar",
-                "candidates": candidates
-            })
-
-            # 2. Departman bazlı gruplar
-            cursor.execute(
-                """SELECT dp.id, dp.name, dp.pool_type
-                   FROM department_pools dp
-                   WHERE dp.company_id = ? AND dp.is_active = 1
-                   ORDER BY dp.pool_type, dp.name""",
-                (company_id,)
-            )
-            pools = [dict(row) for row in cursor.fetchall()]
-
-            for pool in pools:
+            # Pozisyon bazlı aday eşleştirmesi (pozisyon seçilince filtreleme için)
+            position_candidates = {}
+            for pos in positions:
                 cursor.execute(
                     """SELECT c.id, c.ad_soyad, c.email
                        FROM candidates c
                        JOIN candidate_pool_assignments cpa ON cpa.candidate_id = c.id
                        WHERE cpa.department_pool_id = ? AND c.company_id = ?
                        ORDER BY c.ad_soyad""",
-                    (pool["id"], company_id)
+                    (pos["id"], company_id)
                 )
-                pool_candidates = [dict(row) for row in cursor.fetchall()]
+                pos_candidates = [dict(row) for row in cursor.fetchall()]
+                position_candidates[str(pos["id"])] = pos_candidates
 
-                if pool_candidates:
-                    prefix = "Departman" if pool["pool_type"] == "department" else "Pozisyon"
-                    candidate_groups.append({
-                        "label": f"{prefix}: {pool['name']}",
-                        "candidates": pool_candidates
-                    })
-
-        return {"success": True, "data": {"positions": positions, "candidates": candidates, "candidateGroups": candidate_groups}}
+        return {"success": True, "data": {"positions": positions, "candidates": candidates, "positionCandidates": position_candidates}}
     except HTTPException:
         raise
     except Exception as e:

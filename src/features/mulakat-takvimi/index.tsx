@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   CalendarClock, Plus, Edit, Trash2, RefreshCw, ChevronLeft, ChevronRight,
-  Clock, MapPin, Star, List, CalendarDays
+  Clock, MapPin, Star, List, CalendarDays, Info
 } from 'lucide-react'
 
 const API_URL = 'http://***REMOVED***:8000'
@@ -47,15 +47,10 @@ interface CandidateItem {
   email: string
 }
 
-interface CandidateGroup {
-  label: string
-  candidates: CandidateItem[]
-}
-
 interface DropdownData {
   positions: Array<{ id: number; baslik: string }>
   candidates: CandidateItem[]
-  candidateGroups?: CandidateGroup[]
+  positionCandidates?: Record<string, CandidateItem[]>
 }
 
 const DURUM_BADGE: Record<string, string> = {
@@ -447,19 +442,30 @@ export default function MulakatTakvimi() {
           </DialogHeader>
           <div className="space-y-3">
             <div>
+              <Label className="text-sm">Pozisyon</Label>
+              <Select value={form.position_id} onValueChange={v => setForm({...form, position_id: v, candidate_id: ''})}>
+                <SelectTrigger><SelectValue placeholder="Pozisyon seçin (opsiyonel)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Tümü (pozisyon seçme)</SelectItem>
+                  {dropdown.positions.map(p => (
+                    <SelectItem key={p.id} value={String(p.id)}>{p.baslik}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label className="text-sm">Aday *</Label>
               <Select value={form.candidate_id} onValueChange={v => setForm({...form, candidate_id: v})}>
                 <SelectTrigger><SelectValue placeholder="Aday seçin" /></SelectTrigger>
                 <SelectContent>
-                  {dropdown.candidateGroups && dropdown.candidateGroups.length > 0 ? (
-                    dropdown.candidateGroups.map((group, idx) => (
-                      <SelectGroup key={idx}>
-                        <SelectLabel>{group.label}</SelectLabel>
-                        {group.candidates.map(c => (
-                          <SelectItem key={c.id} value={String(c.id)}>{c.ad_soyad} ({c.email})</SelectItem>
-                        ))}
-                      </SelectGroup>
-                    ))
+                  {form.position_id && dropdown.positionCandidates?.[form.position_id] ? (
+                    dropdown.positionCandidates[form.position_id].length > 0 ? (
+                      dropdown.positionCandidates[form.position_id].map(c => (
+                        <SelectItem key={c.id} value={String(c.id)}>{c.ad_soyad} ({c.email})</SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>Bu pozisyona atanmış aday yok</SelectItem>
+                    )
                   ) : (
                     dropdown.candidates.map(c => (
                       <SelectItem key={c.id} value={String(c.id)}>{c.ad_soyad} ({c.email})</SelectItem>
@@ -467,17 +473,12 @@ export default function MulakatTakvimi() {
                   )}
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label className="text-sm">Pozisyon</Label>
-              <Select value={form.position_id} onValueChange={v => setForm({...form, position_id: v})}>
-                <SelectTrigger><SelectValue placeholder="Pozisyon seçin (opsiyonel)" /></SelectTrigger>
-                <SelectContent>
-                  {dropdown.positions.map(p => (
-                    <SelectItem key={p.id} value={String(p.id)}>{p.baslik}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {!form.position_id && form.candidate_id && (
+                <div className="flex items-start gap-1.5 mt-1.5 p-2 bg-blue-50 rounded text-xs text-blue-700">
+                  <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                  <span>Bu aday henüz bir pozisyona atanmamış. Pozisyonsuz mülakat oluşturabilirsiniz.</span>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
