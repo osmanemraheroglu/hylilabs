@@ -47,6 +47,7 @@ Son guncelleme: 20.02.2026
 - Email preview dialog state fix (reorder state updates, loadInterviews en sona alindi)
 - Email gonderimi: veritabani hesabi kullanimi (email_accounts tablosu, varsayilan_gonderim=1)
 - send_interview_invite() account parametresi eklendi
+- Mulakat onaylama linki sistemi: token uretimi, public /confirm/{token} endpoint, email'de onay linki
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -83,6 +84,7 @@ Son guncelleme: 20.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+4928766 - feat: mulakat onaylama linki - token sistemi ve public endpoint
 536e950 - fix: email gonderiminde veritabani hesabini kullan (email/sifre kolonlari)
 2cbf52b - fix: email preview dialog state fix - reorder state updates and API calls
 90de6f9 - fix: email preview dialog DOM crash - add setTimeout delay between dialogs
