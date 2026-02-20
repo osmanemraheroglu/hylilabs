@@ -250,8 +250,17 @@ def get_email_preview(
 
             # Onay linki olustur
             confirm_url = None
+            onay_suresi = 3  # varsayilan
             if interview.get("confirm_token"):
                 confirm_url = f"http://***REMOVED***:8000/api/interviews/confirm/{interview['confirm_token']}"
+                # onay_suresi hesapla (confirm_token_expires - olusturma_tarihi)
+                if interview.get("confirm_token_expires") and interview.get("olusturma_tarihi"):
+                    try:
+                        expires = datetime.fromisoformat(interview["confirm_token_expires"])
+                        created = datetime.fromisoformat(interview["olusturma_tarihi"])
+                        onay_suresi = max(1, (expires - created).days)
+                    except:
+                        pass
 
             # Email icerigini olustur
             content = generate_interview_invite_content(
@@ -263,7 +272,8 @@ def get_email_preview(
                 position_title=interview.get("position_title") or "Genel Basvuru",
                 interviewer=interview.get("mulakatci"),
                 notes=interview.get("notlar"),
-                confirm_url=confirm_url
+                confirm_url=confirm_url,
+                onay_suresi=onay_suresi
             )
 
             return {
@@ -333,8 +343,17 @@ def send_interview_email(
 
             # Onay linki olustur
             confirm_url = None
+            onay_suresi = 3  # varsayilan
             if interview.get("confirm_token"):
                 confirm_url = f"http://***REMOVED***:8000/api/interviews/confirm/{interview['confirm_token']}"
+                # onay_suresi hesapla (confirm_token_expires - olusturma_tarihi)
+                if interview.get("confirm_token_expires") and interview.get("olusturma_tarihi"):
+                    try:
+                        expires = datetime.fromisoformat(interview["confirm_token_expires"])
+                        created = datetime.fromisoformat(interview["olusturma_tarihi"])
+                        onay_suresi = max(1, (expires - created).days)
+                    except:
+                        pass
 
             # Email gonder
             success, msg = send_interview_invite(
@@ -348,7 +367,8 @@ def send_interview_email(
                 interviewer=interview.get("mulakatci"),
                 notes=interview.get("notlar"),
                 account=email_account,
-                confirm_url=confirm_url
+                confirm_url=confirm_url,
+                onay_suresi=onay_suresi
             )
 
             if not success:

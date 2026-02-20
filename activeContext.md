@@ -53,6 +53,7 @@ Son guncelleme: 21.02.2026
 ### 21.02.2026
 - Mulakat formu onay suresi Select alani eklendi (frontend)
 - Backend: onay_suresi parametresi aliniyor, token suresi dinamik
+- Email taslagi dinamik onay_suresi kullanimi (hardcoded 7 gun -> parametrik)
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)

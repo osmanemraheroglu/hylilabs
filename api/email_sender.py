@@ -231,7 +231,8 @@ def generate_interview_invite_content(
     position_title: str,
     interviewer: Optional[str] = None,
     notes: Optional[str] = None,
-    confirm_url: Optional[str] = None
+    confirm_url: Optional[str] = None,
+    onay_suresi: int = 3
 ) -> dict:
     """
     Mulakat davet emaili icerigi olustur (gondermeden)
@@ -275,7 +276,7 @@ def generate_interview_invite_content(
         body += "---------------\n"
         body += "Mulakata katilacaginizi onaylamak icin asagidaki linke tiklayin:\n"
         body += f"{confirm_url}\n"
-        body += "(Link 7 gun gecerlidir)\n"
+        body += f"(Link {onay_suresi} gun gecerlidir)\n"
 
     subject = f"Mulakat Daveti - {COMPANY_INFO['name']} - {position_title or 'Genel Basvuru'}"
 
@@ -294,7 +295,8 @@ def send_interview_invite(
     notes: Optional[str] = None,
     cc_interviewer: Optional[str] = None,
     account: Optional[dict] = None,
-    confirm_url: Optional[str] = None
+    confirm_url: Optional[str] = None,
+    onay_suresi: int = 3
 ) -> tuple[bool, str]:
     """
     Mulakat davet emaili gonder
@@ -315,7 +317,8 @@ def send_interview_invite(
         position_title=position_title,
         interviewer=interviewer,
         notes=notes,
-        confirm_url=confirm_url
+        confirm_url=confirm_url,
+        onay_suresi=onay_suresi
     )
 
     return send_email(candidate_email, content["konu"], content["icerik"], cc=cc_interviewer, account=account)
