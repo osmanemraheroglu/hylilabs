@@ -122,6 +122,9 @@ export default function MulakatTakvimi() {
   // Eval form
   const [evalForm, setEvalForm] = useState({ degerlendirme: '', puan: '0' })
 
+  // Email gönder checkbox (yeni mülakat için)
+  const [sendEmail, setSendEmail] = useState(true)
+
   const loadInterviews = useCallback(() => {
     setLoading(true)
     const params = new URLSearchParams()
@@ -154,6 +157,7 @@ export default function MulakatTakvimi() {
       sure_dakika: '60', tur: 'teknik', lokasyon: 'online', mulakatci: '', notlar: '',
     })
     setEditingId(null)
+    setSendEmail(true)
   }
 
   const openCreate = () => { resetForm(); setDialogOpen(true) }
@@ -188,6 +192,11 @@ export default function MulakatTakvimi() {
       lokasyon: form.lokasyon,
       mulakatci: form.mulakatci || null,
       notlar: form.notlar || null,
+    }
+
+    // Yeni mülakat için email gönderme seçeneği
+    if (!editingId) {
+      payload.send_email = sendEmail
     }
 
     const url = editingId
@@ -536,6 +545,20 @@ export default function MulakatTakvimi() {
               <Label className="text-sm">Notlar</Label>
               <Textarea value={form.notlar} onChange={e => setForm({...form, notlar: e.target.value})} placeholder="Notlar..." rows={2} />
             </div>
+            {!editingId && (
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  type="checkbox"
+                  id="sendEmail"
+                  checked={sendEmail}
+                  onChange={e => setSendEmail(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <label htmlFor="sendEmail" className="text-sm text-muted-foreground cursor-pointer">
+                  Adaya mülakat daveti emaili gönder
+                </label>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>İptal</Button>

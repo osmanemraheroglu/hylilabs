@@ -8,6 +8,11 @@ from models import Interview
 from datetime import datetime
 from typing import Optional
 import traceback
+import logging
+
+from email_sender import send_interview_invite
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/interviews", tags=["interviews"])
 
@@ -112,11 +117,13 @@ def create_new_interview(
     require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
+        send_email = body.get("send_email", True)
 
+        interview_date = datetime.fromisoformat(body["tarih"])
         interview = Interview(
             candidate_id=body["candidate_id"],
             position_id=body.get("position_id"),
-            tarih=datetime.fromisoformat(body["tarih"]),
+            tarih=interview_date,
             sure_dakika=body.get("sure_dakika", 60),
             tur=body.get("tur", "teknik"),
             lokasyon=body.get("lokasyon", "online"),
@@ -126,7 +133,56 @@ def create_new_interview(
         )
 
         new_id = create_interview(interview, company_id=company_id)
-        return {"success": True, "id": new_id, "message": "Mulakat olusturuldu"}
+
+        # Email gönder
+        email_sent = False
+        if send_email:
+            try:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    # Aday bilgisini al
+                    cursor.execute(
+                        "SELECT ad_soyad, email FROM candidates WHERE id = ? AND company_id = ?",
+                        (body["candidate_id"], company_id)
+                    )
+                    candidate = cursor.fetchone()
+
+                    # Pozisyon bilgisini al
+                    position_title = None
+                    if body.get("position_id"):
+                        cursor.execute(
+                            "SELECT name FROM department_pools WHERE id = ? AND company_id = ?",
+                            (body["position_id"], company_id)
+                        )
+                        pos_row = cursor.fetchone()
+                        if pos_row:
+                            position_title = pos_row["name"]
+
+                if candidate and candidate["email"]:
+                    success, msg = send_interview_invite(
+                        candidate_name=candidate["ad_soyad"],
+                        candidate_email=candidate["email"],
+                        interview_date=interview_date,
+                        duration=body.get("sure_dakika", 60),
+                        interview_type=body.get("tur", "teknik"),
+                        location=body.get("lokasyon", "online"),
+                        position_title=position_title or "Genel Başvuru",
+                        interviewer=body.get("mulakatci"),
+                        notes=body.get("notlar")
+                    )
+                    email_sent = success
+                    if not success:
+                        logger.warning(f"Email gonderilemedi: {msg}")
+            except Exception as e:
+                logger.error(f"Email gonderme hatasi: {e}")
+                email_sent = False
+
+        return {
+            "success": True,
+            "id": new_id,
+            "message": "Mulakat olusturuldu",
+            "email_sent": email_sent
+        }
     except HTTPException:
         raise
     except PermissionError as e:
