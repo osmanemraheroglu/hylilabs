@@ -280,10 +280,14 @@ def send_interview_invite(
     position_title: str,
     interviewer: Optional[str] = None,
     notes: Optional[str] = None,
-    cc_interviewer: Optional[str] = None
+    cc_interviewer: Optional[str] = None,
+    account: Optional[dict] = None
 ) -> tuple[bool, str]:
     """
     Mulakat davet emaili gonder
+
+    Args:
+        account: Email hesabi (veritabanindan). None ise SMTP_CONFIG kullanilir.
 
     Returns:
         (basarili, mesaj) tuple
@@ -299,7 +303,7 @@ def send_interview_invite(
         notes=notes
     )
 
-    return send_email(candidate_email, content["konu"], content["icerik"], cc=cc_interviewer)
+    return send_email(candidate_email, content["konu"], content["icerik"], cc=cc_interviewer, account=account)
 
 
 def send_interview_reminder(

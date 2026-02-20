@@ -293,6 +293,16 @@ def send_interview_email(
 
             interview = dict(interview)
 
+            # Email hesabini al (varsayilan gonderim hesabi)
+            cursor.execute(
+                """SELECT * FROM email_accounts
+                   WHERE company_id = ? AND aktif = 1 AND varsayilan_gonderim = 1
+                   LIMIT 1""",
+                (company_id,)
+            )
+            email_account = cursor.fetchone()
+            email_account = dict(email_account) if email_account else None
+
             # tarih string ise datetime'a cevir
             tarih = interview["tarih"]
             if isinstance(tarih, str):
@@ -308,7 +318,8 @@ def send_interview_email(
                 location=interview.get("lokasyon", "online"),
                 position_title=interview.get("position_title") or "Genel Basvuru",
                 interviewer=interview.get("mulakatci"),
-                notes=interview.get("notlar")
+                notes=interview.get("notlar"),
+                account=email_account
             )
 
             if not success:
