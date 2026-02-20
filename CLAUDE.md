@@ -77,3 +77,32 @@ Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
 
 ## SQL Kurali
 JOIN iceren tum SQL sorgularinda company_id her zaman tablo prefixiyle yazilmali (orn: c.company_id, a.company_id). Prefixsiz AND company_id = ? kullanimi yasaktir.
+
+---
+
+## KILITLI SISTEMLER (21.02.2026)
+
+### Mulakat Takvimi UI — DEGISMEZ
+- src/features/mulakat-takvimi/index.tsx
+- Pozisyon -> Aday sirasi ve filtreleme
+- Email onizleme dialog (Kaydet -> Onizle -> Gonder akisi)
+- Onay suresi secimi (1/3/7/14/30 gun, varsayilan 3 gun)
+
+### Email Onizleme Sistemi — DEGISMEZ
+- api/email_sender.py — send_interview_invite(), generate_interview_invite_content()
+- Alici email degistirilebilir
+- Turkce karakter duzeltmeleri yapildi
+- Not yoksa NOTLAR bolumu gizlenir
+- Tarih Turkce format (TURKCE_AYLAR dict)
+
+### Mulakat Onaylama Linki — DEGISMEZ
+- interviews tablosu: confirm_token, confirm_token_expires, confirmed_at, confirmation_status
+- GET /api/interviews/confirm/{token} — public endpoint (auth gerektirmez)
+- Token suresi IK tarafindan belirlenir
+- Onay sayfasi HTML response doner
+
+### pm2 Deployment — DEGISMEZ
+- ecosystem.config.cjs — frontend port 3000, backend port 8000
+- start-backend.sh — uvicorn baslatma scripti
+- systemd devre disi, pm2 tek process manager
+- DEPLOYMENT.md — yeni sunucu kurulum rehberi
