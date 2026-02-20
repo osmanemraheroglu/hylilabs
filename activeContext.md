@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 19.02.2026
+Son guncelleme: 20.02.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -26,6 +26,15 @@ Son guncelleme: 19.02.2026
 10. Ayarlar sayfasi: Sadece 3 sekme. KILITLI.
 
 ## Son 72 Saatte Tamamlananlar
+### 20.02.2026
+- pm2 kurulumu ve yapilandirilmasi (ecosystem.config.cjs)
+- systemd -> pm2 gecisi (frontend + backend)
+- DEPLOYMENT.md olusturuldu (yeni sunucu rehberi)
+- Mulakat Takvimi pozisyon dropdown duzeltildi (positions -> department_pools)
+- Mulakat Takvimi Turkce karakter duzeltmeleri (20+ kelime)
+- Mulakat Takvimi aday gruplari eklendi (candidateGroups: Tum Adaylar, Departman, Pozisyon)
+- Mulakat Takvimi tarih formati GG.AA.YYYY (toLocaleDateString tr-TR)
+
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
 - CV ZIP Download endpoint + UI
@@ -61,16 +70,15 @@ Son guncelleme: 19.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-f11aeac - ui: clarify date labels and add relative time tooltip
-2627a12 - docs: add .cursorrules with SQL company_id prefix rule
-4311074 - fix: resolve SQL ambiguous column error in dashboard stats
-ea98465 - fix: restore user session on page refresh via /api/auth/me
-47a97ac - fix: clean super admin panel
+5a29dd5 - fix: interviews dropdown-data - use department_pool_id column
+79e4d46 - fix: mulakat takvimi - aday gruplari ve tarih formati
+239cd6a - fix: mulakat takvimi - pozisyon dropdown ve turkce karakterler
+c5401fc - docs: simplify deployment guide - no data migration needed
+7737aa4 - infra: add pm2 config + deployment guide for new server setup
 
 ## Sonraki Gorev
 Guvenlik taramasi tamamlandi. Sistem stabil.
 
 ## Bilinen Acik Konular
-- pm2 kurulu degil, vite preview ile calisiyor
 - SSL henuz yok (HTTP)
 - Company Switcher henuz yapilmadi
