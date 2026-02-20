@@ -79,11 +79,11 @@ Son guncelleme: 20.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+4e3a926 - feat: email onizleme akisi eklendi (Kaydet -> Onizle -> Gonder)
 a35032c - feat: mulakat olusturulunca adaya email gonder
 8aaf655 - fix: tarih input placeholder GG.AA.YYYY eklendi
 ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
-e6e2c5b - fix: remove unused SelectGroup, SelectLabel imports
 
 ## Sonraki Gorev
 Guvenlik taramasi tamamlandi. Sistem stabil.
