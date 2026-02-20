@@ -162,7 +162,7 @@ export default function MulakatTakvimi() {
     const d = new Date(item.tarih)
     setForm({
       candidate_id: String(item.candidate_id),
-      position_id: item.position_id ? String(item.position_id) : '',
+      position_id: item.position_id ? String(item.position_id) : 'none',
       tarih: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
       saat: item.saat || formatTime(item.tarih),
       sure_dakika: String(item.sure_dakika),
@@ -181,7 +181,7 @@ export default function MulakatTakvimi() {
     const tarihStr = `${form.tarih}T${form.saat}:00`
     const payload: Record<string, unknown> = {
       candidate_id: Number(form.candidate_id),
-      position_id: form.position_id ? Number(form.position_id) : null,
+      position_id: form.position_id && form.position_id !== 'none' ? Number(form.position_id) : null,
       tarih: tarihStr,
       sure_dakika: Number(form.sure_dakika),
       tur: form.tur,
@@ -446,7 +446,7 @@ export default function MulakatTakvimi() {
               <Select value={form.position_id} onValueChange={v => setForm({...form, position_id: v, candidate_id: ''})}>
                 <SelectTrigger><SelectValue placeholder="Pozisyon seçin (opsiyonel)" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tümü (pozisyon seçme)</SelectItem>
+                  <SelectItem value="none">Tümü (pozisyon seçme)</SelectItem>
                   {dropdown.positions.map(p => (
                     <SelectItem key={p.id} value={String(p.id)}>{p.baslik}</SelectItem>
                   ))}
@@ -458,13 +458,13 @@ export default function MulakatTakvimi() {
               <Select value={form.candidate_id} onValueChange={v => setForm({...form, candidate_id: v})}>
                 <SelectTrigger><SelectValue placeholder="Aday seçin" /></SelectTrigger>
                 <SelectContent>
-                  {form.position_id && dropdown.positionCandidates?.[form.position_id] ? (
+                  {form.position_id && form.position_id !== 'none' && dropdown.positionCandidates?.[form.position_id] ? (
                     dropdown.positionCandidates[form.position_id].length > 0 ? (
                       dropdown.positionCandidates[form.position_id].map(c => (
                         <SelectItem key={c.id} value={String(c.id)}>{c.ad_soyad} ({c.email})</SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="" disabled>Bu pozisyona atanmış aday yok</SelectItem>
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">Bu pozisyona atanmış aday yok</div>
                     )
                   ) : (
                     dropdown.candidates.map(c => (
@@ -473,7 +473,7 @@ export default function MulakatTakvimi() {
                   )}
                 </SelectContent>
               </Select>
-              {!form.position_id && form.candidate_id && (
+              {(!form.position_id || form.position_id === 'none') && form.candidate_id && (
                 <div className="flex items-start gap-1.5 mt-1.5 p-2 bg-blue-50 rounded text-xs text-blue-700">
                   <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
                   <span>Bu aday henüz bir pozisyona atanmamış. Pozisyonsuz mülakat oluşturabilirsiniz.</span>
