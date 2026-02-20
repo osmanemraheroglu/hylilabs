@@ -483,7 +483,7 @@ export default function MulakatTakvimi() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-sm">Tarih *</Label>
-                <Input type="date" value={form.tarih} onChange={e => setForm({...form, tarih: e.target.value})} />
+                <Input type="date" value={form.tarih} onChange={e => setForm({...form, tarih: e.target.value})} placeholder="GG.AA.YYYY" />
               </div>
               <div>
                 <Label className="text-sm">Saat *</Label>
