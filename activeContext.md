@@ -117,7 +117,8 @@ Son guncelleme: 21.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-PENDING - fix: frontend turkce karakter duzeltmeleri (9 dosya)
+1fe9af5 - fix: settings/advanced Turkce karakter duzeltmesi - sadece UI metinleri
+577ef45 - fix: frontend turkce karakter duzeltmeleri (9 dosya)
 c9dfa57 - feat: keyword sayfasi menuden kaldirildi, eksik beceriler dashboard widget
 dbbbe75 - feat: takvimde onaylandi badge ve filtre
 951abf2 - feat: email sender_name dinamik sirket adi destegi
@@ -132,7 +133,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Frontend Turkce karakter duzeltmeleri tamamlandi. Deploy bekliyor.
+Frontend Turkce karakter duzeltmeleri tamamlandi ve deploy edildi.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)
