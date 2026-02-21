@@ -100,6 +100,8 @@ Son guncelleme: 21.02.2026
 - dashboard/index.tsx pie chart Turkce etiketler:
   - DURUM_LABELS map eklendi
   - yeni->Yeni, pozisyona_atandi->Pozisyona Atandı, mulakatta->Mülakata Çağrıldı, arsiv->Arşiv, reddedildi->Reddedildi, ise_alindi->İşe Alındı
+- havuzlar/index.tsx kalan Turkce duzeltmeleri:
+  - havuzlarini -> havuzlarını, Arsiv -> Arşiv
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -153,7 +155,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Dashboard pie chart Turkce etiketleri deploy edildi.
+Havuzlar kalan Turkce duzeltmeleri deploy edildi.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

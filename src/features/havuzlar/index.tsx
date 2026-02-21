@@ -525,7 +525,7 @@ export default function Havuzlar() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2"><FolderTree className="h-6 w-6" /> Havuzlar</h2>
-          <p className="text-muted-foreground text-sm">Departman ve pozisyon havuzlarini yönetin</p>
+          <p className="text-muted-foreground text-sm">Departman ve pozisyon havuzlarını yönetin</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => { loadTree(); loadAllPools(); if (selectedPoolId) loadCandidates(selectedPoolId) }} disabled={loading}><RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />Yenile</Button>
@@ -538,7 +538,7 @@ export default function Havuzlar() {
       <div className="grid grid-cols-4 gap-3">
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold">{totalCandidates}</div><div className="text-xs text-muted-foreground">Toplam Aday</div></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-blue-600">{tree?.system_pools?.find(s => s.name === 'Genel Havuz')?.candidate_count || 0}</div><div className="text-xs text-muted-foreground">Genel Havuz</div></CardContent></Card>
-        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-orange-600">{tree?.system_pools?.find(s => s.name === 'Ar\u015Fiv')?.candidate_count || 0}</div><div className="text-xs text-muted-foreground">Arsiv</div></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-orange-600">{tree?.system_pools?.find(s => s.name === 'Ar\u015Fiv')?.candidate_count || 0}</div><div className="text-xs text-muted-foreground">Arşiv</div></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-green-600">{tree?.departments?.length || 0}</div><div className="text-xs text-muted-foreground">Departman</div></CardContent></Card>
       </div>
 
