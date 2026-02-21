@@ -39,6 +39,8 @@ interface InterviewItem {
   email: string
   telefon: string | null
   pozisyon_baslik: string | null
+  confirmation_status: string | null
+  confirmed_at: string | null
 }
 
 interface CandidateItem {
@@ -74,6 +76,17 @@ const TUR_LABEL: Record<string, string> = {
   genel: 'Genel',
 }
 
+// Onay durumu badge'i
+function ConfirmationBadge({ status }: { status: string | null }) {
+  if (status === 'confirmed') {
+    return <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">✓ Onaylandı</span>
+  }
+  if (status === 'pending') {
+    return <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">⏳ Bekliyor</span>
+  }
+  return null
+}
+
 const DAYS = ['Pzt', 'Sal', 'Car', 'Per', 'Cum', 'Cmt', 'Paz']
 const MONTHS = [
   'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
@@ -101,6 +114,7 @@ export default function MulakatTakvimi() {
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState('calendar')
   const [filterDurum, setFilterDurum] = useState('all')
+  const [filterConfirmation, setFilterConfirmation] = useState('all')
 
   // Calendar state
   const [calYear, setCalYear] = useState(new Date().getFullYear())
@@ -137,6 +151,7 @@ export default function MulakatTakvimi() {
     setLoading(true)
     const params = new URLSearchParams()
     if (filterDurum !== 'all') params.append('durum', filterDurum)
+    if (filterConfirmation !== 'all') params.append('confirmation_status', filterConfirmation)
 
     fetch(`${API_URL}/api/interviews?${params}`, { headers: getHeaders() })
       .then(r => r.json())
@@ -145,7 +160,7 @@ export default function MulakatTakvimi() {
       })
       .catch(err => console.error('Interview hatasi:', err))
       .finally(() => setLoading(false))
-  }, [filterDurum])
+  }, [filterDurum, filterConfirmation])
 
   const loadDropdown = useCallback(() => {
     fetch(`${API_URL}/api/interviews/dropdown-data`, { headers: getHeaders() })
@@ -359,14 +374,17 @@ export default function MulakatTakvimi() {
             <div
               key={iv.id}
               onClick={() => openEdit(iv)}
-              className={`text-[10px] leading-tight p-0.5 rounded mb-0.5 cursor-pointer truncate ${
+              className={`text-[10px] leading-tight p-0.5 rounded mb-0.5 cursor-pointer ${
                 iv.durum === 'tamamlandi' ? 'bg-green-100 text-green-700' :
                 iv.durum === 'iptal' ? 'bg-red-100 text-red-700' :
                 iv.durum === 'ertelendi' ? 'bg-yellow-100 text-yellow-700' :
                 'bg-blue-100 text-blue-700'
               }`}
             >
-              {formatTime(iv.tarih)} {iv.ad_soyad.split(' ')[0]}
+              <div className="flex items-center gap-0.5 truncate">
+                <span>{formatTime(iv.tarih)} {iv.ad_soyad.split(' ')[0]}</span>
+                {iv.confirmation_status === 'confirmed' && <span className="text-green-600">✓</span>}
+              </div>
             </div>
           ))}
           {dayInterviews.length > 2 && (
@@ -391,6 +409,7 @@ export default function MulakatTakvimi() {
     planlanmis: interviews.filter(i => i.durum === 'planlanmis').length,
     tamamlandi: interviews.filter(i => i.durum === 'tamamlandi').length,
     iptal: interviews.filter(i => i.durum === 'iptal').length,
+    onaylandi: interviews.filter(i => i.confirmation_status === 'confirmed').length,
   }
 
   return (
@@ -413,10 +432,11 @@ export default function MulakatTakvimi() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-5 gap-3">
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold">{stats.total}</div><div className="text-xs text-muted-foreground">Toplam</div></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-blue-600">{stats.planlanmis}</div><div className="text-xs text-muted-foreground">Planlanmış</div></CardContent></Card>
-        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-green-600">{stats.tamamlandi}</div><div className="text-xs text-muted-foreground">Tamamlandı</div></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-green-600">{stats.onaylandi}</div><div className="text-xs text-muted-foreground">Onaylandı</div></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-emerald-600">{stats.tamamlandi}</div><div className="text-xs text-muted-foreground">Tamamlandı</div></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-red-600">{stats.iptal}</div><div className="text-xs text-muted-foreground">İptal</div></CardContent></Card>
       </div>
 
@@ -428,16 +448,26 @@ export default function MulakatTakvimi() {
             <TabsTrigger value="list"><List className="h-4 w-4 mr-1" /> Liste</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Select value={filterDurum} onValueChange={setFilterDurum}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tüm Durumlar</SelectItem>
-            <SelectItem value="planlanmis">Planlanmış</SelectItem>
-            <SelectItem value="tamamlandi">Tamamlandı</SelectItem>
-            <SelectItem value="iptal">İptal</SelectItem>
-            <SelectItem value="ertelendi">Ertelendi</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select value={filterDurum} onValueChange={setFilterDurum}>
+            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Durumlar</SelectItem>
+              <SelectItem value="planlanmis">Planlanmış</SelectItem>
+              <SelectItem value="tamamlandi">Tamamlandı</SelectItem>
+              <SelectItem value="iptal">İptal</SelectItem>
+              <SelectItem value="ertelendi">Ertelendi</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterConfirmation} onValueChange={setFilterConfirmation}>
+            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Onay</SelectItem>
+              <SelectItem value="confirmed">✓ Onaylandı</SelectItem>
+              <SelectItem value="pending">⏳ Bekliyor</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Calendar View */}
@@ -491,7 +521,12 @@ export default function MulakatTakvimi() {
                     <TableCell><Badge variant="outline" className="text-xs">{TUR_LABEL[iv.tur] || iv.tur}</Badge></TableCell>
                     <TableCell className="text-sm flex items-center gap-1"><MapPin className="h-3 w-3 text-muted-foreground" />{iv.lokasyon}</TableCell>
                     <TableCell className="text-sm">{iv.mulakatci || '-'}</TableCell>
-                    <TableCell><Badge className={`text-xs ${DURUM_BADGE[iv.durum] || ''}`}>{DURUM_LABEL[iv.durum] || iv.durum}</Badge></TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <Badge className={`text-xs ${DURUM_BADGE[iv.durum] || ''}`}>{DURUM_LABEL[iv.durum] || iv.durum}</Badge>
+                        <ConfirmationBadge status={iv.confirmation_status} />
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {iv.puan ? (
                         <div className="flex items-center gap-0.5">{[1,2,3,4,5].map(s => <Star key={s} className={`h-3 w-3 ${s <= iv.puan! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />)}</div>

@@ -63,6 +63,9 @@ Son guncelleme: 21.02.2026
 - is_reminder parametresi eklendi (email konu + icerik farkli)
 - interviews tablosuna onay_suresi kolonu eklendi
 - Email sender_name dinamik: sirket_adi > account.sender_name > 'HyliLabs'
+- Mulakat takvimi onay durumu badge (confirmed/pending)
+- Onay durumu filtre dropdown eklendi
+- Stats kart sayisi 4->5 (Onaylandi eklendi)
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)

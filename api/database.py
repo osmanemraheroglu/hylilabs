@@ -4836,6 +4836,7 @@ def get_interviews(
     end_date: Optional[datetime] = None,
     candidate_id: Optional[int] = None,
     durum: Optional[str] = None,
+    confirmation_status: Optional[str] = None,
     company_id: Optional[int] = None
 ) -> list[dict]:
     """Mulakatlari getir (aday bilgileriyle birlikte)"""
@@ -4871,6 +4872,10 @@ def get_interviews(
         if durum:
             query += " AND i.durum = ?"
             params.append(durum)
+
+        if confirmation_status:
+            query += " AND i.confirmation_status = ?"
+            params.append(confirmation_status)
 
         query += " ORDER BY i.tarih ASC"
 

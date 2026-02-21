@@ -80,6 +80,7 @@ def list_interviews(
     end_date: Optional[str] = Query(None),
     candidate_id: Optional[int] = Query(None),
     durum: Optional[str] = Query(None),
+    confirmation_status: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_user)
 ):
     """Mulakatlari listele"""
@@ -92,6 +93,7 @@ def list_interviews(
         results = get_interviews(
             start_date=sd, end_date=ed,
             candidate_id=candidate_id, durum=durum,
+            confirmation_status=confirmation_status,
             company_id=company_id
         )
 
