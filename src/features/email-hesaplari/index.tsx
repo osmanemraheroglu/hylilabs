@@ -49,7 +49,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   gmail: 'Gmail',
   outlook: 'Outlook / Office 365',
   yandex: 'Yandex',
-  custom: 'Ozel (Manuel)',
+  custom: 'Özel (Manuel)',
 }
 
 export default function EmailHesaplari() {
@@ -151,7 +151,7 @@ export default function EmailHesaplari() {
       .then(r => r.json())
       .then(res => {
         if (res.success) { setDialogOpen(false); resetForm(); loadAccounts() }
-        else alert(res.detail || 'Hata olustu')
+        else alert(res.detail || 'Hata oluştu')
       })
       .catch(err => console.error('Save hatasi:', err))
   }
@@ -205,9 +205,9 @@ export default function EmailHesaplari() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Mail className="h-6 w-6" /> Email Hesaplari
+            <Mail className="h-6 w-6" /> Email Hesapları
           </h2>
-          <p className="text-muted-foreground text-sm">CV toplama ve iletisim icin email hesaplarini yonetin</p>
+          <p className="text-muted-foreground text-sm">CV toplama ve iletişim için email hesaplarını yönetin</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={loadAccounts} disabled={loading}>
@@ -228,7 +228,7 @@ export default function EmailHesaplari() {
 
       {/* Account Cards */}
       {accounts.length === 0 && !loading ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">Henuz email hesabi eklenmemis. "Yeni Hesap" butonuna tiklayin.</CardContent></Card>
+        <Card><CardContent className="p-8 text-center text-muted-foreground">Henüz email hesabı eklenmemiş. "Yeni Hesap" butonuna tıklayın.</CardContent></Card>
       ) : (
         <div className="grid gap-3">
           {accounts.map(acc => (
@@ -243,7 +243,7 @@ export default function EmailHesaplari() {
                       <div className="font-medium flex items-center gap-2">
                         {acc.ad}
                         {acc.varsayilan_okuma ? <Badge variant="outline" className="text-[10px]"><Star className="h-2.5 w-2.5 mr-0.5 fill-yellow-400 text-yellow-400" />Okuma</Badge> : null}
-                        {acc.varsayilan_gonderim ? <Badge variant="outline" className="text-[10px]"><Star className="h-2.5 w-2.5 mr-0.5 fill-green-400 text-green-400" />Gonderim</Badge> : null}
+                        {acc.varsayilan_gonderim ? <Badge variant="outline" className="text-[10px]"><Star className="h-2.5 w-2.5 mr-0.5 fill-green-400 text-green-400" />Gönderim</Badge> : null}
                       </div>
                       <div className="text-sm text-muted-foreground">{acc.email}</div>
                       <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
@@ -264,10 +264,10 @@ export default function EmailHesaplari() {
                       {testingId === acc.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Wifi className="h-3.5 w-3.5" />}
                     </Button>
                     <div className="flex flex-col gap-0.5">
-                      <button onClick={() => handleSetDefault(acc.id, 'reading')} className="text-[10px] text-muted-foreground hover:text-blue-600" title="Varsayilan okuma">
+                      <button onClick={() => handleSetDefault(acc.id, 'reading')} className="text-[10px] text-muted-foreground hover:text-blue-600" title="Varsayılan okuma">
                         <Shield className="h-3 w-3 inline mr-0.5" />O
                       </button>
-                      <button onClick={() => handleSetDefault(acc.id, 'sending')} className="text-[10px] text-muted-foreground hover:text-green-600" title="Varsayilan gonderim">
+                      <button onClick={() => handleSetDefault(acc.id, 'sending')} className="text-[10px] text-muted-foreground hover:text-green-600" title="Varsayılan gönderim">
                         <Shield className="h-3 w-3 inline mr-0.5" />G
                       </button>
                     </div>
@@ -286,15 +286,15 @@ export default function EmailHesaplari() {
       <Dialog open={dialogOpen} onOpenChange={o => { if (!o) { setDialogOpen(false); resetForm() } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Email Hesabi Duzenle' : 'Yeni Email Hesabi'}</DialogTitle>
+            <DialogTitle>{editingId ? 'Email Hesabı Düzenle' : 'Yeni Email Hesabı'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label className="text-sm">Hesap Adi *</Label>
-              <Input value={form.ad} onChange={e => setForm({...form, ad: e.target.value})} placeholder="Ornek: IK Gmail" />
+              <Label className="text-sm">Hesap Adı *</Label>
+              <Input value={form.ad} onChange={e => setForm({...form, ad: e.target.value})} placeholder="Örnek: İK Gmail" />
             </div>
             <div>
-              <Label className="text-sm">Saglayici *</Label>
+              <Label className="text-sm">Sağlayıcı *</Label>
               <Select value={form.saglayici} onValueChange={handleProviderChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -310,13 +310,13 @@ export default function EmailHesaplari() {
                 <Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="ornek@gmail.com" />
               </div>
               <div>
-                <Label className="text-sm">{editingId ? 'Sifre (bos birakirsaniz degismez)' : 'Sifre *'}</Label>
+                <Label className="text-sm">{editingId ? 'Şifre (boş bırakırsanız değişmez)' : 'Şifre *'}</Label>
                 <div className="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     value={form.sifre}
                     onChange={e => setForm({...form, sifre: e.target.value})}
-                    placeholder={editingId ? '****' : 'Uygulama sifresi'}
+                    placeholder={editingId ? '****' : 'Uygulama şifresi'}
                   />
                   <button
                     type="button"
@@ -329,8 +329,8 @@ export default function EmailHesaplari() {
               </div>
             </div>
             <div>
-              <Label className="text-sm">Gonderici Adi</Label>
-              <Input value={form.sender_name} onChange={e => setForm({...form, sender_name: e.target.value})} placeholder="Sirket IK" />
+              <Label className="text-sm">Gönderici Adı</Label>
+              <Input value={form.sender_name} onChange={e => setForm({...form, sender_name: e.target.value})} placeholder="Şirket İK" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -354,7 +354,7 @@ export default function EmailHesaplari() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>Iptal</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>İptal</Button>
             <Button onClick={handleSave} disabled={!form.ad || !form.email || !form.imap_server || !form.smtp_server || (!editingId && !form.sifre)}>Kaydet</Button>
           </DialogFooter>
         </DialogContent>
@@ -364,11 +364,11 @@ export default function EmailHesaplari() {
       <Dialog open={deleteConfirm !== null} onOpenChange={o => { if (!o) setDeleteConfirm(null) }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Email Hesabi Sil</DialogTitle>
+            <DialogTitle>Email Hesabı Sil</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Bu email hesabini silmek istediginizden emin misiniz? Bu islem geri alinamaz.</p>
+          <p className="text-sm text-muted-foreground">Bu email hesabini silmek istediğinizden emin misiniz? Bu islem geri alınamaz.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Iptal</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>İptal</Button>
             <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>Sil</Button>
           </DialogFooter>
         </DialogContent>

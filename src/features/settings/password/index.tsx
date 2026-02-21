@@ -18,11 +18,11 @@ import { ContentSection } from '../components/content-section'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const passwordFormSchema = z.object({
-  currentPassword: z.string().min(1, 'Mevcut sifre gerekli'),
-  newPassword: z.string().min(8, 'Yeni sifre en az 8 karakter olmali'),
-  confirmPassword: z.string().min(1, 'Sifre tekrari gerekli'),
+  currentPassword: z.string().min(1, 'Mevcut şifre gerekli'),
+  newPassword: z.string().min(8, 'Yeni şifre en az 8 karakter olmalı'),
+  confirmPassword: z.string().min(1, 'Şifre tekrarı gerekli'),
 }).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'Sifreler eslesmiyor',
+  message: 'Şifreler eşleşmiyor',
   path: ['confirmPassword'],
 })
 
@@ -59,13 +59,13 @@ export function SettingsPassword() {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.detail || 'Sifre degistirilemedi')
+        throw new Error(result.detail || 'Şifre değiştirilemedi')
       }
 
-      toast.success('Sifre basariyla degistirildi')
+      toast.success('Şifre başarıyla değiştirildi')
       form.reset()
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Bir hata olustu'
+      const message = error instanceof Error ? error.message : 'Bir hata oluştu'
       toast.error(message)
     } finally {
       setLoading(false)
@@ -74,8 +74,8 @@ export function SettingsPassword() {
 
   return (
     <ContentSection
-      title='Sifre Degistir'
-      desc='Hesabinizin sifresini guncelleyin.'
+      title='Şifre Değiştir'
+      desc='Hesabınızın şifresini güncelleyin.'
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6 max-w-md'>
@@ -84,9 +84,9 @@ export function SettingsPassword() {
             name='currentPassword'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Mevcut Sifre</FormLabel>
+                <FormLabel>Mevcut Şifre</FormLabel>
                 <FormControl>
-                  <Input type='password' placeholder='Mevcut sifreniz' {...field} />
+                  <Input type='password' placeholder='Mevcut şifreniz' {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -97,7 +97,7 @@ export function SettingsPassword() {
             name='newPassword'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Yeni Sifre</FormLabel>
+                <FormLabel>Yeni Şifre</FormLabel>
                 <FormControl>
                   <Input type='password' placeholder='En az 8 karakter' {...field} />
                 </FormControl>
@@ -110,16 +110,16 @@ export function SettingsPassword() {
             name='confirmPassword'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Yeni Sifre (Tekrar)</FormLabel>
+                <FormLabel>Yeni Şifre (Tekrar)</FormLabel>
                 <FormControl>
-                  <Input type='password' placeholder='Yeni sifrenizi tekrar girin' {...field} />
+                  <Input type='password' placeholder='Yeni şifrenizi tekrar girin' {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
           <Button type='submit' disabled={loading}>
-            {loading ? 'Kaydediliyor...' : 'Sifreyi Degistir'}
+            {loading ? 'Kaydediliyor...' : 'Şifreyi Değiştir'}
           </Button>
         </form>
       </Form>

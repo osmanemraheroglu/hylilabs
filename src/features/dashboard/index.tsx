@@ -20,10 +20,10 @@ function getRelativeTime(dateStr: string): string {
   const minutes = Math.floor(diff / 60000)
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
-  if (minutes < 1) return 'Az once'
-  if (minutes < 60) return `${minutes} dakika once`
-  if (hours < 24) return `${hours} saat once`
-  if (days < 30) return `${days} gun once`
+  if (minutes < 1) return 'Az önce'
+  if (minutes < 60) return `${minutes} dakika önce`
+  if (hours < 24) return `${hours} saat önce`
+  if (days < 30) return `${days} gün önce`
   return new Date(dateStr).toLocaleDateString('tr-TR')
 }
 
@@ -107,7 +107,7 @@ export function Dashboard() {
         </Header>
         <Main>
           <div className='flex items-center justify-center h-64'>
-            <div className='text-muted-foreground'>Yukleniyor...</div>
+            <div className='text-muted-foreground'>Yükleniyor...</div>
           </div>
         </Main>
       </>
@@ -131,7 +131,7 @@ export function Dashboard() {
       <Main>
         <div className='mb-4'>
           <h1 className='text-2xl font-bold tracking-tight'>Kontrol Paneli</h1>
-          <p className='text-muted-foreground'>Genel bakis ve istatistikler</p>
+          <p className='text-muted-foreground'>Genel bakış ve istatistikler</p>
         </div>
 
         {/* Metrik Kartlari */}
@@ -270,7 +270,7 @@ export function Dashboard() {
                     </div>
                   ))
                 ) : (
-                  <p className='text-muted-foreground text-center'>Henuz basvuru yok</p>
+                  <p className='text-muted-foreground text-center'>Henüz başvuru yok</p>
                 )}
               </div>
             </CardContent>

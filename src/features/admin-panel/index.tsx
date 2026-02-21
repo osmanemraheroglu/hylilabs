@@ -45,9 +45,9 @@ interface UserItem {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'Sistem Yoneticisi',
-  company_admin: 'Firma Yoneticisi',
-  user: 'Kullanici'
+  super_admin: 'Sistem Yöneticisi',
+  company_admin: 'Firma Yöneticisi',
+  user: 'Kullanıcı'
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -132,15 +132,15 @@ export default function AdminPanel() {
 
       <Tabs defaultValue="stats">
         <TabsList>
-          <TabsTrigger value="stats">Istatistikler</TabsTrigger>
-          <TabsTrigger value="users">Tum Kullanicilar</TabsTrigger>
+          <TabsTrigger value="stats">İstatistikler</TabsTrigger>
+          <TabsTrigger value="users">Tum Kullanıcılar</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stats" className="space-y-6 mt-4">
           {loading ? (
             <div className="text-center py-8">
               <RefreshCw className="h-6 w-6 animate-spin inline mr-2" />
-              Yukleniyor...
+              Yükleniyor...
             </div>
           ) : (
             <>
@@ -160,7 +160,7 @@ export default function AdminPanel() {
                     <Users className="h-10 w-10 text-green-500" />
                     <div>
                       <div className="text-3xl font-bold">{stats?.toplam_kullanici || 0}</div>
-                      <div className="text-sm text-muted-foreground">Toplam Kullanici</div>
+                      <div className="text-sm text-muted-foreground">Toplam Kullanıcı</div>
                     </div>
                   </CardContent>
                 </Card>
@@ -195,13 +195,13 @@ export default function AdminPanel() {
                 <Card>
                   <CardContent className="p-4 text-center">
                     <div className="text-2xl font-bold text-yellow-600">{stats?.askida_firma || 0}</div>
-                    <div className="text-sm text-muted-foreground">Askida Firma</div>
+                    <div className="text-sm text-muted-foreground">Askıda Firma</div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
                     <div className="text-2xl font-bold text-blue-600">{stats?.son_30_gun_cv || 0}</div>
-                    <div className="text-sm text-muted-foreground">Son 30 Gun CV</div>
+                    <div className="text-sm text-muted-foreground">Son 30 Gün CV</div>
                   </CardContent>
                 </Card>
               </div>
@@ -209,7 +209,7 @@ export default function AdminPanel() {
               {/* Company Stats Table */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Firma Bazli Istatistikler</CardTitle>
+                  <CardTitle className="text-lg">Firma Bazli İstatistikler</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <Table>
@@ -220,7 +220,7 @@ export default function AdminPanel() {
                         <TableHead>Durum</TableHead>
                         <TableHead className="text-right">Aday</TableHead>
                         <TableHead className="text-right">Pozisyon</TableHead>
-                        <TableHead className="text-right">Kullanici</TableHead>
+                        <TableHead className="text-right">Kullanıcı</TableHead>
                         <TableHead>Son CV</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -228,7 +228,7 @@ export default function AdminPanel() {
                       {companyStats.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                            Firma bulunamadi
+                            Firma bulunamadı
                           </TableCell>
                         </TableRow>
                       ) : companyStats.map(cs => (
@@ -285,8 +285,8 @@ export default function AdminPanel() {
                     <TableHead>Firma</TableHead>
                     <TableHead>Rol</TableHead>
                     <TableHead>Durum</TableHead>
-                    <TableHead>Son Giris</TableHead>
-                    <TableHead className="text-right">Islemler</TableHead>
+                    <TableHead>Son Giriş</TableHead>
+                    <TableHead className="text-right">İşlemler</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -294,13 +294,13 @@ export default function AdminPanel() {
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8">
                         <RefreshCw className="h-5 w-5 animate-spin inline mr-2" />
-                        Yukleniyor...
+                        Yükleniyor...
                       </TableCell>
                     </TableRow>
                   ) : filteredUsers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        Kullanici bulunamadi
+                        Kullanıcı bulunamadı
                       </TableCell>
                     </TableRow>
                   ) : filteredUsers.map(u => (
@@ -332,8 +332,8 @@ export default function AdminPanel() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="user">Kullanici</SelectItem>
-                                <SelectItem value="company_admin">Firma Yoneticisi</SelectItem>
+                                <SelectItem value="user">Kullanıcı</SelectItem>
+                                <SelectItem value="company_admin">Firma Yöneticisi</SelectItem>
                               </SelectContent>
                             </Select>
                             <Button

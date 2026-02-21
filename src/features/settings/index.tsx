@@ -11,7 +11,7 @@ import { SidebarNav } from './components/sidebar-nav'
 
 const sidebarNavItems = [
   {
-    title: 'Sifre Degistir',
+    title: 'Şifre Değiştir',
     href: '/settings',
     icon: <KeyRound size={18} />,
   },
@@ -21,7 +21,7 @@ const sidebarNavItems = [
     icon: <Palette size={18} />,
   },
   {
-    title: 'Gelismis',
+    title: 'Gelişmiş',
     href: '/settings/advanced',
     icon: <Settings2 size={18} />,
   },
@@ -46,7 +46,7 @@ export function Settings() {
             Ayarlar
           </h1>
           <p className='text-muted-foreground'>
-            Hesap ve sistem ayarlarinizi yonetin.
+            Hesap ve sistem ayarlarınızı yönetin.
           </p>
         </div>
         <Separator className='my-4 lg:my-6' />

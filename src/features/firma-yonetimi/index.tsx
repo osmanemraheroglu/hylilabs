@@ -101,7 +101,7 @@ export default function FirmaYonetimi() {
   }
 
   const handleCreate = () => {
-    if (!form.ad.trim()) { alert('Firma adi zorunlu'); return }
+    if (!form.ad.trim()) { alert('Firma adı zorunlu'); return }
     setSaving(true)
     fetch(`${API}/api/companies`, {
       method: 'POST',
@@ -119,7 +119,7 @@ export default function FirmaYonetimi() {
           resetForm()
           loadCompanies()
         } else {
-          alert(d.detail || 'Hata olustu')
+          alert(d.detail || 'Hata oluştu')
         }
       })
       .catch(e => alert('Hata: ' + e))
@@ -163,7 +163,7 @@ export default function FirmaYonetimi() {
           resetForm()
           loadCompanies()
         } else {
-          alert(d.detail || 'Hata olustu')
+          alert(d.detail || 'Hata oluştu')
         }
       })
       .catch(e => alert('Hata: ' + e))
@@ -193,7 +193,7 @@ export default function FirmaYonetimi() {
           setDeleteConfirm(null)
           loadCompanies()
         } else {
-          alert(d.detail || 'Hata olustu')
+          alert(d.detail || 'Hata oluştu')
         }
       })
       .catch(e => alert('Hata: ' + e))
@@ -204,7 +204,7 @@ export default function FirmaYonetimi() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Building2 className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-bold">Firma Yonetimi</h1>
+          <h1 className="text-2xl font-bold">Firma Yönetimi</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={loadCompanies} disabled={loading}>
@@ -224,13 +224,13 @@ export default function FirmaYonetimi() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10"></TableHead>
-                <TableHead>Firma Adi</TableHead>
+                <TableHead>Firma Adı</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Yetkili</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Limitler</TableHead>
                 <TableHead>Durum</TableHead>
-                <TableHead className="text-right">Islemler</TableHead>
+                <TableHead className="text-right">İşlemler</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -238,13 +238,13 @@ export default function FirmaYonetimi() {
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8">
                     <RefreshCw className="h-5 w-5 animate-spin inline mr-2" />
-                    Yukleniyor...
+                    Yükleniyor...
                   </TableCell>
                 </TableRow>
               ) : companies.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    Henuz firma bulunmuyor
+                    Henüz firma bulunmuyor
                   </TableCell>
                 </TableRow>
               ) : companies.map(c => (
@@ -276,7 +276,7 @@ export default function FirmaYonetimi() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(c)} title="Duzenle">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(c)} title="Düzenle">
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleToggleStatus(c)} title={c.aktif ? 'Pasif Yap' : 'Aktif Yap'}>
@@ -292,7 +292,7 @@ export default function FirmaYonetimi() {
                     <TableRow>
                       <TableCell colSpan={8} className="bg-muted/30 p-4">
                         {statsLoading ? (
-                          <div className="text-center py-2"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yukleniyor...</div>
+                          <div className="text-center py-2"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div>
                         ) : stats ? (
                           <div className="grid grid-cols-3 gap-4">
                             <Card>
@@ -318,13 +318,13 @@ export default function FirmaYonetimi() {
                                 <Users className="h-8 w-8 text-purple-500" />
                                 <div>
                                   <div className="text-2xl font-bold">{stats.toplam_kullanici}</div>
-                                  <div className="text-xs text-muted-foreground">Toplam Kullanici</div>
+                                  <div className="text-xs text-muted-foreground">Toplam Kullanıcı</div>
                                 </div>
                               </CardContent>
                             </Card>
                           </div>
                         ) : (
-                          <div className="text-center text-muted-foreground">Istatistik yuklenemedi</div>
+                          <div className="text-center text-muted-foreground">İstatistik yüklenemedi</div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -344,7 +344,7 @@ export default function FirmaYonetimi() {
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label>Firma Adi *</Label>
+              <Label>Firma Adı *</Label>
               <Input value={form.ad} onChange={e => setForm({...form, ad: e.target.value})} placeholder="Firma adi" />
             </div>
             <div className="space-y-2">
@@ -364,7 +364,7 @@ export default function FirmaYonetimi() {
               <Input value={form.adres} onChange={e => setForm({...form, adres: e.target.value})} placeholder="Adres" />
             </div>
             <div className="space-y-2">
-              <Label>Yetkili Adi</Label>
+              <Label>Yetkili Adı</Label>
               <Input value={form.yetkili_adi} onChange={e => setForm({...form, yetkili_adi: e.target.value})} placeholder="Ad Soyad" />
             </div>
             <div className="space-y-2">
@@ -387,7 +387,7 @@ export default function FirmaYonetimi() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Max Kullanici</Label>
+              <Label>Max Kullanıcı</Label>
               <Input type="number" value={form.max_kullanici} onChange={e => setForm({...form, max_kullanici: e.target.value})} />
             </div>
             <div className="space-y-2">
@@ -396,10 +396,10 @@ export default function FirmaYonetimi() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Iptal</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>İptal</Button>
             <Button onClick={handleCreate} disabled={saving}>
               {saving && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
-              Olustur
+              Oluştur
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -409,11 +409,11 @@ export default function FirmaYonetimi() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Firma Duzenle</DialogTitle>
+            <DialogTitle>Firma Düzenle</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label>Firma Adi *</Label>
+              <Label>Firma Adı *</Label>
               <Input value={form.ad} onChange={e => setForm({...form, ad: e.target.value})} />
             </div>
             <div className="space-y-2">
@@ -433,7 +433,7 @@ export default function FirmaYonetimi() {
               <Input value={form.adres} onChange={e => setForm({...form, adres: e.target.value})} />
             </div>
             <div className="space-y-2">
-              <Label>Yetkili Adi</Label>
+              <Label>Yetkili Adı</Label>
               <Input value={form.yetkili_adi} onChange={e => setForm({...form, yetkili_adi: e.target.value})} />
             </div>
             <div className="space-y-2">
@@ -456,7 +456,7 @@ export default function FirmaYonetimi() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Max Kullanici</Label>
+              <Label>Max Kullanıcı</Label>
               <Input type="number" value={form.max_kullanici} onChange={e => setForm({...form, max_kullanici: e.target.value})} />
             </div>
             <div className="space-y-2">
@@ -465,7 +465,7 @@ export default function FirmaYonetimi() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Iptal</Button>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>İptal</Button>
             <Button onClick={handleUpdate} disabled={saving}>
               {saving && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
               Kaydet
@@ -480,9 +480,9 @@ export default function FirmaYonetimi() {
           <DialogHeader>
             <DialogTitle>Firma Sil</DialogTitle>
           </DialogHeader>
-          <p>Bu firmayi silmek istediginizden emin misiniz? Bu islem geri alinamaz.</p>
+          <p>Bu firmayi silmek istediginizden emin misiniz? Bu islem geri alınamaz.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Iptal</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>İptal</Button>
             <Button variant="destructive" onClick={handleDelete}>Sil</Button>
           </DialogFooter>
         </DialogContent>

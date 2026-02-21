@@ -30,7 +30,7 @@ interface Candidate { id: number; ad_soyad: string; email: string|null; telefon:
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   aktif: { label: 'Aktif', color: 'bg-blue-100 text-blue-800' },
   beklemede: { label: 'Beklemede', color: 'bg-yellow-100 text-yellow-800' },
-  inceleniyor: { label: 'Inceleniyor', color: 'bg-purple-100 text-purple-800' },
+  inceleniyor: { label: 'İnceleniyor', color: 'bg-purple-100 text-purple-800' },
   mulakat: { label: 'Mulakat', color: 'bg-cyan-100 text-cyan-800' },
   teklif: { label: 'Teklif', color: 'bg-green-100 text-green-800' },
   red: { label: 'Red', color: 'bg-red-100 text-red-800' },
@@ -45,7 +45,7 @@ function dayColor(d: number|undefined) {
 
 function scoreIcon(s: number) {
   if (s >= 80) return { icon: '\uD83D\uDFE2', label: 'Tam Uyumlu' }
-  if (s >= 50) return { icon: '\uD83D\uDFE1', label: 'Kismi Uyumlu' }
+  if (s >= 50) return { icon: '\uD83D\uDFE1', label: 'Kısmi Uyumlu' }
   return { icon: '\uD83D\uDD34', label: 'Uyumsuz' }
 }
 
@@ -249,7 +249,7 @@ export default function Havuzlar() {
       })
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}))
-        throw new Error(errData.detail || "Indirme hatasi")
+        throw new Error(errData.detail || "İndirme hatası")
       }
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
@@ -275,7 +275,7 @@ export default function Havuzlar() {
     setParseLoading(true); setParsedData(null)
     fetch(`${API}/api/pools/position/from-url`, { method: 'POST', headers: H(), body: JSON.stringify({ url: urlInput }) })
       .then(r => r.json()).then(res => {
-        if (res.basarili) {
+        if (res.başarılı) {
           setParsedData(res)
           setPositionForm({
             pozisyon_adi: res.pozisyon_adi || '',
@@ -286,14 +286,14 @@ export default function Havuzlar() {
             aranan_nitelikler: res.aranan_nitelikler || '',
             is_tanimi: res.is_tanimi || ''
           })
-        } else { alert(res.hata || res.detail || 'Parse hatasi') }
+        } else { alert(res.hata || res.detail || 'Parse hatası') }
       }).catch(e => alert('Hata: ' + e)).finally(() => setParseLoading(false))
   }
 
   // Parse Sonucu veya Manuel Kaydet
   const handleSaveParsed = () => {
-    if (!positionForm.pozisyon_adi) { alert("Pozisyon adi gerekli"); return }
-    if (!poolForm.parent_id) { alert("Departman secilmedi"); return }
+    if (!positionForm.pozisyon_adi) { alert("Pozisyon adı gerekli"); return }
+    if (!poolForm.parent_id) { alert("Departman seçilmedi"); return }
     setSavingPosition(true)
     const payload = {
       parent_id: Number(poolForm.parent_id),
@@ -312,7 +312,7 @@ export default function Havuzlar() {
           setPositionForm({ pozisyon_adi: '', lokasyon: '', deneyim_yil: '0', egitim_seviyesi: '', keywords: '', aranan_nitelikler: '', is_tanimi: '' })
           loadTree(); loadAllPools()
           alert('Pozisyon basariyla eklendi!')
-        } else { alert(res.detail || 'Kayit hatasi') }
+        } else { alert(res.detail || 'Kayıt hatası') }
       }).catch(e => alert('Hata: ' + e)).finally(() => setSavingPosition(false))
   }
 
@@ -417,7 +417,7 @@ export default function Havuzlar() {
       .then(r => r.json())
       .then(res => {
         if (res.success) {
-          alert('AI degerlendirme tamamlandi!')
+          alert('AI değerlendirme tamamlandi!')
           loadDetail(candidateId)
         } else { alert(res.detail || 'Hata') }
       })
@@ -497,12 +497,12 @@ export default function Havuzlar() {
         <div className="space-y-1">
           <div className="font-medium">Teknik Yetkinlik: <span className="text-purple-600">{String(v2.technical_score || 0)}/37</span></div>
           <div className="text-muted-foreground ml-2">Kritik: {String(v2.critical_score || 0)}</div>
-          <div className="text-muted-foreground ml-2">Onemli: {String(v2.important_score || 0)}</div>
+          <div className="text-muted-foreground ml-2">Önemli: {String(v2.important_score || 0)}</div>
         </div>
         <div className="space-y-1">
           <div className="font-medium">Genel: <span className="text-green-600">{String(v2.general_score || 0)}/20</span></div>
           <div className="text-muted-foreground ml-2">Deneyim: {String(v2.experience_score || 0)}</div>
-          <div className="text-muted-foreground ml-2">Egitim: {String(v2.education_score || 0)}</div>
+          <div className="text-muted-foreground ml-2">Eğitim: {String(v2.education_score || 0)}</div>
         </div>
         <div className="space-y-1">
           <div className="font-medium">Eleme: <span className="text-orange-600">{String(v2.elimination_score || 0)}/10</span></div>
@@ -513,7 +513,7 @@ export default function Havuzlar() {
           <div className="col-span-2"><span className="font-medium text-red-600">Eksik Kritik:</span> {(v2.critical_missing as string[]).join(', ')}</div>
         )}
         {Array.isArray(v2.critical_matched) && (v2.critical_matched as string[]).length > 0 && (
-          <div className="col-span-2"><span className="font-medium text-green-600">Eslesen Kritik:</span> {(v2.critical_matched as string[]).join(', ')}</div>
+          <div className="col-span-2"><span className="font-medium text-green-600">Eşleşen Kritik:</span> {(v2.critical_matched as string[]).join(', ')}</div>
         )}
       </div>
     )
@@ -525,11 +525,11 @@ export default function Havuzlar() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2"><FolderTree className="h-6 w-6" /> Havuzlar</h2>
-          <p className="text-muted-foreground text-sm">Departman ve pozisyon havuzlarini yonetin</p>
+          <p className="text-muted-foreground text-sm">Departman ve pozisyon havuzlarini yönetin</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => { loadTree(); loadAllPools(); if (selectedPoolId) loadCandidates(selectedPoolId) }} disabled={loading}><RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />Yenile</Button>
-          <Button size="sm" variant="outline" onClick={handleSyncAll} disabled={syncing}>{syncing ? <RefreshCw className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}Eslestir</Button>
+          <Button size="sm" variant="outline" onClick={handleSyncAll} disabled={syncing}>{syncing ? <RefreshCw className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}Eşleştir</Button>
           <Button size="sm" onClick={() => openCreate('department')}><Plus className="h-4 w-4 mr-1" />Departman</Button>
         </div>
       </div>
@@ -547,7 +547,7 @@ export default function Havuzlar() {
         {/* Left: Tree */}
         <div className="col-span-4">
           <Card><CardContent className="p-3 space-y-1">
-            <div className="text-sm font-medium text-muted-foreground mb-2">Havuz Agaci</div>
+            <div className="text-sm font-medium text-muted-foreground mb-2">Havuz Ağacı</div>
             {tree?.system_pools?.map(sp => (
               <div key={sp.id} className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-muted ${selectedPoolId === sp.id ? 'bg-muted border border-primary' : ''}`} onClick={() => setSelectedPoolId(sp.id)}>
                 <div className="flex items-center gap-2">{sp.name === 'Ar\u015Fiv' ? <Archive className="h-4 w-4 text-orange-500" /> : <Inbox className="h-4 w-4 text-blue-500" />}<span className="text-sm font-medium">{sp.name}</span></div>
@@ -581,7 +581,7 @@ export default function Havuzlar() {
         {/* Right: Candidates */}
         <div className="col-span-8">
           {!selectedPoolId ? (
-            <Card><CardContent className="p-12 text-center text-muted-foreground"><FolderTree className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>Aday listesini gormek icin soldaki agactan bir havuz secin</p></CardContent></Card>
+            <Card><CardContent className="p-12 text-center text-muted-foreground"><FolderTree className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>Aday listesini görmek için soldaki ağaçtan bir havuz secin</p></CardContent></Card>
           ) : (
             <Card><CardContent className="p-4 space-y-3">
               {/* Pool Header */}
@@ -591,7 +591,7 @@ export default function Havuzlar() {
                   {poolInfo?.description && <p className="text-xs text-muted-foreground">{poolInfo.description}</p>}
                 </div>
                 <div className="flex gap-1.5">
-                  {poolInfo && !poolInfo.is_system && (<><Button variant="outline" size="sm" onClick={openEdit}><Edit className="h-3.5 w-3.5 mr-1" />Duzenle</Button><Button variant="outline" size="sm" className="text-red-500" onClick={() => setDeleteConfirm(selectedPoolId)}><Trash2 className="h-3.5 w-3.5 mr-1" />Sil</Button></>)}
+                  {poolInfo && !poolInfo.is_system && (<><Button variant="outline" size="sm" onClick={openEdit}><Edit className="h-3.5 w-3.5 mr-1" />Düzenle</Button><Button variant="outline" size="sm" className="text-red-500" onClick={() => setDeleteConfirm(selectedPoolId)}><Trash2 className="h-3.5 w-3.5 mr-1" />Sil</Button></>)}
                   {poolInfo && poolInfo.pool_type === 'position' && !poolInfo.is_system && (
                     <Button variant="default" size="sm" onClick={handlePullCandidates} disabled={pulling}>{pulling ? <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1" />}CV Cek</Button>
                   )}
@@ -608,7 +608,7 @@ export default function Havuzlar() {
                 <Select value={filterScore} onValueChange={setFilterScore}>
                   <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tum Skorlar</SelectItem>
+                    <SelectItem value="all">Tüm Skorlar</SelectItem>
                     <SelectItem value="high">80+ Tam Uyum</SelectItem>
                     <SelectItem value="medium">50-79 Kismi</SelectItem>
                     <SelectItem value="low">0-49 Uyumsuz</SelectItem>
@@ -617,18 +617,18 @@ export default function Havuzlar() {
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tum Durum</SelectItem>
+                    <SelectItem value="all">Tüm Durum</SelectItem>
                     {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="default">Varsayilan</SelectItem>
-                    <SelectItem value="score_desc">Skor (Yuksek)</SelectItem>
-                    <SelectItem value="score_asc">Skor (Dusuk)</SelectItem>
+                    <SelectItem value="default">Varsayılan</SelectItem>
+                    <SelectItem value="score_desc">Skor (Yüksek)</SelectItem>
+                    <SelectItem value="score_asc">Skor (Düşük)</SelectItem>
                     <SelectItem value="exp">Deneyim</SelectItem>
-                    <SelectItem value="name">Isim (A-Z)</SelectItem>
+                    <SelectItem value="name">İsim (A-Z)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -642,14 +642,14 @@ export default function Havuzlar() {
                   </>
                 )}
                 <div className="flex-1" />
-                <Button size="sm" variant="outline" onClick={handleDownloadPoolCVs} disabled={downloadingCVs || filteredCandidates.length === 0}>{downloadingCVs ? <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}CV Indir</Button>
+                <Button size="sm" variant="outline" onClick={handleDownloadPoolCVs} disabled={downloadingCVs || filteredCandidates.length === 0}>{downloadingCVs ? <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}CV İndir</Button>
                 <Button size="sm" variant="ghost" onClick={handleExport}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
                 <Badge variant="outline">{filteredCandidates.length} aday</Badge>
               </div>
 
               {/* Candidates Table */}
               {candidatesLoading ? (
-                <div className="text-center py-8 text-muted-foreground"><RefreshCw className="h-5 w-5 animate-spin inline mr-2" />Yukleniyor...</div>
+                <div className="text-center py-8 text-muted-foreground"><RefreshCw className="h-5 w-5 animate-spin inline mr-2" />Yükleniyor...</div>
               ) : filteredCandidates.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">Bu havuzda aday bulunmuyor</div>
               ) : (
@@ -692,8 +692,8 @@ export default function Havuzlar() {
                               </TableCell>
                               <TableCell onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center gap-1">
-                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEvaluate(c.id)} disabled={evaluating} title="AI Degerlendir"><Brain className="h-3.5 w-3.5 text-purple-500" /></Button>
-                                  <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRemoveCandidate(c.id)} title="Cikar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEvaluate(c.id)} disabled={evaluating} title="AI Değerlendir"><Brain className="h-3.5 w-3.5 text-purple-500" /></Button>
+                                  <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRemoveCandidate(c.id)} title="Çıkar"><Trash2 className="h-3.5 w-3.5" /></Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -701,15 +701,15 @@ export default function Havuzlar() {
                             {expandedCandidate === c.id && (
                               <TableRow key={`detail-${c.id}`}>
                                 <TableCell colSpan={8} className="bg-muted/30 p-4">
-                                  {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yukleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const v2d = (candidateDetail as any).v2_detail; const aie = (candidateDetail as any).ai_evaluation; return (
+                                  {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const v2d = (candidateDetail as any).v2_detail; const aie = (candidateDetail as any).ai_evaluation; return (
                                     <div className="space-y-3">
                                       {/* Kisisel Bilgiler */}
                                       <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-xs">
                                         <div className="min-w-0 truncate"><span className="font-medium">Email:</span> {String(cd?.email || '-')}</div>
                                         <div><span className="font-medium">Telefon:</span> {String(cd?.telefon || '-')}</div>
                                         <div className="min-w-0 truncate"><span className="font-medium">Lokasyon:</span> {String(cd?.lokasyon || '-')}</div>
-                                        <div className="min-w-0 truncate"><span className="font-medium">Sirket:</span> {String(cd?.mevcut_sirket || '-')}</div>
-                                        <div className="min-w-0 truncate col-span-2"><span className="font-medium">Egitim:</span> {String(cd?.egitim || '-')} {cd?.universite ? `/ ${cd?.universite as string}` : ''}</div>
+                                        <div className="min-w-0 truncate"><span className="font-medium">Şirket:</span> {String(cd?.mevcut_sirket || '-')}</div>
+                                        <div className="min-w-0 truncate col-span-2"><span className="font-medium">Eğitim:</span> {String(cd?.egitim || '-')} {cd?.universite ? `/ ${cd?.universite as string}` : ''}</div>
                                         <div><span className="font-medium">Deneyim:</span> {String(cd?.toplam_deneyim_yil || '-')} yil</div>
                                       </div>
                                       {/* Teknik Beceriler */}
@@ -734,14 +734,14 @@ export default function Havuzlar() {
                                       {/* AI Evaluation */}
                                       <div className="border rounded p-3 bg-white">
                                         <div className="flex items-center justify-between mb-2">
-                                          <div className="text-xs font-medium flex items-center gap-1"><Brain className="h-3 w-3" />AI Degerlendirme {aie ? `(v2: ${String((aie)?.v2_score || '-')})` : ''}</div>
+                                          <div className="text-xs font-medium flex items-center gap-1"><Brain className="h-3 w-3" />AI Değerlendirme {aie ? `(v2: ${String((aie)?.v2_score || '-')})` : ''}</div>
                                           <div className="flex gap-1">
-                                            <Button size="sm" variant="outline" onClick={() => handleViewCV(cd.id)} disabled={!cd?.cv_dosya_adi} className="h-6 text-[10px] px-2" title={cd?.cv_dosya_adi ? 'CV Goruntule' : 'CV yok'}>
+                                            <Button size="sm" variant="outline" onClick={() => handleViewCV(cd.id)} disabled={!cd?.cv_dosya_adi} className="h-6 text-[10px] px-2" title={cd?.cv_dosya_adi ? 'CV Görüntüle' : 'CV yok'}>
                                               <FileText className="h-3 w-3 mr-1" />CV
                                             </Button>
                                             <Button size="sm" variant="outline" onClick={() => handleEvaluate(cd.id)} disabled={evaluating} className="h-6 text-[10px] px-2">
                                               {evaluating ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Brain className="h-3 w-3 mr-1" />}
-                                              {aie ? 'Yeniden Degerlendir' : 'AI Degerlendir'}
+                                              {aie ? 'Yeniden Değerlendir' : 'AI Değerlendir'}
                                             </Button>
                                             <Button size="sm" variant="outline" onClick={() => handleDownloadReport(cd.id)} disabled={!aie} className="h-6 text-[10px] px-2">
                                               <FileText className="h-3 w-3 mr-1" />Rapor
@@ -751,7 +751,7 @@ export default function Havuzlar() {
                                         {aie ? (
                                           <div className="text-xs whitespace-pre-line text-muted-foreground">{String((aie)?.text || '')}</div>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">Henuz AI degerlendirme yapilmamis</div>
+                                          <div className="text-xs text-muted-foreground italic">Henuz AI değerlendirme yapilmamis</div>
                                         )}
                                       </div>
                                     </div>
@@ -774,7 +774,7 @@ export default function Havuzlar() {
                   <div className="flex items-center justify-between mb-3 cursor-pointer" onClick={() => setTitlesExpanded(!titlesExpanded)}>
                     <h4 className="font-medium text-sm flex items-center gap-2">
                       <Brain className="h-4 w-4" />
-                      Akilli Havuz Basliklari
+                      Akıllı Havuz Başlıkları
                     </h4>
                     {titlesExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </div>
@@ -782,12 +782,12 @@ export default function Havuzlar() {
                   {titlesExpanded && (
                     <div className="space-y-4">
                       {titlesLoading ? (
-                        <div className="text-center py-4 text-muted-foreground text-sm"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yukleniyor...</div>
+                        <div className="text-center py-4 text-muted-foreground text-sm"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div>
                       ) : (
                         <>
                           {/* Onaylı Başlıklar */}
                           <div className="space-y-2">
-                            <div className="text-xs font-medium text-muted-foreground">Onayli Basliklar</div>
+                            <div className="text-xs font-medium text-muted-foreground">Onaylı Başlıklar</div>
                             {approvedTitles && (approvedTitles.exact?.length > 0 || approvedTitles.similar?.length > 0 || approvedTitles.related?.length > 0) ? (
                               <div className="space-y-1">
                                 {approvedTitles.exact?.length > 0 && (
@@ -804,13 +804,13 @@ export default function Havuzlar() {
                                 )}
                                 {approvedTitles.related?.length > 0 && (
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-xs">🔗 Iliskili:</span>
+                                    <span className="text-xs">🔗 İlişkili:</span>
                                     {approvedTitles.related.map(t => <Badge key={t.id} variant="secondary" className="text-[10px]">{t.related_title}</Badge>)}
                                   </div>
                                 )}
                               </div>
                             ) : (
-                              <div className="text-xs text-muted-foreground">Henuz onayli baslik yok</div>
+                              <div className="text-xs text-muted-foreground">Henuz onaylı başlık yok</div>
                             )}
                           </div>
 
@@ -839,7 +839,7 @@ export default function Havuzlar() {
                                   className="mt-2"
                                 >
                                   {approving ? <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-                                  Secilenleri Onayla ({selectedPending.size})
+                                  Seçilenleri Onayla ({selectedPending.size})
                                 </Button>
                               </div>
                             ) : (
@@ -885,7 +885,7 @@ export default function Havuzlar() {
 
                 {parsedData && (
                   <div className="space-y-3 border-t pt-3">
-                    <div className="text-sm font-medium text-green-600">Analiz basarili! Asagidaki bilgileri duzenleyebilirsiniz:</div>
+                    <div className="text-sm font-medium text-green-600">Analiz başarılı! Asagidaki bilgileri duzenleyebilirsiniz:</div>
                     <div className="grid grid-cols-2 gap-2">
                       <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} /></div>
                       <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} /></div>
@@ -893,15 +893,15 @@ export default function Havuzlar() {
                     <div className="grid grid-cols-2 gap-2">
                       <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
                       <div>
-                        <Label className="text-sm">Egitim Seviyesi</Label>
+                        <Label className="text-sm">Eğitim Seviyesi</Label>
                         <Select value={positionForm.egitim_seviyesi} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v})}>
-                          <SelectTrigger><SelectValue placeholder="Secin..." /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder="Seçin..." /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">-</SelectItem>
                             <SelectItem value="Lise">Lise</SelectItem>
-                            <SelectItem value="On Lisans">On Lisans</SelectItem>
+                            <SelectItem value="Ön Lisans">Ön Lisans</SelectItem>
                             <SelectItem value="Lisans">Lisans</SelectItem>
-                            <SelectItem value="Yuksek Lisans">Yuksek Lisans</SelectItem>
+                            <SelectItem value="Yüksek Lisans">Yüksek Lisans</SelectItem>
                             <SelectItem value="Doktora">Doktora</SelectItem>
                           </SelectContent>
                         </Select>
@@ -909,7 +909,7 @@ export default function Havuzlar() {
                     </div>
                     <div><Label className="text-sm">Anahtar Kelimeler (virgul ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} /></div>
                     <div><Label className="text-sm">Aranan Nitelikler</Label><Textarea value={positionForm.aranan_nitelikler} onChange={e => setPositionForm({...positionForm, aranan_nitelikler: e.target.value})} rows={3} /></div>
-                    <div><Label className="text-sm">Is Tanimi</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} /></div>
+                    <div><Label className="text-sm">İş Tanımı</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} /></div>
                     <Button onClick={handleSaveParsed} disabled={savingPosition || !positionForm.pozisyon_adi} className="w-full">
                       {savingPosition ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : null}Kaydet
                     </Button>
@@ -950,7 +950,7 @@ export default function Havuzlar() {
                                 is_tanimi: res.data.is_tanimi || ''
                               })
                             } else {
-                              alert(res.detail || res.message || 'Parse hatasi')
+                              alert(res.detail || res.message || 'Parse hatası')
                             }
                           })
                           .catch(err => alert('Hata: ' + err.message))
@@ -970,7 +970,7 @@ export default function Havuzlar() {
 
                 {parsedData && (
                   <div className="space-y-3 border-t pt-3">
-                    <div className="text-sm font-medium text-green-600">Analiz basarili! Asagidaki bilgileri duzenleyebilirsiniz:</div>
+                    <div className="text-sm font-medium text-green-600">Analiz başarılı! Asagidaki bilgileri duzenleyebilirsiniz:</div>
                     <div className="grid grid-cols-2 gap-2">
                       <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} /></div>
                       <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} /></div>
@@ -978,15 +978,15 @@ export default function Havuzlar() {
                     <div className="grid grid-cols-2 gap-2">
                       <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
                       <div>
-                        <Label className="text-sm">Egitim Seviyesi</Label>
+                        <Label className="text-sm">Eğitim Seviyesi</Label>
                         <Select value={positionForm.egitim_seviyesi} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v})}>
-                          <SelectTrigger><SelectValue placeholder="Secin..." /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder="Seçin..." /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">-</SelectItem>
                             <SelectItem value="Lise">Lise</SelectItem>
-                            <SelectItem value="On Lisans">On Lisans</SelectItem>
+                            <SelectItem value="Ön Lisans">Ön Lisans</SelectItem>
                             <SelectItem value="Lisans">Lisans</SelectItem>
-                            <SelectItem value="Yuksek Lisans">Yuksek Lisans</SelectItem>
+                            <SelectItem value="Yüksek Lisans">Yüksek Lisans</SelectItem>
                             <SelectItem value="Doktora">Doktora</SelectItem>
                           </SelectContent>
                         </Select>
@@ -994,7 +994,7 @@ export default function Havuzlar() {
                     </div>
                     <div><Label className="text-sm">Anahtar Kelimeler (virgul ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} /></div>
                     <div><Label className="text-sm">Aranan Nitelikler</Label><Textarea value={positionForm.aranan_nitelikler} onChange={e => setPositionForm({...positionForm, aranan_nitelikler: e.target.value})} rows={3} /></div>
-                    <div><Label className="text-sm">Is Tanimi</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} /></div>
+                    <div><Label className="text-sm">İş Tanımı</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} /></div>
                     <Button onClick={handleSaveParsed} disabled={savingPosition || !positionForm.pozisyon_adi} className="w-full">
                       {savingPosition ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : null}Kaydet
                     </Button>
@@ -1005,21 +1005,21 @@ export default function Havuzlar() {
               {/* TAB 3: Manuel Giris */}
               <TabsContent value="manual" className="space-y-3 mt-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} placeholder="Ornek: Frontend Developer" /></div>
+                  <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} placeholder="Örnek: Frontend Developer" /></div>
                   <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} placeholder="Istanbul" /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
                   <div>
-                    <Label className="text-sm">Egitim Seviyesi</Label>
+                    <Label className="text-sm">Eğitim Seviyesi</Label>
                     <Select value={positionForm.egitim_seviyesi} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v})}>
-                      <SelectTrigger><SelectValue placeholder="Secin..." /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Seçin..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">-</SelectItem>
                         <SelectItem value="Lise">Lise</SelectItem>
-                        <SelectItem value="On Lisans">On Lisans</SelectItem>
+                        <SelectItem value="Ön Lisans">Ön Lisans</SelectItem>
                         <SelectItem value="Lisans">Lisans</SelectItem>
-                        <SelectItem value="Yuksek Lisans">Yuksek Lisans</SelectItem>
+                        <SelectItem value="Yüksek Lisans">Yüksek Lisans</SelectItem>
                         <SelectItem value="Doktora">Doktora</SelectItem>
                       </SelectContent>
                     </Select>
@@ -1027,7 +1027,7 @@ export default function Havuzlar() {
                 </div>
                 <div><Label className="text-sm">Anahtar Kelimeler (virgul ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} placeholder="react, typescript, node.js" /></div>
                 <div><Label className="text-sm">Aranan Nitelikler</Label><Textarea value={positionForm.aranan_nitelikler} onChange={e => setPositionForm({...positionForm, aranan_nitelikler: e.target.value})} rows={3} placeholder="Gerekli beceriler ve nitelikler..." /></div>
-                <div><Label className="text-sm">Is Tanimi</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} placeholder="Pozisyon hakkinda detaylar..." /></div>
+                <div><Label className="text-sm">İş Tanımı</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} placeholder="Pozisyon hakkinda detaylar..." /></div>
                 <Button onClick={handleSaveParsed} disabled={savingPosition || !positionForm.pozisyon_adi} className="w-full">
                   {savingPosition ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : null}Kaydet
                 </Button>
@@ -1036,9 +1036,9 @@ export default function Havuzlar() {
           ) : (
             /* Departman ekleme (eski basit form) */
             <div className="space-y-3">
-              <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} placeholder="Ornek: Yazilim Gelistirme" /></div>
-              <div><Label className="text-sm">Aciklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
-              <DialogFooter><Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Iptal</Button><Button onClick={handleCreatePool} disabled={!poolForm.name}>Olustur</Button></DialogFooter>
+              <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} placeholder="Örnek: Yazilim Gelistirme" /></div>
+              <div><Label className="text-sm">Açıklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
+              <DialogFooter><Button variant="outline" onClick={() => setCreateDialogOpen(false)}>İptal</Button><Button onClick={handleCreatePool} disabled={!poolForm.name}>Oluştur</Button></DialogFooter>
             </div>
           )}
         </DialogContent>
@@ -1046,10 +1046,10 @@ export default function Havuzlar() {
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Havuz Duzenle</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Havuz Düzenle</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} /></div>
-            <div><Label className="text-sm">Aciklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
+            <div><Label className="text-sm">Açıklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
 
             {/* Keyword Yonetimi */}
             {poolInfo?.pool_type === 'position' && (
@@ -1058,7 +1058,7 @@ export default function Havuzlar() {
                 {/* Mevcut Keywords */}
                 <div className="flex flex-wrap gap-1.5">
                   {editKeywords.length === 0 ? (
-                    <span className="text-xs text-muted-foreground">Henuz keyword yok</span>
+                    <span className="text-xs text-muted-foreground">Henüz keyword yok</span>
                   ) : (
                     editKeywords.map((kw, i) => (
                       <Badge key={i} variant="secondary" className="text-xs pr-1 flex items-center gap-1">
@@ -1067,7 +1067,7 @@ export default function Havuzlar() {
                           onClick={() => handleRemoveKeyword(kw)}
                           disabled={keywordLoading}
                           className="ml-1 hover:bg-muted-foreground/20 rounded p-0.5"
-                          title="Kaldir"
+                          title="Kaldır"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -1092,21 +1092,21 @@ export default function Havuzlar() {
               </div>
             )}
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setEditDialogOpen(false)}>Iptal</Button><Button onClick={handleUpdatePool} disabled={!poolForm.name}>Kaydet</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button><Button onClick={handleUpdatePool} disabled={!poolForm.name}>Kaydet</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={deleteConfirm !== null} onOpenChange={o => { if (!o) setDeleteConfirm(null) }}>
         <DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Havuz Sil</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">Bu havuzu silmek istediginizden emin misiniz? Adaylar Genel Havuz'a tasinacaktir.</p>
-          <DialogFooter><Button variant="outline" onClick={() => setDeleteConfirm(null)}>Iptal</Button><Button variant="destructive" onClick={handleDeletePool}>Sil</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setDeleteConfirm(null)}>İptal</Button><Button variant="destructive" onClick={handleDeletePool}>Sil</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Aday Ata</DialogTitle></DialogHeader>
-          <div><Label className="text-sm">Aday ID</Label><Input type="number" value={assignCandidateId} onChange={e => setAssignCandidateId(e.target.value)} placeholder="Ornek: 421" /></div>
-          <DialogFooter><Button variant="outline" onClick={() => setAssignDialogOpen(false)}>Iptal</Button><Button onClick={handleAssignCandidate} disabled={!assignCandidateId}>Ata</Button></DialogFooter>
+          <div><Label className="text-sm">Aday ID</Label><Input type="number" value={assignCandidateId} onChange={e => setAssignCandidateId(e.target.value)} placeholder="Örnek: 421" /></div>
+          <DialogFooter><Button variant="outline" onClick={() => setAssignDialogOpen(false)}>İptal</Button><Button onClick={handleAssignCandidate} disabled={!assignCandidateId}>Ata</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -1117,7 +1117,7 @@ export default function Havuzlar() {
               <SelectContent>{allPools.filter(p => p.id !== selectedPoolId).map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setTransferDialogOpen(false)}>Iptal</Button><Button onClick={handleTransfer} disabled={!transferTargetId}>Transfer</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setTransferDialogOpen(false)}>İptal</Button><Button onClick={handleTransfer} disabled={!transferTargetId}>Transfer</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -1128,7 +1128,7 @@ export default function Havuzlar() {
               <SelectContent>{Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Iptal</Button><Button onClick={handleStatusUpdate} disabled={!statusValue}>Guncelle</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setStatusDialogOpen(false)}>İptal</Button><Button onClick={handleStatusUpdate} disabled={!statusValue}>Guncelle</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

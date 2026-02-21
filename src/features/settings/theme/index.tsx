@@ -33,13 +33,13 @@ export function SettingsTheme() {
 
   function onSubmit(data: ThemeFormValues) {
     setTheme(data.theme)
-    toast.success('Tema tercihleri guncellendi')
+    toast.success('Tema tercihleri güncellendi')
   }
 
   return (
     <ContentSection
       title='Tema'
-      desc='Kontrol paneli icin tema secin.'
+      desc='Kontrol paneli için tema seçin.'
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
@@ -48,7 +48,7 @@ export function SettingsTheme() {
             name='theme'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tema Secimi</FormLabel>
+                <FormLabel>Tema Seçimi</FormLabel>
                 <FormMessage />
                 <RadioGroup
                   onValueChange={field.onChange}
@@ -77,7 +77,7 @@ export function SettingsTheme() {
                         </div>
                       </div>
                       <span className='block w-full p-2 text-center font-normal'>
-                        Acik
+                        Açık
                       </span>
                     </FormLabel>
                   </FormItem>
@@ -112,7 +112,7 @@ export function SettingsTheme() {
             )}
           />
 
-          <Button type='submit'>Tercihleri Guncelle</Button>
+          <Button type='submit'>Tercihleri Güncelle</Button>
         </form>
       </Form>
     </ContentSection>

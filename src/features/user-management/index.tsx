@@ -78,7 +78,7 @@ export default function UserManagement() {
       const data = await res.json()
       if (data.success) {
         setTempPassword(data.data.temp_password)
-        showMsg('Kullanici olusturuldu.')
+        showMsg('Kullanıcı oluşturuldu.')
         setShowAddForm(false)
         setNewEmail('')
         setNewName('')
@@ -88,7 +88,7 @@ export default function UserManagement() {
         showMsg('Hata: ' + (data.detail || 'Bilinmeyen hata'))
       }
     } catch (err) {
-      showMsg('Baglanti hatasi')
+      showMsg('Bağlantı hatası')
     }
   }
 
@@ -108,19 +108,19 @@ export default function UserManagement() {
       })
       const data = await res.json()
       if (data.success) {
-        showMsg('Kullanici guncellendi')
+        showMsg('Kullanıcı güncellendi')
         setEditUser(null)
         loadUsers()
       } else {
         showMsg('Hata: ' + (data.detail || 'Bilinmeyen hata'))
       }
     } catch (err) {
-      showMsg('Baglanti hatasi')
+      showMsg('Bağlantı hatası')
     }
   }
 
   const handleDelete = async (userId: number, userName: string) => {
-    if (!confirm(userName + ' kullanicisinii silmek istediginize emin misiniz?')) return
+    if (!confirm(userName + ' kullanıcısını silmek istediğinize emin misiniz?')) return
     try {
       const res = await fetch(`${API_URL}/api/users/${userId}`, {
         method: 'DELETE',
@@ -128,13 +128,13 @@ export default function UserManagement() {
       })
       const data = await res.json()
       if (data.success) {
-        showMsg('Kullanici silindi')
+        showMsg('Kullanıcı silindi')
         loadUsers()
       } else {
         showMsg('Hata: ' + (data.detail || 'Bilinmeyen hata'))
       }
     } catch (err) {
-      showMsg('Baglanti hatasi')
+      showMsg('Bağlantı hatası')
     }
   }
 
@@ -148,12 +148,12 @@ export default function UserManagement() {
       showMsg(data.message)
       loadUsers()
     } catch (err) {
-      showMsg('Baglanti hatasi')
+      showMsg('Bağlantı hatası')
     }
   }
 
   const handleResetPassword = async (userId: number, userName: string) => {
-    if (!confirm(userName + ' kullanicisinin sifresini sifirlamak istiyor musunuz?')) return
+    if (!confirm(userName + ' kullanıcısının şifresini sıfırlamak istiyor musunuz?')) return
     try {
       const res = await fetch(`${API_URL}/api/users/${userId}/reset-password`, {
         method: 'POST',
@@ -162,12 +162,12 @@ export default function UserManagement() {
       const data = await res.json()
       if (data.success) {
         setTempPassword(data.data.temp_password)
-        showMsg('Sifre sifirlandi.')
+        showMsg('Şifre sıfırlandı.')
       } else {
         showMsg('Hata: ' + (data.detail || 'Bilinmeyen hata'))
       }
     } catch (err) {
-      showMsg('Baglanti hatasi')
+      showMsg('Bağlantı hatası')
     }
   }
 
@@ -190,12 +190,12 @@ export default function UserManagement() {
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>
         <div>
-          <h2 className='text-2xl font-bold tracking-tight'>Kullanici Yonetimi</h2>
-          <p className='text-muted-foreground'>Firma kullanicilarini yonetin</p>
+          <h2 className='text-2xl font-bold tracking-tight'>Kullanıcı Yönetimi</h2>
+          <p className='text-muted-foreground'>Firma kullanıcılarını yönetin</p>
         </div>
         <Button onClick={() => setShowAddForm(!showAddForm)}>
           <UserPlus className='mr-2 h-4 w-4' />
-          Yeni Kullanici
+          Yeni Kullanıcı
         </Button>
       </div>
 
@@ -207,8 +207,8 @@ export default function UserManagement() {
 
       {tempPassword && (
         <div className='rounded-md bg-yellow-50 p-4 text-sm text-yellow-800 border border-yellow-200'>
-          <strong>Gecici Sifre:</strong> {tempPassword}
-          <span className='ml-2 text-xs'>(Bu sifreyi not edin, tekrar gosterilmeyecek)</span>
+          <strong>Geçici Şifre:</strong> {tempPassword}
+          <span className='ml-2 text-xs'>(Bu şifreyi not edin, tekrar gösterilmeyecek)</span>
           <Button variant='ghost' size='sm' className='ml-4' onClick={() => setTempPassword('')}>Kapat</Button>
         </div>
       )}
@@ -216,7 +216,7 @@ export default function UserManagement() {
       <div className='grid gap-4 md:grid-cols-4'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Toplam Kullanici</CardTitle>
+            <CardTitle className='text-sm font-medium'>Toplam Kullanıcı</CardTitle>
             <Users className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
@@ -243,7 +243,7 @@ export default function UserManagement() {
         </Card>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Admin Sayisi</CardTitle>
+            <CardTitle className='text-sm font-medium'>Admin Sayısı</CardTitle>
             <Shield className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
@@ -255,7 +255,7 @@ export default function UserManagement() {
       {showAddForm && (
         <Card>
           <CardHeader>
-            <CardTitle className='text-base'>Yeni Kullanici Ekle</CardTitle>
+            <CardTitle className='text-base'>Yeni Kullanıcı Ekle</CardTitle>
           </CardHeader>
           <CardContent>
             <div className='flex gap-4 items-end flex-wrap'>
@@ -274,13 +274,13 @@ export default function UserManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='user'>Kullanici</SelectItem>
+                    <SelectItem value='user'>Kullanıcı</SelectItem>
                     <SelectItem value='company_admin'>Firma Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Button onClick={handleAdd}>Ekle</Button>
-              <Button variant='outline' onClick={() => setShowAddForm(false)}>Iptal</Button>
+              <Button variant='outline' onClick={() => setShowAddForm(false)}>İptal</Button>
             </div>
           </CardContent>
         </Card>
@@ -289,7 +289,7 @@ export default function UserManagement() {
       {editUser && (
         <Card>
           <CardHeader>
-            <CardTitle className='text-base'>Kullanici Duzenle: {editUser.ad_soyad}</CardTitle>
+            <CardTitle className='text-base'>Kullanıcı Düzenle: {editUser.ad_soyad}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className='flex gap-4 items-end flex-wrap'>
@@ -308,13 +308,13 @@ export default function UserManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='user'>Kullanici</SelectItem>
+                    <SelectItem value='user'>Kullanıcı</SelectItem>
                     <SelectItem value='company_admin'>Firma Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Button onClick={handleUpdate}>Kaydet</Button>
-              <Button variant='outline' onClick={() => setEditUser(null)}>Iptal</Button>
+              <Button variant='outline' onClick={() => setEditUser(null)}>İptal</Button>
             </div>
           </CardContent>
         </Card>
@@ -322,7 +322,7 @@ export default function UserManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle className='text-base'>Kullanici Listesi</CardTitle>
+          <CardTitle className='text-base'>Kullanıcı Listesi</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -332,8 +332,8 @@ export default function UserManagement() {
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Durum</TableHead>
-                <TableHead>Son Giris</TableHead>
-                <TableHead className='text-right'>Islemler</TableHead>
+                <TableHead>Son Giriş</TableHead>
+                <TableHead className='text-right'>İşlemler</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -343,7 +343,7 @@ export default function UserManagement() {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Badge variant={user.rol === 'company_admin' ? 'default' : 'secondary'}>
-                      {user.rol === 'company_admin' ? 'Admin' : user.rol === 'super_admin' ? 'Super Admin' : 'Kullanici'}
+                      {user.rol === 'company_admin' ? 'Admin' : user.rol === 'super_admin' ? 'Super Admin' : 'Kullanıcı'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -352,17 +352,17 @@ export default function UserManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell className='text-sm text-muted-foreground'>
-                    {user.son_giris ? new Date(user.son_giris).toLocaleDateString('tr-TR') : 'Hic giris yok'}
+                    {user.son_giris ? new Date(user.son_giris).toLocaleDateString('tr-TR') : 'Hiç giriş yok'}
                   </TableCell>
                   <TableCell className='text-right'>
                     <div className='flex justify-end gap-1'>
-                      <Button variant='ghost' size='sm' onClick={() => startEdit(user)} title='Duzenle'>
+                      <Button variant='ghost' size='sm' onClick={() => startEdit(user)} title='Düzenle'>
                         <Pencil className='h-4 w-4' />
                       </Button>
                       <Button variant='ghost' size='sm' onClick={() => handleToggle(user.id)} title={user.aktif ? 'Pasif Yap' : 'Aktif Yap'}>
                         <ToggleLeft className='h-4 w-4' />
                       </Button>
-                      <Button variant='ghost' size='sm' onClick={() => handleResetPassword(user.id, user.ad_soyad)} title='Sifre Sifirla'>
+                      <Button variant='ghost' size='sm' onClick={() => handleResetPassword(user.id, user.ad_soyad)} title='Şifre Sıfırla'>
                         <KeyRound className='h-4 w-4' />
                       </Button>
                       <Button variant='ghost' size='sm' onClick={() => handleDelete(user.id, user.ad_soyad)} title='Sil'>

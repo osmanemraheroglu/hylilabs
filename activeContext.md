@@ -71,6 +71,16 @@ Son guncelleme: 21.02.2026
 - Dashboard Eksik Beceriler widget'i kaldirildi (veri altyapisi hazir degil)
 - Profil dropdown: Faturalama ve Yeni Takim secenekleri kaldirildi
 - Profil dropdown: Turkce ceviri (Profile->Profil, Settings->Ayarlar, Sign out->Oturumu Kapat)
+- Frontend Turkce karakter duzeltmeleri (9 dosya, 150+ kelime):
+  - settings/password/index.tsx: Sifre -> Şifre, vs.
+  - settings/theme/index.tsx: Acik -> Açık, Guncelle -> Güncelle
+  - settings/index.tsx: Gelismis -> Gelişmiş
+  - user-management/index.tsx: Kullanici -> Kullanıcı, Sifre -> Şifre, vs.
+  - havuzlar/index.tsx: Duzenle -> Düzenle, Iptal -> İptal, Egitim -> Eğitim, vs.
+  - admin-panel/index.tsx: Istatistikler -> İstatistikler, Kullanici -> Kullanıcı
+  - firma-yonetimi/index.tsx: Firma Yonetimi -> Yönetimi, Olustur -> Oluştur
+  - email-hesaplari/index.tsx: Gonderim -> Gönderim, Saglayici -> Sağlayıcı
+  - dashboard/index.tsx: once -> önce, bakis -> bakış
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -107,6 +117,7 @@ Son guncelleme: 21.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+PENDING - fix: frontend turkce karakter duzeltmeleri (9 dosya)
 c9dfa57 - feat: keyword sayfasi menuden kaldirildi, eksik beceriler dashboard widget
 dbbbe75 - feat: takvimde onaylandi badge ve filtre
 951abf2 - feat: email sender_name dinamik sirket adi destegi
@@ -121,7 +132,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Guvenlik taramasi tamamlandi. Sistem stabil.
+Frontend Turkce karakter duzeltmeleri tamamlandi. Deploy bekliyor.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)
