@@ -86,6 +86,12 @@ Son guncelleme: 21.02.2026
   - candidates/index.tsx: önce, yıl, Değerlendirmede, Mülakat, Arşiv, Yükleme, Şirket, Eğitim, etc.
   - settings-page/index.tsx: Firma Adı, Kullanıcı, Günlük, Bağlantı hatası, görüntülemek için, etc.
   - havuzlar/index.tsx: Mülakat, dosyaları, başarıyla, tamamlandı, yıl, yüklenemedi, Henüz, başlık, etc.
+- cv-collect/index.tsx Turkce karakter duzeltmeleri (30+ duzeltme):
+  - Manuel Yükle, CV Yükle, Başarılı, Başarı Oranı, Toplama Geçmişi
+  - seçmek için tıklayın, sürükleyin, dosyaları desteklenir
+  - hesabı bulunamadı, Hesapları sayfasından, Hesabı Seçimi
+  - Klasör Seçimi, klasörleri yükleyin, Klasörleri Yükle, yüklenmedi
+  - Tarama Ayarları, okunmamış, işlenir, Taranıyor, işlemini başlatın
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -139,7 +145,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Tum Turkce karakter duzeltmeleri tamamlandi. Deploy bekleniyor.
+cv-collect Turkce karakter duzeltmeleri deploy edildi.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

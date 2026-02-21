@@ -147,13 +147,13 @@ export default function CvCollect() {
       const data = await res.json()
       if (data.success) {
         setParseResult(data.data)
-        showMsg('CV basariyla yuklendi ve parse edildi')
+        showMsg('CV başarıyla yüklendi ve parse edildi')
         loadData()
       } else {
         setParseError(data.message || data.detail || 'CV parse edilemedi')
       }
     } catch (err) {
-      setParseError('Baglanti hatasi')
+      setParseError('Bağlantı hatası')
     } finally {
       setUploading(false)
     }
@@ -189,10 +189,10 @@ export default function CvCollect() {
           setSelectedFolder(data.data[0].name)
         }
       } else {
-        showMsg(data.message || 'Klasorler yuklenemedi')
+        showMsg(data.message || 'Klasörler yüklenemedi')
       }
     } catch (err) {
-      showMsg('Klasor yukleme hatasi')
+      showMsg('Klasör yükleme hatası')
     } finally {
       setLoadingFolders(false)
     }
@@ -225,10 +225,10 @@ export default function CvCollect() {
         showMsg(data.message)
         loadData() // Istatistikleri ve gecmisi guncelle
       } else {
-        showMsg(data.detail || data.message || 'Tarama hatasi')
+        showMsg(data.detail || data.message || 'Tarama hatası')
       }
     } catch (err) {
-      showMsg('Tarama baglanti hatasi')
+      showMsg('Tarama bağlantı hatası')
     } finally {
       setScanning(false)
       setTimeout(() => setScanProgress(0), 1000)
@@ -247,7 +247,7 @@ export default function CvCollect() {
     <div className='space-y-6'>
       <div>
         <h2 className='text-2xl font-bold tracking-tight'>CV Topla</h2>
-        <p className='text-muted-foreground'>Manuel yukleme veya email'den otomatik CV toplama</p>
+        <p className='text-muted-foreground'>Manuel yükleme veya email'den otomatik CV toplama</p>
       </div>
 
       {message && (
@@ -269,7 +269,7 @@ export default function CvCollect() {
         </Card>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Basarili Parse</CardTitle>
+            <CardTitle className='text-sm font-medium'>Başarılı Parse</CardTitle>
             <CheckCircle className='h-4 w-4 text-green-500' />
           </CardHeader>
           <CardContent>
@@ -278,7 +278,7 @@ export default function CvCollect() {
         </Card>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Basari Orani</CardTitle>
+            <CardTitle className='text-sm font-medium'>Başarı Oranı</CardTitle>
             <BarChart3 className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
@@ -300,17 +300,17 @@ export default function CvCollect() {
       {/* 3 Sekmeli Yapi */}
       <Tabs defaultValue='manuel' className='w-full'>
         <TabsList className='grid w-full grid-cols-3'>
-          <TabsTrigger value='manuel'>Manuel Yukle</TabsTrigger>
+          <TabsTrigger value='manuel'>Manuel Yükle</TabsTrigger>
           <TabsTrigger value='email'>Email'den Topla</TabsTrigger>
-          <TabsTrigger value='gecmis'>Toplama Gecmisi</TabsTrigger>
+          <TabsTrigger value='gecmis'>Toplama Geçmişi</TabsTrigger>
         </TabsList>
 
         {/* Tab 1: Manuel Yukle */}
         <TabsContent value='manuel' className='space-y-4'>
           <Card>
             <CardHeader>
-              <CardTitle className='text-base'>CV Yukle</CardTitle>
-              <CardDescription>PDF, DOCX, DOC, PNG, JPG dosyalari desteklenir</CardDescription>
+              <CardTitle className='text-base'>CV Yükle</CardTitle>
+              <CardDescription>PDF, DOCX, DOC, PNG, JPG dosyaları desteklenir</CardDescription>
             </CardHeader>
             <CardContent>
               <div
@@ -335,7 +335,7 @@ export default function CvCollect() {
                 ) : (
                   <div className='flex flex-col items-center gap-2'>
                     <Upload className='h-8 w-8 text-muted-foreground' />
-                    <p className='text-sm font-medium'>Dosya secmek icin tiklayin veya surukleyin</p>
+                    <p className='text-sm font-medium'>Dosya seçmek için tıklayın veya sürükleyin</p>
                     <p className='text-xs text-muted-foreground'>PDF, DOCX, DOC, PNG, JPG (Maks 10MB)</p>
                   </div>
                 )}
@@ -365,7 +365,7 @@ export default function CvCollect() {
                   <div><span className='text-sm text-muted-foreground'>Telefon:</span> <span className='font-medium'>{parseResult.telefon || '-'}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Lokasyon:</span> <span className='font-medium'>{parseResult.lokasyon || '-'}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Pozisyon:</span> <span className='font-medium'>{parseResult.mevcut_pozisyon || '-'}</span></div>
-                  <div><span className='text-sm text-muted-foreground'>Deneyim:</span> <span className='font-medium'>{parseResult.toplam_deneyim_yil ? parseResult.toplam_deneyim_yil + ' yil' : '-'}</span></div>
+                  <div><span className='text-sm text-muted-foreground'>Deneyim:</span> <span className='font-medium'>{parseResult.toplam_deneyim_yil ? parseResult.toplam_deneyim_yil + ' yıl' : '-'}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Kaynak:</span> <Badge variant='secondary'>{parseResult.cv_source || 'genel'}</Badge></div>
                   <div><span className='text-sm text-muted-foreground'>Aday ID:</span> <span className='font-medium'>#{parseResult.candidate_id}</span></div>
                 </div>
@@ -382,8 +382,8 @@ export default function CvCollect() {
                 <div className='flex flex-col items-center gap-3 text-center'>
                   <AlertCircle className='h-10 w-10 text-yellow-500' />
                   <div>
-                    <p className='font-medium'>Aktif email hesabi bulunamadi</p>
-                    <p className='text-sm text-muted-foreground'>Email Hesaplari sayfasindan yeni hesap ekleyebilirsiniz.</p>
+                    <p className='font-medium'>Aktif email hesabı bulunamadı</p>
+                    <p className='text-sm text-muted-foreground'>Email Hesapları sayfasından yeni hesap ekleyebilirsiniz.</p>
                   </div>
                 </div>
               </CardContent>
@@ -395,13 +395,13 @@ export default function CvCollect() {
                 <CardHeader>
                   <CardTitle className='text-base flex items-center gap-2'>
                     <Mail className='h-4 w-4' />
-                    Email Hesabi Secimi
+                    Email Hesabı Seçimi
                   </CardTitle>
                 </CardHeader>
                 <CardContent className='space-y-4'>
                   <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
                     <SelectTrigger>
-                      <SelectValue placeholder='Email hesabi secin' />
+                      <SelectValue placeholder='Email hesabı seçin' />
                     </SelectTrigger>
                     <SelectContent>
                       {emailAccounts.map(acc => (
@@ -419,18 +419,18 @@ export default function CvCollect() {
                 <CardHeader>
                   <CardTitle className='text-base flex items-center gap-2'>
                     <FolderOpen className='h-4 w-4' />
-                    Klasor Secimi
+                    Klasör Seçimi
                   </CardTitle>
                 </CardHeader>
                 <CardContent className='space-y-4'>
                   <div className='flex gap-2'>
                     <Select value={selectedFolder} onValueChange={setSelectedFolder} disabled={folders.length === 0}>
                       <SelectTrigger className='flex-1'>
-                        <SelectValue placeholder={folders.length === 0 ? 'Once klasorleri yukleyin' : 'Klasor secin'} />
+                        <SelectValue placeholder={folders.length === 0 ? 'Önce klasörleri yükleyin' : 'Klasör seçin'} />
                       </SelectTrigger>
                       <SelectContent>
                         {folders.length === 0 ? (
-                          <SelectItem value='INBOX'>INBOX (varsayilan)</SelectItem>
+                          <SelectItem value='INBOX'>INBOX (varsayılan)</SelectItem>
                         ) : (
                           folders.map(f => (
                             <SelectItem key={f.name} value={f.name}>{f.display_name}</SelectItem>
@@ -440,12 +440,12 @@ export default function CvCollect() {
                     </Select>
                     <Button variant='outline' onClick={loadFolders} disabled={loadingFolders || !selectedAccountId}>
                       {loadingFolders ? <RefreshCw className='h-4 w-4 animate-spin' /> : <RefreshCw className='h-4 w-4' />}
-                      <span className='ml-2'>Klasorleri Yukle</span>
+                      <span className='ml-2'>Klasörleri Yükle</span>
                     </Button>
                   </div>
                   {folders.length === 0 && (
                     <p className='text-xs text-muted-foreground'>
-                      Klasor listesi yuklenmedi. Varsayilan olarak INBOX taranacak.
+                      Klasör listesi yüklenmedi. Varsayılan olarak INBOX taranacak.
                     </p>
                   )}
                 </CardContent>
@@ -454,7 +454,7 @@ export default function CvCollect() {
               {/* Tarama Ayarlari */}
               <Card>
                 <CardHeader>
-                  <CardTitle className='text-base'>Tarama Ayarlari</CardTitle>
+                  <CardTitle className='text-base'>Tarama Ayarları</CardTitle>
                 </CardHeader>
                 <CardContent className='space-y-4'>
                   <div className='flex items-center space-x-2'>
@@ -464,10 +464,10 @@ export default function CvCollect() {
                       onCheckedChange={(checked) => setUnseenOnly(checked === true)}
                     />
                     <label htmlFor='unseen' className='text-sm font-medium leading-none cursor-pointer'>
-                      Sadece okunmamis emailleri tara
+                      Sadece okunmamış emailleri tara
                     </label>
                   </div>
-                  <p className='text-xs text-muted-foreground'>Tek seferde maksimum 50 adet CV islenir.</p>
+                  <p className='text-xs text-muted-foreground'>Tek seferde maksimum 50 adet CV işlenir.</p>
                 </CardContent>
               </Card>
 
@@ -481,7 +481,7 @@ export default function CvCollect() {
                 {scanning ? (
                   <>
                     <RefreshCw className='h-4 w-4 animate-spin mr-2' />
-                    Taraniyor...
+                    Taranıyor...
                   </>
                 ) : (
                   <>
@@ -560,17 +560,17 @@ export default function CvCollect() {
         <TabsContent value='gecmis'>
           <Card>
             <CardHeader>
-              <CardTitle className='text-base'>Toplama Gecmisi (Son 30 Gun)</CardTitle>
+              <CardTitle className='text-base'>Toplama Geçmişi (Son 30 Gün)</CardTitle>
               <CardDescription>
-                Bu bolum yalnizca email uzerinden yapilan otomatik CV toplama islemlerinin gecmisini gosterir.
+                Bu bölüm yalnızca email üzerinden yapılan otomatik CV toplama işlemlerinin geçmişini gösterir.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {history.length === 0 ? (
                 <div className='text-center py-8 text-muted-foreground'>
                   <Mail className='h-10 w-10 mx-auto mb-3 opacity-50' />
-                  <p>Henuz email toplama islemi yapilmamis.</p>
-                  <p className='text-sm'>Email'den Topla sekmesinden CV toplama islemini baslatin.</p>
+                  <p>Henüz email toplama işlemi yapılmamış.</p>
+                  <p className='text-sm'>Email'den Topla sekmesinden CV toplama işlemini başlatın.</p>
                 </div>
               ) : (
                 <Table>
@@ -580,7 +580,7 @@ export default function CvCollect() {
                       <TableHead>Hesap</TableHead>
                       <TableHead>Taranan</TableHead>
                       <TableHead>Bulunan CV</TableHead>
-                      <TableHead>Basarili</TableHead>
+                      <TableHead>Başarılı</TableHead>
                       <TableHead>Mevcut</TableHead>
                       <TableHead>Durum</TableHead>
                     </TableRow>
