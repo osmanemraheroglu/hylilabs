@@ -64,6 +64,15 @@ interface RecentActivity {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
 
+const DURUM_LABELS: Record<string, string> = {
+  'yeni': 'Yeni',
+  'pozisyona_atandi': 'Pozisyona Atandı',
+  'mulakatta': 'Mülakata Çağrıldı',
+  'arsiv': 'Arşiv',
+  'reddedildi': 'Reddedildi',
+  'ise_alindi': 'İşe Alındı'
+}
+
 export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [poolData, setPoolData] = useState<PoolDistribution | null>(null)
@@ -115,7 +124,7 @@ export function Dashboard() {
   }
 
   const pieData = poolData?.distribution.map(item => ({
-    name: item.label,
+    name: DURUM_LABELS[item.durum] || item.label,
     value: item.count
   })) || []
 

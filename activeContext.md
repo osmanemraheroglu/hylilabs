@@ -97,6 +97,9 @@ Son guncelleme: 21.02.2026
 - cv-collect/index.tsx durum badge Turkce etiketler:
   - getDurumLabel() fonksiyonu eklendi
   - tamamlandi->Tamamlandı, basarili->Başarılı, kismi_basarili->Kısmi Başarılı, basarisiz->Başarısız, devam_ediyor->Devam Ediyor
+- dashboard/index.tsx pie chart Turkce etiketler:
+  - DURUM_LABELS map eklendi
+  - yeni->Yeni, pozisyona_atandi->Pozisyona Atandı, mulakatta->Mülakata Çağrıldı, arsiv->Arşiv, reddedildi->Reddedildi, ise_alindi->İşe Alındı
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -150,7 +153,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Menu ve durum badge Turkce duzeltmeleri deploy edildi.
+Dashboard pie chart Turkce etiketleri deploy edildi.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)
