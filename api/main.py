@@ -1,8 +1,32 @@
 import os
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from database import get_connection
+from scheduler import start_scheduler
 from routes.auth import router as auth_router
+
+# Logging ayarla
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Scheduler instance
+scheduler = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan - startup ve shutdown"""
+    global scheduler
+    # Startup
+    scheduler = start_scheduler()
+    logger.info("Application started - scheduler running")
+    yield
+    # Shutdown
+    if scheduler:
+        scheduler.shutdown()
+        logger.info("Scheduler shutdown")
 from routes.dashboard import router as dashboard_router
 from routes.keywords import router as keywords_router
 from routes.users import router as users_router
@@ -20,7 +44,8 @@ app = FastAPI(
     version="1.0.0",
     docs_url=None if os.getenv("ENV") == "production" else "/docs",
     redoc_url=None if os.getenv("ENV") == "production" else "/redoc",
-    openapi_url=None if os.getenv("ENV") == "production" else "/openapi.json"
+    openapi_url=None if os.getenv("ENV") == "production" else "/openapi.json",
+    lifespan=lifespan
 )
 
 # CORS ayarları

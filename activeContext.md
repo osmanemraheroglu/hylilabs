@@ -58,6 +58,10 @@ Son guncelleme: 21.02.2026
 - Email tarih formati Turkce (22 Subat 2026)
 - NOTLAR bolumu kosullu (not yoksa gizle)
 - Sirket adi dinamik (companies tablosundan)
+- Otomatik hatirlatma email sistemi (APScheduler)
+- scheduler.py: send_reminder_emails() her gun 09:00
+- is_reminder parametresi eklendi (email konu + icerik farkli)
+- interviews tablosuna onay_suresi kolonu eklendi
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)

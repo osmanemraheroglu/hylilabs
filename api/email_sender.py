@@ -242,7 +242,8 @@ def generate_interview_invite_content(
     notes: Optional[str] = None,
     confirm_url: Optional[str] = None,
     onay_suresi: int = 3,
-    sirket_adi: Optional[str] = None
+    sirket_adi: Optional[str] = None,
+    is_reminder: bool = False
 ) -> dict:
     """
     Mülakat davet emaili içeriği oluştur (göndermeden)
@@ -250,6 +251,7 @@ def generate_interview_invite_content(
     Args:
         confirm_url: Mülakat onay linki (opsiyonel)
         sirket_adi: Şirket adı (opsiyonel, yoksa COMPANY_INFO kullanılır)
+        is_reminder: Hatırlatma emaili mi?
 
     Returns:
         {"konu": str, "icerik": str}
@@ -274,20 +276,39 @@ def generate_interview_invite_content(
     if notes:
         notes_section = f"\nNOTLAR\n------\n{notes}\n"
 
-    body = INTERVIEW_INVITE_TEMPLATE.format(
-        candidate_name=candidate_name,
-        company_name=company_name,
-        interview_date=format_turkish_date(interview_date),
-        interview_time=interview_date.strftime("%H:%M"),
-        duration=duration,
-        interview_type=get_interview_type_label(interview_type),
-        location=location.title(),
-        location_details=get_location_details(location),
-        interviewer_info=interviewer_info,
-        position_title=position_title or "Genel Başvuru",
-        notes_section=notes_section,
-        company_contact=company_contact.strip()
-    )
+    # Hatırlatma için özel giriş metni
+    if is_reminder:
+        intro_text = f"Mülakat davetinizi henüz onaylamadığınızı fark ettik. Son gün hatırlatması olarak tekrar gönderiyoruz."
+    else:
+        intro_text = f"{company_name} olarak başvurunuzu değerlendirdik ve sizinle bir mülakat gerçekleştirmek istiyoruz."
+
+    # Template yerine manuel oluştur (hatırlatma için farklı giriş)
+    body = f"""
+Sayın {candidate_name},
+
+{intro_text}
+
+MÜLAKAT DETAYLARI
+-----------------
+Tarih: {format_turkish_date(interview_date)}
+Saat: {interview_date.strftime("%H:%M")}
+Süre: {duration} dakika
+Tür: {get_interview_type_label(interview_type)}
+Lokasyon: {location.title()}
+{get_location_details(location)}
+
+{interviewer_info}
+
+POZİSYON
+--------
+{position_title or "Genel Başvuru"}
+{notes_section}
+Lütfen bu mülakat davetini onaylamak veya değişiklik talep etmek için bizimle iletişime geçin.
+
+Saygılarımızla,
+{company_name} İK Ekibi
+{company_contact}
+"""
 
     # Onay linki ekle
     if confirm_url:
@@ -297,7 +318,11 @@ def generate_interview_invite_content(
         body += f"{confirm_url}\n"
         body += f"(Link {onay_suresi} gün geçerlidir)\n"
 
-    subject = f"Mülakat Daveti - {company_name} - {position_title or 'Genel Başvuru'}"
+    # Konu satırı
+    if is_reminder:
+        subject = f"HATIRLATMA: Mülakat Daveti - {company_name} - {position_title or 'Genel Başvuru'}"
+    else:
+        subject = f"Mülakat Daveti - {company_name} - {position_title or 'Genel Başvuru'}"
 
     return {"konu": subject, "icerik": body}
 
@@ -316,7 +341,8 @@ def send_interview_invite(
     account: Optional[dict] = None,
     confirm_url: Optional[str] = None,
     onay_suresi: int = 3,
-    sirket_adi: Optional[str] = None
+    sirket_adi: Optional[str] = None,
+    is_reminder: bool = False
 ) -> tuple[bool, str]:
     """
     Mülakat davet emaili gönder
@@ -325,6 +351,7 @@ def send_interview_invite(
         account: Email hesabı (veritabanından). None ise SMTP_CONFIG kullanılır.
         confirm_url: Mülakat onay linki (opsiyonel)
         sirket_adi: Şirket adı (opsiyonel)
+        is_reminder: Hatırlatma emaili mi?
 
     Returns:
         (basarili, mesaj) tuple
@@ -340,7 +367,8 @@ def send_interview_invite(
         notes=notes,
         confirm_url=confirm_url,
         onay_suresi=onay_suresi,
-        sirket_adi=sirket_adi
+        sirket_adi=sirket_adi,
+        is_reminder=is_reminder
     )
 
     return send_email(candidate_email, content["konu"], content["icerik"], cc=cc_interviewer, account=account)
