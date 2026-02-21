@@ -69,6 +69,7 @@ Son guncelleme: 21.02.2026
 - Email UTF-8 encoding fix (Header + formataddr)
 - Keyword Istatistikleri menuden kaldirildi
 - Dashboard Eksik Beceriler widget'i kaldirildi (veri altyapisi hazir degil)
+- Profil dropdown: Faturalama ve Yeni Takim secenekleri kaldirildi
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
