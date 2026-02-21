@@ -144,6 +144,7 @@ Son guncelleme: 22.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+7480780 - fix: mulakat olusturulunca aday durumu guncelleniyor + update activeContext
 4c185c2 - fix: frontend turkce karakter duzeltmeleri - ek dosyalar (4 dosya, 40+)
 1fe9af5 - fix: settings/advanced Turkce karakter duzeltmesi - sadece UI metinleri
 577ef45 - fix: frontend turkce karakter duzeltmeleri (9 dosya)
