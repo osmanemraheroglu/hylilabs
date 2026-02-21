@@ -6,6 +6,8 @@ SMTP ile mulakat bildirimleri gonderir
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from email.utils import formataddr
 from datetime import datetime
 from typing import Optional
 
@@ -166,9 +168,10 @@ def send_email(
     try:
         # Email olustur
         msg = MIMEMultipart()
-        msg["From"] = f"{sender_name} <{email_addr}>"
+        # UTF-8 encoding for Turkish characters
+        msg["From"] = formataddr((str(Header(sender_name, 'utf-8')), email_addr))
         msg["To"] = to_email
-        msg["Subject"] = subject
+        msg["Subject"] = Header(subject, 'utf-8')
 
         if cc:
             msg["Cc"] = cc

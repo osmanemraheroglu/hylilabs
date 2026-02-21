@@ -66,6 +66,7 @@ Son guncelleme: 21.02.2026
 - Mulakat takvimi onay durumu badge (confirmed/pending)
 - Onay durumu filtre dropdown eklendi
 - Stats kart sayisi 4->5 (Onaylandi eklendi)
+- Email UTF-8 encoding fix (Header + formataddr)
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
