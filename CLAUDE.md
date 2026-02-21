@@ -120,3 +120,11 @@ JOIN iceren tum SQL sorgularinda company_id her zaman tablo prefixiyle yazilmali
 - msg["From"] = formataddr((str(Header(sender_name, 'utf-8')), email_addr))
 - msg["Subject"] = Header(subject, 'utf-8')
 - DEGISTIRME
+
+### Türkçe Metin Kuralı — DEGISMEZ
+Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
+ş, ğ, ü, ö, ı, ç, İ, Ş, Ğ, Ü, Ö, Ç
+- Yeni bileşen yazarken Türkçe karakterleri doğru kullan
+- Mevcut metinleri düzenlerken Türkçe karakterleri koru
+- Asla "Kullanici", "Sifre", "Guncelle", "Iptal", "Yukleniyor" gibi karaktersiz yazma
+- DB'den gelen değerleri frontend'de Türkçe'ye çevir (getDurumLabel pattern)
