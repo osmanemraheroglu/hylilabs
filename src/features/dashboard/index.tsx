@@ -11,7 +11,8 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
-import { Users, Briefcase, FileText, Clock, Calendar, UserCheck } from 'lucide-react'
+import { Users, Briefcase, FileText, Clock, Calendar, UserCheck, BarChart3 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const API_URL = 'http://***REMOVED***:8000'
 
@@ -62,12 +63,29 @@ interface RecentActivity {
   }>
 }
 
+interface MissingSkillsData {
+  hardest_to_find: Array<{
+    keyword: string
+    positions_requiring: number
+    candidates_having: number
+    gap: string
+  }>
+  well_covered: Array<{
+    keyword: string
+    positions_requiring: number
+    candidates_having: number
+    coverage: string
+  }>
+}
+
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
 
 export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [poolData, setPoolData] = useState<PoolDistribution | null>(null)
   const [activities, setActivities] = useState<RecentActivity | null>(null)
+  const [missingSkills, setMissingSkills] = useState<MissingSkillsData | null>(null)
+  const [missingSkillsLoading, setMissingSkillsLoading] = useState(true)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -94,6 +112,15 @@ export function Dashboard() {
         console.error('Dashboard API error:', err)
         setLoading(false)
       })
+
+    // Eksik Beceriler ayrı yükleniyor (opsiyonel widget)
+    fetch(`${API_URL}/api/keywords/missing-skills`, { headers })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) setMissingSkills(res.data)
+      })
+      .catch(err => console.error('Missing skills error:', err))
+      .finally(() => setMissingSkillsLoading(false))
   }, [])
 
   if (loading) {
@@ -259,7 +286,7 @@ export function Dashboard() {
                       <div className='text-right'>
                         <p className='text-xs'>{app.pozisyon || 'Genel Basvuru'}</p>
                         <p className='text-xs text-muted-foreground'>
-                          <span 
+                          <span
                             title={new Date(app.basvuru_tarihi).toLocaleString('tr-TR')}
                             style={{cursor: 'default'}}
                           >
@@ -276,6 +303,42 @@ export function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Eksik Beceriler Widget */}
+        <Card className='mt-4'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <div>
+              <CardTitle className='text-base flex items-center gap-2'>
+                <BarChart3 className='h-4 w-4' />
+                Eksik Beceriler
+              </CardTitle>
+              <CardDescription>En zor bulunan yetenekler</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {missingSkillsLoading ? (
+              <div className='space-y-2'>
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className='flex items-center justify-between'>
+                    <Skeleton className='h-4 w-24' />
+                    <Skeleton className='h-4 w-12' />
+                  </div>
+                ))}
+              </div>
+            ) : missingSkills?.hardest_to_find?.length ? (
+              <div className='space-y-2'>
+                {missingSkills.hardest_to_find.slice(0, 5).map((skill, i) => (
+                  <div key={i} className='flex items-center justify-between py-1 border-b last:border-0'>
+                    <span className='text-sm font-medium'>{skill.keyword}</span>
+                    <span className='text-xs text-muted-foreground'>{skill.candidates_having} aday</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className='text-muted-foreground text-center text-sm'>Veri bulunamadi</p>
+            )}
+          </CardContent>
+        </Card>
       </Main>
     </>
   )

@@ -67,6 +67,8 @@ Son guncelleme: 21.02.2026
 - Onay durumu filtre dropdown eklendi
 - Stats kart sayisi 4->5 (Onaylandi eklendi)
 - Email UTF-8 encoding fix (Header + formataddr)
+- Keyword Istatistikleri menuden kaldirildi
+- Dashboard'a Eksik Beceriler widget'i eklendi
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)

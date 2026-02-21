@@ -9,7 +9,6 @@ import {
   Users,
   UserCog,
   FileUp,
-  BarChart3,
   AudioWaveform,
   Command,
   GalleryVerticalEnd,
@@ -23,7 +22,6 @@ const MENU_ITEMS: Record<string, { title: string; url: string; icon: React.Eleme
   adaylar: { title: 'Adaylar', url: '/candidates', icon: Users },
   havuzlar: { title: 'Havuzlar', url: '/havuzlar', icon: FolderTree },
   mulakatTakvimi: { title: 'Mulakat Takvimi', url: '/mulakat-takvimi', icon: CalendarClock },
-  keywords: { title: 'Keyword Istatistikleri', url: '/keywords', icon: BarChart3 },
   emailHesaplari: { title: 'Email Hesaplari', url: '/email-hesaplari', icon: Mail },
   kullaniciYonetimi: { title: 'Kullanici Yonetimi', url: '/user-management', icon: UserCog },
   firmaYonetimi: { title: 'Firma Yonetimi', url: '/firma-yonetimi', icon: Building2 },
@@ -34,8 +32,8 @@ const MENU_ITEMS: Record<string, { title: string; url: string; icon: React.Eleme
 // Rol bazlı menü tanımları
 const ROLE_MENUS: Record<string, string[]> = {
   super_admin: ['dashboard', 'firmaYonetimi', 'adminPanel', 'ayarlar'],
-  company_admin: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi', 'keywords', 'emailHesaplari', 'kullaniciYonetimi', 'ayarlar'],
-  user: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi', 'keywords'],
+  company_admin: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi', 'emailHesaplari', 'kullaniciYonetimi', 'ayarlar'],
+  user: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi'],
 }
 
 // Varsayılan teams
