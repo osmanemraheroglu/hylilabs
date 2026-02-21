@@ -128,7 +128,8 @@ def send_email(
     subject: str,
     body: str,
     cc: Optional[str] = None,
-    account: Optional[dict] = None
+    account: Optional[dict] = None,
+    sirket_adi: Optional[str] = None
 ) -> tuple[bool, str]:
     """
     Email gonder
@@ -139,6 +140,7 @@ def send_email(
         body: Email icerigi
         cc: CC adresi (opsiyonel)
         account: Kullanilacak email hesabi (veritabanindan). None ise varsayilan SMTP_CONFIG kullanilir.
+        sirket_adi: Sirket adi (opsiyonel). Oncelikli olarak sender_name icin kullanilir.
 
     Returns:
         (basarili, mesaj) tuple
@@ -149,7 +151,8 @@ def send_email(
         smtp_port = account.get("smtp_port", 587)
         email_addr = account["email"]
         password = account["sifre"]
-        sender_name = account.get("sender_name") or account.get("ad", "TalentFlow")
+        # Oncelik: sirket_adi > account.sender_name > account.ad > 'HyliLabs'
+        sender_name = sirket_adi if sirket_adi else (account.get("sender_name") or account.get("ad") or "HyliLabs")
     else:
         if not SMTP_CONFIG["email"] or not SMTP_CONFIG["password"]:
             return False, "SMTP ayarlari yapilandirilmamis"
@@ -157,7 +160,8 @@ def send_email(
         smtp_port = SMTP_CONFIG["smtp_port"]
         email_addr = SMTP_CONFIG["email"]
         password = SMTP_CONFIG["password"]
-        sender_name = SMTP_CONFIG["sender_name"]
+        # Oncelik: sirket_adi > SMTP_CONFIG.sender_name > 'HyliLabs'
+        sender_name = sirket_adi if sirket_adi else (SMTP_CONFIG.get("sender_name") or "HyliLabs")
 
     try:
         # Email olustur
@@ -371,7 +375,7 @@ def send_interview_invite(
         is_reminder=is_reminder
     )
 
-    return send_email(candidate_email, content["konu"], content["icerik"], cc=cc_interviewer, account=account)
+    return send_email(candidate_email, content["konu"], content["icerik"], cc=cc_interviewer, account=account, sirket_adi=sirket_adi)
 
 
 def send_interview_reminder(
