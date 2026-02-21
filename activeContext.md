@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 21.02.2026
+Son guncelleme: 22.02.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -26,6 +26,12 @@ Son guncelleme: 21.02.2026
 10. Ayarlar sayfasi: Sadece 3 sekme. KILITLI.
 
 ## Son 72 Saatte Tamamlananlar
+### 22.02.2026
+- Mulakat olusturulunca aday durumu otomatik 'mulakat' olarak guncelleniyor
+- Mulakat iptal edilince baska aktif mulakat yoksa aday durumu 'pozisyona_atandi' olarak geri aliniyor
+- Mulakat silinince baska aktif mulakat yoksa aday durumu 'pozisyona_atandi' olarak geri aliniyor
+- Dashboard "Mulakat Bekleyen" ve Takvim "Planlanmis" senkronizasyonu saglandi
+
 ### 20.02.2026
 - pm2 kurulumu ve yapilandirilmasi (ecosystem.config.cjs)
 - systemd -> pm2 gecisi (frontend + backend)
@@ -155,7 +161,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Havuzlar kalan Turkce duzeltmeleri deploy edildi.
+Mulakat-aday durum senkronizasyonu deploy edildi.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

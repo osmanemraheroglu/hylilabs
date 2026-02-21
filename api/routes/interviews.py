@@ -150,6 +150,14 @@ def create_new_interview(
                    WHERE id = ?""",
                 (confirm_token, confirm_expires.isoformat(), new_id)
             )
+
+            # Aday durumunu 'mulakat' olarak guncelle
+            cursor.execute(
+                """UPDATE candidates
+                   SET durum = 'mulakat'
+                   WHERE id = ? AND company_id = ?""",
+                (body["candidate_id"], company_id)
+            )
             conn.commit()
 
         return {
@@ -177,6 +185,18 @@ def update_existing_interview(
     try:
         company_id = current_user["company_id"]
 
+        # Mulakatin candidate_id'sini al (iptal durumu icin)
+        candidate_id = None
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT candidate_id FROM interviews WHERE id = ? AND company_id = ?",
+                (interview_id, company_id)
+            )
+            row = cursor.fetchone()
+            if row:
+                candidate_id = row["candidate_id"]
+
         # tarih string ise datetime yap
         if "tarih" in body and isinstance(body["tarih"], str):
             body["tarih"] = datetime.fromisoformat(body["tarih"])
@@ -184,6 +204,24 @@ def update_existing_interview(
         success = update_interview(interview_id, company_id=company_id, **body)
         if not success:
             raise HTTPException(status_code=404, detail="Mulakat bulunamadi veya degisiklik yok")
+
+        # Eger mulakat iptal edildiyse ve baska aktif mulakat yoksa, aday durumunu geri al
+        if body.get("durum") == "iptal" and candidate_id:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """UPDATE candidates SET durum = 'pozisyona_atandi'
+                       WHERE id = ? AND company_id = ?
+                       AND NOT EXISTS (
+                           SELECT 1 FROM interviews i
+                           JOIN candidates c ON c.id = i.candidate_id
+                           WHERE i.candidate_id = ? AND i.durum = 'planlanmis'
+                           AND c.company_id = ?
+                       )""",
+                    (candidate_id, company_id, candidate_id, company_id)
+                )
+                conn.commit()
+
         return {"success": True, "message": "Mulakat guncellendi"}
     except HTTPException:
         raise
@@ -203,9 +241,40 @@ def delete_existing_interview(
     require_company_user(current_user)
     try:
         company_id = current_user["company_id"]
+
+        # Silmeden once candidate_id'yi al
+        candidate_id = None
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT candidate_id FROM interviews WHERE id = ? AND company_id = ?",
+                (interview_id, company_id)
+            )
+            row = cursor.fetchone()
+            if row:
+                candidate_id = row["candidate_id"]
+
         success = delete_interview(interview_id, company_id=company_id)
         if not success:
             raise HTTPException(status_code=404, detail="Mulakat bulunamadi")
+
+        # Silme sonrasi: baska aktif mulakat yoksa aday durumunu geri al
+        if candidate_id:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """UPDATE candidates SET durum = 'pozisyona_atandi'
+                       WHERE id = ? AND company_id = ?
+                       AND NOT EXISTS (
+                           SELECT 1 FROM interviews i
+                           JOIN candidates c ON c.id = i.candidate_id
+                           WHERE i.candidate_id = ? AND i.durum = 'planlanmis'
+                           AND c.company_id = ?
+                       )""",
+                    (candidate_id, company_id, candidate_id, company_id)
+                )
+                conn.commit()
+
         return {"success": True, "message": "Mulakat silindi"}
     except HTTPException:
         raise
