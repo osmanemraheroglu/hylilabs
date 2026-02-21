@@ -102,6 +102,7 @@ Son guncelleme: 21.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+dbbbe75 - feat: takvimde onaylandi badge ve filtre
 951abf2 - feat: email sender_name dinamik sirket adi destegi
 4928766 - feat: mulakat onaylama linki - token sistemi ve public endpoint
 536e950 - fix: email gonderiminde veritabani hesabini kullan (email/sifre kolonlari)
