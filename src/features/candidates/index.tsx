@@ -16,10 +16,10 @@ function getRelativeTime(dateStr: string): string {
   const minutes = Math.floor(diff / 60000)
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
-  if (minutes < 1) return 'Az once'
-  if (minutes < 60) return `${minutes} dakika once`
-  if (hours < 24) return `${hours} saat once`
-  if (days < 30) return `${days} gun once`
+  if (minutes < 1) return 'Az önce'
+  if (minutes < 60) return `${minutes} dakika önce`
+  if (hours < 24) return `${hours} saat önce`
+  if (days < 30) return `${days} gün önce`
   return new Date(dateStr).toLocaleDateString('tr-TR')
 }
 
@@ -101,7 +101,7 @@ export default function Candidates() {
       })
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}))
-        throw new Error(errData.detail || 'Indirme hatasi')
+        throw new Error(errData.detail || 'İndirme hatası')
       }
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
@@ -112,7 +112,7 @@ export default function Candidates() {
       a.click()
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
-      toast.success('CV dosyalari indirildi')
+      toast.success('CV dosyaları indirildi')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Bilinmeyen hata'
       toast.error(message)
@@ -138,7 +138,7 @@ export default function Candidates() {
   const currentPage = Math.floor(offset / limit) + 1
 
   const durumLabel = (d: string) => {
-    const map: Record<string, string> = { yeni: 'Yeni', degerlendirmede: 'Degerlendirmede', mulakat: 'Mulakat', kabul: 'Kabul', red: 'Red', arsiv: 'Arsiv' }
+    const map: Record<string, string> = { yeni: 'Yeni', degerlendirmede: 'Değerlendirmede', mulakat: 'Mülakat', kabul: 'Kabul', red: 'Red', arsiv: 'Arşiv' }
     return map[d] || d
   }
 
@@ -169,7 +169,7 @@ export default function Candidates() {
               ) : (
                 <Download className='h-4 w-4 mr-2' />
               )}
-              CV Indir
+              CV İndir
             </Button>
           )}
           <div className='flex items-center gap-2'>
@@ -195,13 +195,13 @@ export default function Candidates() {
                 <SelectValue placeholder='Durum' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='all'>Tum Durumlar</SelectItem>
+                <SelectItem value='all'>Tüm Durumlar</SelectItem>
                 <SelectItem value='yeni'>Yeni</SelectItem>
-                <SelectItem value='degerlendirmede'>Degerlendirmede</SelectItem>
-                <SelectItem value='mulakat'>Mulakat</SelectItem>
+                <SelectItem value='degerlendirmede'>Değerlendirmede</SelectItem>
+                <SelectItem value='mulakat'>Mülakat</SelectItem>
                 <SelectItem value='kabul'>Kabul</SelectItem>
                 <SelectItem value='red'>Red</SelectItem>
-                <SelectItem value='arsiv'>Arsiv</SelectItem>
+                <SelectItem value='arsiv'>Arşiv</SelectItem>
               </SelectContent>
             </Select>
             <Select value={havuz} onValueChange={v => { setHavuz(v); setOffset(0) }}>
@@ -209,11 +209,11 @@ export default function Candidates() {
                 <SelectValue placeholder='Havuz' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='all'>Tum Havuzlar</SelectItem>
+                <SelectItem value='all'>Tüm Havuzlar</SelectItem>
                 <SelectItem value='genel_havuz'>Genel Havuz</SelectItem>
                 <SelectItem value='departman_havuzu'>Departman</SelectItem>
                 <SelectItem value='pozisyon_havuzu'>Pozisyon</SelectItem>
-                <SelectItem value='arsiv'>Arsiv</SelectItem>
+                <SelectItem value='arsiv'>Arşiv</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={handleSearch} variant='outline'>
@@ -239,7 +239,7 @@ export default function Candidates() {
                     <TableHead>Lokasyon</TableHead>
                     <TableHead>Deneyim</TableHead>
                     <TableHead>Durum</TableHead>
-                    <TableHead>CV Yukleme Tarihi</TableHead>
+                    <TableHead>CV Yükleme Tarihi</TableHead>
                     <TableHead className='text-right'>Detay</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -247,7 +247,7 @@ export default function Candidates() {
                   {candidates.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className='text-center text-muted-foreground py-8'>
-                        Aday bulunamadi
+                        Aday bulunamadı
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -259,7 +259,7 @@ export default function Candidates() {
                         </TableCell>
                         <TableCell className='text-sm'>{c.mevcut_pozisyon || '-'}</TableCell>
                         <TableCell className='text-sm'>{c.lokasyon || '-'}</TableCell>
-                        <TableCell className='text-sm'>{c.toplam_deneyim_yil ? c.toplam_deneyim_yil + ' yil' : '-'}</TableCell>
+                        <TableCell className='text-sm'>{c.toplam_deneyim_yil ? c.toplam_deneyim_yil + ' yıl' : '-'}</TableCell>
                         <TableCell>
                           <Badge variant={durumVariant(c.durum)}>{durumLabel(c.durum)}</Badge>
                         </TableCell>
@@ -318,12 +318,12 @@ export default function Candidates() {
                   <div><span className='text-sm text-muted-foreground'>Email:</span> <span className='font-medium'>{String(detailData.email || '-')}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Telefon:</span> <span className='font-medium'>{String(detailData.telefon || '-')}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Lokasyon:</span> <span className='font-medium'>{String(detailData.lokasyon || '-')}</span></div>
-                  <div><span className='text-sm text-muted-foreground'>Deneyim:</span> <span className='font-medium'>{detailData.toplam_deneyim_yil ? detailData.toplam_deneyim_yil + ' yil' : '-'}</span></div>
+                  <div><span className='text-sm text-muted-foreground'>Deneyim:</span> <span className='font-medium'>{detailData.toplam_deneyim_yil ? detailData.toplam_deneyim_yil + ' yıl' : '-'}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Pozisyon:</span> <span className='font-medium'>{String(detailData.mevcut_pozisyon || '-')}</span></div>
-                  <div><span className='text-sm text-muted-foreground'>Sirket:</span> <span className='font-medium'>{String(detailData.mevcut_sirket || '-')}</span></div>
-                  <div><span className='text-sm text-muted-foreground'>Egitim:</span> <span className='font-medium'>{String(detailData.egitim || '-')}</span></div>
-                  <div><span className='text-sm text-muted-foreground'>Universite:</span> <span className='font-medium'>{String(detailData.universite || '-')}</span></div>
-                  <div><span className='text-sm text-muted-foreground'>Bolum:</span> <span className='font-medium'>{String(detailData.bolum || '-')}</span></div>
+                  <div><span className='text-sm text-muted-foreground'>Şirket:</span> <span className='font-medium'>{String(detailData.mevcut_sirket || '-')}</span></div>
+                  <div><span className='text-sm text-muted-foreground'>Eğitim:</span> <span className='font-medium'>{String(detailData.egitim || '-')}</span></div>
+                  <div><span className='text-sm text-muted-foreground'>Üniversite:</span> <span className='font-medium'>{String(detailData.universite || '-')}</span></div>
+                  <div><span className='text-sm text-muted-foreground'>Bölüm:</span> <span className='font-medium'>{String(detailData.bolum || '-')}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Durum:</span> <Badge variant={durumVariant(String(detailData.durum || 'yeni'))}>{durumLabel(String(detailData.durum || 'yeni'))}</Badge></div>
                 </div>
 
@@ -356,7 +356,7 @@ export default function Candidates() {
                 ) : null}
               </div>
             ) : (
-              <p className='text-center text-muted-foreground'>Veri yuklenemedi</p>
+              <p className='text-center text-muted-foreground'>Veri yüklenemedi</p>
             )}
           </div>
         </div>

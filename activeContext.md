@@ -81,6 +81,11 @@ Son guncelleme: 21.02.2026
   - firma-yonetimi/index.tsx: Firma Yonetimi -> Yönetimi, Olustur -> Oluştur
   - email-hesaplari/index.tsx: Gonderim -> Gönderim, Saglayici -> Sağlayıcı
   - dashboard/index.tsx: once -> önce, bakis -> bakış
+- Ek Turkce karakter duzeltmeleri (4 dosya, 40+ duzeltme):
+  - dashboard/index.tsx: Bugün, Başvuru, Değerlendirme, Dağılımı, göre, etc.
+  - candidates/index.tsx: önce, yıl, Değerlendirmede, Mülakat, Arşiv, Yükleme, Şirket, Eğitim, etc.
+  - settings-page/index.tsx: Firma Adı, Kullanıcı, Günlük, Bağlantı hatası, görüntülemek için, etc.
+  - havuzlar/index.tsx: Mülakat, dosyaları, başarıyla, tamamlandı, yıl, yüklenemedi, Henüz, başlık, etc.
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -117,6 +122,7 @@ Son guncelleme: 21.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+4c185c2 - fix: frontend turkce karakter duzeltmeleri - ek dosyalar (4 dosya, 40+)
 1fe9af5 - fix: settings/advanced Turkce karakter duzeltmesi - sadece UI metinleri
 577ef45 - fix: frontend turkce karakter duzeltmeleri (9 dosya)
 c9dfa57 - feat: keyword sayfasi menuden kaldirildi, eksik beceriler dashboard widget
@@ -133,7 +139,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Frontend Turkce karakter duzeltmeleri tamamlandi ve deploy edildi.
+Tum Turkce karakter duzeltmeleri tamamlandi. Deploy bekleniyor.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

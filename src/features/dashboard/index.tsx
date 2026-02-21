@@ -143,7 +143,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold'>{stats?.toplam_aday || 0}</div>
-              <p className='text-xs text-muted-foreground'>Sistemdeki tum adaylar</p>
+              <p className='text-xs text-muted-foreground'>Sistemdeki tüm adaylar</p>
             </CardContent>
           </Card>
 
@@ -154,18 +154,18 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold'>{stats?.aktif_pozisyon || 0}</div>
-              <p className='text-xs text-muted-foreground'>Acik pozisyon sayisi</p>
+              <p className='text-xs text-muted-foreground'>Açık pozisyon sayısı</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>Bugun Basvuru</CardTitle>
+              <CardTitle className='text-sm font-medium'>Bugün Başvuru</CardTitle>
               <FileText className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold'>{stats?.bugun_basvuru || 0}</div>
-              <p className='text-xs text-muted-foreground'>Bugun gelen basvurular</p>
+              <p className='text-xs text-muted-foreground'>Bugün gelen başvurular</p>
             </CardContent>
           </Card>
 
@@ -176,7 +176,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold'>{stats?.bekleyen || 0}</div>
-              <p className='text-xs text-muted-foreground'>Degerlendirme bekleyen</p>
+              <p className='text-xs text-muted-foreground'>Değerlendirme bekleyen</p>
             </CardContent>
           </Card>
 
@@ -187,29 +187,29 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold'>{stats?.mulakat_bekleyen || 0}</div>
-              <p className='text-xs text-muted-foreground'>Mulakat asamasinda</p>
+              <p className='text-xs text-muted-foreground'>Mülakat aşamasında</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>Bu Ay Ise Alinan</CardTitle>
+              <CardTitle className='text-sm font-medium'>Bu Ay İşe Alınan</CardTitle>
               <UserCheck className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold'>{stats?.bu_ay_ise_alinan || 0}</div>
-              <p className='text-xs text-muted-foreground'>Bu ay ise alinan adaylar</p>
+              <p className='text-xs text-muted-foreground'>Bu ay işe alınan adaylar</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Alt Kisim - Grafik ve Aktiviteler */}
         <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-          {/* Havuz Dagilimi */}
+          {/* Havuz Dağılımı */}
           <Card>
             <CardHeader>
-              <CardTitle>Aday Havuz Dagilimi</CardTitle>
-              <CardDescription>Durumlara gore aday dagilimi</CardDescription>
+              <CardTitle>Aday Havuz Dağılımı</CardTitle>
+              <CardDescription>Durumlara göre aday dağılımı</CardDescription>
             </CardHeader>
             <CardContent>
               {pieData.length > 0 ? (
@@ -235,7 +235,7 @@ export function Dashboard() {
                 </ResponsiveContainer>
               ) : (
                 <div className='flex items-center justify-center h-64 text-muted-foreground'>
-                  Veri bulunamadi
+                  Veri bulunamadı
                 </div>
               )}
             </CardContent>
@@ -244,8 +244,8 @@ export function Dashboard() {
           {/* Son Aktiviteler */}
           <Card>
             <CardHeader>
-              <CardTitle>Son Email Basvurulari</CardTitle>
-              <CardDescription>Email ile gelen son basvurular</CardDescription>
+              <CardTitle>Son Email Başvuruları</CardTitle>
+              <CardDescription>Email ile gelen son başvurular</CardDescription>
             </CardHeader>
             <CardContent>
               <div className='space-y-4 max-h-[300px] overflow-y-auto'>
@@ -257,7 +257,7 @@ export function Dashboard() {
                         <p className='text-xs text-muted-foreground'>{app.email}</p>
                       </div>
                       <div className='text-right'>
-                        <p className='text-xs'>{app.pozisyon || 'Genel Basvuru'}</p>
+                        <p className='text-xs'>{app.pozisyon || 'Genel Başvuru'}</p>
                         <p className='text-xs text-muted-foreground'>
                           <span
                             title={new Date(app.basvuru_tarihi).toLocaleString('tr-TR')}

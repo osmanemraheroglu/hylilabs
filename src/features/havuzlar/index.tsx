@@ -31,7 +31,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   aktif: { label: 'Aktif', color: 'bg-blue-100 text-blue-800' },
   beklemede: { label: 'Beklemede', color: 'bg-yellow-100 text-yellow-800' },
   inceleniyor: { label: 'İnceleniyor', color: 'bg-purple-100 text-purple-800' },
-  mulakat: { label: 'Mulakat', color: 'bg-cyan-100 text-cyan-800' },
+  mulakat: { label: 'Mülakat', color: 'bg-cyan-100 text-cyan-800' },
   teklif: { label: 'Teklif', color: 'bg-green-100 text-green-800' },
   red: { label: 'Red', color: 'bg-red-100 text-red-800' },
 }
@@ -260,7 +260,7 @@ export default function Havuzlar() {
       a.click()
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
-      toast.success("CV dosyalari indirildi")
+      toast.success("CV dosyaları indirildi")
     } catch (err) {
       const message = err instanceof Error ? err.message : "Bilinmeyen hata"
       toast.error(message)
@@ -311,7 +311,7 @@ export default function Havuzlar() {
           setCreateDialogOpen(false); resetPoolForm(); setUrlInput(''); setParsedData(null)
           setPositionForm({ pozisyon_adi: '', lokasyon: '', deneyim_yil: '0', egitim_seviyesi: '', keywords: '', aranan_nitelikler: '', is_tanimi: '' })
           loadTree(); loadAllPools()
-          alert('Pozisyon basariyla eklendi!')
+          alert('Pozisyon başarıyla eklendi!')
         } else { alert(res.detail || 'Kayıt hatası') }
       }).catch(e => alert('Hata: ' + e)).finally(() => setSavingPosition(false))
   }
@@ -417,7 +417,7 @@ export default function Havuzlar() {
       .then(r => r.json())
       .then(res => {
         if (res.success) {
-          alert('AI değerlendirme tamamlandi!')
+          alert('AI değerlendirme tamamlandı!')
           loadDetail(candidateId)
         } else { alert(res.detail || 'Hata') }
       })
@@ -430,7 +430,7 @@ export default function Havuzlar() {
     if (!selectedPoolId) return
     fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/report`, { headers: H() })
       .then(r => {
-        if (!r.ok) throw new Error('Rapor alinamadi')
+        if (!r.ok) throw new Error('Rapor alınamadı')
         return r.text()
       })
       .then(html => {
@@ -445,14 +445,14 @@ export default function Havuzlar() {
     if (!selectedPoolId) return
     fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/cv`, { headers: H() })
       .then(r => {
-        if (!r.ok) throw new Error('CV bulunamadi')
+        if (!r.ok) throw new Error('CV bulunamadı')
         return r.blob()
       })
       .then(blob => {
         const url = URL.createObjectURL(blob)
         window.open(url, '_blank')
       })
-      .catch(() => alert('CV dosyasi bulunamadi'))
+      .catch(() => alert('CV dosyası bulunamadı'))
   }
 
   // Filtering & Sorting
@@ -679,7 +679,7 @@ export default function Havuzlar() {
                                 {c.email && <div className="text-xs text-muted-foreground ml-4">{c.email}</div>}
                               </TableCell>
                               <TableCell className="text-sm truncate">{c.mevcut_pozisyon || '-'}</TableCell>
-                              <TableCell className="text-sm">{c.toplam_deneyim_yil ? `${c.toplam_deneyim_yil} yil` : '-'}</TableCell>
+                              <TableCell className="text-sm">{c.toplam_deneyim_yil ? `${c.toplam_deneyim_yil} yıl` : '-'}</TableCell>
                               <TableCell className="text-sm truncate">{c.lokasyon || '-'}</TableCell>
                               <TableCell>
                                 {c.match_score ? <Badge variant="outline" className="text-xs">{si?.icon} {c.match_score}</Badge>
@@ -710,7 +710,7 @@ export default function Havuzlar() {
                                         <div className="min-w-0 truncate"><span className="font-medium">Lokasyon:</span> {String(cd?.lokasyon || '-')}</div>
                                         <div className="min-w-0 truncate"><span className="font-medium">Şirket:</span> {String(cd?.mevcut_sirket || '-')}</div>
                                         <div className="min-w-0 truncate col-span-2"><span className="font-medium">Eğitim:</span> {String(cd?.egitim || '-')} {cd?.universite ? `/ ${cd?.universite as string}` : ''}</div>
-                                        <div><span className="font-medium">Deneyim:</span> {String(cd?.toplam_deneyim_yil || '-')} yil</div>
+                                        <div><span className="font-medium">Deneyim:</span> {String(cd?.toplam_deneyim_yil || '-')} yıl</div>
                                       </div>
                                       {/* Teknik Beceriler */}
                                       {cd?.teknik_beceriler && (
@@ -751,11 +751,11 @@ export default function Havuzlar() {
                                         {aie ? (
                                           <div className="text-xs whitespace-pre-line text-muted-foreground">{String((aie)?.text || '')}</div>
                                         ) : (
-                                          <div className="text-xs text-muted-foreground italic">Henuz AI değerlendirme yapilmamis</div>
+                                          <div className="text-xs text-muted-foreground italic">Henüz AI değerlendirme yapılmamış</div>
                                         )}
                                       </div>
                                     </div>
-                                  ); })() : <div className="text-center text-muted-foreground text-xs">Detay yuklenemedi</div>}
+                                  ); })() : <div className="text-center text-muted-foreground text-xs">Detay yüklenemedi</div>}
                                 </TableCell>
                               </TableRow>
                             )}
@@ -810,7 +810,7 @@ export default function Havuzlar() {
                                 )}
                               </div>
                             ) : (
-                              <div className="text-xs text-muted-foreground">Henuz onaylı başlık yok</div>
+                              <div className="text-xs text-muted-foreground">Henüz onaylı başlık yok</div>
                             )}
                           </div>
 
@@ -843,7 +843,7 @@ export default function Havuzlar() {
                                 </Button>
                               </div>
                             ) : (
-                              <div className="text-xs text-muted-foreground">Onay bekleyen baslik yok</div>
+                              <div className="text-xs text-muted-foreground">Onay bekleyen başlık yok</div>
                             )}
                           </div>
                         </>
@@ -885,7 +885,7 @@ export default function Havuzlar() {
 
                 {parsedData && (
                   <div className="space-y-3 border-t pt-3">
-                    <div className="text-sm font-medium text-green-600">Analiz başarılı! Asagidaki bilgileri duzenleyebilirsiniz:</div>
+                    <div className="text-sm font-medium text-green-600">Analiz başarılı! Aşağıdaki bilgileri düzenleyebilirsiniz:</div>
                     <div className="grid grid-cols-2 gap-2">
                       <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} /></div>
                       <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} /></div>
@@ -970,7 +970,7 @@ export default function Havuzlar() {
 
                 {parsedData && (
                   <div className="space-y-3 border-t pt-3">
-                    <div className="text-sm font-medium text-green-600">Analiz başarılı! Asagidaki bilgileri duzenleyebilirsiniz:</div>
+                    <div className="text-sm font-medium text-green-600">Analiz başarılı! Aşağıdaki bilgileri düzenleyebilirsiniz:</div>
                     <div className="grid grid-cols-2 gap-2">
                       <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} /></div>
                       <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} /></div>

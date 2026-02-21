@@ -12,12 +12,12 @@ function getHeaders() {
 }
 
 const SETTING_LABELS: Record<string, string> = {
-  firma_adi: 'Firma Adi',
+  firma_adi: 'Firma Adı',
   firma_email: 'Firma Email',
   firma_telefon: 'Firma Telefon',
   firma_adres: 'Firma Adres',
-  max_kullanici: 'Maksimum Kullanici',
-  cv_parse_limit: 'Gunluk CV Parse Limiti',
+  max_kullanici: 'Maksimum Kullanıcı',
+  cv_parse_limit: 'Günlük CV Parse Limiti',
 }
 
 const DEFAULT_KEYS = ['firma_adi', 'firma_email', 'firma_telefon', 'firma_adres', 'max_kullanici', 'cv_parse_limit']
@@ -69,7 +69,7 @@ export default function SettingsPage() {
         showMsg('Hata: ' + (data.detail || 'Bilinmeyen hata'))
       }
     } catch (err) {
-      showMsg('Baglanti hatasi')
+      showMsg('Bağlantı hatası')
     } finally {
       setSaving(null)
     }
@@ -92,11 +92,11 @@ export default function SettingsPage() {
       <div className='space-y-6'>
         <div>
           <h2 className='text-2xl font-bold tracking-tight'>Ayarlar</h2>
-          <p className='text-muted-foreground'>Firma ayarlarini yonetin</p>
+          <p className='text-muted-foreground'>Firma ayarlarını yönetin</p>
         </div>
         <Card>
           <CardContent className='pt-6'>
-            <p className='text-center text-muted-foreground'>Bu sayfayi goruntulemek icin admin yetkisi gerekli.</p>
+            <p className='text-center text-muted-foreground'>Bu sayfayı görüntülemek için admin yetkisi gerekli.</p>
           </CardContent>
         </Card>
       </div>
@@ -107,7 +107,7 @@ export default function SettingsPage() {
     <div className='space-y-6'>
       <div>
         <h2 className='text-2xl font-bold tracking-tight'>Ayarlar</h2>
-        <p className='text-muted-foreground'>Firma ayarlarini yonetin</p>
+        <p className='text-muted-foreground'>Firma ayarlarını yönetin</p>
       </div>
 
       {message && (
