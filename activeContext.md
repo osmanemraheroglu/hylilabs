@@ -92,6 +92,11 @@ Son guncelleme: 21.02.2026
   - hesabı bulunamadı, Hesapları sayfasından, Hesabı Seçimi
   - Klasör Seçimi, klasörleri yükleyin, Klasörleri Yükle, yüklenmedi
   - Tarama Ayarları, okunmamış, işlenir, Taranıyor, işlemini başlatın
+- sidebar-data.ts Turkce karakter duzeltmeleri:
+  - Mülakat Takvimi, Email Hesapları, Kullanıcı Yönetimi
+- cv-collect/index.tsx durum badge Turkce etiketler:
+  - getDurumLabel() fonksiyonu eklendi
+  - tamamlandi->Tamamlandı, basarili->Başarılı, kismi_basarili->Kısmi Başarılı, basarisiz->Başarısız, devam_ediyor->Devam Ediyor
 
 ### 18.02.2026
 - Data Reset endpoint + UI (3 kademe)
@@ -145,7 +150,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-cv-collect Turkce karakter duzeltmeleri deploy edildi.
+Menu ve durum badge Turkce duzeltmeleri deploy edildi.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

@@ -21,9 +21,9 @@ const MENU_ITEMS: Record<string, { title: string; url: string; icon: React.Eleme
   cvTopla: { title: 'CV Topla', url: '/cv-collect', icon: FileUp },
   adaylar: { title: 'Adaylar', url: '/candidates', icon: Users },
   havuzlar: { title: 'Havuzlar', url: '/havuzlar', icon: FolderTree },
-  mulakatTakvimi: { title: 'Mulakat Takvimi', url: '/mulakat-takvimi', icon: CalendarClock },
-  emailHesaplari: { title: 'Email Hesaplari', url: '/email-hesaplari', icon: Mail },
-  kullaniciYonetimi: { title: 'Kullanici Yonetimi', url: '/user-management', icon: UserCog },
+  mulakatTakvimi: { title: 'Mülakat Takvimi', url: '/mulakat-takvimi', icon: CalendarClock },
+  emailHesaplari: { title: 'Email Hesapları', url: '/email-hesaplari', icon: Mail },
+  kullaniciYonetimi: { title: 'Kullanıcı Yönetimi', url: '/user-management', icon: UserCog },
   firmaYonetimi: { title: 'Firma Yonetimi', url: '/firma-yonetimi', icon: Building2 },
   adminPanel: { title: 'Admin Panel', url: '/admin-panel', icon: Cog },
   ayarlar: { title: 'Ayarlar', url: '/settings', icon: Settings },
@@ -62,7 +62,7 @@ export function getSidebarData(role: string, userName?: string, userEmail?: stri
 
   return {
     user: {
-      name: userName || 'Kullanici',
+      name: userName || 'Kullanıcı',
       email: userEmail || '',
       avatar: '',
     },

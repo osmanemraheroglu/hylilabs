@@ -80,6 +80,17 @@ interface ScanResult {
   errors: { file: string; error: string }[]
 }
 
+const getDurumLabel = (durum: string) => {
+  const labels: Record<string, string> = {
+    'tamamlandi': 'Tamamlandı',
+    'basarili': 'Başarılı',
+    'kismi_basarili': 'Kısmi Başarılı',
+    'basarisiz': 'Başarısız',
+    'devam_ediyor': 'Devam Ediyor'
+  }
+  return labels[durum] || durum
+}
+
 export default function CvCollect() {
   const [stats, setStats] = useState<{ collection: CollectionStats; storage: StorageStats } | null>(null)
   const [history, setHistory] = useState<HistoryItem[]>([])
@@ -596,7 +607,7 @@ export default function CvCollect() {
                         <TableCell>{item.mevcut_aday}</TableCell>
                         <TableCell>
                           <Badge variant={item.durum === 'tamamlandi' ? 'default' : 'destructive'}>
-                            {item.durum}
+                            {getDurumLabel(item.durum)}
                           </Badge>
                         </TableCell>
                       </TableRow>
