@@ -106,3 +106,17 @@ JOIN iceren tum SQL sorgularinda company_id her zaman tablo prefixiyle yazilmali
 - start-backend.sh — uvicorn baslatma scripti
 - systemd devre disi, pm2 tek process manager
 - DEPLOYMENT.md — yeni sunucu kurulum rehberi
+
+### Otomatik Hatirlatma Email Sistemi — DEGISMEZ
+- api/scheduler.py — APScheduler, her gun 09:00 Europe/Istanbul
+- Son gunu olan pending mulakatlari bulur, hatirlatma emaili gonderir
+- hatirlatma_gonderildi kolonu ile tekrar gonderimi onler
+- api/main.py lifespan ile baslatiliyor
+- is_reminder=True ile farkli email icerigi
+
+### Email UTF-8 Encoding — DEGISMEZ
+- api/email_sender.py: formataddr + Header ile UTF-8 encoding
+- Turkce karakterler destekleniyor (s,g,u,o,i,c vb.)
+- msg["From"] = formataddr((str(Header(sender_name, 'utf-8')), email_addr))
+- msg["Subject"] = Header(subject, 'utf-8')
+- DEGISTIRME
