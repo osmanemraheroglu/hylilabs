@@ -63,11 +63,11 @@ export function SettingsAdvanced() {
   const handleReset = async () => {
     if (!dialogState.level) return
     if (confirmText !== 'SIFIRLA') {
-      setError('Onay icin SIFIRLA yazin')
+      setError('Onay için SIFIRLA yazın')
       return
     }
     if (!password) {
-      setError('Sifre gerekli')
+      setError('Şifre gerekli')
       return
     }
 
@@ -91,16 +91,16 @@ export function SettingsAdvanced() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Islem basarisiz')
+        throw new Error(data.detail || 'İşlem başarısız')
       }
 
-      setSuccess(data.message || 'Veriler basariyla sifirlandi')
+      setSuccess(data.message || 'Veriler başarıyla sıfırlandı')
       setTimeout(() => {
         closeDialog()
         setSuccess('')
       }, 2000)
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Bir hata olustu'
+      const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu'
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -110,24 +110,24 @@ export function SettingsAdvanced() {
   const resetCards = [
     {
       level: 'candidates' as const,
-      title: 'Aday Verilerini Sifirla',
-      description: 'Tum aday kayitlarini ve CV dosyalarini siler. Havuzlar ve pozisyonlar korunur.',
+      title: 'Aday Verilerini Sıfırla',
+      description: 'Tüm aday kayıtlarını ve CV dosyalarını siler. Havuzlar ve pozisyonlar korunur.',
       icon: Trash2,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50',
     },
     {
       level: 'pools' as const,
-      title: 'Havuz Verilerini Sifirla',
-      description: 'Tum havuzlari, pozisyonlari ve iliskili aday verilerini siler.',
+      title: 'Havuz Verilerini Sıfırla',
+      description: 'Tüm havuzları, pozisyonları ve ilişkili aday verilerini siler.',
       icon: Database,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
     },
     {
       level: 'full' as const,
-      title: 'Tum Sistemi Sifirla',
-      description: 'Tum verileri siler: adaylar, havuzlar, pozisyonlar, email hesaplari. DIKKAT: Bu islem geri alinamaz!',
+      title: 'Tüm Sistemi Sıfırla',
+      description: 'Tüm verileri siler: adaylar, havuzlar, pozisyonlar, email hesapları. DİKKAT: Bu işlem geri alınamaz!',
       icon: ServerCrash,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
@@ -137,8 +137,8 @@ export function SettingsAdvanced() {
 
   return (
     <ContentSection
-      title='Gelismis Ayarlar'
-      desc='Sistem verilerini yonetme ve sifirlama islemleri. Bu islemler geri alinamaz.'
+      title='Gelişmiş Ayarlar'
+      desc='Sistem verilerini yönetme ve sıfırlama işlemleri. Bu işlemler geri alınamaz.'
     >
       <div className='space-y-4'>
         {resetCards.map((card) => {
@@ -167,7 +167,7 @@ export function SettingsAdvanced() {
                   onClick={() => openResetDialog(card.level, card.title, card.description)}
                 >
                   <AlertTriangle className='h-4 w-4 mr-2' />
-                  Sifirla
+                  Sıfırla
                 </Button>
               </CardContent>
             </Card>
@@ -194,11 +194,11 @@ export function SettingsAdvanced() {
               ) : (
                 <>
                   <div className='space-y-2'>
-                    <Label htmlFor='password'>Sifreniz</Label>
+                    <Label htmlFor='password'>Şifreniz</Label>
                     <Input
                       id='password'
                       type='password'
-                      placeholder='Mevcut sifrenizi girin'
+                      placeholder='Mevcut şifrenizi girin'
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
@@ -206,7 +206,7 @@ export function SettingsAdvanced() {
 
                   <div className='space-y-2'>
                     <Label htmlFor='confirm'>
-                      Onaylamak icin <strong>SIFIRLA</strong> yazin
+                      Onaylamak için <strong>SIFIRLA</strong> yazın
                     </Label>
                     <Input
                       id='confirm'
@@ -227,7 +227,7 @@ export function SettingsAdvanced() {
 
             <DialogFooter>
               <Button variant='outline' onClick={closeDialog} disabled={loading}>
-                Iptal
+                İptal
               </Button>
               {!success && (
                 <Button
