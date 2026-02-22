@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Building2, Plus, Pencil, Trash2, ToggleLeft, ToggleRight, RefreshCw, ChevronDown, ChevronUp, Users, Target, FileText } from 'lucide-react'
 
@@ -23,7 +22,6 @@ interface Company {
   aktif: number
   max_kullanici: number
   max_aday: number
-  plan: string
   yetkili_adi: string | null
   yetkili_email: string | null
   yetkili_telefon: string | null
@@ -34,12 +32,6 @@ interface CompanyStats {
   toplam_aday: number
   toplam_pozisyon: number
   toplam_kullanici: number
-}
-
-const PLAN_COLORS: Record<string, string> = {
-  basic: 'bg-gray-100 text-gray-800',
-  professional: 'bg-blue-100 text-blue-800',
-  enterprise: 'bg-purple-100 text-purple-800'
 }
 
 export default function FirmaYonetimi() {
@@ -56,7 +48,7 @@ export default function FirmaYonetimi() {
   const [form, setForm] = useState({
     ad: '', email: '', telefon: '', adres: '', website: '',
     yetkili_adi: '', yetkili_email: '', yetkili_telefon: '',
-    plan: 'basic', max_kullanici: '5', max_aday: '1000'
+    max_kullanici: '5', max_aday: '1000'
   })
   const [editId, setEditId] = useState<number | null>(null)
 
@@ -95,7 +87,7 @@ export default function FirmaYonetimi() {
     setForm({
       ad: '', email: '', telefon: '', adres: '', website: '',
       yetkili_adi: '', yetkili_email: '', yetkili_telefon: '',
-      plan: 'basic', max_kullanici: '5', max_aday: '1000'
+      max_kullanici: '5', max_aday: '1000'
     })
     setEditId(null)
   }
@@ -137,7 +129,6 @@ export default function FirmaYonetimi() {
       yetkili_adi: c.yetkili_adi || '',
       yetkili_email: c.yetkili_email || '',
       yetkili_telefon: c.yetkili_telefon || '',
-      plan: c.plan || 'basic',
       max_kullanici: String(c.max_kullanici || 5),
       max_aday: String(c.max_aday || 1000)
     })
@@ -227,7 +218,6 @@ export default function FirmaYonetimi() {
                 <TableHead>Firma Adı</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Yetkili</TableHead>
-                <TableHead>Plan</TableHead>
                 <TableHead>Limitler</TableHead>
                 <TableHead>Durum</TableHead>
                 <TableHead className="text-right">İşlemler</TableHead>
@@ -236,14 +226,14 @@ export default function FirmaYonetimi() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     <RefreshCw className="h-5 w-5 animate-spin inline mr-2" />
                     Yükleniyor...
                   </TableCell>
                 </TableRow>
               ) : companies.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     Henüz firma bulunmuyor
                   </TableCell>
                 </TableRow>
@@ -260,11 +250,8 @@ export default function FirmaYonetimi() {
                       {c.yetkili_email && <div className="text-xs text-muted-foreground">{c.yetkili_email}</div>}
                     </TableCell>
                     <TableCell onClick={() => loadStats(c.id)}>
-                      <Badge className={PLAN_COLORS[c.plan] || PLAN_COLORS.basic}>{c.plan}</Badge>
-                    </TableCell>
-                    <TableCell onClick={() => loadStats(c.id)}>
                       <div className="text-xs">
-                        <span className="text-muted-foreground">Kullanici:</span> {c.max_kullanici}
+                        <span className="text-muted-foreground">Kullanıcı:</span> {c.max_kullanici}
                         <span className="mx-1">|</span>
                         <span className="text-muted-foreground">Aday:</span> {c.max_aday}
                       </div>
@@ -290,7 +277,7 @@ export default function FirmaYonetimi() {
                   </TableRow>
                   {expandedId === c.id && (
                     <TableRow>
-                      <TableCell colSpan={8} className="bg-muted/30 p-4">
+                      <TableCell colSpan={7} className="bg-muted/30 p-4">
                         {statsLoading ? (
                           <div className="text-center py-2"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div>
                         ) : stats ? (
@@ -376,17 +363,6 @@ export default function FirmaYonetimi() {
               <Input value={form.yetkili_telefon} onChange={e => setForm({...form, yetkili_telefon: e.target.value})} placeholder="+90 555 987 6543" />
             </div>
             <div className="space-y-2">
-              <Label>Plan</Label>
-              <Select value={form.plan} onValueChange={v => setForm({...form, plan: v})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="basic">Basic</SelectItem>
-                  <SelectItem value="professional">Professional</SelectItem>
-                  <SelectItem value="enterprise">Enterprise</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label>Max Kullanıcı</Label>
               <Input type="number" value={form.max_kullanici} onChange={e => setForm({...form, max_kullanici: e.target.value})} />
             </div>
@@ -443,17 +419,6 @@ export default function FirmaYonetimi() {
             <div className="space-y-2">
               <Label>Yetkili Telefon</Label>
               <Input value={form.yetkili_telefon} onChange={e => setForm({...form, yetkili_telefon: e.target.value})} />
-            </div>
-            <div className="space-y-2">
-              <Label>Plan</Label>
-              <Select value={form.plan} onValueChange={v => setForm({...form, plan: v})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="basic">Basic</SelectItem>
-                  <SelectItem value="professional">Professional</SelectItem>
-                  <SelectItem value="enterprise">Enterprise</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label>Max Kullanıcı</Label>

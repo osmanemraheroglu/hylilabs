@@ -32,6 +32,10 @@ Son guncelleme: 22.02.2026
 - Mulakat silinince baska aktif mulakat yoksa aday durumu 'pozisyona_atandi' olarak geri aliniyor
 - Dashboard "Mulakat Bekleyen" ve Takvim "Planlanmis" senkronizasyonu saglandi
 - Dashboard "Bekleyen" karti duzeltildi: position_pools.durum='beklemede' -> candidates.durum='yeni'
+- Plan dropdown kaldirildi (firma-yonetimi sayfasindan)
+- CV yuklemede max_aday limiti kontrolu eklendi (403 hatasi donuyor)
+- CV Topla sayfasinda aday limiti gostergesi eklendi (X / Y Aday + progress bar)
+- /api/companies/me endpoint'i eklendi (kullanicinin firmasini getir)
 
 ### 20.02.2026
 - pm2 kurulumu ve yapilandirilmasi (ecosystem.config.cjs)

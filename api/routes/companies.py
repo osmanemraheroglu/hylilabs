@@ -15,6 +15,38 @@ import traceback
 router = APIRouter(prefix="/api/companies", tags=["companies"])
 
 
+@router.get("/me")
+def get_my_company(current_user: dict = Depends(get_current_user)):
+    """Kullanicinin kendi firmasini getir"""
+    company_id = current_user.get("company_id")
+    if not company_id:
+        raise HTTPException(status_code=400, detail="Firma bulunamadi")
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, ad, max_aday, max_kullanici FROM companies WHERE id = ?", (company_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                raise HTTPException(status_code=404, detail="Firma bulunamadi")
+
+            return {
+                "success": True,
+                "company": {
+                    "id": row["id"],
+                    "ad": row["ad"],
+                    "max_aday": row["max_aday"],
+                    "max_kullanici": row["max_kullanici"]
+                }
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 def require_super_admin(current_user: dict):
     """Super admin yetkisi kontrolu"""
     if current_user["rol"] != "super_admin":

@@ -8,7 +8,8 @@ sys.path.append("/var/www/hylilabs/api")
 from database import (
     create_candidate,
     get_email_collection_history,
-    get_email_collection_stats
+    get_email_collection_stats,
+    get_connection
 )
 from core.cv_parser import parse_cv, save_cv_file, get_cv_storage_stats
 from routes.auth import get_current_user
@@ -54,7 +55,22 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
         company_id = current_user["company_id"]
         if not company_id:
             raise HTTPException(status_code=400, detail="Firma secilmeli")
-        
+
+        # Firma aday limitini kontrol et
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT max_aday FROM companies WHERE id = ?", (company_id,))
+            company = cursor.fetchone()
+
+            cursor.execute("SELECT COUNT(*) FROM candidates WHERE company_id = ?", (company_id,))
+            current_count = cursor.fetchone()[0]
+
+            if company and company['max_aday'] != -1 and current_count >= company['max_aday']:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Aday limiti doldu. Maksimum {company['max_aday']} aday eklenebilir."
+                )
+
         # CV dosyasini kaydet (firma bazli klasore)
         cv_path = save_cv_file(content, file.filename, company_id, result.candidate.email)
         if cv_path:

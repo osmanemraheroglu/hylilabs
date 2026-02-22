@@ -102,6 +102,9 @@ export default function CvCollect() {
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Aday limiti state
+  const [limitInfo, setLimitInfo] = useState<{ toplam_aday: number; max_aday: number } | null>(null)
+
   // Email toplama state'leri
   const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([])
   const [selectedAccountId, setSelectedAccountId] = useState<string>('')
@@ -117,9 +120,11 @@ export default function CvCollect() {
     Promise.all([
       fetch(`${API_URL}/api/cv/stats`, { headers: getJsonHeaders() }).then(r => r.json()),
       fetch(`${API_URL}/api/cv/history`, { headers: getJsonHeaders() }).then(r => r.json()),
-      fetch(`${API_URL}/api/emails`, { headers: getJsonHeaders() }).then(r => r.json())
+      fetch(`${API_URL}/api/emails`, { headers: getJsonHeaders() }).then(r => r.json()),
+      fetch(`${API_URL}/api/dashboard/stats`, { headers: getJsonHeaders() }).then(r => r.json()),
+      fetch(`${API_URL}/api/companies/me`, { headers: getJsonHeaders() }).then(r => r.json())
     ])
-      .then(([statsRes, historyRes, emailsRes]) => {
+      .then(([statsRes, historyRes, emailsRes, dashboardRes, companyRes]) => {
         if (statsRes.success) setStats(statsRes.data)
         if (historyRes.success) setHistory(historyRes.data)
         if (emailsRes.success) {
@@ -129,6 +134,10 @@ export default function CvCollect() {
             setSelectedAccountId(String(activeAccounts[0].id))
           }
         }
+        // Limit bilgisini ayarla
+        const toplam = dashboardRes?.toplam_aday ?? 0
+        const max = companyRes?.company?.max_aday ?? 1000
+        setLimitInfo({ toplam_aday: toplam, max_aday: max })
       })
       .catch(err => console.error('CV data hatasi:', err))
       .finally(() => setLoading(false))
@@ -256,9 +265,26 @@ export default function CvCollect() {
 
   return (
     <div className='space-y-6'>
-      <div>
-        <h2 className='text-2xl font-bold tracking-tight'>CV Topla</h2>
-        <p className='text-muted-foreground'>Manuel yükleme veya email'den otomatik CV toplama</p>
+      <div className='flex items-center justify-between'>
+        <div>
+          <h2 className='text-2xl font-bold tracking-tight'>CV Topla</h2>
+          <p className='text-muted-foreground'>Manuel yükleme veya email'den otomatik CV toplama</p>
+        </div>
+        {limitInfo && (
+          <div className='flex items-center gap-3 bg-muted/50 rounded-lg px-4 py-2'>
+            <div className='text-sm'>
+              <span className='font-semibold'>{limitInfo.toplam_aday}</span>
+              <span className='text-muted-foreground'> / {limitInfo.max_aday === -1 ? '∞' : limitInfo.max_aday}</span>
+              <span className='text-muted-foreground ml-1'>Aday</span>
+            </div>
+            {limitInfo.max_aday !== -1 && (
+              <Progress
+                value={(limitInfo.toplam_aday / limitInfo.max_aday) * 100}
+                className='w-24 h-2'
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {message && (
