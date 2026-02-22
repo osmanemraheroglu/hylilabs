@@ -138,7 +138,7 @@ def create_company_endpoint(body: dict, current_user: dict = Depends(get_current
                     cursor = conn.cursor()
                     hashed = hash_password(gecici_sifre)
                     cursor.execute("""
-                        INSERT INTO users (email, sifre, ad_soyad, rol, company_id, aktif)
+                        INSERT INTO users (email, password_hash, ad_soyad, rol, company_id, aktif)
                         VALUES (?, ?, ?, 'company_admin', ?, 1)
                     """, (yetkili_email, hashed, yetkili_adi, company_id))
                     conn.commit()

@@ -5649,7 +5649,7 @@ def update_company_status(company_id: int, durum: str) -> bool:
 
 def delete_company_soft(company_id: int) -> bool:
     """
-    Firmayı soft delete yap (durum='silindi')
+    Firmayı soft delete yap (aktif=0)
 
     Args:
         company_id: Firma ID
@@ -5660,11 +5660,12 @@ def delete_company_soft(company_id: int) -> bool:
     with get_connection() as conn:
         cursor = conn.cursor()
 
-        # Firma durumunu güncelle
+        # Firma aktif durumunu guncelle
         cursor.execute(
-            "UPDATE companies SET durum = 'silindi', aktif = 0 WHERE id = ?",
+            "UPDATE companies SET aktif = 0 WHERE id = ?",
             (company_id,)
         )
+        company_updated = cursor.rowcount > 0
 
         # Firma kullanıcılarını pasif yap
         cursor.execute(
@@ -5672,7 +5673,7 @@ def delete_company_soft(company_id: int) -> bool:
             (company_id,)
         )
 
-        return cursor.rowcount > 0
+        return company_updated
 
 
 def get_super_admin_stats() -> dict:
