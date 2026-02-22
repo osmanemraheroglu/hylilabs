@@ -31,6 +31,7 @@ Son guncelleme: 22.02.2026
 - Mulakat iptal edilince baska aktif mulakat yoksa aday durumu 'pozisyona_atandi' olarak geri aliniyor
 - Mulakat silinince baska aktif mulakat yoksa aday durumu 'pozisyona_atandi' olarak geri aliniyor
 - Dashboard "Mulakat Bekleyen" ve Takvim "Planlanmis" senkronizasyonu saglandi
+- Dashboard "Bekleyen" karti duzeltildi: position_pools.durum='beklemede' -> candidates.durum='yeni'
 
 ### 20.02.2026
 - pm2 kurulumu ve yapilandirilmasi (ecosystem.config.cjs)

@@ -5253,12 +5253,12 @@ def get_dashboard_stats(company_id: int = None) -> dict:
         """, params)
         bugun_basvuru = cursor.fetchone()[0]
 
-        # Degerlendirme bekleyen (havuzda beklemede duranlar)
+        # Degerlendirme bekleyen (yeni adaylar)
+        company_and = "AND company_id = ?" if company_id else ""
         cursor.execute(f"""
-            SELECT COUNT(DISTINCT pp.candidate_id) FROM position_pools pp
-            JOIN candidates c ON pp.candidate_id = c.id
-            WHERE pp.durum = 'beklemede'
-            {company_and_c}
+            SELECT COUNT(*) FROM candidates
+            WHERE durum = 'yeni'
+            {company_and}
         """, params)
         bekleyen = cursor.fetchone()[0]
 
