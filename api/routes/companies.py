@@ -8,9 +8,12 @@ from routes.auth import get_current_user
 from database import (
     get_connection, get_all_companies_admin, create_company,
     update_company, update_company_status, delete_company_soft,
-    create_company_user
+    create_company_user, hash_password
 )
+from email_sender import send_email
 import traceback
+import secrets
+import string
 
 router = APIRouter(prefix="/api/companies", tags=["companies"])
 
@@ -119,7 +122,68 @@ def create_company_endpoint(body: dict, current_user: dict = Depends(get_current
             max_aday=body.get("max_aday", 1000)
         )
 
-        return {"success": True, "company_id": company_id}
+        # Yetkili email varsa otomatik kullanici olustur ve email gonder
+        yetkili_email = body.get("yetkili_email")
+        yetkili_adi = body.get("yetkili_adi") or "Yetkili"
+        email_sent = False
+
+        if yetkili_email:
+            try:
+                # Gecici sifre uret (8 karakter: buyuk+kucuk+rakam)
+                chars = string.ascii_letters + string.digits
+                gecici_sifre = ''.join(secrets.choice(chars) for _ in range(8))
+
+                # Kullaniciyi DB'ye kaydet
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    hashed = hash_password(gecici_sifre)
+                    cursor.execute("""
+                        INSERT INTO users (email, sifre, ad_soyad, rol, company_id, aktif)
+                        VALUES (?, ?, ?, 'company_admin', ?, 1)
+                    """, (yetkili_email, hashed, yetkili_adi, company_id))
+                    conn.commit()
+
+                # System email hesabini al (company_id=1 veya varsayilan)
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        SELECT * FROM email_accounts
+                        WHERE aktif = 1 AND (company_id = 1 OR varsayilan_gonderim = 1)
+                        ORDER BY varsayilan_gonderim DESC, company_id ASC
+                        LIMIT 1
+                    """)
+                    email_account = cursor.fetchone()
+                    email_account = dict(email_account) if email_account else None
+
+                # Email gonder
+                if email_account:
+                    email_body = f"""Sayın {yetkili_adi},
+
+{ad} için HyliLabs hesabınız oluşturuldu.
+
+Giriş Bilgileri:
+URL: http://***REMOVED***:3000
+Email: {yetkili_email}
+Şifre: {gecici_sifre}
+
+İlk girişte şifrenizi değiştirmenizi öneririz.
+
+Saygılarımızla,
+HyliLabs Ekibi"""
+
+                    success, msg = send_email(
+                        to_email=yetkili_email,
+                        subject="HyliLabs - Hesabınız Oluşturuldu",
+                        body=email_body,
+                        account=email_account,
+                        sirket_adi="HyliLabs"
+                    )
+                    email_sent = success
+            except Exception as e:
+                # Kullanici/email hatasi firma olusturmayi engellemez
+                traceback.print_exc()
+
+        return {"success": True, "company_id": company_id, "email_sent": email_sent}
     except HTTPException:
         raise
     except Exception as e:

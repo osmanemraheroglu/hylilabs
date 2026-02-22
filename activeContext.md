@@ -37,6 +37,7 @@ Son guncelleme: 22.02.2026
 - CV Topla sayfasinda aday limiti gostergesi eklendi (X / Y Aday + progress bar)
 - /api/companies/me endpoint'i eklendi (kullanicinin firmasini getir)
 - create_company() eksik parametreler eklendi (yetkili_adi, yetkili_email, yetkili_telefon, max_kullanici, max_aday)
+- Firma olusturulunca yetkili emaile otomatik kullanici hesabi ve sifre emaili gonderiliyor
 
 ### 20.02.2026
 - pm2 kurulumu ve yapilandirilmasi (ecosystem.config.cjs)
@@ -150,7 +151,8 @@ Son guncelleme: 22.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-dbddd20 - fix: create_company() eksik parametreler eklendi
+c8c3a14 - feat: firma olusturulunca yetkili email otomatik kullanici ve sifre emaili
+875bea8 - fix: create_company() eksik parametreler eklendi
 a149447 - feat: plan dropdown kaldirildi, max_aday limiti ve gosterge eklendi
 525a132 - fix: dashboard bekleyen karti - yanlis tablo duzeltildi, candidates.durum=yeni
 7480780 - fix: mulakat olusturulunca aday durumu guncelleniyor + update activeContext
@@ -171,7 +173,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-create_company() parametreleri duzeltildi, deploy bekleniyor.
+Firma olusturma + otomatik kullanici + email deploy edildi.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)
