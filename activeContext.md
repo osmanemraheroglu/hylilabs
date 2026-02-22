@@ -149,6 +149,7 @@ Son guncelleme: 22.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+a149447 - feat: plan dropdown kaldirildi, max_aday limiti ve gosterge eklendi
 525a132 - fix: dashboard bekleyen karti - yanlis tablo duzeltildi, candidates.durum=yeni
 7480780 - fix: mulakat olusturulunca aday durumu guncelleniyor + update activeContext
 4c185c2 - fix: frontend turkce karakter duzeltmeleri - ek dosyalar (4 dosya, 40+)
