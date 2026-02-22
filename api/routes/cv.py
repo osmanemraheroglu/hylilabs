@@ -68,7 +68,7 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
             if company and company['max_aday'] != -1 and current_count >= company['max_aday']:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"Aday limiti doldu. Maksimum {company['max_aday']} aday eklenebilir."
+                    detail=f"Aday limitinize ulaştınız! Maksimum {company['max_aday']} aday ekleyebilirsiniz. Limitinizi artırmak için yöneticinizle iletişime geçin."
                 )
 
         # CV dosyasini kaydet (firma bazli klasore)

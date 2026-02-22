@@ -165,6 +165,14 @@ export default function CvCollect() {
         body: formData
       })
       const data = await res.json()
+
+      // 403 limit hatası özel işleme
+      if (res.status === 403) {
+        setParseError(`⚠️ ${data.detail || 'Aday limitinize ulaştınız!'}`)
+        loadData() // Limit göstergesini güncelle
+        return
+      }
+
       if (data.success) {
         setParseResult(data.data)
         showMsg('CV başarıyla yüklendi ve parse edildi')
