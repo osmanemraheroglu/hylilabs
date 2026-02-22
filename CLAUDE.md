@@ -128,3 +128,8 @@ Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
 - Mevcut metinleri düzenlerken Türkçe karakterleri koru
 - Asla "Kullanici", "Sifre", "Guncelle", "Iptal", "Yukleniyor" gibi karaktersiz yazma
 - DB'den gelen değerleri frontend'de Türkçe'ye çevir (getDurumLabel pattern)
+
+### Dashboard Bekleyen Kartı (22.02.2026) — DEGISMEZ
+- api/database.py — candidates.durum = 'yeni' sorgusu
+- position_pools tablosu degil, candidates tablosu kullaniliyor
+- DEGISTIRME
