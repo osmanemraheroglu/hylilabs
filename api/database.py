@@ -5372,14 +5372,21 @@ def get_recent_evaluations(company_id: int = None, limit: int = 10) -> list[dict
 # ============ FIRMA ISLEMLERI ============
 
 def create_company(ad: str, slug: str, email: str = None, telefon: str = None,
-                   adres: str = None, website: str = None, plan: str = "basic") -> int:
+                   adres: str = None, website: str = None, plan: str = "basic",
+                   yetkili_adi: str = None, yetkili_email: str = None,
+                   yetkili_telefon: str = None, max_kullanici: int = 5,
+                   max_aday: int = 1000) -> int:
     """Yeni firma olustur"""
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO companies (ad, slug, email, telefon, adres, website, plan)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (ad, slug, email, telefon, adres, website, plan))
+            INSERT INTO companies (ad, slug, email, telefon, adres, website, plan,
+                                   yetkili_adi, yetkili_email, yetkili_telefon,
+                                   max_kullanici, max_aday)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (ad, slug, email, telefon, adres, website, plan,
+              yetkili_adi, yetkili_email, yetkili_telefon,
+              max_kullanici, max_aday))
         return cursor.lastrowid
 
 
