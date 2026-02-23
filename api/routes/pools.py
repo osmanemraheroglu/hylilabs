@@ -1167,7 +1167,7 @@ def get_candidate_report(pool_id: int, candidate_id: int, current_user: dict = D
                     pass
         
         # HTML rapor oluştur
-        from eval_report import generate_eval_html
+        from eval_report_v2 import generate_eval_html
         html = generate_eval_html(
             candidate_name=candidate_name,
             position_name=position_name,
