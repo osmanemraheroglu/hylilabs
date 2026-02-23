@@ -27,6 +27,10 @@ Son guncelleme: 23.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- Havuzlar frontend cift sayim duzeltildi: totalCandidates artik backend'den geliyor
+- TreeData interface'e total_candidates eklendi
+- totalCandidates hesaplamasi basitlestirildi (tree?.total_candidates || 0)
+- Backend /api/pools/hierarchical endpoint'ine total_candidates eklendi
 - window.alert() kaldirildi, sonner toast bildirimleri eklendi (3 dosya, 33 alert)
 - email-hesaplari, firma-yonetimi, havuzlar sayfalarinda toast.success/error kullaniliyor
 - PYTHONPATH fix: ecosystem.config.cjs'e core/ path eklendi
@@ -216,7 +220,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Security duzeltmeleri tamamlandi. Kariyer sayfasi gelistirmeye hazir.
+Aday durum akisi duzeltmeleri tamamlandi. Kariyer sayfasi gelistirmeye hazir.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

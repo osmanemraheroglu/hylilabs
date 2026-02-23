@@ -24,7 +24,7 @@ interface Pool { id: number; name: string; icon: string; pool_type: string; is_s
 interface SysPool { id: number; name: string; icon: string; is_system: boolean; candidate_count: number }
 interface Position { id: number; name: string; icon: string; keywords: string|null; description: string|null; candidate_count: number }
 interface Dept { id: number; name: string; icon: string; candidate_count: number; positions: Position[]; total_position_candidates: number }
-interface TreeData { system_pools: SysPool[]; departments: Dept[] }
+interface TreeData { system_pools: SysPool[]; departments: Dept[]; total_candidates?: number }
 interface Candidate { id: number; ad_soyad: string; email: string|null; telefon: string|null; mevcut_pozisyon: string|null; toplam_deneyim_yil: number|null; lokasyon: string|null; match_score?: number; match_reason?: string; remaining_days?: number; assignment_type?: string; status?: string }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -486,7 +486,7 @@ export default function Havuzlar() {
     else setSelectedCandidates(new Set(filteredCandidates.map(c => c.id)))
   }
 
-  const totalCandidates = tree ? (tree.system_pools?.reduce((s, p) => s + p.candidate_count, 0) || 0) + (tree.departments?.reduce((s, d) => s + d.total_position_candidates, 0) || 0) : 0
+  const totalCandidates = tree?.total_candidates || 0
 
   // V2 Detail Renderer
   const renderV2Detail = (v2: any) => {

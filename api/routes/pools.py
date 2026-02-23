@@ -46,11 +46,19 @@ def get_hierarchical(current_user: dict = Depends(get_current_user)):
                     "candidate_count": count,
                 })
 
+        # Toplam aday sayısı (Dashboard ile aynı kaynak)
+        from database import get_connection
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM candidates WHERE company_id = ?", (company_id,))
+            total_candidates = cursor.fetchone()[0]
+
         return {
             "success": True,
             "data": {
                 "system_pools": system_list,
                 "departments": departments,
+                "total_candidates": total_candidates,
             }
         }
     except Exception as e:
