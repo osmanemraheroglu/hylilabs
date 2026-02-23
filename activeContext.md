@@ -185,6 +185,7 @@ Son guncelleme: 23.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+6c4410b - fix: havuzlar frontend cift sayim duzeltildi - totalCandidates artik backendden geliyor
 9d28dd0 - ui: window.alert kaldirildi, toast bildirimleri eklendi
 c56a09c - fix: PYTHONPATH core/ eklendi - candidate_matcher ve cv_parser import sorunu cozuldu
 e0a669f - fix: eslestirme calismiyordu - approved_title_mappings senkronizasyonu eklendi
