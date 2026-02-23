@@ -175,3 +175,10 @@ Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
 - Var olan tablolar sqlite_master ile kontrol edilir
 - Her DELETE try/except ile sarılı
 - api/database.py — DEGISTIRME
+
+### Security Sistemi (23.02.2026) — DEGISMEZ
+- JWT_SECRET .env'den zorunlu, fallback yok - RuntimeError fırlatır
+- Public endpoint rate limiting hazır:
+  - check_public_apply_limit() → 10 istek/saat/IP
+  - check_public_positions_limit() → 60 istek/dakika/IP
+- api/rate_limiter.py + api/routes/auth.py — DEGISTIRME
