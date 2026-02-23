@@ -199,3 +199,25 @@ Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
 - Kilitli dosyalar (scoring_v2.py, email_worker.py, job_scraper.py) core. prefix'siz import ediyor
 - PYTHONPATH sayesinde import hataları çözüldü
 - DEGISTIRME
+
+### URL Parse Frontend Fix (23.02.2026) — DEGISMEZ
+- src/features/havuzlar/index.tsx
+- res.başarılı → res.success && res.data kontrolü
+- res.pozisyon_adi → res.data.pozisyon_adi erişimi
+- Commit 275682b — DEGISTIRME
+
+### Radix UI Select Fix (23.02.2026) — DEGISMEZ
+- SelectItem value="" → value="none" (3 yerde: satır 901, 986, 1019)
+- Select value={x || "none"}, onChange: "none" → "" dönüşümü
+- Commit e32c1a4 — DEGISTIRME
+
+### Eşleştirme Senkronizasyon Fix (23.02.2026) — DEGISMEZ
+- approved_title_mappings tablosu pozisyon onayında senkronize ediliyor
+- Onay: is_approved=1, Red: kayıt siliniyor — her iki tabloda
+- Commit e0a669f — DEGISTIRME
+
+### Toast Bildirim Sistemi (23.02.2026) — DEGISMEZ
+- 33 window.alert() kaldırıldı (3 dosya)
+- sonner toast kullanılıyor: toast.success() + toast.error()
+- Dosyalar: havuzlar, firma-yonetimi, email-hesaplari
+- Commit dc8592b — DEGISTIRME
