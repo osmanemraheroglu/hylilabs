@@ -37,6 +37,9 @@ Son guncelleme: 23.02.2026
 - DELETE /api/companies/{id}: Kalici silme (hard delete) - tum veriler silinir
 - hard_delete_company(): 10 tablo sirayla siliniyor (candidates, users, interviews, vs.)
 - Silme onay dialogu: "Bu islem GERI ALINAMAZ" uyarisi
+- URL Parse frontend duzeltildi: res.basarili -> res.success, res.pozisyon_adi -> res.data.pozisyon_adi
+- save-parsed endpoint detayli loglama eklendi (debug icin)
+- save-parsed endpoint test edildi: calisiyor (pool olusturma, categorize_and_save, pull_matching)
 
 ### 22.02.2026
 - Mulakat olusturulunca aday durumu otomatik 'mulakat' olarak guncelleniyor
@@ -169,6 +172,8 @@ Son guncelleme: 23.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+fec1e45 - debug: save-parsed endpoint detayli loglama
+275682b - fix: URL parse frontend response handling duzeltmesi
 52b7a7f - security: IDOR duzeltmesi, audit log, mulakat izolasyon dogrulama
 df4b16c - docs: security sistemi CLAUDE.md kilitlendi
 aab1e57 - security: JWT secret zorunlu, rate limiting public endpoint hazirlik
