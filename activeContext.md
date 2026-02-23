@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 22.02.2026
+Son guncelleme: 23.02.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -26,6 +26,13 @@ Son guncelleme: 22.02.2026
 10. Ayarlar sayfasi: Sadece 3 sekme. KILITLI.
 
 ## Son 72 Saatte Tamamlananlar
+### 23.02.2026
+- Auth yonlendirme duzeltildi: token yoksa /sign-in'e yonlendir
+- /api/auth/me endpoint'i: aktif=0 kullanici -> 401, aktif=0 firma -> 403
+- Login endpoint'i: pasif kullanici/firma icin ozel hata mesajlari
+- Frontend initAuth(): 401/403 durumunda token silip /sign-in'e yonlendiriyor
+- Token varken /sign-in'e gelince /'e (dashboard) yonlendiriyor
+
 ### 22.02.2026
 - Mulakat olusturulunca aday durumu otomatik 'mulakat' olarak guncelleniyor
 - Mulakat iptal edilince baska aktif mulakat yoksa aday durumu 'pozisyona_atandi' olarak geri aliniyor
@@ -157,6 +164,7 @@ Son guncelleme: 22.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+XXXXXX - fix: auth yonlendirme duzeltmesi - pasif kullanici ve route guard
 84967de - fix: teams dropdown kaldirildi, menu ve dashboard Turkce duzeltme
 7d4126d - fix: login sayfasi HyliLabs markasi ve Turkce duzeltmesi
 cf31959 - fix: firma email gonderi ve silme hatasi duzeltildi
@@ -182,7 +190,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Teams dropdown kaldirildi, menu ve dashboard Turkce duzeltmeler deploy edildi.
+Auth yonlendirme duzeltmesi deploy edildi. Yeni tarayicida token yoksa /sign-in'e yonleniyor.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

@@ -61,11 +61,17 @@ export const useAuthStore = create<AuthState>()((set) => {
 /**
  * Uygulama baslarken token varsa /api/auth/me ile kullanici bilgisini yukler.
  * Token gecersizse veya hata olursa logout yapar.
+ * 401: Kullanici bulunamadi veya pasif
+ * 403: Firma pasif
  */
 export async function initAuth(): Promise<boolean> {
   const token = localStorage.getItem('access_token')
-  
+
   if (!token) {
+    // Token yoksa login sayfasina yonlendir
+    if (window.location.pathname !== '/sign-in') {
+      window.location.href = '/sign-in'
+    }
     return false
   }
 
@@ -79,13 +85,16 @@ export async function initAuth(): Promise<boolean> {
     })
 
     if (!response.ok) {
-      // Token gecersiz veya suresi dolmus
+      // 401 veya 403 durumunda token sil ve login'e yonlendir
       useAuthStore.getState().auth.reset()
+      if (window.location.pathname !== '/sign-in') {
+        window.location.href = '/sign-in'
+      }
       return false
     }
 
     const userData = await response.json()
-    
+
     // User bilgisini store'a kaydet
     const user: AuthUser = {
       accountNo: String(userData.id),
@@ -97,12 +106,21 @@ export async function initAuth(): Promise<boolean> {
     }
 
     useAuthStore.getState().auth.setUser(user)
+
+    // Basarili giris ve sign-in sayfasindaysa dashboard'a yonlendir
+    if (window.location.pathname === '/sign-in') {
+      window.location.href = '/'
+    }
+
     return true
 
   } catch (error) {
     // Network hatasi veya diger sorunlar
     console.error('Auth initialization failed:', error)
     useAuthStore.getState().auth.reset()
+    if (window.location.pathname !== '/sign-in') {
+      window.location.href = '/sign-in'
+    }
     return false
   }
 }

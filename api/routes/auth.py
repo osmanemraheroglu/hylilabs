@@ -6,7 +6,7 @@ import jwt
 from datetime import datetime, timedelta
 import sys
 sys.path.append("/var/www/hylilabs/api")
-from database import verify_user, get_user
+from database import verify_user, get_user, get_connection
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer()
@@ -41,6 +41,21 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         user = get_user(user_id)
         if not user:
             raise HTTPException(status_code=401, detail="Kullanıcı bulunamadı")
+
+        # Kullanıcı aktif mi kontrol et
+        if not user.get("aktif", 1):
+            raise HTTPException(status_code=401, detail="Hesabınız pasif durumda")
+
+        # Firma aktif mi kontrol et
+        company_id = user.get("company_id")
+        if company_id:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT aktif FROM companies WHERE id = ?", (company_id,))
+                row = cursor.fetchone()
+                if row and not row[0]:
+                    raise HTTPException(status_code=403, detail="Firmanız pasif durumda")
+
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token süresi dolmuş")
@@ -52,7 +67,21 @@ def login(request: LoginRequest):
     user = verify_user(request.email, request.password)
     if not user:
         raise HTTPException(status_code=401, detail="Email veya şifre hatalı")
-    
+
+    # Kullanıcı aktif mi kontrol et
+    if not user.get("aktif", 1):
+        raise HTTPException(status_code=403, detail="Hesabınız pasif. Yöneticinizle iletişime geçin.")
+
+    # Firma aktif mi kontrol et
+    company_id = user.get("company_id")
+    if company_id:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT aktif FROM companies WHERE id = ?", (company_id,))
+            row = cursor.fetchone()
+            if row and not row[0]:
+                raise HTTPException(status_code=403, detail="Firmanız pasif durumda.")
+
     token = create_access_token(user["id"])
     
     # Hassas bilgileri çıkar
