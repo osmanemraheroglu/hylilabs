@@ -11,7 +11,7 @@ from database import (
     create_company_user, hash_password, hard_delete_company
 )
 from email_sender import send_email
-from audit_logger import log_audit, AuditAction, EntityType
+from audit_logger import log_action, AuditAction, EntityType
 import traceback
 import secrets
 import string
@@ -124,7 +124,7 @@ def create_company_endpoint(body: dict, request: Request, current_user: dict = D
         )
 
         # Audit log: Firma oluşturma
-        log_audit(
+        log_action(
             user_id=current_user["id"],
             user_email=current_user["email"],
             company_id=None,  # Super admin, firma bağımsız
@@ -272,7 +272,7 @@ def toggle_company_status(company_id: int, request: Request, current_user: dict 
             conn.commit()
 
         # Audit log: Firma durum değişikliği
-        log_audit(
+        log_action(
             user_id=current_user["id"],
             user_email=current_user["email"],
             company_id=None,
@@ -312,7 +312,7 @@ def delete_company_endpoint(company_id: int, request: Request, current_user: dic
             raise HTTPException(status_code=404, detail="Firma bulunamadi")
 
         # Audit log: Firma silme
-        log_audit(
+        log_action(
             user_id=current_user["id"],
             user_email=current_user["email"],
             company_id=None,
