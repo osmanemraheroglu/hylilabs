@@ -256,3 +256,11 @@ Her aday her zaman şu kurallarla havuzda olmalı:
 - durum='ise_alindi' → Hiçbir havuzda değil
 - Hiçbir aday 2 havuzda aynı anda olamaz
 DEGISTIRME
+
+### Pozisyon Havuzu Sorgu Yönlendirmesi (24.02.2026) — DEGISMEZ
+- pools.py route'unda pool_type kontrolü:
+  - pool_type == "position" → get_position_candidates() çağrılır (candidate_positions tablosu)
+  - pool_type == "department" veya diğer → get_department_pool_candidates() çağrılır (candidate_pool_assignments tablosu)
+- get_position_candidates() fonksiyonu c.* ile tüm aday alanlarını döndürür
+- Dosyalar: api/routes/pools.py (satır 215-216), api/database.py (satır 8577-8599)
+- Commit: 6641c11 — DEGISTIRME

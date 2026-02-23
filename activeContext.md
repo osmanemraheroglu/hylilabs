@@ -13,7 +13,7 @@ Son guncelleme: 23.02.2026
 - demo@demo.com -> company_admin -> aktif (sifre: demo123)
 - test@test.com -> user -> PASIF (aktif=0, GERI ALINAMAZ)
 
-## Kilitli Sistemler — DOKUNULMAZLAR (27 sistem)
+## Kilitli Sistemler — DOKUNULMAZLAR (28 sistem)
 1. v2 eslestirme: Fuzzy 70->85, 85->92. Max 1 pozisyon/aday. DEGISMEZ.
 2. Scoring v2.1: Dynamic knockout(%50), junior/senior penalti, egitim kademeli. DEGISMEZ.
 3. Claude CV parsing: %100 basarili. Parse sistemi bozulmamali.
@@ -28,8 +28,12 @@ Son guncelleme: 23.02.2026
 12. Dashboard Visibility Refresh: fetchDashboardData() + visibilitychange.
 13. Genel Havuzdan Silme Engeli: 400 HTTPException + toast.error().
 14. Pool Assignments Veri Kurallari: Her durum icin havuz kurali.
+15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 24.02.2026
+- CLAUDE.md: Sistem #28 kilitlendi - Pozisyon Havuzu Sorgu Yönlendirmesi
+
 ### 23.02.2026
 - BUG FIX: Pozisyon havuzlarinda aday gorunmuyordu (0 aday) - pools.py route'a pool_type kontrol eklendi
 - get_position_candidates() fonksiyonu guncellendi: c.* donuyor, frontend ile uyumlu
