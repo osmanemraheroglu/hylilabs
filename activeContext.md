@@ -27,6 +27,8 @@ Son guncelleme: 23.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- arsivle endpoint duzeltildi: candidate_pool_assignments'a Arsiv havuzu atamasi eklendi
+- Mevcut arsivli aday (ID=432) Arsiv havuzuna eklendi
 - Havuzlar frontend cift sayim duzeltildi: totalCandidates artik backend'den geliyor
 - TreeData interface'e total_candidates eklendi
 - totalCandidates hesaplamasi basitlestirildi (tree?.total_candidates || 0)

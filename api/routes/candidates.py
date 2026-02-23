@@ -218,8 +218,25 @@ def arsivle_candidate(candidate_id: int, current_user: dict = Depends(get_curren
 
         with get_connection() as conn:
             cursor = conn.cursor()
+            # Arşiv havuzunu bul
+            cursor.execute("""
+                SELECT id FROM department_pools
+                WHERE company_id = ? AND name = 'Arşiv' AND is_system = 1
+            """, (company_id,))
+            arsiv_row = cursor.fetchone()
+            if not arsiv_row:
+                raise HTTPException(status_code=500, detail="Arşiv havuzu bulunamadı")
+            arsiv_pool_id = arsiv_row[0]
+
             # Pozisyon atamasını sil
             cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
+            # Eski havuz atamasını sil
+            cursor.execute("DELETE FROM candidate_pool_assignments WHERE candidate_id = ?", (candidate_id,))
+            # Arşiv havuzuna ata
+            cursor.execute("""
+                INSERT INTO candidate_pool_assignments (candidate_id, department_pool_id, company_id)
+                VALUES (?, ?, ?)
+            """, (candidate_id, arsiv_pool_id, company_id))
             # Durumu güncelle
             cursor.execute("""
                 UPDATE candidates
