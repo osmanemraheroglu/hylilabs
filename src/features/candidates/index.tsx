@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { RefreshCw, Search, Users, ChevronLeft, ChevronRight, Eye, X, Download } from 'lucide-react'
+import { RefreshCw, Search, Users, ChevronLeft, ChevronRight, Eye, X, Download, Archive, CheckCircle, XCircle } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
 
@@ -134,18 +134,47 @@ export default function Candidates() {
       .finally(() => setDetailLoading(false))
   }
 
+  const handleStatusChange = async (candidateId: number, action: 'elen' | 'arsivle' | 'ise-al') => {
+    try {
+      const response = await fetch(`${API_URL}/api/candidates/${candidateId}/${action}`, {
+        method: 'PATCH',
+        headers: getHeaders()
+      })
+      const res = await response.json()
+      if (res.success) {
+        toast.success(res.message)
+        setSelectedCandidate(null)
+        loadCandidates()
+      } else {
+        toast.error(res.detail || 'İşlem başarısız')
+      }
+    } catch (err) {
+      toast.error('Bir hata oluştu')
+      console.error('Status change error:', err)
+    }
+  }
+
   const totalPages = Math.ceil(total / limit)
   const currentPage = Math.floor(offset / limit) + 1
 
   const durumLabel = (d: string) => {
-    const map: Record<string, string> = { yeni: 'Yeni', degerlendirmede: 'Değerlendirmede', mulakat: 'Mülakat', kabul: 'Kabul', red: 'Red', arsiv: 'Arşiv' }
+    const map: Record<string, string> = {
+      yeni: 'Yeni',
+      degerlendirmede: 'Değerlendirmede',
+      pozisyona_atandi: 'Pozisyona Atandı',
+      mulakat: 'Mülakat',
+      kabul: 'Kabul',
+      ise_alindi: 'İşe Alındı',
+      red: 'Red',
+      arsiv: 'Arşiv'
+    }
     return map[d] || d
   }
 
   const durumVariant = (d: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
-    if (d === 'kabul') return 'default'
+    if (d === 'kabul' || d === 'ise_alindi') return 'default'
     if (d === 'red' || d === 'arsiv') return 'destructive'
-    if (d === 'mulakat') return 'outline'
+    if (d === 'mulakat' || d === 'pozisyona_atandi') return 'outline'
     return 'secondary'
   }
 
@@ -197,10 +226,9 @@ export default function Candidates() {
               <SelectContent>
                 <SelectItem value='all'>Tüm Durumlar</SelectItem>
                 <SelectItem value='yeni'>Yeni</SelectItem>
-                <SelectItem value='degerlendirmede'>Değerlendirmede</SelectItem>
+                <SelectItem value='pozisyona_atandi'>Pozisyona Atandı</SelectItem>
                 <SelectItem value='mulakat'>Mülakat</SelectItem>
-                <SelectItem value='kabul'>Kabul</SelectItem>
-                <SelectItem value='red'>Red</SelectItem>
+                <SelectItem value='ise_alindi'>İşe Alındı</SelectItem>
                 <SelectItem value='arsiv'>Arşiv</SelectItem>
               </SelectContent>
             </Select>
@@ -354,6 +382,44 @@ export default function Candidates() {
                     <p className='text-sm whitespace-pre-wrap'>{String(detailData.deneyim_detay)}</p>
                   </div>
                 ) : null}
+
+                {/* Durum Değiştirme Butonları */}
+                {detailData.durum !== 'ise_alindi' && detailData.durum !== 'arsiv' && (
+                  <div className='border-t pt-4 mt-4'>
+                    <p className='text-sm text-muted-foreground mb-3'>Durum Değiştir:</p>
+                    <div className='flex flex-wrap gap-2'>
+                      {(detailData.durum === 'mulakat' || detailData.durum === 'pozisyona_atandi') && (
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handleStatusChange(selectedCandidate!.id, 'elen')}
+                          className='text-orange-600 hover:text-orange-700 hover:bg-orange-50'
+                        >
+                          <XCircle className='h-4 w-4 mr-1' />
+                          Elen
+                        </Button>
+                      )}
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => handleStatusChange(selectedCandidate!.id, 'ise-al')}
+                        className='text-green-600 hover:text-green-700 hover:bg-green-50'
+                      >
+                        <CheckCircle className='h-4 w-4 mr-1' />
+                        İşe Al
+                      </Button>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => handleStatusChange(selectedCandidate!.id, 'arsivle')}
+                        className='text-gray-600 hover:text-gray-700 hover:bg-gray-50'
+                      >
+                        <Archive className='h-4 w-4 mr-1' />
+                        Arşivle
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <p className='text-center text-muted-foreground'>Veri yüklenemedi</p>

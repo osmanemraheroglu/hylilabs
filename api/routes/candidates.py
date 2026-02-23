@@ -174,6 +174,94 @@ def candidate_positions(candidate_id: int, current_user: dict = Depends(get_curr
 
 
 # ============================================================
+# Durum Geçiş Endpoint'leri (Adım 3/4)
+# ============================================================
+
+@router.patch("/{candidate_id}/elen")
+def elen_candidate(candidate_id: int, current_user: dict = Depends(get_current_user)):
+    """Adayı elen - pozisyondan çıkar, havuza geri gönder"""
+    require_company_user(current_user)
+    company_id = current_user["company_id"]
+    try:
+        from database import get_connection, verify_candidate_ownership
+        if not verify_candidate_ownership(candidate_id, company_id):
+            raise HTTPException(status_code=404, detail="Aday bulunamadı")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            # Pozisyon atamasını sil
+            cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
+            # Durumu güncelle
+            cursor.execute("""
+                UPDATE candidates
+                SET durum = 'yeni', havuz = 'genel_havuz'
+                WHERE id = ? AND company_id = ?
+            """, (candidate_id, company_id))
+            conn.commit()
+
+        return {"success": True, "message": "Aday havuza geri gönderildi"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/{candidate_id}/arsivle")
+def arsivle_candidate(candidate_id: int, current_user: dict = Depends(get_current_user)):
+    """Adayı arşivle"""
+    require_company_user(current_user)
+    company_id = current_user["company_id"]
+    try:
+        from database import get_connection, verify_candidate_ownership
+        if not verify_candidate_ownership(candidate_id, company_id):
+            raise HTTPException(status_code=404, detail="Aday bulunamadı")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            # Pozisyon atamasını sil
+            cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
+            # Durumu güncelle
+            cursor.execute("""
+                UPDATE candidates
+                SET durum = 'arsiv', havuz = 'arsiv'
+                WHERE id = ? AND company_id = ?
+            """, (candidate_id, company_id))
+            conn.commit()
+
+        return {"success": True, "message": "Aday arşivlendi"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/{candidate_id}/ise-al")
+def ise_al_candidate(candidate_id: int, current_user: dict = Depends(get_current_user)):
+    """Adayı işe alındı olarak işaretle"""
+    require_company_user(current_user)
+    company_id = current_user["company_id"]
+    try:
+        from database import get_connection, verify_candidate_ownership
+        if not verify_candidate_ownership(candidate_id, company_id):
+            raise HTTPException(status_code=404, detail="Aday bulunamadı")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE candidates
+                SET durum = 'ise_alindi'
+                WHERE id = ? AND company_id = ?
+            """, (candidate_id, company_id))
+            conn.commit()
+
+        return {"success": True, "message": "Aday işe alındı olarak işaretlendi"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
 # CV ZIP Download Endpoint (appended - locked file policy)
 # ============================================================
 
