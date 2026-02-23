@@ -164,7 +164,7 @@ Son guncelleme: 23.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-XXXXXX - fix: auth yonlendirme duzeltmesi - pasif kullanici ve route guard
+b5c8dfa - fix: auth yonlendirme duzeltmesi - pasif kullanici ve route guard
 84967de - fix: teams dropdown kaldirildi, menu ve dashboard Turkce duzeltme
 7d4126d - fix: login sayfasi HyliLabs markasi ve Turkce duzeltmesi
 cf31959 - fix: firma email gonderi ve silme hatasi duzeltildi
