@@ -535,13 +535,17 @@ def parse_position_from_url(data: dict, current_user: dict = Depends(get_current
         result = process_job_url(url)
 
         if not result.get("basarili"):
-            raise HTTPException(status_code=400, detail=result.get("hata", "Parse hatasi"))
+            error_msg = result.get("hata", "Bilinmeyen hata")
+            print(f"[URL Parse] Basarisiz: {url[:50]}... -> {error_msg}")
+            raise HTTPException(status_code=400, detail=error_msg)
 
+        print(f"[URL Parse] Basarili: {result.get('pozisyon_adi', 'N/A')}")
         return {"success": True, "data": result}
     except HTTPException:
         raise
     except Exception as e:
         traceback.print_exc()
+        print(f"[URL Parse] Exception: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
