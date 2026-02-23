@@ -41,6 +41,9 @@ Son guncelleme: 22.02.2026
 - Firma kullanici olusturma kolon adi duzeltildi (sifre -> password_hash)
 - Firma silme fonksiyonu duzeltildi (durum kolonu yok, rowcount fix)
 - Login sayfasi HyliLabs markasi ve Turkce (Shadcn Admin -> HyliLabs, Sign in -> Giris Yap)
+- Teams dropdown kaldirildi (sol ust logo artik tiklanabilir degil)
+- Sidebar "Firma Yonetimi" -> "Firma Yönetimi" Turkce duzeltme
+- Dashboard "Mulakat Bekleyen" -> "Mülakat Bekleyen" Turkce duzeltme
 
 ### 20.02.2026
 - pm2 kurulumu ve yapilandirilmasi (ecosystem.config.cjs)
@@ -154,7 +157,8 @@ Son guncelleme: 22.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-83c4ac9 - fix: login sayfasi HyliLabs markasi ve Turkce duzeltmesi
+84967de - fix: teams dropdown kaldirildi, menu ve dashboard Turkce duzeltme
+7d4126d - fix: login sayfasi HyliLabs markasi ve Turkce duzeltmesi
 cf31959 - fix: firma email gonderi ve silme hatasi duzeltildi
 14a2aef - feat: firma olusturulunca yetkili email otomatik kullanici ve sifre emaili
 875bea8 - fix: create_company() eksik parametreler eklendi
@@ -178,7 +182,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Login sayfasi HyliLabs markasi ve Turkce duzeltmesi deploy edildi.
+Teams dropdown kaldirildi, menu ve dashboard Turkce duzeltmeler deploy edildi.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

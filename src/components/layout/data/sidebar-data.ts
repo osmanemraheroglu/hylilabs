@@ -24,7 +24,7 @@ const MENU_ITEMS: Record<string, { title: string; url: string; icon: React.Eleme
   mulakatTakvimi: { title: 'Mülakat Takvimi', url: '/mulakat-takvimi', icon: CalendarClock },
   emailHesaplari: { title: 'Email Hesapları', url: '/email-hesaplari', icon: Mail },
   kullaniciYonetimi: { title: 'Kullanıcı Yönetimi', url: '/user-management', icon: UserCog },
-  firmaYonetimi: { title: 'Firma Yonetimi', url: '/firma-yonetimi', icon: Building2 },
+  firmaYonetimi: { title: 'Firma Yönetimi', url: '/firma-yonetimi', icon: Building2 },
   adminPanel: { title: 'Admin Panel', url: '/admin-panel', icon: Cog },
   ayarlar: { title: 'Ayarlar', url: '/settings', icon: Settings },
 }

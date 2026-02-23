@@ -191,7 +191,7 @@ export function Dashboard() {
 
           <Card>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>Mulakat Bekleyen</CardTitle>
+              <CardTitle className='text-sm font-medium'>Mülakat Bekleyen</CardTitle>
               <Calendar className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
