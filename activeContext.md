@@ -169,6 +169,9 @@ Son guncelleme: 23.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+52b7a7f - security: IDOR duzeltmesi, audit log, mulakat izolasyon dogrulama
+df4b16c - docs: security sistemi CLAUDE.md kilitlendi
+aab1e57 - security: JWT secret zorunlu, rate limiting public endpoint hazirlik
 b5c8dfa - fix: auth yonlendirme duzeltmesi - pasif kullanici ve route guard
 84967de - fix: teams dropdown kaldirildi, menu ve dashboard Turkce duzeltme
 7d4126d - fix: login sayfasi HyliLabs markasi ve Turkce duzeltmesi
@@ -195,8 +198,15 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Auth yonlendirme duzeltmesi deploy edildi. Yeni tarayicida token yoksa /sign-in'e yonleniyor.
+Security duzeltmeleri tamamlandi. Kariyer sayfasi gelistirmeye hazir.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)
 - Company Switcher henuz yapilmadi
+
+## Son Security Duzeltmeleri (23.02.2026)
+- IDOR zafiyeti duzeltildi (pools.py: 4 sorguya company_id filtresi eklendi)
+- Super Admin audit log eklendi (firma olusturma, silme, durum degisikligi)
+- JWT_SECRET fallback kaldirildi, .env zorunlu
+- Public endpoint rate limiting hazir (check_public_apply_limit, check_public_positions_limit)
+- Mulakat izolasyonu dogrulandi (0 NULL company_id kayit)
