@@ -8733,12 +8733,24 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
                         candidate_id, general_pool['id'], company_id, 'auto', 0,
                         'Pozisyon silindi - Genel Havuz\'a taşındı', conn=conn
                     )
+                    # Aday durumunu da güncelle
+                    cursor.execute("""
+                        UPDATE candidates
+                        SET durum = 'yeni', havuz = 'genel_havuz'
+                        WHERE id = ? AND company_id = ?
+                    """, (candidate_id, company_id))
                     stats['to_general'] += 1
                 elif archive_pool:
                     assign_candidate_to_department_pool(
                         candidate_id, archive_pool['id'], company_id, 'auto', 0,
                         'Pozisyon silindi - Arşiv\'e taşındı', conn=conn
                     )
+                    # Aday durumunu da güncelle
+                    cursor.execute("""
+                        UPDATE candidates
+                        SET durum = 'arsiv', havuz = 'arsiv'
+                        WHERE id = ? AND company_id = ?
+                    """, (candidate_id, company_id))
                     stats['to_archive'] += 1
 
         # Commit işlemi (sadece yeni bağlantı açıldıysa)
