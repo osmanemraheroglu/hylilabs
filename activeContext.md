@@ -32,6 +32,11 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- eval_report_v2.py: 3 bug düzeltildi
+  - Bug 1: CSS overflow fix - word-break:break-word 13 yerde eklendi
+  - Bug 2: Genel Değerlendirme parse fix - 'degerlendirme' (g ile) kontrol
+  - Bug 3: Eksik yetkinlik tag'leri - AI metninden parantez içi beceri ayıklama
+- extract_skills_from_text() fonksiyonu eklendi (regex ile parantez parse)
 - eval_report_v2.py: Modern infographic tasarımlı AI değerlendirme raporu oluşturuldu
 - SVG radar chart (5 boyut), progress bar'lar, verdict card'lar, yetkinlik tag'leri
 - pools.py: eval_report_v2 import edildi, yeni rapor aktif

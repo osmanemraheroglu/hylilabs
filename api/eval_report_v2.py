@@ -2,7 +2,29 @@
 1 A4 sayfaya sığan, SVG radar chart'lı, print-ready rapor.
 """
 import base64
+import re
 from datetime import datetime
+
+
+def extract_skills_from_text(text):
+    """AI metnindeki parantez içi yazılım/beceri isimlerini ayıkla.
+
+    Örnek: "Yapısal tasarım yazılımları (Tekla, SAP2000, ETABS) bilgisi yok"
+    → ['Tekla', 'SAP2000', 'ETABS']
+    """
+    skills = []
+    # Parantez içindeki virgülle ayrılmış kelimeleri bul
+    pattern = r'\(([^)]+)\)'
+    matches = re.findall(pattern, text)
+    for match in matches:
+        # Virgül veya "ve" ile ayrılmış öğeleri ayır
+        items = re.split(r'[,،]\s*|\s+ve\s+', match)
+        for item in items:
+            item = item.strip()
+            # Sadece yazılım/beceri gibi görünen kısa öğeleri al
+            if item and len(item) <= 25 and not item.lower().startswith(('vb', 'vs', 'gibi', 'örn')):
+                skills.append(item)
+    return skills[:6]  # Max 6 skill
 
 
 def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_date=None):
@@ -85,6 +107,7 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
     # AI metni işleme
     ai_sections = {"guclu": [], "eksik": [], "genel": "", "alternatif": []}
     current_section = None
+    eksik_raw_lines = []  # Bug 3: Eksik bölümündeki ham satırları sakla
 
     for line in ai_text.split('\n'):
         line = line.strip()
@@ -93,7 +116,8 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
             current_section = 'guclu'
         elif 'eksik' in lower:
             current_section = 'eksik'
-        elif 'genel' in lower and 'değerlendirme' in lower.replace('ğ','g'):
+        elif 'genel' in lower and 'degerlendirme' in lower.replace('ğ', 'g'):
+            # Bug 2 FIX: 'degerlendirme' (g ile) kontrol et
             current_section = 'genel'
         elif 'alternatif' in lower:
             current_section = 'alternatif'
@@ -101,22 +125,34 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
             item = line.lstrip('-•').strip()
             if item and current_section in ['guclu', 'eksik', 'alternatif']:
                 ai_sections[current_section].append(item)
+                # Bug 3: Eksik bölümündeki satırları sakla
+                if current_section == 'eksik':
+                    eksik_raw_lines.append(item)
         elif line and current_section == 'genel' and not line.endswith(':'):
             ai_sections['genel'] += (' ' if ai_sections['genel'] else '') + line
+
+    # Bug 3 FIX: critical_missing boşsa AI metninden ayıkla
+    if not critical_missing and eksik_raw_lines:
+        extracted_skills = []
+        for raw_line in eksik_raw_lines:
+            skills = extract_skills_from_text(raw_line)
+            extracted_skills.extend(skills)
+        if extracted_skills:
+            critical_missing = extracted_skills[:6]
 
     # Genel değerlendirme max 320 karakter
     genel_text = ai_sections['genel'][:320] + ('...' if len(ai_sections['genel']) > 320 else '')
 
     # Yetkinlik tag'leri
     def make_tags(items, color, bg):
-        return ''.join(f'<span style="background:{bg};color:{color};padding:2px 6px;border-radius:10px;font-size:9px;margin:1px;display:inline-block;">{item[:20]}</span>' for item in items[:6])
+        return ''.join(f'<span style="background:{bg};color:{color};padding:2px 6px;border-radius:10px;font-size:9px;margin:1px;display:inline-block;word-break:break-word;max-width:100%;">{item[:20]}</span>' for item in items[:6])
 
     matched_tags = make_tags(critical_matched, "#166534", "#dcfce7") if critical_matched else '<em style="color:#94a3b8;font-size:9px;">-</em>'
     missing_tags = make_tags(critical_missing, "#991b1b", "#fef2f2") if critical_missing else '<em style="color:#94a3b8;font-size:9px;">-</em>'
 
     # Güçlü/Eksik listeler
     def make_list(items, max_items=3):
-        return ''.join(f'<div style="font-size:9px;margin:2px 0;line-height:1.3;">• {item[:40]}</div>' for item in items[:max_items])
+        return ''.join(f'<div style="font-size:9px;margin:2px 0;line-height:1.3;word-break:break-word;">• {item[:50]}</div>' for item in items[:max_items])
 
     guclu_list = make_list(ai_sections['guclu']) or '<em style="color:#94a3b8;font-size:9px;">Belirtilmedi</em>'
     eksik_list = make_list(ai_sections['eksik']) or '<em style="color:#94a3b8;font-size:9px;">Belirtilmedi</em>'
@@ -160,7 +196,7 @@ body {{ font-family: 'DM Sans', sans-serif; max-width: 210mm; margin: 0 auto; pa
 .header-date {{ text-align: right; font-size: 8px; opacity: 0.75; }}
 .main-grid {{ display: grid; grid-template-columns: 140px 1fr; gap: 10px; }}
 .left-col {{ display: flex; flex-direction: column; gap: 8px; }}
-.card {{ background: #f8fafc; border-radius: 6px; padding: 10px; }}
+.card {{ background: #f8fafc; border-radius: 6px; padding: 10px; overflow: hidden; word-break: break-word; }}
 .card-title {{ font-size: 9px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }}
 .total-score {{ text-align: center; padding: 12px; }}
 .total-num {{ font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 700; color: {main_color}; line-height: 1; }}
@@ -169,15 +205,15 @@ body {{ font-family: 'DM Sans', sans-serif; max-width: 210mm; margin: 0 auto; pa
 .radar-wrap {{ display: flex; justify-content: center; }}
 .right-col {{ display: flex; flex-direction: column; gap: 8px; }}
 .verdicts {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }}
-.verdict-card {{ background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; text-align: center; }}
+.verdict-card {{ background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; text-align: center; overflow: hidden; word-break: break-word; }}
 .verdict-card .label {{ font-size: 8px; color: #94a3b8; margin-bottom: 3px; }}
 .verdict-card .value {{ font-size: 11px; font-weight: 600; color: #1e293b; }}
 .scores-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }}
-.tags-section {{ display: flex; flex-wrap: wrap; gap: 2px; }}
+.tags-section {{ display: flex; flex-wrap: wrap; gap: 2px; overflow: hidden; }}
 .two-col {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }}
-.ai-section {{ background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-top: 8px; }}
+.ai-section {{ background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-top: 8px; overflow: hidden; word-break: break-word; }}
 .ai-title {{ font-size: 10px; font-weight: 600; color: #1e3a5f; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }}
-.ai-text {{ font-size: 9px; color: #475569; line-height: 1.5; }}
+.ai-text {{ font-size: 9px; color: #475569; line-height: 1.5; word-break: break-word; }}
 .footer {{ text-align: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 8px; color: #94a3b8; }}
 </style>
 </head>
