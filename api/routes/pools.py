@@ -583,16 +583,21 @@ async def parse_position_from_document(
 @router.post("/position/save-parsed")
 def save_parsed_position(data: dict, current_user: dict = Depends(get_current_user)):
     try:
+        print(f"[save-parsed] START - data: {data}")
         company_id = current_user["company_id"]
         parent_id = data.get("parent_id")
+        print(f"[save-parsed] company_id={company_id}, parent_id={parent_id}")
+
         if not parent_id:
             raise HTTPException(status_code=400, detail="parent_id gerekli")
         if not data.get("pozisyon_adi"):
             raise HTTPException(status_code=400, detail="pozisyon_adi gerekli")
 
         # Verify parent ownership
+        print(f"[save-parsed] Verifying parent ownership...")
         if not verify_department_pool_ownership(parent_id, company_id):
             raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+        print(f"[save-parsed] Parent ownership verified")
 
         # Create position pool
         keywords = data.get("keywords", [])
@@ -617,28 +622,35 @@ def save_parsed_position(data: dict, current_user: dict = Depends(get_current_us
             "lokasyon": data.get("lokasyon", ""),
             "company_id": company_id
         }
+        print(f"[save-parsed] Creating pool with data: {pool_data}")
 
         pool_id = create_department_pool(**pool_data)
+        print(f"[save-parsed] Pool created with id={pool_id}")
         if not pool_id:
             raise HTTPException(status_code=500, detail="Pozisyon olusturulamadi")
 
         # categorize_and_save - v2 tablolarini doldur
+        print(f"[save-parsed] Running categorize_and_save...")
         position_text = f"{data.get('pozisyon_adi','')} {data.get('aranan_nitelikler','')} {data.get('is_tanimi','')}"
         try:
             from scoring_v2 import categorize_and_save
             categorize_and_save(pool_id, data["pozisyon_adi"], position_text, keywords)
+            print(f"[save-parsed] categorize_and_save completed")
         except Exception as cat_err:
-            print(f"categorize_and_save hatasi (devam ediliyor): {cat_err}")
+            print(f"[save-parsed] categorize_and_save hatasi (devam ediliyor): {cat_err}")
 
         # Otomatik CV Cek
+        print(f"[save-parsed] Running pull_matching_candidates...")
         transferred = 0
         try:
             from database import pull_matching_candidates_to_position
             result = pull_matching_candidates_to_position(pool_id, company_id)
             transferred = result.get("transferred", 0)
+            print(f"[save-parsed] pull_matching completed, transferred={transferred}")
         except Exception as pull_err:
-            print(f"pull_matching hatasi (devam ediliyor): {pull_err}")
+            print(f"[save-parsed] pull_matching hatasi (devam ediliyor): {pull_err}")
 
+        print(f"[save-parsed] SUCCESS - pool_id={pool_id}, transferred={transferred}")
         return {
             "success": True,
             "pool_id": pool_id,
@@ -648,6 +660,7 @@ def save_parsed_position(data: dict, current_user: dict = Depends(get_current_us
     except HTTPException:
         raise
     except Exception as e:
+        print(f"[save-parsed] ERROR: {e}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
