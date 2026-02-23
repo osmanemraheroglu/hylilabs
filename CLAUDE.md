@@ -133,3 +133,33 @@ Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
 - api/database.py — candidates.durum = 'yeni' sorgusu
 - position_pools tablosu degil, candidates tablosu kullaniliyor
 - DEGISTIRME
+
+### Türkçe Karakter Sistemi (22.02.2026) — DEGISMEZ
+- Tüm frontend UI metinleri doğru Türkçe karakter kullanır
+- DB'den gelen değerler getDurumLabel() pattern ile Türkçe'ye çevrilir
+- Dashboard pie chart, CV Topla badge, Toplama Geçmişi badge dahil
+- DEGISTIRME
+
+### Mülakat-Aday Durum Senkronizasyonu (22.02.2026) — DEGISMEZ
+- Mülakat oluşturulunca candidates.durum = 'mulakat' otomatik güncellenir
+- Mülakat iptal/silinince başka aktif mülakat yoksa durum geri alınır
+- api/routes/interviews.py — DEGISTIRME
+
+### Max Aday Limit Sistemi (22.02.2026) — DEGISMEZ
+- Plan dropdown kaldırıldı, max_aday manuel belirlenir
+- CV yüklemede api/routes/cv.py'de limit kontrolü yapılır
+- Limit dolunca kullanıcı dostu hata mesajı gösterilir
+- CV Topla sayfasında progress bar ile limit göstergesi var
+- DEGISTIRME
+
+### Firma Otomatik Kullanıcı Sistemi (22.02.2026) — DEGISMEZ
+- Firma oluşturulunca yetkili email'e otomatik company_admin hesabı açılır
+- Geçici şifre oluşturulur ve email ile gönderilir
+- api/routes/companies.py — DEGISTIRME
+
+### Auth Route Guard (23.02.2026) — DEGISMEZ
+- Token yoksa → /sign-in'e yönlendir
+- aktif=0 kullanıcı → 401, login engeli
+- Pasif firma kullanıcısı → 403, login engeli
+- Token varken /sign-in'e gelince → /dashboard'a yönlendir
+- src/stores/auth-store.ts + api/routes/auth.py — DEGISTIRME
