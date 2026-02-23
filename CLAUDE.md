@@ -182,3 +182,13 @@ Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
   - check_public_apply_limit() → 10 istek/saat/IP
   - check_public_positions_limit() → 60 istek/dakika/IP
 - api/rate_limiter.py + api/routes/auth.py — DEGISTIRME
+
+### IDOR Koruması (23.02.2026) — DEGISMEZ
+- pools.py satır 852, 859, 1007, 1012
+- Tüm candidate/pool sorgularında AND company_id = ? zorunlu
+- Commit 52b7a7f — DEGISTIRME
+
+### Super Admin Audit Log (23.02.2026) — DEGISMEZ
+- audit_logger.py — COMPANY_CREATE, COMPANY_DELETE, COMPANY_STATUS_CHANGE
+- Firma oluşturma, silme, durum değişikliği loglanıyor
+- Commit 52b7a7f — DEGISTIRME
