@@ -163,3 +163,9 @@ Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
 - Pasif firma kullanıcısı → 403, login engeli
 - Token varken /sign-in'e gelince → /dashboard'a yönlendir
 - src/stores/auth-store.ts + api/routes/auth.py — DEGISTIRME
+
+### Takvimde Onaylama Badge Sistemi (21.02.2026) — DEGISMEZ
+- interviews tablosunda confirmation_status, confirmed_at alanları
+- Takvimde yeşil ✓ badge, listede "✓ Onaylandı" / "⏳ Bekliyor"
+- Onay durumu filtre dropdown
+- Commit: dbbbe75 — DEGISTIRME
