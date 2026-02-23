@@ -13,7 +13,7 @@ Son guncelleme: 23.02.2026
 - demo@demo.com -> company_admin -> aktif (sifre: demo123)
 - test@test.com -> user -> PASIF (aktif=0, GERI ALINAMAZ)
 
-## Kilitli Sistemler — DOKUNULMAZLAR
+## Kilitli Sistemler — DOKUNULMAZLAR (27 sistem)
 1. v2 eslestirme: Fuzzy 70->85, 85->92. Max 1 pozisyon/aday. DEGISMEZ.
 2. Scoring v2.1: Dynamic knockout(%50), junior/senior penalti, egitim kademeli. DEGISMEZ.
 3. Claude CV parsing: %100 basarili. Parse sistemi bozulmamali.
@@ -24,9 +24,14 @@ Son guncelleme: 23.02.2026
 8. CV dosya izolasyonu: /data/cvs/{company_id}/. GERI DONULEMEZ.
 9. Firma login kontrolu: verify_user() aktiflik kontrolu. DEGISMEZ.
 10. Ayarlar sayfasi: Sadece 3 sekme. KILITLI.
+11. Aday Durum Akisi Senkronizasyonu: candidates.durum + pool_assignments birlikte guncellenir.
+12. Dashboard Visibility Refresh: fetchDashboardData() + visibilitychange.
+13. Genel Havuzdan Silme Engeli: 400 HTTPException + toast.error().
+14. Pool Assignments Veri Kurallari: Her durum icin havuz kurali.
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- CLAUDE.md: 4 yeni sistem kilitlendi (#24-27) - Durum senkronizasyonu, dashboard refresh, pool kurallari
 - Genel Havuz'dan silme icin kullanici dostu toast mesaji (havuzlar frontend)
 - COMMIT D: havuzdan silme durum guncelleme + dashboard visibility refresh
 - COMMIT C: ise-al endpoint pool_assignments temizleme eklendi + DB fix (ID:434)
@@ -231,7 +236,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Tum durum senkronizasyonu tamamlandi. Kariyer sayfasi gelistirmeye hazir.
+Kariyer Sayfasi guvenlik taramasi ve gelistirme.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

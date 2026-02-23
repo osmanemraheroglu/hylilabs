@@ -221,3 +221,38 @@ Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
 - sonner toast kullanılıyor: toast.success() + toast.error()
 - Dosyalar: havuzlar, firma-yonetimi, email-hesaplari
 - Commit dc8592b — DEGISTIRME
+
+### Aday Durum Akışı Senkronizasyonu (23.02.2026) — DEGISMEZ
+Her aday aksiyonu candidates.durum VE candidate_pool_assignments'ı birlikte günceller:
+- arsivle: durum=arsiv, Arşiv havuzuna taşı
+- elen: durum=yeni, Genel Havuza taşı
+- ise-al: durum=ise_alindi, tüm havuzlardan sil
+- havuzdan sil (Arşiv): durum=yeni, Genel Havuza taşı
+- havuzdan sil (Genel): 400 ENGEL
+Dosyalar:
+- api/routes/candidates.py (elen:195-212, arsivle:220-260, ise-al:287-296)
+- api/routes/pools.py (remove_candidate:282-326)
+Commit: e289c20, 96df97c, 1268b20 — DEGISTIRME
+
+### Dashboard Visibility Refresh (23.02.2026) — DEGISMEZ
+- src/features/dashboard/index.tsx
+- fetchDashboardData() fonksiyonu ayrıştırıldı
+- visibilitychange event listener ile sayfa görünür olunca otomatik yenileme
+- Commit 1268b20 — DEGISTIRME
+
+### Genel Havuzdan Silme Engeli (23.02.2026) — DEGISMEZ
+- Backend: pools.py remove_candidate → Genel Havuz için 400 HTTPException
+- Frontend: havuzlar/index.tsx → 400 response için toast.error()
+- Genel Havuzdan manuel aday silme engellendi
+- Adayı kaldırmak için Arşivle butonu kullanılmalı
+- Commit 96105f0 — DEGISTIRME
+
+### Pool Assignments Veri Kuralları (23.02.2026) — DEGISMEZ
+Her aday her zaman şu kurallarla havuzda olmalı:
+- durum='yeni' → Genel Havuzda
+- durum='arsiv' → Arşiv havuzunda
+- durum='mulakat' → Genel Havuzda (değişmez)
+- durum='pozisyona_atandi' → Genel Havuzda
+- durum='ise_alindi' → Hiçbir havuzda değil
+- Hiçbir aday 2 havuzda aynı anda olamaz
+DEGISTIRME
