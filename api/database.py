@@ -5694,64 +5694,39 @@ def hard_delete_company(company_id: int) -> bool:
         if not cursor.fetchone():
             return False
 
-        # Sırayla tüm ilişkili tabloları sil
-        # CASCADE DELETE aktif olsa da explicit silme daha güvenli
+        # Var olan tabloları bul
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        existing_tables = {row[0] for row in cursor.fetchall()}
 
-        # 1. Aday keyword'leri (candidates silinmeden önce)
-        try:
-            cursor.execute("""
+        # Silinecek tablolar ve sorguları (sıralı - bağımlılıklara göre)
+        delete_queries = [
+            ("candidate_keywords", """
                 DELETE FROM candidate_keywords WHERE candidate_id IN
                 (SELECT id FROM candidates WHERE company_id = ?)
-            """, (company_id,))
-        except:
-            pass  # Tablo yoksa devam et
+            """),
+            ("candidates", "DELETE FROM candidates WHERE company_id = ?"),
+            ("users", "DELETE FROM users WHERE company_id = ?"),
+            ("interviews", "DELETE FROM interviews WHERE company_id = ?"),
+            ("positions", "DELETE FROM positions WHERE company_id = ?"),
+            ("position_pools", "DELETE FROM position_pools WHERE company_id = ?"),
+            ("department_pools", "DELETE FROM department_pools WHERE company_id = ?"),
+            ("keyword_stats", "DELETE FROM keyword_stats WHERE company_id = ?"),
+            ("email_accounts", "DELETE FROM email_accounts WHERE company_id = ?"),
+            ("email_templates", "DELETE FROM email_templates WHERE company_id = ?"),
+            ("company_settings", "DELETE FROM company_settings WHERE company_id = ?"),
+            ("cv_collection_history", "DELETE FROM cv_collection_history WHERE company_id = ?"),
+            ("audit_logs", "DELETE FROM audit_logs WHERE company_id = ?"),
+        ]
 
-        # 2. Adaylar
-        cursor.execute("DELETE FROM candidates WHERE company_id = ?", (company_id,))
+        # Sadece var olan tabloları sil
+        for table_name, query in delete_queries:
+            if table_name in existing_tables:
+                try:
+                    cursor.execute(query, (company_id,))
+                except Exception:
+                    pass  # Hata olursa sessizce devam et
 
-        # 3. Kullanıcılar
-        cursor.execute("DELETE FROM users WHERE company_id = ?", (company_id,))
-
-        # 4. Mülakatlar
-        cursor.execute("DELETE FROM interviews WHERE company_id = ?", (company_id,))
-
-        # 5. Pozisyonlar
-        try:
-            cursor.execute("DELETE FROM positions WHERE company_id = ?", (company_id,))
-        except:
-            pass  # Tablo yoksa devam et
-
-        # 6. Pozisyon havuzları
-        try:
-            cursor.execute("DELETE FROM position_pools WHERE company_id = ?", (company_id,))
-        except:
-            pass  # Tablo yoksa devam et
-
-        # 7. Departman/Pozisyon havuzları
-        cursor.execute("DELETE FROM department_pools WHERE company_id = ?", (company_id,))
-
-        # 8. Keyword istatistikleri
-        try:
-            cursor.execute("DELETE FROM keyword_stats WHERE company_id = ?", (company_id,))
-        except:
-            pass  # Tablo yoksa devam et
-
-        # 9. Email hesapları
-        cursor.execute("DELETE FROM email_accounts WHERE company_id = ?", (company_id,))
-
-        # 10. Email şablonları
-        cursor.execute("DELETE FROM email_templates WHERE company_id = ?", (company_id,))
-
-        # 11. Firma ayarları
-        cursor.execute("DELETE FROM company_settings WHERE company_id = ?", (company_id,))
-
-        # 12. CV toplama geçmişi
-        cursor.execute("DELETE FROM cv_collection_history WHERE company_id = ?", (company_id,))
-
-        # 13. Audit logs
-        cursor.execute("DELETE FROM audit_logs WHERE company_id = ?", (company_id,))
-
-        # 14. Son olarak firmayı sil
+        # Son olarak firmayı sil
         cursor.execute("DELETE FROM companies WHERE id = ?", (company_id,))
 
         conn.commit()
