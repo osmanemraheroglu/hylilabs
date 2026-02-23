@@ -27,6 +27,7 @@ Son guncelleme: 23.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- COMMIT C: ise-al endpoint pool_assignments temizleme eklendi + DB fix (ID:434)
 - COMMIT B: elen endpoint pool_assignments senkronizasyonu eklendi
 - COMMIT A FIX: Duplicate pool assignments duzeltildi (430,431 Genel Havuz'dan silindi, sadece Arsiv'de)
 - COMMIT A: 2 yetim aday (411,423) Genel Havuz'a eklendi (candidate_pool_assignments: 51->53->51)
@@ -228,7 +229,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-COMMIT C: ise-al endpoint duzeltmesi (pool_assignments sync)
+Durum/pool_assignments senkronizasyonu tamamlandi. Kariyer sayfasi gelistirmeye hazir.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

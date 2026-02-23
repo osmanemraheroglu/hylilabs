@@ -284,6 +284,17 @@ def ise_al_candidate(candidate_id: int, current_user: dict = Depends(get_current
 
         with get_connection() as conn:
             cursor = conn.cursor()
+            # Pozisyon atamasını sil
+            cursor.execute(
+                "DELETE FROM candidate_positions WHERE candidate_id = ?",
+                (candidate_id,)
+            )
+            # Havuz atamasını sil (işe alınan hiçbir havuzda olmamalı)
+            cursor.execute(
+                "DELETE FROM candidate_pool_assignments WHERE candidate_id = ? AND company_id = ?",
+                (candidate_id, company_id)
+            )
+            # Durumu güncelle
             cursor.execute("""
                 UPDATE candidates
                 SET durum = 'ise_alindi'
