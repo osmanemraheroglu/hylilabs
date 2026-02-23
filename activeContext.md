@@ -27,6 +27,8 @@ Son guncelleme: 23.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- dashboard.py labels'a "yeni" eklendi (pie chart icin)
+- 3 arsivli aday (430,431,432) Arsiv havuzuna eklendi (candidate_pool_assignments)
 - arsivle endpoint duzeltildi: candidate_pool_assignments'a Arsiv havuzu atamasi eklendi
 - Mevcut arsivli aday (ID=432) Arsiv havuzuna eklendi
 - Havuzlar frontend cift sayim duzeltildi: totalCandidates artik backend'den geliyor

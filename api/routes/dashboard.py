@@ -49,6 +49,7 @@ def pool_distribution(current_user: dict = Depends(get_current_user)):
         
         # Durum etiketleri
         labels = {
+            "yeni": "Yeni",
             "beklemede": "Beklemede",
             "kisa_liste": "Kısa Liste",
             "mulakat": "Mülakat",
