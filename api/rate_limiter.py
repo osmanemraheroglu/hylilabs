@@ -38,6 +38,19 @@ class RateLimitConfig:
     GENERAL_MAX_REQUESTS = 1000
     GENERAL_WINDOW_MINUTES = 60
 
+    # === PUBLIC ENDPOINT LIMITLERI (Kariyer Sayfası) ===
+    # Public başvuru: 10 istek / saat / IP (spam önleme)
+    PUBLIC_APPLY_MAX = 10
+    PUBLIC_APPLY_WINDOW_MINUTES = 60
+
+    # Public pozisyon listesi: 60 istek / dakika / IP
+    PUBLIC_POSITIONS_MAX = 60
+    PUBLIC_POSITIONS_WINDOW_MINUTES = 1
+
+    # Public genel: 120 istek / dakika / IP
+    PUBLIC_GENERAL_MAX = 120
+    PUBLIC_GENERAL_WINDOW_MINUTES = 1
+
 
 # ============ VERITABANI ============
 
@@ -279,6 +292,67 @@ def check_api_limit(identifier: str) -> Tuple[bool, str]:
 def record_api_call(identifier: str):
     """API cagrisini kaydet"""
     record_action(identifier, "api_call")
+
+
+# ============ PUBLIC ENDPOINT FONKSIYONLARI (Kariyer Sayfası) ============
+
+def check_public_apply_limit(ip_address: str) -> Tuple[bool, str]:
+    """
+    Public başvuru rate limit kontrolu (spam önleme)
+
+    Args:
+        ip_address: İstemci IP adresi
+
+    Returns:
+        Tuple[bool, str]: (izin_var_mi, mesaj)
+    """
+    allowed, count, remaining = check_rate_limit(
+        ip_address,
+        "public_apply",
+        RateLimitConfig.PUBLIC_APPLY_MAX,
+        RateLimitConfig.PUBLIC_APPLY_WINDOW_MINUTES
+    )
+
+    if not allowed:
+        wait_time = get_wait_time(ip_address, "public_apply", RateLimitConfig.PUBLIC_APPLY_WINDOW_MINUTES)
+        wait_minutes = max(1, wait_time // 60)
+        return False, f"Çok fazla başvuru gönderdiniz. {wait_minutes} dakika sonra tekrar deneyin."
+
+    return True, f"Kalan başvuru hakkı: {remaining}"
+
+
+def record_public_apply(ip_address: str):
+    """Public başvuru aksiyonunu kaydet"""
+    record_action(ip_address, "public_apply")
+
+
+def check_public_positions_limit(ip_address: str) -> Tuple[bool, str]:
+    """
+    Public pozisyon listesi rate limit kontrolu
+
+    Args:
+        ip_address: İstemci IP adresi
+
+    Returns:
+        Tuple[bool, str]: (izin_var_mi, mesaj)
+    """
+    allowed, count, remaining = check_rate_limit(
+        ip_address,
+        "public_positions",
+        RateLimitConfig.PUBLIC_POSITIONS_MAX,
+        RateLimitConfig.PUBLIC_POSITIONS_WINDOW_MINUTES
+    )
+
+    if not allowed:
+        wait_time = get_wait_time(ip_address, "public_positions", RateLimitConfig.PUBLIC_POSITIONS_WINDOW_MINUTES)
+        return False, f"Çok fazla istek gönderdiniz. {wait_time} saniye sonra tekrar deneyin."
+
+    return True, ""
+
+
+def record_public_positions(ip_address: str):
+    """Public pozisyon listesi aksiyonunu kaydet"""
+    record_action(ip_address, "public_positions")
 
 
 # ============ DEKORATOR ============

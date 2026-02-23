@@ -12,7 +12,9 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer()
 
 # JWT ayarları
-SECRET_KEY = os.getenv("JWT_SECRET", "fallback-dev-only")
+SECRET_KEY = os.getenv("JWT_SECRET")
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET environment variable zorunlu! .env dosyasinda tanimlayin.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
