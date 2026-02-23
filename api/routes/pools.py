@@ -845,18 +845,18 @@ def evaluate_candidate(pool_id: int, candidate_id: int, current_user: dict = Dep
         with get_connection() as conn:
             cursor = conn.cursor()
             
-            # Aday bilgileri
+            # Aday bilgileri (company_id filtresi ile IDOR koruması)
             cursor.execute("""
-                SELECT ad_soyad, mevcut_pozisyon, toplam_deneyim_yil, egitim, 
+                SELECT ad_soyad, mevcut_pozisyon, toplam_deneyim_yil, egitim,
                        teknik_beceriler, deneyim_detay, lokasyon
-                FROM candidates WHERE id = ?
-            """, (candidate_id,))
+                FROM candidates WHERE id = ? AND company_id = ?
+            """, (candidate_id, company_id))
             cand = cursor.fetchone()
             if not cand:
                 raise HTTPException(status_code=404, detail="Aday bulunamadi")
-            
-            # Pozisyon bilgileri
-            cursor.execute("SELECT name, keywords FROM department_pools WHERE id = ?", (pool_id,))
+
+            # Pozisyon bilgileri (company_id filtresi ile IDOR koruması)
+            cursor.execute("SELECT name, keywords FROM department_pools WHERE id = ? AND company_id = ?", (pool_id, company_id))
             pos = cursor.fetchone()
             if not pos:
                 raise HTTPException(status_code=404, detail="Pozisyon bulunamadi")
@@ -1003,13 +1003,13 @@ def get_candidate_report(pool_id: int, candidate_id: int, current_user: dict = D
             if not ai_row:
                 raise HTTPException(status_code=404, detail="AI degerlendirme bulunamadi. Once degerlendirme yapin.")
             
-            # Aday adı
-            cursor.execute("SELECT ad_soyad FROM candidates WHERE id = ?", (candidate_id,))
+            # Aday adı (company_id filtresi ile IDOR koruması)
+            cursor.execute("SELECT ad_soyad FROM candidates WHERE id = ? AND company_id = ?", (candidate_id, company_id))
             cand = cursor.fetchone()
             candidate_name = cand["ad_soyad"] if cand else "Bilinmeyen"
-            
-            # Pozisyon adı
-            cursor.execute("SELECT name FROM department_pools WHERE id = ?", (pool_id,))
+
+            # Pozisyon adı (company_id filtresi ile IDOR koruması)
+            cursor.execute("SELECT name FROM department_pools WHERE id = ? AND company_id = ?", (pool_id, company_id))
             pos = cursor.fetchone()
             position_name = pos["name"] if pos else "Bilinmeyen"
             

@@ -3,7 +3,7 @@ Companies API - Super Admin Only
 Firma CRUD islemleri
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from routes.auth import get_current_user
 from database import (
     get_connection, get_all_companies_admin, create_company,
@@ -11,6 +11,7 @@ from database import (
     create_company_user, hash_password, hard_delete_company
 )
 from email_sender import send_email
+from audit_logger import log_audit, AuditAction, EntityType
 import traceback
 import secrets
 import string
@@ -95,7 +96,7 @@ def get_company(company_id: int, current_user: dict = Depends(get_current_user))
 
 
 @router.post("")
-def create_company_endpoint(body: dict, current_user: dict = Depends(get_current_user)):
+def create_company_endpoint(body: dict, request: Request, current_user: dict = Depends(get_current_user)):
     """Yeni firma olustur"""
     require_super_admin(current_user)
 
@@ -120,6 +121,19 @@ def create_company_endpoint(body: dict, current_user: dict = Depends(get_current
             plan=body.get("plan", "basic"),
             max_kullanici=body.get("max_kullanici", 5),
             max_aday=body.get("max_aday", 1000)
+        )
+
+        # Audit log: Firma oluşturma
+        log_audit(
+            user_id=current_user["id"],
+            user_email=current_user["email"],
+            company_id=None,  # Super admin, firma bağımsız
+            action=AuditAction.COMPANY_CREATE.value,
+            entity_type=EntityType.COMPANY.value,
+            entity_id=company_id,
+            entity_name=ad,
+            details={"slug": slug, "plan": body.get("plan", "basic")},
+            ip_address=request.client.host if request.client else None
         )
 
         # Yetkili email varsa otomatik kullanici olustur ve email gonder
@@ -226,7 +240,7 @@ def update_company_endpoint(company_id: int, body: dict, current_user: dict = De
 
 
 @router.patch("/{company_id}/toggle-status")
-def toggle_company_status(company_id: int, current_user: dict = Depends(get_current_user)):
+def toggle_company_status(company_id: int, request: Request, current_user: dict = Depends(get_current_user)):
     """Firma aktif/pasif toggle - aktif ise pasif, pasif ise aktif yap"""
     require_super_admin(current_user)
 
@@ -234,14 +248,15 @@ def toggle_company_status(company_id: int, current_user: dict = Depends(get_curr
         with get_connection() as conn:
             cursor = conn.cursor()
 
-            # Mevcut durumu al
-            cursor.execute("SELECT aktif FROM companies WHERE id = ?", (company_id,))
+            # Mevcut durumu ve firma adını al
+            cursor.execute("SELECT ad, aktif FROM companies WHERE id = ?", (company_id,))
             row = cursor.fetchone()
 
             if not row:
                 raise HTTPException(status_code=404, detail="Firma bulunamadi")
 
-            current_status = row[0]
+            firma_adi = row[0]
+            current_status = row[1]
             new_status = 0 if current_status else 1
 
             # Firma durumunu guncelle
@@ -256,6 +271,20 @@ def toggle_company_status(company_id: int, current_user: dict = Depends(get_curr
 
             conn.commit()
 
+        # Audit log: Firma durum değişikliği
+        log_audit(
+            user_id=current_user["id"],
+            user_email=current_user["email"],
+            company_id=None,
+            action=AuditAction.COMPANY_STATUS_CHANGE.value,
+            entity_type=EntityType.COMPANY.value,
+            entity_id=company_id,
+            entity_name=firma_adi,
+            old_values={"aktif": current_status},
+            new_values={"aktif": new_status},
+            ip_address=request.client.host if request.client else None
+        )
+
         return {"success": True, "aktif": new_status}
     except HTTPException:
         raise
@@ -265,15 +294,35 @@ def toggle_company_status(company_id: int, current_user: dict = Depends(get_curr
 
 
 @router.delete("/{company_id}")
-def delete_company_endpoint(company_id: int, current_user: dict = Depends(get_current_user)):
+def delete_company_endpoint(company_id: int, request: Request, current_user: dict = Depends(get_current_user)):
     """Firma kalici sil (hard delete) - TUM veriler silinir"""
     require_super_admin(current_user)
 
     try:
+        # Silmeden önce firma adını al (audit log için)
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT ad FROM companies WHERE id = ?", (company_id,))
+            row = cursor.fetchone()
+            firma_adi = row[0] if row else f"Firma #{company_id}"
+
         success = hard_delete_company(company_id)
 
         if not success:
             raise HTTPException(status_code=404, detail="Firma bulunamadi")
+
+        # Audit log: Firma silme
+        log_audit(
+            user_id=current_user["id"],
+            user_email=current_user["email"],
+            company_id=None,
+            action=AuditAction.COMPANY_DELETE.value,
+            entity_type=EntityType.COMPANY.value,
+            entity_id=company_id,
+            entity_name=firma_adi,
+            details={"hard_delete": True},
+            ip_address=request.client.host if request.client else None
+        )
 
         return {"success": True, "message": "Firma ve tum verileri kalici olarak silindi"}
     except HTTPException:

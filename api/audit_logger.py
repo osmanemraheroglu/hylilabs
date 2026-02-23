@@ -72,6 +72,11 @@ class AuditAction(str, Enum):
     EMAIL_ACCOUNT_DELETE = "EMAIL_ACCOUNT_DELETE"
     EMAIL_FETCH = "EMAIL_FETCH"
 
+    # Company Operations (Super Admin)
+    COMPANY_CREATE = "COMPANY_CREATE"
+    COMPANY_DELETE = "COMPANY_DELETE"
+    COMPANY_STATUS_CHANGE = "COMPANY_STATUS_CHANGE"
+
 
 class EntityType(str, Enum):
     """Entity tipleri"""
@@ -165,7 +170,12 @@ ACTION_KVKK_MAPPING = {
     # Email
     AuditAction.EMAIL_ACCOUNT_CREATE.value: KVKKCategory.KULLANICI_YONETIMI.value,
     AuditAction.EMAIL_ACCOUNT_DELETE.value: KVKKCategory.KULLANICI_YONETIMI.value,
-    AuditAction.EMAIL_FETCH.value: KVKKCategory.VERI_ISLEME.value
+    AuditAction.EMAIL_FETCH.value: KVKKCategory.VERI_ISLEME.value,
+
+    # Company Operations (Super Admin)
+    AuditAction.COMPANY_CREATE.value: KVKKCategory.KULLANICI_YONETIMI.value,
+    AuditAction.COMPANY_DELETE.value: KVKKCategory.VERI_SILME.value,
+    AuditAction.COMPANY_STATUS_CHANGE.value: KVKKCategory.KULLANICI_YONETIMI.value
 }
 
 
