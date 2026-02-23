@@ -40,6 +40,7 @@ Son guncelleme: 22.02.2026
 - Firma olusturulunca yetkili emaile otomatik kullanici hesabi ve sifre emaili gonderiliyor
 - Firma kullanici olusturma kolon adi duzeltildi (sifre -> password_hash)
 - Firma silme fonksiyonu duzeltildi (durum kolonu yok, rowcount fix)
+- Login sayfasi HyliLabs markasi ve Turkce (Shadcn Admin -> HyliLabs, Sign in -> Giris Yap)
 
 ### 20.02.2026
 - pm2 kurulumu ve yapilandirilmasi (ecosystem.config.cjs)
@@ -153,7 +154,8 @@ Son guncelleme: 22.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-4008a92 - fix: firma email gonderi ve silme hatasi duzeltildi
+83c4ac9 - fix: login sayfasi HyliLabs markasi ve Turkce duzeltmesi
+cf31959 - fix: firma email gonderi ve silme hatasi duzeltildi
 14a2aef - feat: firma olusturulunca yetkili email otomatik kullanici ve sifre emaili
 875bea8 - fix: create_company() eksik parametreler eklendi
 a149447 - feat: plan dropdown kaldirildi, max_aday limiti ve gosterge eklendi
@@ -176,7 +178,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Firma email gonderimi ve silme hatalari duzeltildi.
+Login sayfasi HyliLabs markasi ve Turkce duzeltmesi deploy edildi.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)
