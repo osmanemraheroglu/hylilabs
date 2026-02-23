@@ -27,6 +27,7 @@ Son guncelleme: 23.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- COMMIT D: havuzdan silme durum guncelleme + dashboard visibility refresh
 - COMMIT C: ise-al endpoint pool_assignments temizleme eklendi + DB fix (ID:434)
 - COMMIT B: elen endpoint pool_assignments senkronizasyonu eklendi
 - COMMIT A FIX: Duplicate pool assignments duzeltildi (430,431 Genel Havuz'dan silindi, sadece Arsiv'de)
@@ -229,7 +230,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Durum/pool_assignments senkronizasyonu tamamlandi. Kariyer sayfasi gelistirmeye hazir.
+Tum durum senkronizasyonu tamamlandi. Kariyer sayfasi gelistirmeye hazir.
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

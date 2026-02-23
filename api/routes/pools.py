@@ -279,6 +279,52 @@ def remove_candidate(
         if not verify_department_pool_ownership(pool_id, company_id):
             raise HTTPException(status_code=403, detail="Bu havuza erisim yetkiniz yok")
 
+        # Havuz tipini kontrol et ve durumu güncelle
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "SELECT name FROM department_pools WHERE id = ? AND company_id = ?",
+                (pool_id, company_id)
+            )
+            pool = cursor.fetchone()
+
+            if pool:
+                pool_name = pool[0]
+
+                if pool_name == 'Genel Havuz':
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Genel Havuz'dan aday silinemez. Adayı arşivlemek için Arşivle butonunu kullanın."
+                    )
+
+                elif pool_name == 'Arşiv':
+                    # Arşivden çıkarıldı → Genel Havuza taşı
+                    cursor.execute("""
+                        UPDATE candidates SET durum='yeni', havuz='genel_havuz'
+                        WHERE id=? AND company_id=?
+                    """, (candidate_id, company_id))
+                    cursor.execute(
+                        "SELECT id FROM department_pools WHERE company_id=? AND name='Genel Havuz' AND is_system=1",
+                        (company_id,)
+                    )
+                    genel = cursor.fetchone()
+                    if genel:
+                        cursor.execute("""
+                            INSERT OR IGNORE INTO candidate_pool_assignments
+                            (candidate_id, department_pool_id, company_id)
+                            VALUES (?,?,?)
+                        """, (candidate_id, genel[0], company_id))
+
+                else:
+                    # Pozisyon/Departmandan çıkarıldı → yeni'ye döner
+                    cursor.execute("""
+                        UPDATE candidates SET durum='yeni', havuz='genel_havuz'
+                        WHERE id=? AND company_id=?
+                    """, (candidate_id, company_id))
+
+            conn.commit()
+
         # Her iki tablodan da sil
         removed_assignments = remove_candidate_from_department_pool(candidate_id, pool_id)
         removed_positions = remove_candidate_from_pool(pool_id, candidate_id)
@@ -286,7 +332,7 @@ def remove_candidate(
         if not removed_assignments and not removed_positions:
             raise HTTPException(status_code=404, detail="Aday bu havuzda bulunamadi")
 
-        return {"success": True, "message": "Aday havuzdan cikarildi"}
+        return {"success": True, "message": "Aday havuzdan çıkarıldı"}
     except HTTPException:
         raise
     except Exception as e:

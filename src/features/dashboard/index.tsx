@@ -79,7 +79,7 @@ export function Dashboard() {
   const [activities, setActivities] = useState<RecentActivity | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchDashboardData = () => {
     const token = localStorage.getItem('access_token')
     if (!token) return
 
@@ -103,6 +103,21 @@ export function Dashboard() {
         console.error('Dashboard API error:', err)
         setLoading(false)
       })
+  }
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  // Sayfa görünür olunca verileri yenile
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchDashboardData()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
 
   if (loading) {
