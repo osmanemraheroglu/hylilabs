@@ -27,6 +27,9 @@ Son guncelleme: 23.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- PYTHONPATH fix: ecosystem.config.cjs'e core/ path eklendi
+- candidate_matcher ve cv_parser import hatalari cozuldu
+- v2 scoring artik duzgun calisiyor (fallback'e dusmuyor)
 - Auth yonlendirme duzeltildi: token yoksa /sign-in'e yonlendir
 - /api/auth/me endpoint'i: aktif=0 kullanici -> 401, aktif=0 firma -> 403
 - Login endpoint'i: pasif kullanici/firma icin ozel hata mesajlari
@@ -176,6 +179,7 @@ Son guncelleme: 23.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+c56a09c - fix: PYTHONPATH core/ eklendi - candidate_matcher ve cv_parser import sorunu cozuldu
 e0a669f - fix: eslestirme calismiyordu - approved_title_mappings senkronizasyonu eklendi
 e32c1a4 - fix: URL parse sonuc render SelectItem value crash duzeltildi
 fec1e45 - debug: save-parsed endpoint detayli loglama

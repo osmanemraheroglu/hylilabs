@@ -192,3 +192,10 @@ Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
 - audit_logger.py — COMPANY_CREATE, COMPANY_DELETE, COMPANY_STATUS_CHANGE
 - Firma oluşturma, silme, durum değişikliği loglanıyor
 - Commit 52b7a7f — DEGISTIRME
+
+### PYTHONPATH Konfigürasyonu (23.02.2026) — DEGISMEZ
+- ecosystem.config.cjs'de PYTHONPATH=/var/www/hylilabs/api/core:/var/www/hylilabs/api
+- candidate_matcher ve cv_parser core/ altında, PYTHONPATH ile erişiliyor
+- Kilitli dosyalar (scoring_v2.py, email_worker.py, job_scraper.py) core. prefix'siz import ediyor
+- PYTHONPATH sayesinde import hataları çözüldü
+- DEGISTIRME
