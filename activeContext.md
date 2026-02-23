@@ -32,7 +32,12 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
-- eval_report_v2.py: 3 bug düzeltildi
+- eval_report_v2.py: 3 yeni bug düzeltildi (v2)
+  - Bug 1: ** markdown temizleme - line.replace('**', '').strip()
+  - Bug 2: Header tespiti 3 koşul - liste öğesi değil + <50 karakter + : ile biter
+  - Bug 3: Overflow fix - .left-col, .right-col, .card, .tags-section, .ai-text overflow:hidden
+- _parse_ai_sections() fonksiyonu ayrı fonksiyon olarak eklendi (test edilebilir)
+- eval_report_v2.py: 3 bug düzeltildi (v1)
   - Bug 1: CSS overflow fix - word-break:break-word 13 yerde eklendi
   - Bug 2: Genel Değerlendirme parse fix - 'degerlendirme' (g ile) kontrol
   - Bug 3: Eksik yetkinlik tag'leri - AI metninden parantez içi beceri ayıklama

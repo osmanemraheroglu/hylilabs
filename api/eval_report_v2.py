@@ -13,18 +13,65 @@ def extract_skills_from_text(text):
     → ['Tekla', 'SAP2000', 'ETABS']
     """
     skills = []
-    # Parantez içindeki virgülle ayrılmış kelimeleri bul
     pattern = r'\(([^)]+)\)'
     matches = re.findall(pattern, text)
     for match in matches:
-        # Virgül veya "ve" ile ayrılmış öğeleri ayır
         items = re.split(r'[,،]\s*|\s+ve\s+', match)
         for item in items:
             item = item.strip()
-            # Sadece yazılım/beceri gibi görünen kısa öğeleri al
             if item and len(item) <= 25 and not item.lower().startswith(('vb', 'vs', 'gibi', 'örn')):
                 skills.append(item)
-    return skills[:6]  # Max 6 skill
+    return skills[:6]
+
+
+def _parse_ai_sections(ai_text):
+    """AI değerlendirme metnini bölümlere ayır.
+
+    Args:
+        ai_text: AI'dan gelen değerlendirme metni
+
+    Returns:
+        dict: {'guclu': [], 'eksik': [], 'genel': '', 'alternatif': []}
+    """
+    sections = {"guclu": [], "eksik": [], "genel": "", "alternatif": []}
+    current_section = None
+
+    for line in ai_text.split('\n'):
+        # Bug 1 FIX: ** markdown temizle
+        line = line.replace('**', '').strip()
+        if not line:
+            continue
+
+        lower = line.lower()
+
+        # Bug 2 FIX: Başlık tespiti için 3 şart birlikte kontrol et
+        # 1. Liste maddesi DEĞİL
+        # 2. 50 karakterden kısa
+        # 3. : ile bitiyor
+        is_list_item = line.startswith('-') or line.startswith('•')
+        is_short = len(line) < 50
+        ends_with_colon = line.endswith(':')
+
+        if not is_list_item and is_short and ends_with_colon:
+            # Başlık satırı - hangi bölüm?
+            if 'güçlü' in lower or 'guclu' in lower:
+                current_section = 'guclu'
+            elif 'eksik' in lower:
+                current_section = 'eksik'
+            elif 'genel' in lower and ('değerlendirme' in lower or 'degerlendirme' in lower):
+                current_section = 'genel'
+            elif 'alternatif' in lower:
+                current_section = 'alternatif'
+        elif is_list_item:
+            # Liste maddesi
+            item = line.lstrip('-•').strip()
+            if item and current_section in ['guclu', 'eksik', 'alternatif']:
+                sections[current_section].append(item)
+        elif line and current_section == 'genel':
+            # Genel değerlendirme içerik satırı
+            sections['genel'] += (' ' if sections['genel'] else '') + line
+
+    return sections
 
 
 def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_date=None):
@@ -61,15 +108,15 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
 
     # Renk kodlaması
     if total >= 70:
-        main_color = "#22c55e"  # Yeşil
+        main_color = "#22c55e"
         verdict = "Güçlü Aday"
         verdict_bg = "#dcfce7"
     elif total >= 40:
-        main_color = "#f59e0b"  # Turuncu
+        main_color = "#f59e0b"
         verdict = "Değerlendirilebilir"
         verdict_bg = "#fef3c7"
     else:
-        main_color = "#ef4444"  # Kırmızı
+        main_color = "#ef4444"
         verdict = "Uygun Değil"
         verdict_bg = "#fef2f2"
 
@@ -100,41 +147,16 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
         radar_point(radar_elim, 288)
     ])
 
-    # Grid çizgileri için
     def grid_points(pct):
         return ' '.join([radar_point(pct, a) for a in [0, 72, 144, 216, 288]])
 
-    # AI metni işleme
-    ai_sections = {"guclu": [], "eksik": [], "genel": "", "alternatif": []}
-    current_section = None
-    eksik_raw_lines = []  # Bug 3: Eksik bölümündeki ham satırları sakla
+    # AI metni işleme - ayrı fonksiyon kullan
+    ai_sections = _parse_ai_sections(ai_text)
 
-    for line in ai_text.split('\n'):
-        line = line.strip()
-        lower = line.lower()
-        if 'güçlü' in lower or 'guclu' in lower:
-            current_section = 'guclu'
-        elif 'eksik' in lower:
-            current_section = 'eksik'
-        elif 'genel' in lower and 'degerlendirme' in lower.replace('ğ', 'g'):
-            # Bug 2 FIX: 'degerlendirme' (g ile) kontrol et
-            current_section = 'genel'
-        elif 'alternatif' in lower:
-            current_section = 'alternatif'
-        elif line.startswith('-') or line.startswith('•'):
-            item = line.lstrip('-•').strip()
-            if item and current_section in ['guclu', 'eksik', 'alternatif']:
-                ai_sections[current_section].append(item)
-                # Bug 3: Eksik bölümündeki satırları sakla
-                if current_section == 'eksik':
-                    eksik_raw_lines.append(item)
-        elif line and current_section == 'genel' and not line.endswith(':'):
-            ai_sections['genel'] += (' ' if ai_sections['genel'] else '') + line
-
-    # Bug 3 FIX: critical_missing boşsa AI metninden ayıkla
-    if not critical_missing and eksik_raw_lines:
+    # critical_missing boşsa AI metninden ayıkla
+    if not critical_missing and ai_sections['eksik']:
         extracted_skills = []
-        for raw_line in eksik_raw_lines:
+        for raw_line in ai_sections['eksik']:
             skills = extract_skills_from_text(raw_line)
             extracted_skills.extend(skills)
         if extracted_skills:
@@ -152,7 +174,7 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
 
     # Güçlü/Eksik listeler
     def make_list(items, max_items=3):
-        return ''.join(f'<div style="font-size:9px;margin:2px 0;line-height:1.3;word-break:break-word;">• {item[:50]}</div>' for item in items[:max_items])
+        return ''.join(f'<div style="font-size:9px;margin:2px 0;line-height:1.3;word-break:break-word;overflow:hidden;">• {item[:60]}</div>' for item in items[:max_items])
 
     guclu_list = make_list(ai_sections['guclu']) or '<em style="color:#94a3b8;font-size:9px;">Belirtilmedi</em>'
     eksik_list = make_list(ai_sections['eksik']) or '<em style="color:#94a3b8;font-size:9px;">Belirtilmedi</em>'
@@ -190,12 +212,13 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
 body {{ font-family: 'DM Sans', sans-serif; max-width: 210mm; margin: 0 auto; padding: 12px; color: #1e293b; font-size: 10px; line-height: 1.4; background: #fff; }}
 .header {{ display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 8px; color: #fff; margin-bottom: 10px; }}
 .avatar {{ width: 42px; height: 42px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; }}
-.header-info {{ flex: 1; }}
+.header-info {{ flex: 1; overflow: hidden; }}
 .header-info h1 {{ font-size: 14px; font-weight: 600; margin-bottom: 2px; }}
 .header-info p {{ font-size: 9px; opacity: 0.85; }}
 .header-date {{ text-align: right; font-size: 8px; opacity: 0.75; }}
 .main-grid {{ display: grid; grid-template-columns: 140px 1fr; gap: 10px; }}
-.left-col {{ display: flex; flex-direction: column; gap: 8px; }}
+.left-col {{ display: flex; flex-direction: column; gap: 8px; overflow: hidden; }}
+.right-col {{ display: flex; flex-direction: column; gap: 8px; overflow: hidden; }}
 .card {{ background: #f8fafc; border-radius: 6px; padding: 10px; overflow: hidden; word-break: break-word; }}
 .card-title {{ font-size: 9px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }}
 .total-score {{ text-align: center; padding: 12px; }}
@@ -203,17 +226,16 @@ body {{ font-family: 'DM Sans', sans-serif; max-width: 210mm; margin: 0 auto; pa
 .total-label {{ font-size: 10px; color: #64748b; margin-top: 2px; }}
 .verdict {{ display: inline-block; background: {verdict_bg}; color: {main_color}; padding: 3px 10px; border-radius: 12px; font-size: 9px; font-weight: 600; margin-top: 6px; }}
 .radar-wrap {{ display: flex; justify-content: center; }}
-.right-col {{ display: flex; flex-direction: column; gap: 8px; }}
 .verdicts {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }}
 .verdict-card {{ background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; text-align: center; overflow: hidden; word-break: break-word; }}
 .verdict-card .label {{ font-size: 8px; color: #94a3b8; margin-bottom: 3px; }}
 .verdict-card .value {{ font-size: 11px; font-weight: 600; color: #1e293b; }}
 .scores-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }}
-.tags-section {{ display: flex; flex-wrap: wrap; gap: 2px; overflow: hidden; }}
+.tags-section {{ display: flex; flex-wrap: wrap; gap: 2px; overflow: hidden; word-break: break-word; }}
 .two-col {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }}
 .ai-section {{ background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-top: 8px; overflow: hidden; word-break: break-word; }}
 .ai-title {{ font-size: 10px; font-weight: 600; color: #1e3a5f; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }}
-.ai-text {{ font-size: 9px; color: #475569; line-height: 1.5; word-break: break-word; }}
+.ai-text {{ font-size: 9px; color: #475569; line-height: 1.5; word-break: break-word; overflow: hidden; }}
 .footer {{ text-align: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 8px; color: #94a3b8; }}
 </style>
 </head>
