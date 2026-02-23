@@ -895,10 +895,10 @@ export default function Havuzlar() {
                       <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
                       <div>
                         <Label className="text-sm">Eğitim Seviyesi</Label>
-                        <Select value={positionForm.egitim_seviyesi} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v})}>
+                        <Select value={positionForm.egitim_seviyesi || "none"} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v === "none" ? "" : v})}>
                           <SelectTrigger><SelectValue placeholder="Seçin..." /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">-</SelectItem>
+                            <SelectItem value="none">-</SelectItem>
                             <SelectItem value="Lise">Lise</SelectItem>
                             <SelectItem value="Ön Lisans">Ön Lisans</SelectItem>
                             <SelectItem value="Lisans">Lisans</SelectItem>
@@ -980,10 +980,10 @@ export default function Havuzlar() {
                       <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
                       <div>
                         <Label className="text-sm">Eğitim Seviyesi</Label>
-                        <Select value={positionForm.egitim_seviyesi} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v})}>
+                        <Select value={positionForm.egitim_seviyesi || "none"} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v === "none" ? "" : v})}>
                           <SelectTrigger><SelectValue placeholder="Seçin..." /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">-</SelectItem>
+                            <SelectItem value="none">-</SelectItem>
                             <SelectItem value="Lise">Lise</SelectItem>
                             <SelectItem value="Ön Lisans">Ön Lisans</SelectItem>
                             <SelectItem value="Lisans">Lisans</SelectItem>
@@ -1013,10 +1013,10 @@ export default function Havuzlar() {
                   <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
                   <div>
                     <Label className="text-sm">Eğitim Seviyesi</Label>
-                    <Select value={positionForm.egitim_seviyesi} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v})}>
+                    <Select value={positionForm.egitim_seviyesi || "none"} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v === "none" ? "" : v})}>
                       <SelectTrigger><SelectValue placeholder="Seçin..." /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">-</SelectItem>
+                        <SelectItem value="none">-</SelectItem>
                         <SelectItem value="Lise">Lise</SelectItem>
                         <SelectItem value="Ön Lisans">Ön Lisans</SelectItem>
                         <SelectItem value="Lisans">Lisans</SelectItem>
