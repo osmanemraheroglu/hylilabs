@@ -174,25 +174,25 @@ export default function Havuzlar() {
     const payload: Record<string, unknown> = { name: poolForm.name, pool_type: poolForm.pool_type, icon: poolForm.pool_type === 'position' ? '\uD83C\uDFAF' : '\uD83D\uDCC1', keywords: poolForm.keywords ? poolForm.keywords.split(',').map(k => k.trim()).filter(Boolean) : [], description: poolForm.description, gerekli_deneyim_yil: Number(poolForm.gerekli_deneyim_yil) || 0, gerekli_egitim: poolForm.gerekli_egitim, lokasyon: poolForm.lokasyon }
     if (poolForm.parent_id) payload.parent_id = Number(poolForm.parent_id)
     fetch(`${API}/api/pools`, { method: 'POST', headers: H(), body: JSON.stringify(payload) })
-      .then(r => r.json()).then(res => { if (res.success) { setCreateDialogOpen(false); resetPoolForm(); loadTree(); loadAllPools() } else alert(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { setCreateDialogOpen(false); resetPoolForm(); loadTree(); loadAllPools() } else toast.error(res.detail || 'Hata') })
   }
 
   const handleUpdatePool = () => {
     if (!selectedPoolId || !poolForm.name) return
     fetch(`${API}/api/pools/${selectedPoolId}`, { method: 'PUT', headers: H(), body: JSON.stringify({ name: poolForm.name, keywords: poolForm.keywords ? poolForm.keywords.split(',').map(k => k.trim()).filter(Boolean) : [], description: poolForm.description }) })
-      .then(r => r.json()).then(res => { if (res.success) { setEditDialogOpen(false); loadTree(); loadAllPools(); loadCandidates(selectedPoolId) } else alert(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { setEditDialogOpen(false); loadTree(); loadAllPools(); loadCandidates(selectedPoolId) } else toast.error(res.detail || 'Hata') })
   }
 
   const handleDeletePool = () => {
     if (!deleteConfirm) return
     fetch(`${API}/api/pools/${deleteConfirm}`, { method: 'DELETE', headers: H() })
-      .then(r => r.json()).then(res => { if (res.success) { setDeleteConfirm(null); if (selectedPoolId === deleteConfirm) { setSelectedPoolId(null); setCandidates([]); setPoolInfo(null) }; loadTree(); loadAllPools() } else alert(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { setDeleteConfirm(null); if (selectedPoolId === deleteConfirm) { setSelectedPoolId(null); setCandidates([]); setPoolInfo(null) }; loadTree(); loadAllPools() } else toast.error(res.detail || 'Hata') })
   }
 
   const handleAssignCandidate = () => {
     if (!selectedPoolId || !assignCandidateId) return
     fetch(`${API}/api/pools/${selectedPoolId}/candidates`, { method: 'POST', headers: H(), body: JSON.stringify({ candidate_id: Number(assignCandidateId), reason: 'Manuel atama' }) })
-      .then(r => r.json()).then(res => { if (res.success) { setAssignDialogOpen(false); setAssignCandidateId(''); loadCandidates(selectedPoolId); loadTree() } else alert(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { setAssignDialogOpen(false); setAssignCandidateId(''); loadCandidates(selectedPoolId); loadTree() } else toast.error(res.detail || 'Hata') })
   }
 
   const handleRemoveCandidate = (cid: number) => {
@@ -204,26 +204,26 @@ export default function Havuzlar() {
   const handleTransfer = () => {
     if (!selectedPoolId || !transferTargetId || selectedCandidates.size === 0) return
     fetch(`${API}/api/pools/transfer`, { method: 'POST', headers: H(), body: JSON.stringify({ candidate_ids: Array.from(selectedCandidates), source_pool_id: selectedPoolId, target_pool_id: Number(transferTargetId) }) })
-      .then(r => r.json()).then(res => { if (res.success) { setTransferDialogOpen(false); setTransferTargetId(''); setSelectedCandidates(new Set()); loadCandidates(selectedPoolId); loadTree() } else alert(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { setTransferDialogOpen(false); setTransferTargetId(''); setSelectedCandidates(new Set()); loadCandidates(selectedPoolId); loadTree() } else toast.error(res.detail || 'Hata') })
   }
 
   const handleStatusUpdate = () => {
     if (!selectedPoolId || !statusValue || selectedCandidates.size === 0) return
     fetch(`${API}/api/pools/${selectedPoolId}/candidates/status`, { method: 'PUT', headers: H(), body: JSON.stringify({ candidate_ids: Array.from(selectedCandidates), durum: statusValue }) })
-      .then(r => r.json()).then(res => { if (res.success) { setStatusDialogOpen(false); setStatusValue(''); setSelectedCandidates(new Set()); loadCandidates(selectedPoolId) } else alert(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { setStatusDialogOpen(false); setStatusValue(''); setSelectedCandidates(new Set()); loadCandidates(selectedPoolId) } else toast.error(res.detail || 'Hata') })
   }
 
   const handleSyncAll = () => {
     setSyncing(true)
     fetch(`${API}/api/pools/sync-all`, { method: 'POST', headers: H() })
-      .then(r => r.json()).then(res => { if (res.success) { alert(`${res.data.positions_scanned} pozisyon tarandi, ${res.data.total_transferred} aday aktarildi`); loadTree(); loadAllPools(); if (selectedPoolId) loadCandidates(selectedPoolId) } else alert(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { toast.success('Senkronizasyon Tamamlandı', { description: `${res.data.positions_scanned} pozisyon tarandı, ${res.data.total_transferred} aday aktarıldı` }); loadTree(); loadAllPools(); if (selectedPoolId) loadCandidates(selectedPoolId) } else toast.error(res.detail || 'Hata') })
       .catch(console.error).finally(() => setSyncing(false))
   }
 
   const handlePullCandidates = () => {
     if (!selectedPoolId) return; setPulling(true)
     fetch(`${API}/api/pools/${selectedPoolId}/pull-candidates`, { method: 'POST', headers: H() })
-      .then(r => r.json()).then(res => { if (res.success) { alert(`${res.data.total_scanned} aday tarandi, ${res.data.matched} eslesti, ${res.data.transferred} aktarildi`); loadCandidates(selectedPoolId); loadTree() } else alert(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { const desc = res.data.matched > 0 ? `${res.data.total_scanned} aday tarandı, ${res.data.matched} eşleşti, ${res.data.transferred} aktarıldı` : `${res.data.total_scanned} aday tarandı. Mevcut adaylarla eşleşme bulunamadı.`; toast.success('Eşleştirme Tamamlandı', { description: desc }); loadCandidates(selectedPoolId); loadTree() } else toast.error(res.detail || 'Hata') })
       .catch(console.error).finally(() => setPulling(false))
   }
 
@@ -287,14 +287,14 @@ export default function Havuzlar() {
             aranan_nitelikler: d.aranan_nitelikler || '',
             is_tanimi: d.is_tanimi || ''
           })
-        } else { alert(res.detail || res.hata || 'Parse hatası') }
-      }).catch(e => alert('Hata: ' + e)).finally(() => setParseLoading(false))
+        } else { toast.error(res.detail || res.hata || 'Parse hatası') }
+      }).catch(e => toast.error('Hata: ' + e)).finally(() => setParseLoading(false))
   }
 
   // Parse Sonucu veya Manuel Kaydet
   const handleSaveParsed = () => {
-    if (!positionForm.pozisyon_adi) { alert("Pozisyon adı gerekli"); return }
-    if (!poolForm.parent_id) { alert("Departman seçilmedi"); return }
+    if (!positionForm.pozisyon_adi) { toast.error("Pozisyon adı gerekli"); return }
+    if (!poolForm.parent_id) { toast.error("Departman seçilmedi"); return }
     setSavingPosition(true)
     const payload = {
       parent_id: Number(poolForm.parent_id),
@@ -312,9 +312,9 @@ export default function Havuzlar() {
           setCreateDialogOpen(false); resetPoolForm(); setUrlInput(''); setParsedData(null)
           setPositionForm({ pozisyon_adi: '', lokasyon: '', deneyim_yil: '0', egitim_seviyesi: '', keywords: '', aranan_nitelikler: '', is_tanimi: '' })
           loadTree(); loadAllPools()
-          alert('Pozisyon başarıyla eklendi!')
-        } else { alert(res.detail || 'Kayıt hatası') }
-      }).catch(e => alert('Hata: ' + e)).finally(() => setSavingPosition(false))
+          toast.success('Pozisyon başarıyla eklendi')
+        } else { toast.error(res.detail || 'Kayıt hatası') }
+      }).catch(e => toast.error('Hata: ' + e)).finally(() => setSavingPosition(false))
   }
 
   // Keyword Ekle
@@ -327,7 +327,7 @@ export default function Havuzlar() {
           setEditKeywords(res.keywords || [])
           setNewKeyword('')
           loadCandidates(selectedPoolId)
-        } else { alert(res.detail || 'Hata') }
+        } else { toast.error(res.detail || 'Hata') }
       }).catch(console.error).finally(() => setKeywordLoading(false))
   }
 
@@ -340,7 +340,7 @@ export default function Havuzlar() {
         if (res.success) {
           setEditKeywords(res.keywords || [])
           loadCandidates(selectedPoolId)
-        } else { alert(res.detail || 'Hata') }
+        } else { toast.error(res.detail || 'Hata') }
       }).catch(console.error).finally(() => setKeywordLoading(false))
   }
 
@@ -391,10 +391,13 @@ export default function Havuzlar() {
       .then(r => r.json())
       .then(res => {
         if (res.success) {
-          alert(`${res.approved} başlık onaylandı, ${res.transferred} aday eşleştirildi`)
+          const desc = res.transferred > 0
+            ? `${res.approved} başlık onaylandı, ${res.transferred} aday eşleştirildi`
+            : `${res.approved} başlık onaylandı. Mevcut adaylarla eşleşme bulunamadı.`
+          toast.success('Onay Tamamlandı', { description: desc })
           loadTitles(selectedPoolId)
           loadCandidates(selectedPoolId)
-        } else { alert(res.detail || 'Hata') }
+        } else { toast.error(res.detail || 'Hata') }
       })
       .catch(console.error)
       .finally(() => setApproving(false))
@@ -418,11 +421,11 @@ export default function Havuzlar() {
       .then(r => r.json())
       .then(res => {
         if (res.success) {
-          alert('AI değerlendirme tamamlandı!')
+          toast.success('AI değerlendirme tamamlandı')
           loadDetail(candidateId)
-        } else { alert(res.detail || 'Hata') }
+        } else { toast.error(res.detail || 'Hata') }
       })
-      .catch(e => alert('Hata: ' + e))
+      .catch(e => toast.error('Hata: ' + e))
       .finally(() => setEvaluating(false))
   }
 
@@ -439,7 +442,7 @@ export default function Havuzlar() {
         const url = URL.createObjectURL(blob)
         window.open(url, '_blank')
       })
-      .catch(e => alert('Hata: ' + e))
+      .catch(e => toast.error('Hata: ' + e))
   }
 
   const handleViewCV = (candidateId: number) => {
@@ -453,7 +456,7 @@ export default function Havuzlar() {
         const url = URL.createObjectURL(blob)
         window.open(url, '_blank')
       })
-      .catch(() => alert('CV dosyası bulunamadı'))
+      .catch(() => toast.error('CV dosyası bulunamadı'))
   }
 
   // Filtering & Sorting
@@ -951,10 +954,10 @@ export default function Havuzlar() {
                                 is_tanimi: res.data.is_tanimi || ''
                               })
                             } else {
-                              alert(res.detail || res.message || 'Parse hatası')
+                              toast.error(res.detail || res.message || 'Parse hatası')
                             }
                           })
-                          .catch(err => alert('Hata: ' + err.message))
+                          .catch(err => toast.error('Hata: ' + err.message))
                           .finally(() => setParseLoading(false))
                       }
                     }}

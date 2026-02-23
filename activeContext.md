@@ -27,6 +27,8 @@ Son guncelleme: 23.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- window.alert() kaldirildi, sonner toast bildirimleri eklendi (3 dosya, 33 alert)
+- email-hesaplari, firma-yonetimi, havuzlar sayfalarinda toast.success/error kullaniliyor
 - PYTHONPATH fix: ecosystem.config.cjs'e core/ path eklendi
 - candidate_matcher ve cv_parser import hatalari cozuldu
 - v2 scoring artik duzgun calisiyor (fallback'e dusmuyor)
@@ -179,6 +181,7 @@ Son guncelleme: 23.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+9d28dd0 - ui: window.alert kaldirildi, toast bildirimleri eklendi
 c56a09c - fix: PYTHONPATH core/ eklendi - candidate_matcher ve cv_parser import sorunu cozuldu
 e0a669f - fix: eslestirme calismiyordu - approved_title_mappings senkronizasyonu eklendi
 e32c1a4 - fix: URL parse sonuc render SelectItem value crash duzeltildi

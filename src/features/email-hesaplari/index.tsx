@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -151,7 +152,7 @@ export default function EmailHesaplari() {
       .then(r => r.json())
       .then(res => {
         if (res.success) { setDialogOpen(false); resetForm(); loadAccounts() }
-        else alert(res.detail || 'Hata oluştu')
+        else toast.error(res.detail || 'Hata oluştu')
       })
       .catch(err => console.error('Save hatasi:', err))
   }

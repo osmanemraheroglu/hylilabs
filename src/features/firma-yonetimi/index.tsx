@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -93,7 +94,7 @@ export default function FirmaYonetimi() {
   }
 
   const handleCreate = () => {
-    if (!form.ad.trim()) { alert('Firma adı zorunlu'); return }
+    if (!form.ad.trim()) { toast.error('Firma adı zorunlu'); return }
     setSaving(true)
     fetch(`${API}/api/companies`, {
       method: 'POST',
@@ -111,10 +112,10 @@ export default function FirmaYonetimi() {
           resetForm()
           loadCompanies()
         } else {
-          alert(d.detail || 'Hata oluştu')
+          toast.error(d.detail || 'Hata oluştu')
         }
       })
-      .catch(e => alert('Hata: ' + e))
+      .catch(e => toast.error('Hata: ' + e))
       .finally(() => setSaving(false))
   }
 
@@ -154,10 +155,10 @@ export default function FirmaYonetimi() {
           resetForm()
           loadCompanies()
         } else {
-          alert(d.detail || 'Hata oluştu')
+          toast.error(d.detail || 'Hata oluştu')
         }
       })
-      .catch(e => alert('Hata: ' + e))
+      .catch(e => toast.error('Hata: ' + e))
       .finally(() => setSaving(false))
   }
 
@@ -182,11 +183,12 @@ export default function FirmaYonetimi() {
         if (d.success) {
           setDeleteConfirm(null)
           loadCompanies()
+          toast.success('Firma başarıyla silindi')
         } else {
-          alert(d.detail || 'Hata oluştu')
+          toast.error(d.detail || 'Hata oluştu')
         }
       })
-      .catch(e => alert('Hata: ' + e))
+      .catch(e => toast.error('Hata: ' + e))
   }
 
   return (
