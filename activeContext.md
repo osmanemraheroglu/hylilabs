@@ -32,6 +32,11 @@ Son guncelleme: 23.02.2026
 - Login endpoint'i: pasif kullanici/firma icin ozel hata mesajlari
 - Frontend initAuth(): 401/403 durumunda token silip /sign-in'e yonlendiriyor
 - Token varken /sign-in'e gelince /'e (dashboard) yonlendiriyor
+- Firma Yonetimi: Aktif/Pasif toggle ve Kalici Silme ayrildi
+- PATCH /api/companies/{id}/toggle-status: aktif<->pasif toggle
+- DELETE /api/companies/{id}: Kalici silme (hard delete) - tum veriler silinir
+- hard_delete_company(): 10 tablo sirayla siliniyor (candidates, users, interviews, vs.)
+- Silme onay dialogu: "Bu islem GERI ALINAMAZ" uyarisi
 
 ### 22.02.2026
 - Mulakat olusturulunca aday durumu otomatik 'mulakat' olarak guncelleniyor

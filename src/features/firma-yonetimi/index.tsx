@@ -162,10 +162,9 @@ export default function FirmaYonetimi() {
   }
 
   const handleToggleStatus = (c: Company) => {
-    fetch(`${API}/api/companies/${c.id}/status`, {
-      method: 'PUT',
-      headers: H(),
-      body: JSON.stringify({ aktif: c.aktif ? 0 : 1 })
+    fetch(`${API}/api/companies/${c.id}/toggle-status`, {
+      method: 'PATCH',
+      headers: H()
     })
       .then(r => r.json())
       .then(d => { if (d.success) loadCompanies() })
@@ -266,8 +265,14 @@ export default function FirmaYonetimi() {
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(c)} title="Düzenle">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleToggleStatus(c)} title={c.aktif ? 'Pasif Yap' : 'Aktif Yap'}>
-                          {c.aktif ? <ToggleRight className="h-4 w-4 text-green-600" /> : <ToggleLeft className="h-4 w-4 text-gray-400" />}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleStatus(c)}
+                          title={c.aktif ? 'Pasife Al' : 'Aktif Et'}
+                          className={c.aktif ? 'hover:bg-orange-100' : 'hover:bg-green-100'}
+                        >
+                          {c.aktif ? <ToggleRight className="h-4 w-4 text-orange-500" /> : <ToggleLeft className="h-4 w-4 text-green-600" />}
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleteConfirm(c.id)} title="Sil">
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -443,12 +448,18 @@ export default function FirmaYonetimi() {
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Firma Sil</DialogTitle>
+            <DialogTitle className="text-destructive">Firmayı Kalıcı Olarak Sil</DialogTitle>
           </DialogHeader>
-          <p>Bu firmayi silmek istediginizden emin misiniz? Bu islem geri alınamaz.</p>
+          <div className="space-y-3 py-2">
+            <p className="font-medium">Bu firmayı tamamen silmek istediğinizden emin misiniz?</p>
+            <p className="text-sm text-muted-foreground">
+              Firmaya ait <strong>TÜM adaylar, kullanıcılar ve veriler</strong> kalıcı olarak silinecek.
+            </p>
+            <p className="text-sm text-destructive font-semibold">Bu işlem GERİ ALINAMAZ.</p>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>İptal</Button>
-            <Button variant="destructive" onClick={handleDelete}>Sil</Button>
+            <Button variant="destructive" onClick={handleDelete}>Evet, Kalıcı Sil</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

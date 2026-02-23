@@ -5676,6 +5676,61 @@ def delete_company_soft(company_id: int) -> bool:
         return company_updated
 
 
+def hard_delete_company(company_id: int) -> bool:
+    """
+    Firmayı ve tüm ilişkili verileri kalıcı olarak sil
+
+    Args:
+        company_id: Firma ID
+
+    Returns:
+        bool: Silme başarılı mı?
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+
+        # Önce firma var mı kontrol et
+        cursor.execute("SELECT id FROM companies WHERE id = ?", (company_id,))
+        if not cursor.fetchone():
+            return False
+
+        # Sırayla tüm ilişkili tabloları sil
+        # CASCADE DELETE aktif olsa da explicit silme daha güvenli
+
+        # 1. Adaylarla ilişkili tablolar (CASCADE ile otomatik silinir ama explicit yapalım)
+        cursor.execute("DELETE FROM candidates WHERE company_id = ?", (company_id,))
+
+        # 2. Kullanıcılar
+        cursor.execute("DELETE FROM users WHERE company_id = ?", (company_id,))
+
+        # 3. Mülakatlar
+        cursor.execute("DELETE FROM interviews WHERE company_id = ?", (company_id,))
+
+        # 4. Departman/Pozisyon havuzları
+        cursor.execute("DELETE FROM department_pools WHERE company_id = ?", (company_id,))
+
+        # 5. Email hesapları
+        cursor.execute("DELETE FROM email_accounts WHERE company_id = ?", (company_id,))
+
+        # 6. Email şablonları
+        cursor.execute("DELETE FROM email_templates WHERE company_id = ?", (company_id,))
+
+        # 7. Firma ayarları
+        cursor.execute("DELETE FROM company_settings WHERE company_id = ?", (company_id,))
+
+        # 8. CV toplama geçmişi
+        cursor.execute("DELETE FROM cv_collection_history WHERE company_id = ?", (company_id,))
+
+        # 9. Audit logs
+        cursor.execute("DELETE FROM audit_logs WHERE company_id = ?", (company_id,))
+
+        # 10. Son olarak firmayı sil
+        cursor.execute("DELETE FROM companies WHERE id = ?", (company_id,))
+
+        conn.commit()
+        return True
+
+
 def get_super_admin_stats() -> dict:
     """
     Super admin için genel istatistikler

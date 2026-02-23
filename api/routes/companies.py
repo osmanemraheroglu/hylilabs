@@ -8,7 +8,7 @@ from routes.auth import get_current_user
 from database import (
     get_connection, get_all_companies_admin, create_company,
     update_company, update_company_status, delete_company_soft,
-    create_company_user, hash_password
+    create_company_user, hash_password, hard_delete_company
 )
 from email_sender import send_email
 import traceback
@@ -225,26 +225,38 @@ def update_company_endpoint(company_id: int, body: dict, current_user: dict = De
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/{company_id}/status")
-def toggle_company_status(company_id: int, body: dict, current_user: dict = Depends(get_current_user)):
-    """Firma aktif/pasif toggle"""
+@router.patch("/{company_id}/toggle-status")
+def toggle_company_status(company_id: int, current_user: dict = Depends(get_current_user)):
+    """Firma aktif/pasif toggle - aktif ise pasif, pasif ise aktif yap"""
     require_super_admin(current_user)
 
     try:
-        aktif = body.get("aktif")
-        if aktif is None:
-            raise HTTPException(status_code=400, detail="aktif alani zorunlu")
-
-        # update_company_status uses "durum" field, we need to use update_company for "aktif"
         with get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("UPDATE companies SET aktif = ? WHERE id = ?", (1 if aktif else 0, company_id))
-            conn.commit()
 
-            if cursor.rowcount == 0:
+            # Mevcut durumu al
+            cursor.execute("SELECT aktif FROM companies WHERE id = ?", (company_id,))
+            row = cursor.fetchone()
+
+            if not row:
                 raise HTTPException(status_code=404, detail="Firma bulunamadi")
 
-        return {"success": True}
+            current_status = row[0]
+            new_status = 0 if current_status else 1
+
+            # Firma durumunu guncelle
+            cursor.execute("UPDATE companies SET aktif = ? WHERE id = ?", (new_status, company_id))
+
+            # Eger pasife aliniyorsa kullanicilari da pasif yap
+            if new_status == 0:
+                cursor.execute("UPDATE users SET aktif = 0 WHERE company_id = ?", (company_id,))
+            else:
+                # Aktif ediliyorsa kullanicilari da aktif yap
+                cursor.execute("UPDATE users SET aktif = 1 WHERE company_id = ?", (company_id,))
+
+            conn.commit()
+
+        return {"success": True, "aktif": new_status}
     except HTTPException:
         raise
     except Exception as e:
@@ -254,16 +266,16 @@ def toggle_company_status(company_id: int, body: dict, current_user: dict = Depe
 
 @router.delete("/{company_id}")
 def delete_company_endpoint(company_id: int, current_user: dict = Depends(get_current_user)):
-    """Firma sil (soft delete)"""
+    """Firma kalici sil (hard delete) - TUM veriler silinir"""
     require_super_admin(current_user)
 
     try:
-        success = delete_company_soft(company_id)
+        success = hard_delete_company(company_id)
 
         if not success:
             raise HTTPException(status_code=404, detail="Firma bulunamadi")
 
-        return {"success": True}
+        return {"success": True, "message": "Firma ve tum verileri kalici olarak silindi"}
     except HTTPException:
         raise
     except Exception as e:
