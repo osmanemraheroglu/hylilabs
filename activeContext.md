@@ -31,6 +31,9 @@ Son guncelleme: 23.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- BUG FIX: Pozisyon havuzlarinda aday gorunmuyordu (0 aday) - pools.py route'a pool_type kontrol eklendi
+- get_position_candidates() fonksiyonu guncellendi: c.* donuyor, frontend ile uyumlu
+- candidate_positions tablosu pozisyonlar icin kullaniliyor (candidate_pool_assignments degil)
 - CLAUDE.md: 4 yeni sistem kilitlendi (#24-27) - Durum senkronizasyonu, dashboard refresh, pool kurallari
 - Genel Havuz'dan silme icin kullanici dostu toast mesaji (havuzlar frontend)
 - COMMIT D: havuzdan silme durum guncelleme + dashboard visibility refresh

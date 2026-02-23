@@ -10,7 +10,7 @@ from database import (
     assign_candidate_to_department_pool, remove_candidate_from_department_pool,
     remove_candidate_from_pool, transfer_candidates_to_position,
     batch_update_pool_status, verify_department_pool_ownership,
-    move_candidate_to_pool
+    move_candidate_to_pool, get_position_candidates
 )
 from typing import Optional
 import traceback
@@ -207,10 +207,13 @@ def get_pool_candidates(pool_id: int, current_user: dict = Depends(get_current_u
         pool_type = pool.get("pool_type", "department")
         is_system = pool.get("is_system", 0)
 
-        # Sistem havuzlari ve departmanlar: candidate_pool_assignments
-        # Pozisyonlar: candidate_positions (get_department_pool_candidates de assignments kullanir)
+        # Sistem havuzları: get_pool_candidates_with_days
+        # Pozisyonlar: candidate_positions tablosu
+        # Departmanlar: candidate_pool_assignments tablosu
         if is_system:
             candidates = get_pool_candidates_with_days(pool_id, pool_type='general')
+        elif pool_type == "position":
+            candidates = get_position_candidates(pool_id)
         else:
             candidates = get_department_pool_candidates(pool_id)
 

@@ -8575,22 +8575,25 @@ def get_candidate_positions(candidate_id: int) -> list[dict]:
 
 
 def get_position_candidates(position_id: int) -> list[dict]:
-    """Pozisyondaki adayları getir
+    """Pozisyondaki adayları getir (tüm aday alanları dahil)
 
     Args:
-        position_id: Pozisyon ID
+        position_id: Pozisyon ID (department_pools.id where pool_type='position')
 
     Returns:
-        Aday listesi [{id, ad_soyad, email, match_score, status, created_at}, ...]
+        Aday listesi - get_department_pool_candidates ile aynı format
     """
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT cp.id, cp.candidate_id, c.ad_soyad, c.email, c.telefon,
-                   c.mevcut_pozisyon, cp.match_score, cp.status, cp.created_at
+            SELECT c.*,
+                   'auto' as assignment_type,
+                   cp.match_score,
+                   'Pozisyon eşleşmesi' as match_reason,
+                   cp.created_at as assigned_at
             FROM candidate_positions cp
             JOIN candidates c ON cp.candidate_id = c.id
-            WHERE cp.position_id = ?
+            WHERE cp.position_id = ? AND cp.status = 'aktif'
             ORDER BY cp.match_score DESC, cp.created_at DESC
         """, (position_id,))
         return [dict(row) for row in cursor.fetchall()]
