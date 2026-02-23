@@ -195,10 +195,18 @@ export default function Havuzlar() {
       .then(r => r.json()).then(res => { if (res.success) { setAssignDialogOpen(false); setAssignCandidateId(''); loadCandidates(selectedPoolId); loadTree() } else toast.error(res.detail || 'Hata') })
   }
 
-  const handleRemoveCandidate = (cid: number) => {
+  const handleRemoveCandidate = async (cid: number) => {
     if (!selectedPoolId) return
-    fetch(`${API}/api/pools/${selectedPoolId}/candidates/${cid}`, { method: 'DELETE', headers: H() })
-      .then(r => r.json()).then(res => { if (res.success) { loadCandidates(selectedPoolId); loadTree() } })
+    const res = await fetch(`${API}/api/pools/${selectedPoolId}/candidates/${cid}`, { method: 'DELETE', headers: H() })
+    const data = await res.json()
+    if (res.status === 400) {
+      toast.error(data.detail || 'Bu havuzdan aday silinemez.')
+      return
+    }
+    if (data.success) {
+      loadCandidates(selectedPoolId)
+      loadTree()
+    }
   }
 
   const handleTransfer = () => {

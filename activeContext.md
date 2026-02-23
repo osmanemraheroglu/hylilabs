@@ -27,6 +27,7 @@ Son guncelleme: 23.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- Genel Havuz'dan silme icin kullanici dostu toast mesaji (havuzlar frontend)
 - COMMIT D: havuzdan silme durum guncelleme + dashboard visibility refresh
 - COMMIT C: ise-al endpoint pool_assignments temizleme eklendi + DB fix (ID:434)
 - COMMIT B: elen endpoint pool_assignments senkronizasyonu eklendi
