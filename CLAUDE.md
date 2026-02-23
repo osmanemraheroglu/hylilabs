@@ -169,3 +169,9 @@ Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
 - Takvimde yeşil ✓ badge, listede "✓ Onaylandı" / "⏳ Bekliyor"
 - Onay durumu filtre dropdown
 - Commit: dbbbe75 — DEGISTIRME
+
+### Firma Kalıcı Silme Sistemi (23.02.2026) — DEGISMEZ
+- hard_delete_company() - 14 tablo cascade silme
+- Var olan tablolar sqlite_master ile kontrol edilir
+- Her DELETE try/except ile sarılı
+- api/database.py — DEGISTIRME
