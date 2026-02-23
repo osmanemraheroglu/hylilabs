@@ -27,6 +27,9 @@ Son guncelleme: 23.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 23.02.2026
+- COMMIT B: elen endpoint pool_assignments senkronizasyonu eklendi
+- COMMIT A FIX: Duplicate pool assignments duzeltildi (430,431 Genel Havuz'dan silindi, sadece Arsiv'de)
+- COMMIT A: 2 yetim aday (411,423) Genel Havuz'a eklendi (candidate_pool_assignments: 51->53->51)
 - dashboard.py labels'a "yeni" eklendi (pie chart icin)
 - 3 arsivli aday (430,431,432) Arsiv havuzuna eklendi (candidate_pool_assignments)
 - arsivle endpoint duzeltildi: candidate_pool_assignments'a Arsiv havuzu atamasi eklendi
@@ -225,7 +228,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Aday durum akisi duzeltmeleri tamamlandi. Kariyer sayfasi gelistirmeye hazir.
+COMMIT C: ise-al endpoint duzeltmesi (pool_assignments sync)
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

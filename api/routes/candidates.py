@@ -191,6 +191,26 @@ def elen_candidate(candidate_id: int, current_user: dict = Depends(get_current_u
             cursor = conn.cursor()
             # Pozisyon atamasını sil
             cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
+
+            # Eski havuz atamasını sil
+            cursor.execute(
+                "DELETE FROM candidate_pool_assignments WHERE candidate_id = ? AND company_id = ?",
+                (candidate_id, company_id)
+            )
+
+            # Genel Havuz ID'sini bul
+            cursor.execute(
+                "SELECT id FROM department_pools WHERE company_id = ? AND name = 'Genel Havuz' AND is_system = 1",
+                (company_id,)
+            )
+            genel_pool = cursor.fetchone()
+            if genel_pool:
+                cursor.execute("""
+                    INSERT OR IGNORE INTO candidate_pool_assignments
+                    (candidate_id, department_pool_id, company_id)
+                    VALUES (?, ?, ?)
+                """, (candidate_id, genel_pool[0], company_id))
+
             # Durumu güncelle
             cursor.execute("""
                 UPDATE candidates
