@@ -42,6 +42,8 @@ Son guncelleme: 23.02.2026
 - save-parsed endpoint test edildi: calisiyor (pool olusturma, categorize_and_save, pull_matching)
 - URL Parse sonuc render crash duzeltildi: SelectItem value="" -> value="none" (3 yer)
 - Select value guard eklendi: value={x || "none"} + onValueChange none->empty string ceviri
+- KRITIK BUG FIX: Eslestirme calismiyordu - approve_titles sadece position_title_mappings guncelliyordu
+- approved_title_mappings senkronizasyonu eklendi (pools.py approve_titles endpoint)
 
 ### 22.02.2026
 - Mulakat olusturulunca aday durumu otomatik 'mulakat' olarak guncelleniyor
@@ -174,6 +176,7 @@ Son guncelleme: 23.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+e0a669f - fix: eslestirme calismiyordu - approved_title_mappings senkronizasyonu eklendi
 e32c1a4 - fix: URL parse sonuc render SelectItem value crash duzeltildi
 fec1e45 - debug: save-parsed endpoint detayli loglama
 275682b - fix: URL parse frontend response handling duzeltmesi

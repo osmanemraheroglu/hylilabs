@@ -805,6 +805,15 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
             # Onaylananlar
             if approved_ids:
                 placeholders = ",".join("?" * len(approved_ids))
+
+                # Önce onaylanacak başlıkları al (approved_title_mappings sync için)
+                cursor.execute(f"""
+                    SELECT related_title, match_level FROM position_title_mappings
+                    WHERE id IN ({placeholders}) AND position_id = ?
+                """, (*approved_ids, pool_id))
+                titles_to_approve = cursor.fetchall()
+
+                # position_title_mappings güncelle
                 cursor.execute(f"""
                     UPDATE position_title_mappings
                     SET approved = 1
@@ -812,14 +821,46 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
                 """, (*approved_ids, pool_id))
                 approved_count = cursor.rowcount
 
+                # approved_title_mappings tablosunu da güncelle (KRITIK SYNC)
+                for title_row in titles_to_approve:
+                    title = title_row[0]
+                    category = title_row[1]  # match_level = category
+                    cursor.execute("""
+                        UPDATE approved_title_mappings
+                        SET is_approved = 1, approved_at = CURRENT_TIMESTAMP
+                        WHERE position_id = ? AND title = ?
+                    """, (pool_id, title))
+                    # Eğer kayıt yoksa ekle
+                    if cursor.rowcount == 0:
+                        cursor.execute("""
+                            INSERT INTO approved_title_mappings (position_id, title, category, is_approved, approved_at)
+                            VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
+                        """, (pool_id, title, category))
+
             # Reddedilenler (sil)
             if rejected_ids:
                 placeholders = ",".join("?" * len(rejected_ids))
+
+                # Önce silinecek başlıkları al (approved_title_mappings sync için)
+                cursor.execute(f"""
+                    SELECT related_title FROM position_title_mappings
+                    WHERE id IN ({placeholders}) AND position_id = ?
+                """, (*rejected_ids, pool_id))
+                titles_to_reject = [r[0] for r in cursor.fetchall()]
+
+                # position_title_mappings'den sil
                 cursor.execute(f"""
                     DELETE FROM position_title_mappings
                     WHERE id IN ({placeholders}) AND position_id = ?
                 """, (*rejected_ids, pool_id))
                 rejected_count = cursor.rowcount
+
+                # approved_title_mappings'den de sil
+                for title in titles_to_reject:
+                    cursor.execute("""
+                        DELETE FROM approved_title_mappings
+                        WHERE position_id = ? AND title = ?
+                    """, (pool_id, title))
 
             conn.commit()
 
