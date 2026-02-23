@@ -5697,34 +5697,61 @@ def hard_delete_company(company_id: int) -> bool:
         # Sırayla tüm ilişkili tabloları sil
         # CASCADE DELETE aktif olsa da explicit silme daha güvenli
 
-        # 1. Adaylarla ilişkili tablolar (CASCADE ile otomatik silinir ama explicit yapalım)
+        # 1. Aday keyword'leri (candidates silinmeden önce)
+        try:
+            cursor.execute("""
+                DELETE FROM candidate_keywords WHERE candidate_id IN
+                (SELECT id FROM candidates WHERE company_id = ?)
+            """, (company_id,))
+        except:
+            pass  # Tablo yoksa devam et
+
+        # 2. Adaylar
         cursor.execute("DELETE FROM candidates WHERE company_id = ?", (company_id,))
 
-        # 2. Kullanıcılar
+        # 3. Kullanıcılar
         cursor.execute("DELETE FROM users WHERE company_id = ?", (company_id,))
 
-        # 3. Mülakatlar
+        # 4. Mülakatlar
         cursor.execute("DELETE FROM interviews WHERE company_id = ?", (company_id,))
 
-        # 4. Departman/Pozisyon havuzları
+        # 5. Pozisyonlar
+        try:
+            cursor.execute("DELETE FROM positions WHERE company_id = ?", (company_id,))
+        except:
+            pass  # Tablo yoksa devam et
+
+        # 6. Pozisyon havuzları
+        try:
+            cursor.execute("DELETE FROM position_pools WHERE company_id = ?", (company_id,))
+        except:
+            pass  # Tablo yoksa devam et
+
+        # 7. Departman/Pozisyon havuzları
         cursor.execute("DELETE FROM department_pools WHERE company_id = ?", (company_id,))
 
-        # 5. Email hesapları
+        # 8. Keyword istatistikleri
+        try:
+            cursor.execute("DELETE FROM keyword_stats WHERE company_id = ?", (company_id,))
+        except:
+            pass  # Tablo yoksa devam et
+
+        # 9. Email hesapları
         cursor.execute("DELETE FROM email_accounts WHERE company_id = ?", (company_id,))
 
-        # 6. Email şablonları
+        # 10. Email şablonları
         cursor.execute("DELETE FROM email_templates WHERE company_id = ?", (company_id,))
 
-        # 7. Firma ayarları
+        # 11. Firma ayarları
         cursor.execute("DELETE FROM company_settings WHERE company_id = ?", (company_id,))
 
-        # 8. CV toplama geçmişi
+        # 12. CV toplama geçmişi
         cursor.execute("DELETE FROM cv_collection_history WHERE company_id = ?", (company_id,))
 
-        # 9. Audit logs
+        # 13. Audit logs
         cursor.execute("DELETE FROM audit_logs WHERE company_id = ?", (company_id,))
 
-        # 10. Son olarak firmayı sil
+        # 14. Son olarak firmayı sil
         cursor.execute("DELETE FROM companies WHERE id = ?", (company_id,))
 
         conn.commit()
