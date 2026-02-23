@@ -275,18 +275,19 @@ export default function Havuzlar() {
     setParseLoading(true); setParsedData(null)
     fetch(`${API}/api/pools/position/from-url`, { method: 'POST', headers: H(), body: JSON.stringify({ url: urlInput }) })
       .then(r => r.json()).then(res => {
-        if (res.başarılı) {
-          setParsedData(res)
+        if (res.success && res.data) {
+          const d = res.data
+          setParsedData(d)
           setPositionForm({
-            pozisyon_adi: res.pozisyon_adi || '',
-            lokasyon: res.lokasyon || '',
-            deneyim_yil: String(res.deneyim_yil || 0),
-            egitim_seviyesi: res.egitim_seviyesi || '',
-            keywords: Array.isArray(res.keywords) ? res.keywords.join(', ') : (res.keywords || ''),
-            aranan_nitelikler: res.aranan_nitelikler || '',
-            is_tanimi: res.is_tanimi || ''
+            pozisyon_adi: d.pozisyon_adi || '',
+            lokasyon: d.lokasyon || '',
+            deneyim_yil: String(d.deneyim_yil || 0),
+            egitim_seviyesi: d.egitim_seviyesi || '',
+            keywords: Array.isArray(d.keywords) ? d.keywords.join(', ') : (d.keywords || ''),
+            aranan_nitelikler: d.aranan_nitelikler || '',
+            is_tanimi: d.is_tanimi || ''
           })
-        } else { alert(res.hata || res.detail || 'Parse hatası') }
+        } else { alert(res.detail || res.hata || 'Parse hatası') }
       }).catch(e => alert('Hata: ' + e)).finally(() => setParseLoading(false))
   }
 
