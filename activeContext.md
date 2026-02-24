@@ -32,6 +32,9 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- CLAUDE.md: Kritik kural eklendi — Mevcut çalışan sistemleri bozma
+  - interviews.py, pools.py, eval_report_v2.py KİLİTLİ
+  - Yeni özellik eklerken mevcut fonksiyonlara dokunma kuralı
 - interviews.py: Mülakat formu aday dropdown düzeltildi (551 satır)
   - dropdown-data endpoint yanlış tablo sorguluyordu
   - candidate_pool_assignments → candidate_positions tablosuna düzeltildi

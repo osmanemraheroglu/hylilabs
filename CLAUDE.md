@@ -1,5 +1,23 @@
 # HyliLabs — Claude Kurallari
 
+## KRİTİK KURAL — MEVCUT ÇALIŞAN SİSTEMLERİ BOZMA
+
+Herhangi bir dosyada değişiklik yaparken, o dosyadaki MEVCUT ÇALIŞAN FONKSİYONLARI BOZMA.
+Özellikle şu dosyalar KİLİTLİ — değişiklik yaparken çalışan kodu koruma altına al:
+
+- api/routes/interviews.py — Mülakat Takvimi sistemi (dropdown-data, confirm endpoint, CRUD). DEĞİŞMEZ.
+- api/routes/pools.py — Pozisyon havuzu sorgu yönlendirmesi (pool_type kontrolü). DEĞİŞMEZ.
+- api/eval_report_v2.py — Değerlendirme raporu v10. DEĞİŞMEZ.
+
+Yeni özellik eklerken:
+1. Mevcut fonksiyonlara DOKUNMA
+2. Yeni fonksiyonları AYRI ekle
+3. Mevcut import'ları değiştirme
+4. Mevcut SQL sorgularını değiştirme
+5. Değişiklik sonrası TÜM mevcut endpoint'leri test et
+
+---
+
 ## ZORUNLU KURAL — HER GOREV SONU
 
 Her gorev tamamlandiginda, committen ONCE:
