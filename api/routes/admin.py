@@ -89,7 +89,7 @@ def update_user_status(user_id: int, body: dict, current_user: dict = Depends(ge
             cursor.execute("SELECT rol FROM users WHERE id = ?", (user_id,))
             user = cursor.fetchone()
             if not user:
-                raise HTTPException(status_code=404, detail="Kullanici bulunamadi")
+                raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
 
             if user[0] == "super_admin":
                 raise HTTPException(status_code=403, detail="Super admin durumu degistirilemez")
@@ -128,7 +128,7 @@ def update_user_role(user_id: int, body: dict, current_user: dict = Depends(get_
             cursor.execute("SELECT rol FROM users WHERE id = ?", (user_id,))
             user = cursor.fetchone()
             if not user:
-                raise HTTPException(status_code=404, detail="Kullanici bulunamadi")
+                raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
 
             if user[0] == "super_admin":
                 raise HTTPException(status_code=403, detail="Super admin rolu degistirilemez")
@@ -167,7 +167,7 @@ async def reset_data(request: Request, current_user: dict = Depends(get_current_
         cursor.execute("SELECT password_hash FROM users WHERE id = ?", (current_user["id"],))
         user = cursor.fetchone()
         if not user:
-            raise HTTPException(404, "Kullanici bulunamadi")
+            raise HTTPException(404, "Kullanıcı bulunamadı")
         
         if not verify_password(password, user[0]):
             raise HTTPException(403, "Sifre yanlis")

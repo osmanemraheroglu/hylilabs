@@ -105,7 +105,7 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
 
         return {
             "success": True,
-            "message": "CV basariyla yuklendi ve parse edildi",
+            "message": "CV başarıyla yüklendi ve parse edildi",
             "data": {
                 "candidate_id": candidate_id,
                 "ad_soyad": result.candidate.ad_soyad,
@@ -175,7 +175,7 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
     accounts = get_all_email_accounts(only_active=False, company_id=company_id)
     account = next((a for a in accounts if a["id"] == body.account_id), None)
     if not account:
-        raise HTTPException(status_code=404, detail="Email hesabi bulunamadi")
+        raise HTTPException(status_code=404, detail="Email hesabı bulunamadı")
 
     # Sonuc istatistikleri
     results = {
@@ -326,7 +326,7 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
 
         return {
             "success": True,
-            "message": f"Tarama tamamlandi: {results['success']} yeni aday, {results['duplicate']} mevcut, {results['error']} hata",
+            "message": f"Tarama tamamlandı: {results['success']} yeni aday, {results['duplicate']} mevcut, {results['error']} hata",
             "data": results
         }
 

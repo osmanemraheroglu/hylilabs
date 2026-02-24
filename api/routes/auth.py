@@ -145,4 +145,4 @@ def change_password(request: ChangePasswordRequest, current_user: dict = Depends
         cursor = conn.cursor()
         cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, current_user["id"]))
     
-    return {"success": True, "message": "Sifre basariyla degistirildi"}
+    return {"success": True, "message": "Şifre başarıyla değiştirildi"}

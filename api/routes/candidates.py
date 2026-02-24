@@ -91,7 +91,7 @@ def get_candidate_detail(candidate_id: int, current_user: dict = Depends(get_cur
     try:
         data = get_candidate_full_data(candidate_id=candidate_id, company_id=company_id)
         if not data:
-            raise HTTPException(status_code=404, detail="Aday bulunamadi")
+            raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
         data.pop("password_hash", None)
         return {"success": True, "data": data}
@@ -113,8 +113,8 @@ def update_candidate_info(candidate_id: int, request: UpdateCandidateRequest, cu
     try:
         success = update_candidate(candidate_id=candidate_id, company_id=company_id, **fields)
         if not success:
-            raise HTTPException(status_code=404, detail="Aday bulunamadi veya yetkiniz yok")
-        return {"success": True, "message": "Aday guncellendi"}
+            raise HTTPException(status_code=404, detail="Aday bulunamadı veya yetkiniz yok")
+        return {"success": True, "message": "Aday güncellendi"}
     except HTTPException:
         raise
     except Exception as e:
@@ -132,7 +132,7 @@ def delete_candidate(candidate_id: int, current_user: dict = Depends(get_current
     try:
         from database import get_connection, verify_candidate_ownership
         if not verify_candidate_ownership(candidate_id, company_id):
-            raise HTTPException(status_code=404, detail="Aday bulunamadi")
+            raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
         delete_candidate_cv_file(candidate_id)
 
@@ -163,7 +163,7 @@ def candidate_positions(candidate_id: int, current_user: dict = Depends(get_curr
     try:
         from database import verify_candidate_ownership
         if not verify_candidate_ownership(candidate_id, company_id):
-            raise HTTPException(status_code=404, detail="Aday bulunamadi")
+            raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
         positions = get_candidate_positions(candidate_id)
         return {"success": True, "data": positions}
@@ -448,7 +448,7 @@ def download_cvs(
         candidates = cursor.fetchall()
     
     if not candidates:
-        raise HTTPException(status_code=404, detail="Aday bulunamadi")
+        raise HTTPException(status_code=404, detail="Aday bulunamadı")
     
     # ZIP olustur
     zip_buffer = io.BytesIO()
@@ -479,7 +479,7 @@ def download_cvs(
             file_count += 1
     
     if file_count == 0:
-        raise HTTPException(status_code=404, detail="Indirilecek CV dosyasi bulunamadi")
+        raise HTTPException(status_code=404, detail="İndirilecek CV dosyası bulunamadı")
     
     zip_buffer.seek(0)
     

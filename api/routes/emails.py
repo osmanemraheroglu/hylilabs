@@ -97,7 +97,7 @@ def create_new_email_account(body: dict, current_user: dict = Depends(get_curren
     except Exception as e:
         traceback.print_exc()
         if "UNIQUE constraint" in str(e):
-            raise HTTPException(status_code=409, detail="Bu email adresi zaten kayitli")
+            raise HTTPException(status_code=409, detail="Bu email adresi zaten kayıtlı")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -114,8 +114,8 @@ def update_existing_email_account(
 
         success = update_email_account(account_id, company_id=company_id, **fields)
         if not success:
-            raise HTTPException(status_code=404, detail="Hesap bulunamadi veya degisiklik yok")
-        return {"success": True, "message": "Hesap guncellendi"}
+            raise HTTPException(status_code=404, detail="Hesap bulunamadı veya değişiklik yok")
+        return {"success": True, "message": "Hesap güncellendi"}
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except HTTPException:
@@ -134,7 +134,7 @@ def delete_existing_email_account(
         company_id = current_user["company_id"]
         success = delete_email_account(account_id, company_id=company_id)
         if not success:
-            raise HTTPException(status_code=404, detail="Hesap bulunamadi")
+            raise HTTPException(status_code=404, detail="Hesap bulunamadı")
         return {"success": True, "message": "Hesap silindi"}
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
@@ -159,7 +159,7 @@ def test_email_connection(
         accounts = get_all_email_accounts(only_active=False, company_id=company_id)
         account = next((a for a in accounts if a["id"] == account_id), None)
         if not account:
-            raise HTTPException(status_code=404, detail="Hesap bulunamadi")
+            raise HTTPException(status_code=404, detail="Hesap bulunamadı")
 
         # IMAP baglanti testi
         try:
@@ -170,7 +170,7 @@ def test_email_connection(
             mail.logout()
             return {
                 "success": True,
-                "message": f"Baglanti basarili! {folder_count} klasor bulundu.",
+                "message": f"Bağlantı başarılı! {folder_count} klasör bulundu.",
                 "folders": folder_count
             }
         except imaplib.IMAP4.error as imap_err:
@@ -226,7 +226,7 @@ def get_email_folders(
         accounts = get_all_email_accounts(only_active=False, company_id=company_id)
         account = next((a for a in accounts if a["id"] == account_id), None)
         if not account:
-            raise HTTPException(status_code=404, detail="Hesap bulunamadi")
+            raise HTTPException(status_code=404, detail="Hesap bulunamadı")
 
         # IMAP baglantisi
         try:

@@ -24,7 +24,7 @@ def get_my_company(current_user: dict = Depends(get_current_user)):
     """Kullanicinin kendi firmasini getir"""
     company_id = current_user.get("company_id")
     if not company_id:
-        raise HTTPException(status_code=400, detail="Firma bulunamadi")
+        raise HTTPException(status_code=400, detail="Firma bulunamadı")
 
     try:
         with get_connection() as conn:
@@ -33,7 +33,7 @@ def get_my_company(current_user: dict = Depends(get_current_user)):
             row = cursor.fetchone()
 
             if not row:
-                raise HTTPException(status_code=404, detail="Firma bulunamadi")
+                raise HTTPException(status_code=404, detail="Firma bulunamadı")
 
             return {
                 "success": True,
@@ -82,7 +82,7 @@ def get_company(company_id: int, current_user: dict = Depends(get_current_user))
             row = cursor.fetchone()
 
             if not row:
-                raise HTTPException(status_code=404, detail="Firma bulunamadi")
+                raise HTTPException(status_code=404, detail="Firma bulunamadı")
 
             cols = [d[0] for d in cursor.description]
             company = dict(zip(cols, row))
@@ -203,7 +203,7 @@ HyliLabs Ekibi"""
     except Exception as e:
         traceback.print_exc()
         if "UNIQUE constraint" in str(e):
-            raise HTTPException(status_code=400, detail="Bu slug zaten kullaniliyor")
+            raise HTTPException(status_code=400, detail="Bu slug zaten kullanılıyor")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -229,7 +229,7 @@ def update_company_endpoint(company_id: int, body: dict, current_user: dict = De
         success = update_company(company_id, **update_data)
 
         if not success:
-            raise HTTPException(status_code=404, detail="Firma bulunamadi")
+            raise HTTPException(status_code=404, detail="Firma bulunamadı")
 
         return {"success": True}
     except HTTPException:
@@ -253,7 +253,7 @@ def toggle_company_status(company_id: int, request: Request, current_user: dict 
             row = cursor.fetchone()
 
             if not row:
-                raise HTTPException(status_code=404, detail="Firma bulunamadi")
+                raise HTTPException(status_code=404, detail="Firma bulunamadı")
 
             firma_adi = row[0]
             current_status = row[1]
@@ -309,7 +309,7 @@ def delete_company_endpoint(company_id: int, request: Request, current_user: dic
         success = hard_delete_company(company_id)
 
         if not success:
-            raise HTTPException(status_code=404, detail="Firma bulunamadi")
+            raise HTTPException(status_code=404, detail="Firma bulunamadı")
 
         # Audit log: Firma silme
         log_action(
@@ -324,7 +324,7 @@ def delete_company_endpoint(company_id: int, request: Request, current_user: dic
             ip_address=request.client.host if request.client else None
         )
 
-        return {"success": True, "message": "Firma ve tum verileri kalici olarak silindi"}
+        return {"success": True, "message": "Firma ve tüm verileri kalıcı olarak silindi"}
     except HTTPException:
         raise
     except Exception as e:
@@ -363,7 +363,7 @@ def add_company_user(company_id: int, body: dict, current_user: dict = Depends(g
     except Exception as e:
         traceback.print_exc()
         if "UNIQUE constraint" in str(e):
-            raise HTTPException(status_code=400, detail="Bu email zaten kullaniliyor")
+            raise HTTPException(status_code=400, detail="Bu email zaten kullanılıyor")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -379,7 +379,7 @@ def get_company_stats(company_id: int, current_user: dict = Depends(get_current_
             # Firma kontrol
             cursor.execute("SELECT id FROM companies WHERE id = ?", (company_id,))
             if not cursor.fetchone():
-                raise HTTPException(status_code=404, detail="Firma bulunamadi")
+                raise HTTPException(status_code=404, detail="Firma bulunamadı")
 
             # Toplam aday
             cursor.execute("SELECT COUNT(*) FROM candidates WHERE company_id = ?", (company_id,))

@@ -164,7 +164,7 @@ def create_new_interview(
         return {
             "success": True,
             "id": new_id,
-            "message": "Mulakat olusturuldu"
+            "message": "Mülakat oluşturuldu"
         }
     except HTTPException:
         raise
@@ -204,7 +204,7 @@ def update_existing_interview(
 
         success = update_interview(interview_id, company_id=company_id, **body)
         if not success:
-            raise HTTPException(status_code=404, detail="Mulakat bulunamadi veya degisiklik yok")
+            raise HTTPException(status_code=404, detail="Mülakat bulunamadı veya değişiklik yok")
 
         # Eger mulakat iptal edildiyse ve baska aktif mulakat yoksa, aday durumunu geri al
         if body.get("durum") == "iptal" and candidate_id:
@@ -223,7 +223,7 @@ def update_existing_interview(
                 )
                 conn.commit()
 
-        return {"success": True, "message": "Mulakat guncellendi"}
+        return {"success": True, "message": "Mülakat güncellendi"}
     except HTTPException:
         raise
     except PermissionError as e:
@@ -257,7 +257,7 @@ def delete_existing_interview(
 
         success = delete_interview(interview_id, company_id=company_id)
         if not success:
-            raise HTTPException(status_code=404, detail="Mulakat bulunamadi")
+            raise HTTPException(status_code=404, detail="Mülakat bulunamadı")
 
         # Silme sonrasi: baska aktif mulakat yoksa aday durumunu geri al
         if candidate_id:
@@ -276,7 +276,7 @@ def delete_existing_interview(
                 )
                 conn.commit()
 
-        return {"success": True, "message": "Mulakat silindi"}
+        return {"success": True, "message": "Mülakat silindi"}
     except HTTPException:
         raise
     except PermissionError as e:
@@ -452,7 +452,7 @@ def send_interview_email(
 
             return {
                 "success": True,
-                "message": "Email basariyla gonderildi"
+                "message": "Email başarıyla gönderildi"
             }
     except HTTPException:
         raise
@@ -482,7 +482,7 @@ def confirm_interview(token: str):
                 <head><meta charset="UTF-8"><title>Hata</title></head>
                 <body style="font-family:Arial;text-align:center;padding:50px">
                 <h1 style="color:#dc2626">Gecersiz Onay Linki</h1>
-                <p>Bu link gecersiz veya bulunamadi.</p>
+                <p>Bu link geçersiz veya bulunamadı.</p>
                 </body>
                 </html>
                 """, status_code=404)

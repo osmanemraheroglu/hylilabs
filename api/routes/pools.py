@@ -139,11 +139,13 @@ def create_pool(body: dict, current_user: dict = Depends(get_current_user)):
             aranan_nitelikler=body.get("aranan_nitelikler"),
             is_tanimi=body.get("is_tanimi"),
         )
-        return {"success": True, "id": new_id, "message": "Havuz olusturuldu"}
+        return {"success": True, "id": new_id, "message": "Havuz oluşturuldu"}
     except HTTPException:
         raise
     except Exception as e:
         traceback.print_exc()
+        if "UNIQUE constraint" in str(e):
+            raise HTTPException(status_code=409, detail="Bu isimde havuz zaten mevcut")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -162,8 +164,8 @@ def update_pool(pool_id: int, body: dict, current_user: dict = Depends(get_curre
 
         success = update_department_pool(pool_id, company_id=company_id, **fields)
         if not success:
-            raise HTTPException(status_code=404, detail="Havuz bulunamadi veya degisiklik yok")
-        return {"success": True, "message": "Havuz guncellendi"}
+            raise HTTPException(status_code=404, detail="Havuz bulunamadı veya değişiklik yok")
+        return {"success": True, "message": "Havuz güncellendi"}
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except HTTPException:
@@ -202,7 +204,7 @@ def get_pool_candidates(pool_id: int, current_user: dict = Depends(get_current_u
         # Havuz bilgisini al
         pool = get_department_pool(pool_id)
         if not pool:
-            raise HTTPException(status_code=404, detail="Havuz bulunamadi")
+            raise HTTPException(status_code=404, detail="Havuz bulunamadı")
 
         pool_type = pool.get("pool_type", "department")
         is_system = pool.get("is_system", 0)
@@ -333,7 +335,7 @@ def remove_candidate(
         removed_positions = remove_candidate_from_pool(pool_id, candidate_id)
 
         if not removed_assignments and not removed_positions:
-            raise HTTPException(status_code=404, detail="Aday bu havuzda bulunamadi")
+            raise HTTPException(status_code=404, detail="Aday bu havuzda bulunamadı")
 
         return {"success": True, "message": "Aday havuzdan çıkarıldı"}
     except HTTPException:
@@ -391,7 +393,7 @@ def update_candidates_status(
             raise HTTPException(status_code=400, detail="candidate_ids ve durum zorunludur")
 
         updated = batch_update_pool_status(pool_id, candidate_ids, durum)
-        return {"success": True, "updated": updated, "message": f"{updated} aday guncellendi"}
+        return {"success": True, "updated": updated, "message": f"{updated} aday güncellendi"}
     except HTTPException:
         raise
     except Exception as e:
@@ -412,7 +414,7 @@ def pull_candidates(pool_id: int, current_user: dict = Depends(get_current_user)
         return {
             "success": True,
             "data": result,
-            "message": f"{result.get('transferred', 0)} aday eslesti ve aktarildi"
+            "message": f"{result.get('transferred', 0)} aday eşleşti ve aktarıldı"
         }
     except HTTPException:
         raise
@@ -459,7 +461,7 @@ def get_candidate_detail(pool_id: int, candidate_id: int, current_user: dict = D
             """, (candidate_id, company_id))
             row = cursor.fetchone()
             if not row:
-                raise HTTPException(status_code=404, detail="Aday bulunamadi")
+                raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
             cols = [d[0] for d in cursor.description]
             candidate = dict(zip(cols, row))
@@ -684,7 +686,7 @@ def save_parsed_position(data: dict, current_user: dict = Depends(get_current_us
         pool_id = create_department_pool(**pool_data)
         print(f"[save-parsed] Pool created with id={pool_id}")
         if not pool_id:
-            raise HTTPException(status_code=500, detail="Pozisyon olusturulamadi")
+            raise HTTPException(status_code=500, detail="Pozisyon oluşturulamadı")
 
         # categorize_and_save - v2 tablolarini doldur
         print(f"[save-parsed] Running categorize_and_save...")
@@ -712,7 +714,7 @@ def save_parsed_position(data: dict, current_user: dict = Depends(get_current_us
             "success": True,
             "pool_id": pool_id,
             "transferred": transferred,
-            "message": f"Pozisyon olusturuldu, {transferred} aday eslestirildi"
+            "message": f"Pozisyon oluşturuldu, {transferred} aday eşleştirildi"
         }
     except HTTPException:
         raise
@@ -737,7 +739,7 @@ def update_keywords(pool_id: int, data: dict, current_user: dict = Depends(get_c
 
         pool = get_department_pool(pool_id)
         if not pool:
-            raise HTTPException(status_code=404, detail="Havuz bulunamadi")
+            raise HTTPException(status_code=404, detail="Havuz bulunamadı")
 
         current_keywords = pool.get("keywords") or []
         if isinstance(current_keywords, str):
@@ -890,7 +892,7 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
                     # Eğer kayıt yoksa ekle
                     if cursor.rowcount == 0:
                         cursor.execute("""
-                            INSERT INTO approved_title_mappings (position_id, title, category, is_approved, approved_at)
+                            INSERT OR IGNORE INTO approved_title_mappings (position_id, title, category, is_approved, approved_at)
                             VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
                         """, (pool_id, title, category))
 
@@ -968,13 +970,13 @@ def evaluate_candidate(pool_id: int, candidate_id: int, current_user: dict = Dep
             """, (candidate_id, company_id))
             cand = cursor.fetchone()
             if not cand:
-                raise HTTPException(status_code=404, detail="Aday bulunamadi")
+                raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
             # Pozisyon bilgileri (company_id filtresi ile IDOR koruması)
             cursor.execute("SELECT name, keywords FROM department_pools WHERE id = ? AND company_id = ?", (pool_id, company_id))
             pos = cursor.fetchone()
             if not pos:
-                raise HTTPException(status_code=404, detail="Pozisyon bulunamadi")
+                raise HTTPException(status_code=404, detail="Pozisyon bulunamadı")
             
             # v2 skor bilgileri
             cursor.execute("""
@@ -1071,7 +1073,7 @@ Asagidaki formatta yanit ver (kisa ve oz, her baslik 2-3 madde):
         except anthropic.APITimeoutError:
             raise HTTPException(status_code=504, detail="Claude API zaman asimi")
         except anthropic.APIConnectionError:
-            raise HTTPException(status_code=503, detail="Claude API baglanti hatasi")
+            raise HTTPException(status_code=503, detail="Claude API bağlantı hatası")
         except Exception as api_err:
             raise HTTPException(status_code=500, detail=f"Claude API hatasi: {str(api_err)}")
         
@@ -1116,7 +1118,7 @@ def get_candidate_report(pool_id: int, candidate_id: int, current_user: dict = D
             """, (candidate_id, pool_id))
             ai_row = cursor.fetchone()
             if not ai_row:
-                raise HTTPException(status_code=404, detail="AI degerlendirme bulunamadi. Once degerlendirme yapin.")
+                raise HTTPException(status_code=404, detail="AI değerlendirme bulunamadı. Önce değerlendirme yapın.")
             
             # Aday adı (company_id filtresi ile IDOR koruması)
             cursor.execute("SELECT ad_soyad FROM candidates WHERE id = ? AND company_id = ?", (candidate_id, company_id))
@@ -1207,20 +1209,20 @@ def get_candidate_cv(pool_id: int, candidate_id: int, current_user: dict = Depen
             row = cursor.fetchone()
 
             if not row:
-                raise HTTPException(status_code=404, detail="Aday bulunamadi")
+                raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
             cv_path = row["cv_dosya_yolu"]
             cv_filename = row["cv_dosya_adi"] or "cv.pdf"
 
             if not cv_path:
-                raise HTTPException(status_code=404, detail="CV dosyasi bulunamadi")
+                raise HTTPException(status_code=404, detail="CV dosyası bulunamadı")
 
             # Guvenlik: CV erisim kontrolu (2x3)
             if not validate_cv_access(cv_path, company_id):
                 raise HTTPException(status_code=403, detail="CV erisim yetkisi yok")
 
             if not os.path.exists(cv_path):
-                raise HTTPException(status_code=404, detail="CV dosyasi fiziksel olarak bulunamadi")
+                raise HTTPException(status_code=404, detail="CV dosyası fiziksel olarak bulunamadı")
 
             with open(cv_path, "rb") as f:
                 file_bytes = f.read()

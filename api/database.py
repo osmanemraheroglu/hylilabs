@@ -2248,7 +2248,7 @@ def process_candidate_with_dedup(candidate: Candidate, company_id: int = None,
         candidate_id = create_candidate(candidate, company_id=company_id)
         result["action"] = "created"
         result["candidate_id"] = candidate_id
-        result["message"] = f"Yeni aday olusturuldu: {candidate.ad_soyad}"
+        result["message"] = f"Yeni aday oluşturuldu: {candidate.ad_soyad}"
 
         # Log kaydet
         log_candidate_merge(
@@ -6826,7 +6826,7 @@ def create_default_admin():
             company_id=None,
             rol="admin"
         )
-        logger.info("Admin kullanicisi olusturuldu: admin@talentflow.com / admin123")
+        logger.info("Admin kullanıcısı oluşturuldu: admin@talentflow.com / admin123")
 
 
 def create_demo_company_and_user():
@@ -6854,7 +6854,7 @@ def create_demo_company_and_user():
             company_id=company_id,
             rol="admin"  # Firma admini
         )
-        logger.info("Demo kullanici olusturuldu: demo@demo.com / demo123")
+        logger.info("Demo kullanıcı oluşturuldu: demo@demo.com / demo123")
 
 
 # ============ SIFRE SIFIRLAMA ISLEMLERI ============
