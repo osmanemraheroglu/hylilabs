@@ -32,6 +32,15 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- 6 BUG FIX: Dashboard istatistikleri ve aday filtreleme düzeltildi
+  - FIX 1: Bugün Başvuru → candidates.olusturma_tarihi (applications değil)
+  - FIX 2: Bu Ay İşe Alınan → candidates.durum + guncelleme_tarihi
+  - FIX 3: Toplam Aday → durum != 'ise_alindi' hariç tutuluyor
+  - FIX 4: Pozisyona atama → Genel Havuz'dan otomatik DELETE
+  - FIX 5: Departman filtresi → candidate_positions tablosu kullanıyor
+  - FIX 6: Pozisyon filtresi → candidate_positions tablosu kullanıyor
+- DB Cleanup: 4 aday Genel Havuz'dan silindi (399, 406, 412, 417) - pozisyona atanmış ama Genel Havuz'da kalmışlardı
+- CLAUDE.md: Kural 12 güncellendi (candidate_positions tablosu), Pool Assignments kuralı güncellendi
 - CLAUDE.md: Kritik kural eklendi — Mevcut çalışan sistemleri bozma
   - interviews.py, pools.py, eval_report_v2.py KİLİTLİ
   - Yeni özellik eklerken mevcut fonksiyonlara dokunma kuralı

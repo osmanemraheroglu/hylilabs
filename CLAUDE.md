@@ -82,7 +82,7 @@ Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
 9. Ayarlar Gelismis sekmesi 3 kart yapisi korunmali
 10. CV Indir butonlari filtre-bagimli calismali (Adaylar + Havuzlar)
 11. Reset-data endpoint guvenlik kontrolleri (sifre + SIFIRLA + role) degistirilmemeli
-12. Adaylar filtre sistemi (genel/departman/pozisyon/arsiv) candidate_pool_assignments JOIN mantigi korunmali
+12. Adaylar filtre sistemi: Pozisyon/departman filtreleri candidate_positions tablosunu kullanir. candidate_pool_assignments sadece Genel Havuz ve Arsiv icin
 13. create_candidate() duplicate kontrolu (email + telefon) kaldirilmaz
 14. CV dosyalari firma bazli izole: /data/cvs/{company_id}/. save_cv_file() company_id zorunlu. validate_cv_access() okuma kontrolu zorunlu. Flat yapiya geri donulemez. 2x3 guvenlik kontrolu DEGISTIRILEMEZ
 15. DB CASCADE DELETE aktif: applications, matches, candidate_pool_assignments, position_pools, ai_evaluations -> candidates ON DELETE CASCADE. position_keywords_v2 -> department_pools ON DELETE CASCADE. interviews -> candidates, department_pools, companies ON DELETE CASCADE. ai_analyses, hr_evaluations -> candidates, positions. position_requirements, position_sector_preferences, position_title_mappings -> department_pools. candidate_merge_logs -> candidates. company_settings, email_accounts, email_templates -> companies. PRAGMA foreign_keys=ON her connectionda zorunlu. Tablo yapilari DEGISTIRILEMEZ. CASCADE kaldirilmaz.
@@ -270,7 +270,7 @@ Her aday her zaman şu kurallarla havuzda olmalı:
 - durum='yeni' → Genel Havuzda
 - durum='arsiv' → Arşiv havuzunda
 - durum='mulakat' → Genel Havuzda (değişmez)
-- durum='pozisyona_atandi' → Genel Havuzda
+- durum='pozisyona_atandi' → Genel Havuzda DEGIL (candidate_positions tablosunda, Genel Havuz'dan silinir)
 - durum='ise_alindi' → Hiçbir havuzda değil
 - Hiçbir aday 2 havuzda aynı anda olamaz
 DEGISTIRME

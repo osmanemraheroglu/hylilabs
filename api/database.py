@@ -2513,18 +2513,18 @@ def get_all_candidates(
                 query += " AND havuz = ?"
                 params.append("genel_havuz")
             elif havuz == "departman_havuzu":
-                # Departman altindaki pozisyonlara atanmis adaylar
+                # Departman altindaki pozisyonlara atanmis adaylar (candidate_positions tablosundan)
                 query += """ AND candidates.id IN (
-                    SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
-                    JOIN department_pools pos ON cpa.department_pool_id = pos.id
+                    SELECT cp.candidate_id FROM candidate_positions cp
+                    JOIN department_pools pos ON cp.position_id = pos.id
                     JOIN department_pools dept ON pos.parent_id = dept.id
-                    WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0
+                    WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0 AND cp.status = 'aktif'
                 )"""
             elif havuz == "pozisyon_havuzu":
+                # Pozisyona atanmis adaylar (candidate_positions tablosundan)
                 query += """ AND candidates.id IN (
-                    SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
-                    JOIN department_pools dp ON cpa.department_pool_id = dp.id
-                    WHERE dp.pool_type = 'position'
+                    SELECT cp.candidate_id FROM candidate_positions cp
+                    WHERE cp.status = 'aktif'
                 )"""
             elif havuz == "arsiv":
                 query += """ AND candidates.id IN (
@@ -2583,18 +2583,18 @@ def get_candidates_count(
                 query += " AND havuz = ?"
                 params.append("genel_havuz")
             elif havuz == "departman_havuzu":
-                # Departman altindaki pozisyonlara atanmis adaylar
+                # Departman altindaki pozisyonlara atanmis adaylar (candidate_positions tablosundan)
                 query += """ AND candidates.id IN (
-                    SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
-                    JOIN department_pools pos ON cpa.department_pool_id = pos.id
+                    SELECT cp.candidate_id FROM candidate_positions cp
+                    JOIN department_pools pos ON cp.position_id = pos.id
                     JOIN department_pools dept ON pos.parent_id = dept.id
-                    WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0
+                    WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0 AND cp.status = 'aktif'
                 )"""
             elif havuz == "pozisyon_havuzu":
+                # Pozisyona atanmis adaylar (candidate_positions tablosundan)
                 query += """ AND candidates.id IN (
-                    SELECT cpa.candidate_id FROM candidate_pool_assignments cpa
-                    JOIN department_pools dp ON cpa.department_pool_id = dp.id
-                    WHERE dp.pool_type = 'position'
+                    SELECT cp.candidate_id FROM candidate_positions cp
+                    WHERE cp.status = 'aktif'
                 )"""
             elif havuz == "arsiv":
                 query += """ AND candidates.id IN (
@@ -3934,6 +3934,14 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
                 # Havuz alanını güncelle
                 cursor.execute("UPDATE candidates SET havuz = 'pozisyona_aktarilan', durum = 'pozisyona_atandi' WHERE id = ?", (candidate_id,))
 
+                # Genel Havuz'dan sil (pozisyona aktarıldığı için)
+                cursor.execute("""
+                    DELETE FROM candidate_pool_assignments
+                    WHERE candidate_id = ? AND department_pool_id IN (
+                        SELECT id FROM department_pools WHERE name='Genel Havuz' AND company_id = ?
+                    )
+                """, (candidate_id, company_id))
+
                 # Hangi havuzdan geldi? (istatistik)
                 cursor.execute("""
                     SELECT department_pool_id FROM candidate_pool_assignments
@@ -5242,19 +5250,18 @@ def get_dashboard_stats(company_id: int = None) -> dict:
         cursor = conn.cursor()
         company_filter = "WHERE company_id = ?" if company_id else ""
         company_and_c = "AND c.company_id = ?" if company_id else ""
+        company_and = "AND company_id = ?" if company_id else ""
         params = [company_id] if company_id else []
 
-        # Bugun gelen basvuru
+        # Bugun eklenen aday (CV yukleme dahil)
         cursor.execute(f"""
-            SELECT COUNT(*) FROM applications a
-            JOIN candidates c ON a.candidate_id = c.id
-            WHERE date(a.basvuru_tarihi) = date('now')
-            {company_and_c}
+            SELECT COUNT(*) FROM candidates
+            WHERE date(olusturma_tarihi) = date('now')
+            {company_and}
         """, params)
         bugun_basvuru = cursor.fetchone()[0]
 
         # Degerlendirme bekleyen (yeni adaylar)
-        company_and = "AND company_id = ?" if company_id else ""
         cursor.execute(f"""
             SELECT COUNT(*) FROM candidates
             WHERE durum = 'yeni'
@@ -5273,16 +5280,19 @@ def get_dashboard_stats(company_id: int = None) -> dict:
 
         # Bu ay ise alinan
         cursor.execute(f"""
-            SELECT COUNT(*) FROM hr_evaluations e
-            JOIN candidates c ON e.candidate_id = c.id
-            WHERE e.durum = 'ise_alindi'
-            AND strftime('%Y-%m', e.guncelleme_tarihi) = strftime('%Y-%m', 'now')
-            {company_and_c}
+            SELECT COUNT(*) FROM candidates
+            WHERE durum = 'ise_alindi'
+            AND strftime('%Y-%m', guncelleme_tarihi) = strftime('%Y-%m', 'now')
+            {company_and}
         """, params)
         bu_ay_ise_alinan = cursor.fetchone()[0]
 
-        # Toplam aday
-        cursor.execute(f"SELECT COUNT(*) FROM candidates {company_filter}", params)
+        # Toplam aday (ise alinanlar haric)
+        cursor.execute(f"""
+            SELECT COUNT(*) FROM candidates
+            WHERE durum != 'ise_alindi'
+            {company_and}
+        """, params)
         toplam_aday = cursor.fetchone()[0]
 
         # Toplam basvuru
