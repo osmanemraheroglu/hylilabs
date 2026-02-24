@@ -171,7 +171,7 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
     def make_tags(items, color, bg):
         if not items:
             return '<span style="color:#94a3b8;font-size:0.65rem;">-</span>'
-        return ''.join(f'<span style="background:{bg};color:{color};padding:1px 5px;border-radius:8px;font-size:0.6rem;margin:1px;display:inline-block;">{item[:18]}</span>' for item in items[:5])
+        return ''.join(f'<span style="background:{bg};color:{color};padding:1px 5px;border-radius:8px;font-size:0.6rem;margin:1px;display:inline-block;word-break:break-word;overflow-wrap:break-word;">{item[:18]}</span>' for item in items[:5])
 
     matched_tags = make_tags(critical_matched, "#166534", "#dcfce7")
     missing_tags = make_tags(critical_missing, "#991b1b", "#fef2f2")
@@ -189,19 +189,19 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
     # Knockout banner
     knockout_html = f'''<div style="background:#fef2f2;border:1px solid #ef4444;border-radius:4px;padding:6px 10px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
         <span style="font-size:14px;">⛔</span>
-        <div style="flex:1;overflow:hidden;"><span style="font-size:0.7rem;font-weight:600;color:#991b1b;">KNOCKOUT:</span>
+        <div style="flex:1;word-break:break-word;overflow-wrap:break-word;"><span style="font-size:0.7rem;font-weight:600;color:#991b1b;">KNOCKOUT:</span>
         <span style="font-size:0.65rem;color:#b91c1c;">{knockout_reason[:50]}</span></div>
     </div>''' if knockout else ''
 
-    # Progress bar helper
+    # Progress bar helper - BUG 2 FIX: renkli bar görünür
     def progress_bar(value, max_val, label):
         pct = min(100, (value / max_val) * 100) if max_val else 0
         return f'''<div style="margin:2px 0;">
             <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:#64748b;margin-bottom:1px;">
                 <span>{label}</span><span style="font-family:'JetBrains Mono',monospace;">{value}/{max_val}</span>
             </div>
-            <div style="background:#e2e8f0;border-radius:2px;height:5px;overflow:hidden;">
-                <div style="background:{main_color};width:{pct}%;height:100%;border-radius:2px;"></div>
+            <div style="background:#e8e8ec;border-radius:3px;height:5px;">
+                <div style="background:{main_color};width:{pct}%;height:5px;border-radius:3px;"></div>
             </div>
         </div>'''
 
@@ -216,38 +216,40 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
 @media print {{ body {{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }} }}
 * {{ box-sizing: border-box; margin: 0; padding: 0; }}
 body {{ font-family: 'DM Sans', sans-serif; max-width: 800px; margin: 0 auto; padding: 10px; color: #1e293b; font-size: 0.7rem; line-height: 1.3; background: #fff; }}
+.rpt {{ overflow: hidden; }}
 .header {{ display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 6px; color: #fff; margin-bottom: 8px; }}
 .avatar {{ width: 36px; height: 36px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }}
-.hinfo {{ flex: 1; min-width: 0; overflow: hidden; }}
-.hinfo h1 {{ font-size: 0.85rem; font-weight: 600; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-.hinfo p {{ font-size: 0.65rem; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+.hinfo {{ flex: 1; min-width: 0; word-break: break-word; overflow-wrap: break-word; }}
+.hinfo h1 {{ font-size: 0.85rem; font-weight: 600; margin-bottom: 1px; word-break: break-word; overflow-wrap: break-word; }}
+.hinfo p {{ font-size: 0.65rem; opacity: 0.85; word-break: break-word; overflow-wrap: break-word; }}
 .hdate {{ text-align: right; font-size: 0.6rem; opacity: 0.75; flex-shrink: 0; }}
 .top {{ display: flex; gap: 14px; margin-bottom: 8px; }}
-.radar-box {{ width: 140px; flex-shrink: 0; background: #f8fafc; border-radius: 6px; padding: 6px; text-align: center; }}
+.radar-box {{ width: 140px; flex-shrink: 0; background: #f8fafc; border-radius: 6px; padding: 6px; text-align: center; overflow: hidden; }}
 .radar-box svg {{ display: block; margin: 0 auto; }}
 .total-display {{ margin-top: 4px; }}
 .total-num {{ font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: {main_color}; line-height: 1; }}
 .total-label {{ font-size: 0.55rem; color: #64748b; }}
 .verdict-badge {{ display: inline-block; background: {verdict_bg}; color: {main_color}; padding: 2px 8px; border-radius: 10px; font-size: 0.6rem; font-weight: 600; margin-top: 3px; }}
-.scores-box {{ flex: 1; background: #f8fafc; border-radius: 6px; padding: 8px; overflow: hidden; }}
+.scores-box {{ flex: 1; background: #f8fafc; border-radius: 6px; padding: 8px; }}
 .scores-title {{ font-size: 0.6rem; font-weight: 600; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }}
 .verdicts {{ display: flex; gap: 6px; margin-bottom: 8px; }}
-.vcard {{ flex: 1; background: #f8fafc; border-radius: 6px; padding: 6px 8px; text-align: center; overflow: hidden; }}
+.vcard {{ flex: 1; background: #f8fafc; border-radius: 6px; padding: 6px 8px; text-align: center; word-break: break-word; overflow-wrap: break-word; }}
 .vcard .lbl {{ font-size: 0.55rem; color: #94a3b8; margin-bottom: 2px; }}
-.vcard .val {{ font-size: 0.7rem; font-weight: 600; color: #1e293b; word-break: break-word; }}
+.vcard .val {{ font-size: 0.7rem; font-weight: 600; color: #1e293b; word-break: break-word; overflow-wrap: break-word; }}
 .two-col {{ display: flex; gap: 8px; margin-bottom: 8px; }}
-.two-col > div {{ flex: 1; background: #f8fafc; border-radius: 6px; padding: 8px; overflow: hidden; }}
+.two-col > div {{ flex: 1; background: #f8fafc; border-radius: 6px; padding: 8px; word-break: break-word; overflow-wrap: break-word; }}
 .card-title {{ font-size: 0.6rem; font-weight: 600; color: #64748b; margin-bottom: 4px; }}
-.tags {{ display: flex; flex-wrap: wrap; gap: 2px; overflow: hidden; }}
-.ai-box {{ background: #f8fafc; border-radius: 6px; padding: 8px; margin-bottom: 6px; overflow: hidden; }}
+.tags {{ display: flex; flex-wrap: wrap; gap: 2px; word-break: break-word; overflow-wrap: break-word; }}
+.ai-box {{ background: #f8fafc; border-radius: 6px; padding: 8px; margin-bottom: 6px; word-break: break-word; overflow-wrap: break-word; }}
 .ai-title {{ font-size: 0.7rem; font-weight: 600; color: #1e3a5f; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }}
 .ai-text {{ font-size: 0.65rem; color: #475569; line-height: 1.4; word-break: break-word; overflow-wrap: break-word; }}
-.alt-row {{ display: flex; align-items: center; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e2e8f0; }}
+.alt-row {{ display: flex; align-items: center; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e2e8f0; word-break: break-word; overflow-wrap: break-word; }}
 .alt-row .lbl {{ font-size: 0.6rem; color: #64748b; flex-shrink: 0; }}
 .footer {{ text-align: center; padding-top: 6px; border-top: 1px solid #e2e8f0; font-size: 0.55rem; color: #94a3b8; }}
 </style>
 </head>
 <body>
+<div class="rpt">
 <div class="header">
     <div class="avatar">{initials}</div>
     <div class="hinfo">
@@ -345,6 +347,7 @@ body {{ font-family: 'DM Sans', sans-serif; max-width: 800px; margin: 0 auto; pa
 
 <div class="footer">
     HyliLabs HR — Otomatik Değerlendirme Raporu — {eval_date}
+</div>
 </div>
 </body>
 </html>'''

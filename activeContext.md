@@ -32,6 +32,10 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- eval_report_v2.py: 2 son bug düzeltildi (v4 - 361 satır)
+  - BUG 1: overflow:hidden metin container'larından kaldırıldı, sadece .rpt ve .radar-box'ta
+  - BUG 2: Progress bar görünür - background:#e8e8ec;border-radius:3px;height:5px;
+  - Tüm metin alanlarında: word-break:break-word; overflow-wrap:break-word;
 - eval_report_v2.py: TAMAMEN yeniden yazıldı (v3 - 358 satır)
   - Layout: .top flex row - radar (140px) + progress bar'lar yan yana
   - CSS: max-width 800px, font-size 0.65-0.7rem, padding max 10px
