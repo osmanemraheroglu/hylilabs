@@ -32,6 +32,9 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- eval_report_v2.py: 2 kozmetik bug düzeltildi (v6 - 360 satır)
+  - BUG 1: Progress bar tek satır flex layout (label + bar + skor yan yana)
+  - BUG 2: Radar SVG "Tek" → "Teknik" tam yazıldı, x="135" text-anchor="end"
 - eval_report_v2.py: Metin kesme sorunu düzeltildi (v5 - 361 satır)
   - Python slice kaldırıldı: item[:55] → {item}, item[:18] → {item}
   - Güçlü yönler ve eksiklikler listelerinde tam metin gösteriliyor

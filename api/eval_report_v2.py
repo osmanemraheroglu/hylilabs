@@ -193,16 +193,15 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
         <span style="font-size:0.65rem;color:#b91c1c;">{knockout_reason[:50]}</span></div>
     </div>''' if knockout else ''
 
-    # Progress bar helper
+    # Progress bar helper - tek satır flex layout
     def progress_bar(value, max_val, label):
         pct = min(100, (value / max_val) * 100) if max_val else 0
-        return f'''<div style="margin:2px 0;">
-            <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:#64748b;margin-bottom:1px;">
-                <span>{label}</span><span style="font-family:'JetBrains Mono',monospace;">{value}/{max_val}</span>
+        return f'''<div style="display:flex;align-items:center;gap:6px;margin:3px 0;">
+            <span style="width:52px;font-size:0.68rem;color:#64748b;flex-shrink:0;">{label}</span>
+            <div style="flex:1;height:5px;background:#e8e8ec;border-radius:3px;overflow:hidden;">
+                <div style="height:100%;width:{pct}%;background:{main_color};border-radius:3px;"></div>
             </div>
-            <div style="background:#e8e8ec;border-radius:3px;height:5px;">
-                <div style="background:{main_color};width:{pct}%;height:5px;border-radius:3px;"></div>
-            </div>
+            <span style="width:38px;text-align:right;font-size:0.7rem;font-family:'JetBrains Mono',monospace;color:#1e293b;flex-shrink:0;">{value}/{max_val}</span>
         </div>'''
 
     html = f'''<!DOCTYPE html>
@@ -278,10 +277,10 @@ body {{ font-family: 'DM Sans', sans-serif; max-width: 800px; margin: 0 auto; pa
             <line x1="70" y1="70" x2="17.7" y2="51.8" stroke="#e2e8f0" stroke-width="0.5"/>
             <polygon points="{radar_points}" fill="{main_color}22" stroke="{main_color}" stroke-width="2"/>
             <text x="70" y="10" text-anchor="middle" font-size="8" fill="#64748b">Poz</text>
-            <text x="130" y="54" text-anchor="start" font-size="8" fill="#64748b">Tek</text>
+            <text x="135" y="54" text-anchor="end" font-size="8" fill="#64748b">Teknik</text>
             <text x="108" y="128" text-anchor="middle" font-size="8" fill="#64748b">Den</text>
             <text x="32" y="128" text-anchor="middle" font-size="8" fill="#64748b">Eği</text>
-            <text x="10" y="54" text-anchor="end" font-size="8" fill="#64748b">Ele</text>
+            <text x="5" y="54" text-anchor="start" font-size="8" fill="#64748b">Ele</text>
         </svg>
         <div class="total-display">
             <div class="total-num">{total}</div>
@@ -291,11 +290,11 @@ body {{ font-family: 'DM Sans', sans-serif; max-width: 800px; margin: 0 auto; pa
     </div>
     <div class="scores-box">
         <div class="scores-title">Puan Dağılımı</div>
-        {progress_bar(pos_score, 33, 'Pozisyon Uyumu')}
-        {progress_bar(technical_score, 37, 'Teknik Yetkinlik')}
+        {progress_bar(pos_score, 33, 'Pozisyon')}
+        {progress_bar(technical_score, 37, 'Teknik')}
         {progress_bar(experience_score, 10, 'Deneyim')}
         {progress_bar(education_score, 10, 'Eğitim')}
-        {progress_bar(elimination_score, 10, 'Eleme Kriterleri')}
+        {progress_bar(elimination_score, 10, 'Eleme')}
     </div>
 </div>
 
