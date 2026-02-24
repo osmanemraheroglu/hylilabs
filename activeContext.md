@@ -31,6 +31,14 @@ Son guncelleme: 24.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 25.02.2026
+- FIX 7: Application kaydı oluşturma düzeltildi
+  - cv.py upload endpoint: create_application() eklendi (kaynak: cv_yukleme)
+  - cv.py scan-emails endpoint: create_application() eklendi (kaynak: email)
+  - Duplicate kontrolü her iki endpoint'te de eklendi
+  - database.py get_recent_applications(): candidates tablosundan çekiyor (applications değil)
+  - Dashboard "Son Başvurular" widget'ı artık tüm yeni adayları gösteriyor
+
 ### 24.02.2026
 - 6 BUG FIX: Dashboard istatistikleri ve aday filtreleme düzeltildi
   - FIX 1: Bugün Başvuru → candidates.olusturma_tarihi (applications değil)

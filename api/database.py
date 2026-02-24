@@ -5324,26 +5324,24 @@ def get_dashboard_stats(company_id: int = None) -> dict:
 
 
 def get_recent_applications(company_id: int = None, limit: int = 10) -> list[dict]:
-    """Son basvurular"""
+    """Son eklenen adaylar (tüm kaynakları kapsar)"""
     with get_connection() as conn:
         cursor = conn.cursor()
-        company_and = "AND c.company_id = ?" if company_id else ""
+        company_filter = "WHERE c.company_id = ?" if company_id else ""
         params = [company_id] if company_id else []
         params.append(limit)
 
         cursor.execute(f"""
             SELECT
-                a.id,
-                a.basvuru_tarihi,
-                a.kaynak,
+                c.id,
+                c.olusturma_tarihi as basvuru_tarihi,
+                COALESCE(c.havuz, 'bilinmiyor') as kaynak,
                 c.ad_soyad,
                 c.email,
-                p.baslik as pozisyon
-            FROM applications a
-            JOIN candidates c ON a.candidate_id = c.id
-            LEFT JOIN positions p ON a.position_id = p.id
-            WHERE 1=1 {company_and}
-            ORDER BY a.basvuru_tarihi DESC
+                '' as pozisyon
+            FROM candidates c
+            {company_filter}
+            ORDER BY c.olusturma_tarihi DESC
             LIMIT ?
         """, params)
 

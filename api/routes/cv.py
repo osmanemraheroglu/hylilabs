@@ -4,15 +4,21 @@ from typing import Optional
 from datetime import datetime
 import json
 import sys
+import logging
+
 sys.path.append("/var/www/hylilabs/api")
 from database import (
     create_candidate,
+    create_application,
     get_email_collection_history,
     get_email_collection_stats,
     get_connection
 )
+from models import Application
 from core.cv_parser import parse_cv, save_cv_file, get_cv_storage_stats
 from routes.auth import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/cv", tags=["cv"])
 
@@ -79,7 +85,7 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
 
         # Adayi veritabanina kaydet
         candidate_result = create_candidate(result.candidate, company_id)
-        
+
         # Duplicate kontrolu
         if isinstance(candidate_result, dict) and candidate_result.get("duplicate"):
             return {
@@ -87,8 +93,15 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
                 "message": candidate_result["message"],
                 "data": {"existing_id": candidate_result["candidate_id"]}
             }
-        
+
         candidate_id = candidate_result
+
+        # Application kaydı oluştur (sadece yeni aday için)
+        try:
+            app = Application(candidate_id=candidate_id, kaynak="cv_yukleme")
+            create_application(app, company_id)
+        except Exception as e:
+            logger.warning(f"Application kaydi olusturulamadi: {e}")
 
         return {
             "success": True,
@@ -150,20 +163,20 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
         increment_email_account_cv_count, verify_email_account_ownership
     )
     from models import EmailLog
-    
+
     company_id = current_user["company_id"]
     user_id = current_user["id"]
-    
+
     # Hesap kontrolu
     if not verify_email_account_ownership(body.account_id, company_id):
         raise HTTPException(status_code=403, detail="Bu hesaba erisim yetkiniz yok")
-    
+
     # Hesap bilgilerini al
     accounts = get_all_email_accounts(only_active=False, company_id=company_id)
     account = next((a for a in accounts if a["id"] == body.account_id), None)
     if not account:
         raise HTTPException(status_code=404, detail="Email hesabi bulunamadi")
-    
+
     # Sonuc istatistikleri
     results = {
         "processed": 0,
@@ -174,23 +187,23 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
         "candidates": [],
         "errors": []
     }
-    
+
     collection_start = datetime.now()
-    
+
     try:
         # EmailReader olustur ve baglan
         reader = EmailReader.from_account(account)
         if not reader.connect():
             raise HTTPException(status_code=500, detail="Email sunucusuna baglanilamadi")
-        
+
         # Emailleri tara
         for email_msg in reader.fetch_emails_with_attachments(
-            folder=body.folder, 
-            unseen_only=body.unseen_only, 
+            folder=body.folder,
+            unseen_only=body.unseen_only,
             limit=body.limit
         ):
             results["processed"] += 1
-            
+
             # Email logla
             email_log = EmailLog(
                 email_id=email_msg.message_id,
@@ -200,19 +213,19 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
                 ek_sayisi=len(email_msg.attachments)
             )
             log_email(email_log)
-            
+
             # Daha once islendi mi?
             if is_email_processed(email_msg.message_id):
                 continue
-            
+
             # Ekleri isle
             for attachment in email_msg.attachments:
                 results["cv_found"] += 1
-                
+
                 try:
                     # CV parse et
                     result = parse_cv(attachment.content, attachment.filename, str(user_id))
-                    
+
                     if not result.basarili or not result.candidate:
                         results["error"] += 1
                         results["errors"].append({
@@ -220,51 +233,69 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
                             "error": result.hata_mesaji or "Parse hatasi"
                         })
                         continue
-                    
+
                     candidate = result.candidate
-                    
-                    # Duplicate kontrolu
+
+                    # Duplicate kontrolu (email/telefon ile)
                     existing = find_duplicate_candidate(candidate.email, candidate.telefon)
                     if existing:
                         results["duplicate"] += 1
                         continue
-                    
+
                     # CV dosyasini kaydet (firma bazli klasore)
                     cv_path = save_cv_file(attachment.content, attachment.filename, company_id, candidate.email)
                     if cv_path:
                         candidate.cv_dosya_yolu = cv_path
                         candidate.cv_dosya_adi = attachment.filename
-                    
+
                     # Adayi kaydet
-                    candidate_id = create_candidate(candidate, company_id)
-                    
+                    candidate_result = create_candidate(candidate, company_id)
+
+                    # Duplicate kontrolü (create_candidate dict döndü mü?)
+                    if isinstance(candidate_result, dict) and candidate_result.get("duplicate"):
+                        results["duplicate"] += 1
+                        continue
+
+                    candidate_id = candidate_result
+
+                    # Application kaydı oluştur (email tarama için)
+                    try:
+                        app = Application(
+                            candidate_id=candidate_id,
+                            kaynak="email",
+                            email_id=email_msg.message_id
+                        )
+                        create_application(app, company_id)
+                    except Exception as e:
+                        logger.warning(f"Application kaydi olusturulamadi: {e}")
+
                     results["success"] += 1
                     results["candidates"].append({
                         "id": candidate_id,
                         "ad_soyad": candidate.ad_soyad,
                         "email": candidate.email
                     })
-                    
+
                 except Exception as e:
                     results["error"] += 1
                     results["errors"].append({
                         "file": attachment.filename,
                         "error": str(e)
                     })
-            
+
             # Email'i islendi olarak isaretle
             mark_email_processed(email_msg.message_id)
-        
+
         reader.disconnect()
-        
+
         # Hesabin CV sayacini guncelle
         if results["success"] > 0:
             increment_email_account_cv_count(body.account_id, results["success"])
-        
+
         # Toplama islemini logla
         collection_end = datetime.now()
         durum = "tamamlandi" if results["error"] == 0 else ("kismi_basarili" if results["success"] > 0 else "basarisiz")
-        
+
         try:
             log_email_collection(
                 account_id=body.account_id,
@@ -284,7 +315,7 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
             )
         except Exception:
             pass  # Loglama hatasi ana islemi etkilemesin
-        
+
         # AUTO-MATCH: Yeni CV'ler parse edildikten sonra eslestirmeyi tetikle
         if results["success"] > 0:
             try:
@@ -298,7 +329,7 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
             "message": f"Tarama tamamlandi: {results['success']} yeni aday, {results['duplicate']} mevcut, {results['error']} hata",
             "data": results
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
