@@ -1351,12 +1351,14 @@ def match_position_to_candidates(position_id: int, company_id: int) -> dict:
     candidates_to_scan = []
 
     # 1. Genel Havuz'daki adaylar (candidates.havuz alanından)
+    # NOT: ise_alindi ve arsiv durumundaki adaylar hariç tutulur (korumalı durumlar)
     from database import get_connection
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT id FROM candidates
             WHERE company_id = ? AND havuz = 'genel_havuz' AND is_anonymized = 0
+              AND durum NOT IN ('ise_alindi', 'arsiv')
         """, (company_id,))
         for row in cursor.fetchall():
             candidates_to_scan.append({
@@ -1365,6 +1367,7 @@ def match_position_to_candidates(position_id: int, company_id: int) -> dict:
             })
 
     # 2. Diğer pozisyonlardaki adaylar (5'e ulaşmamış olanlar)
+    # NOT: ise_alindi ve arsiv durumundaki adaylar hariç tutulur (korumalı durumlar)
     from database import get_connection
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -1373,6 +1376,7 @@ def match_position_to_candidates(position_id: int, company_id: int) -> dict:
             FROM candidate_positions cp
             JOIN candidates c ON cp.candidate_id = c.id
             WHERE c.company_id = ? AND cp.position_id != ?
+              AND c.durum NOT IN ('ise_alindi', 'arsiv')
         """, (company_id, position_id))
         for row in cursor.fetchall():
             cid = row[0]

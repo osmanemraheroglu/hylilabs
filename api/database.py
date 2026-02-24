@@ -3757,11 +3757,13 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
         cursor = conn.cursor()
 
         # TÜM firma adaylarını al (hangi havuzda olursa olsun)
+        # NOT: ise_alindi ve arsiv durumundaki adaylar hariç tutulur (korumalı durumlar)
         cursor.execute("""
-            SELECT DISTINCT c.id, c.ad_soyad, c.cv_raw_text, c.teknik_beceriler, c.mevcut_pozisyon, 
+            SELECT DISTINCT c.id, c.ad_soyad, c.cv_raw_text, c.teknik_beceriler, c.mevcut_pozisyon,
                    c.deneyim_detay, c.toplam_deneyim_yil, c.egitim, c.lokasyon, c.mevcut_sirket
             FROM candidates c
             WHERE c.company_id = ?
+              AND c.durum NOT IN ('ise_alindi', 'arsiv')
         """, (company_id,))
 
         candidates = cursor.fetchall()
@@ -3893,9 +3895,14 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
             # YENİ SİSTEM: candidate_positions tablosuna ekle
             try:
                 # Foreign key kontrolü: candidate_id ve position_id geçerli mi?
-                cursor.execute("SELECT 1 FROM candidates WHERE id = ?", (candidate_id,))
-                if not cursor.fetchone():
+                # AYNI ZAMANDA durum kontrolü — ise_alindi/arsiv adaylar atlamalı
+                cursor.execute("SELECT durum FROM candidates WHERE id = ?", (candidate_id,))
+                cand_row = cursor.fetchone()
+                if not cand_row:
                     logger.warning(f"candidate_id={candidate_id} bulunamadı, atlanıyor")
+                    continue
+                if cand_row['durum'] in ('ise_alindi', 'arsiv'):
+                    logger.info(f"candidate_id={candidate_id} korumalı durumda ({cand_row['durum']}), atlanıyor")
                     continue
                 
                 cursor.execute("SELECT 1 FROM department_pools WHERE id = ? AND pool_type = 'position'", (position_pool_id,))
@@ -3931,8 +3938,12 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
 
             if inserted:
                 stats['transferred'] += 1
-                # Havuz alanını güncelle
-                cursor.execute("UPDATE candidates SET havuz = 'pozisyona_aktarilan', durum = 'pozisyona_atandi' WHERE id = ?", (candidate_id,))
+                # Havuz alanını güncelle (korumalı durumları değiştirme)
+                cursor.execute("""
+                    UPDATE candidates
+                    SET havuz = 'pozisyona_aktarilan', durum = 'pozisyona_atandi'
+                    WHERE id = ? AND durum NOT IN ('ise_alindi', 'arsiv')
+                """, (candidate_id,))
 
                 # Genel Havuz'dan sil (pozisyona aktarıldığı için)
                 cursor.execute("""
@@ -8515,6 +8526,16 @@ def add_candidate_to_position(candidate_id: int, position_id: int, match_score: 
     """
     with get_connection() as conn:
         cursor = conn.cursor()
+
+        # Korumalı durum kontrolü — ise_alindi/arsiv adaylar eklenemez
+        cursor.execute("SELECT durum FROM candidates WHERE id = ?", (candidate_id,))
+        cand_row = cursor.fetchone()
+        if not cand_row:
+            return False
+        if cand_row['durum'] in ('ise_alindi', 'arsiv'):
+            logger.info(f"add_candidate_to_position: candidate_id={candidate_id} korumalı durumda ({cand_row['durum']}), eklenmedi")
+            return False
+
         try:
             cursor.execute("""
                 INSERT INTO candidate_positions (candidate_id, position_id, match_score)
