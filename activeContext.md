@@ -32,6 +32,13 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- eval_report_v2.py: Kompakt yan yana layout (v9 - 351 satır)
+  - Radar ve progress bar'lar tekrar YAN YANA (flex-direction: row)
+  - Radar: 120px genişlik, SVG viewBox 200x200, display 120x120
+  - Progress bar: label 55px, score 30px - kompakt
+  - Skor ve verdict radar altında (radar-box içinde)
+  - .rpt container'da overflow:hidden KALDIRILDI
+  - 1 A4 sayfaya sığan kompakt layout
 - eval_report_v2.py: Radar ve bar ALT ALTA layout (v8 - 358 satır)
   - .top: flex-direction:column - radar üstte, bar'lar altta
   - .scores-box: width:100% - full genişlik
