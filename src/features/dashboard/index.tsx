@@ -268,8 +268,8 @@ export function Dashboard() {
           {/* Son Aktiviteler */}
           <Card>
             <CardHeader>
-              <CardTitle>Son Email Başvuruları</CardTitle>
-              <CardDescription>Email ile gelen son başvurular</CardDescription>
+              <CardTitle>Son Eklenen Adaylar</CardTitle>
+              <CardDescription>Son eklenen adaylar</CardDescription>
             </CardHeader>
             <CardContent>
               <div className='space-y-4 max-h-[300px] overflow-y-auto'>

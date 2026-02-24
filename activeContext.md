@@ -32,6 +32,9 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 25.02.2026
+- Dashboard widget başlığı güncellendi:
+  - "Son Email Başvuruları" → "Son Eklenen Adaylar"
+  - "Email ile gelen son başvurular" → "Son eklenen adaylar"
 - FIX 7: Application kaydı oluşturma düzeltildi
   - cv.py upload endpoint: create_application() eklendi (kaynak: cv_yukleme)
   - cv.py scan-emails endpoint: create_application() eklendi (kaynak: email)
