@@ -167,20 +167,20 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
     if len(genel_text) > 320:
         genel_text = genel_text[:320] + '...'
 
-    # Yetkinlik tag'leri
+    # Yetkinlik tag'leri - slice kaldırıldı, tam metin
     def make_tags(items, color, bg):
         if not items:
             return '<span style="color:#94a3b8;font-size:0.65rem;">-</span>'
-        return ''.join(f'<span style="background:{bg};color:{color};padding:1px 5px;border-radius:8px;font-size:0.6rem;margin:1px;display:inline-block;word-break:break-word;overflow-wrap:break-word;">{item[:18]}</span>' for item in items[:5])
+        return ''.join(f'<span style="background:{bg};color:{color};padding:1px 5px;border-radius:8px;font-size:0.6rem;margin:1px;display:inline-block;word-break:break-word;overflow-wrap:break-word;">{item}</span>' for item in items[:5])
 
     matched_tags = make_tags(critical_matched, "#166534", "#dcfce7")
     missing_tags = make_tags(critical_missing, "#991b1b", "#fef2f2")
 
-    # Güçlü/Eksik listeler
+    # Güçlü/Eksik listeler - slice kaldırıldı, tam metin
     def make_list(items, max_items=3):
         if not items:
             return '<div style="color:#94a3b8;font-size:0.65rem;">Belirtilmedi</div>'
-        return ''.join(f'<div style="font-size:0.65rem;margin:1px 0;line-height:1.25;word-break:break-word;overflow-wrap:break-word;">• {item[:55]}</div>' for item in items[:max_items])
+        return ''.join(f'<div style="font-size:0.65rem;margin:1px 0;line-height:1.25;word-break:break-word;overflow-wrap:break-word;">• {item}</div>' for item in items[:max_items])
 
     guclu_list = make_list(ai_sections['guclu'])
     eksik_list = make_list(ai_sections['eksik'])
@@ -193,7 +193,7 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
         <span style="font-size:0.65rem;color:#b91c1c;">{knockout_reason[:50]}</span></div>
     </div>''' if knockout else ''
 
-    # Progress bar helper - BUG 2 FIX: renkli bar görünür
+    # Progress bar helper
     def progress_bar(value, max_val, label):
         pct = min(100, (value / max_val) * 100) if max_val else 0
         return f'''<div style="margin:2px 0;">

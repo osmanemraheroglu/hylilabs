@@ -32,6 +32,9 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- eval_report_v2.py: Metin kesme sorunu düzeltildi (v5 - 361 satır)
+  - Python slice kaldırıldı: item[:55] → {item}, item[:18] → {item}
+  - Güçlü yönler ve eksiklikler listelerinde tam metin gösteriliyor
 - eval_report_v2.py: 2 son bug düzeltildi (v4 - 361 satır)
   - BUG 1: overflow:hidden metin container'larından kaldırıldı, sadece .rpt ve .radar-box'ta
   - BUG 2: Progress bar görünür - background:#e8e8ec;border-radius:3px;height:5px;
