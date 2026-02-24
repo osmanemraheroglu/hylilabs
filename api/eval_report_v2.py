@@ -270,11 +270,11 @@ body {{ font-family: 'DM Sans', sans-serif; max-width: 800px; margin: 0 auto; pa
             <line x1="100" y1="100" x2="53.0" y2="164.7" stroke="#e2e8f0" stroke-width="0.5"/>
             <line x1="100" y1="100" x2="23.9" y2="55.3" stroke="#e2e8f0" stroke-width="0.5"/>
             <polygon points="{radar_points}" fill="{main_color}22" stroke="{main_color}" stroke-width="2"/>
-            <text x="100" y="12" text-anchor="middle" font-size="11" fill="#64748b">Poz</text>
-            <text x="188" y="60" text-anchor="end" font-size="11" fill="#64748b">Tek</text>
-            <text x="155" y="180" text-anchor="middle" font-size="11" fill="#64748b">Den</text>
-            <text x="45" y="180" text-anchor="middle" font-size="11" fill="#64748b">Eği</text>
-            <text x="12" y="60" text-anchor="start" font-size="11" fill="#64748b">Ele</text>
+            <text x="100" y="8" text-anchor="middle" font-size="7" fill="#64748b">Pozisyon</text>
+            <text x="192" y="52" text-anchor="end" font-size="7" fill="#64748b">Teknik</text>
+            <text x="155" y="185" text-anchor="middle" font-size="7" fill="#64748b">Deneyim</text>
+            <text x="45" y="185" text-anchor="middle" font-size="7" fill="#64748b">Eğitim</text>
+            <text x="8" y="52" text-anchor="start" font-size="7" fill="#64748b">Eleme</text>
         </svg>
         <div style="font-size:1.2rem;font-weight:700;color:{main_color};line-height:1;">{total}</div>
         <div style="font-size:0.6rem;color:#999;">/ 100 Puan</div>

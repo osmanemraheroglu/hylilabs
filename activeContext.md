@@ -32,6 +32,10 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- eval_report_v2.py: Radar SVG tam label'lar (v10 - 351 satır)
+  - "Poz"→"Pozisyon", "Tek"→"Teknik", "Den"→"Deneyim", "Eği"→"Eğitim", "Ele"→"Eleme"
+  - font-size="7" küçültüldü (sığması için)
+  - Label pozisyonları radar dışına taşındı (y=8, y=52, y=185)
 - eval_report_v2.py: Kompakt yan yana layout (v9 - 351 satır)
   - Radar ve progress bar'lar tekrar YAN YANA (flex-direction: row)
   - Radar: 120px genişlik, SVG viewBox 200x200, display 120x120
