@@ -53,13 +53,14 @@ def dropdown_data(current_user: dict = Depends(get_current_user)):
             candidates = [dict(row) for row in cursor.fetchall()]
 
             # Pozisyon bazlı aday eşleştirmesi (pozisyon seçilince filtreleme için)
+            # NOT: Pozisyon adayları candidate_positions tablosunda tutuluyor
             position_candidates = {}
             for pos in positions:
                 cursor.execute(
                     """SELECT c.id, c.ad_soyad, c.email
                        FROM candidates c
-                       JOIN candidate_pool_assignments cpa ON cpa.candidate_id = c.id
-                       WHERE cpa.department_pool_id = ? AND c.company_id = ?
+                       JOIN candidate_positions cp ON cp.candidate_id = c.id
+                       WHERE cp.position_id = ? AND c.company_id = ? AND cp.status = 'aktif'
                        ORDER BY c.ad_soyad""",
                     (pos["id"], company_id)
                 )

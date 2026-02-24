@@ -32,6 +32,11 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- interviews.py: Mülakat formu aday dropdown düzeltildi (551 satır)
+  - dropdown-data endpoint yanlış tablo sorguluyordu
+  - candidate_pool_assignments → candidate_positions tablosuna düzeltildi
+  - cp.status = 'aktif' filtresi eklendi
+  - Pozisyon seçilince adaylar artık görünüyor
 - eval_report_v2.py: Radar SVG tam label'lar (v10 - 351 satır)
   - "Poz"→"Pozisyon", "Tek"→"Teknik", "Den"→"Deneyim", "Eği"→"Eğitim", "Ele"→"Eleme"
   - font-size="7" küçültüldü (sığması için)
