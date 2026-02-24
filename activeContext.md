@@ -32,6 +32,14 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- eval_report_v2.py: TAMAMEN yeniden yazıldı (v3 - 358 satır)
+  - Layout: .top flex row - radar (140px) + progress bar'lar yan yana
+  - CSS: max-width 800px, font-size 0.65-0.7rem, padding max 10px
+  - Progress bar height: 5px
+  - Tüm container: overflow:hidden; word-break:break-word;
+  - Kaldırılan: "Puan Dağılımı" ayrı kart, "Detaylar" kartı
+  - Parser: 'zayıf' → eksik, 'öneri' → alternatif eklendi
+  - Genel değerlendirme max 320 karakter
 - eval_report_v2.py: 3 yeni bug düzeltildi (v2)
   - Bug 1: ** markdown temizleme - line.replace('**', '').strip()
   - Bug 2: Header tespiti 3 koşul - liste öğesi değil + <50 karakter + : ile biter
