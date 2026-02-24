@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 24.02.2026
+Son guncelleme: 25.02.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -32,6 +32,16 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 25.02.2026
+- Türkçe Hata Mesajları Fix (59 mesaj, 9 dosya):
+  - PARÇA A: pools.py UNIQUE constraint yakalama (409 hatası)
+  - PARÇA A: approved_title_mappings INSERT OR IGNORE (race condition önlemi)
+  - PARÇA B: admin.py, auth.py, candidates.py, companies.py, cv.py düzeltildi
+  - PARÇA B: emails.py, interviews.py, pools.py, database.py düzeltildi
+  - bulunamadı, güncellendi, oluşturuldu, kullanılıyor, başarıyla vb. düzeltildi
+- Durum Downgrade Koruması (3 Katmanlı Savunma):
+  - FIX 1A/1B: SELECT filtreleri (ise_alindi/arsiv hariç)
+  - FIX 2A/2B: INSERT öncesi durum kontrolü
+  - FIX 3: UPDATE güvenliği
 - "Pozisyon" sütun başlığı "CV'de Belirtilen Unvan" olarak güncellendi:
   - candidates/index.tsx satır 266: Tablo başlığı
   - candidates/index.tsx satır 350: Detay görünümü label
@@ -292,6 +302,8 @@ Son guncelleme: 24.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+70fa8b2 - fix: Türkçe karakter düzeltme (59 mesaj) + UNIQUE constraint yakalama (pools.py)
+7a6d7e9 - fix: durum downgrade koruması - ise_alindi/arsiv adaylar 3 katmanlı savunma
 6c4410b - fix: havuzlar frontend cift sayim duzeltildi - totalCandidates artik backendden geliyor
 9d28dd0 - ui: window.alert kaldirildi, toast bildirimleri eklendi
 c56a09c - fix: PYTHONPATH core/ eklendi - candidate_matcher ve cv_parser import sorunu cozuldu
