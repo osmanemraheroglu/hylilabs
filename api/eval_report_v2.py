@@ -130,9 +130,9 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
     radar_edu = min(100, (education_score / 10) * 100) if education_score else 0
     radar_elim = min(100, (elimination_score / 10) * 100) if elimination_score else 0
 
-    # SVG radar chart koordinatları (pentagon) - 180x180 boyut
+    # SVG radar chart koordinatları (pentagon) - 160x160 boyut
     import math
-    def radar_point(value, angle_deg, cx=90, cy=90, max_r=70):
+    def radar_point(value, angle_deg, cx=80, cy=80, max_r=60):
         angle_rad = math.radians(angle_deg - 90)
         r = (value / 100) * max_r
         x = cx + r * math.cos(angle_rad)
@@ -196,12 +196,12 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
     # Progress bar helper - tek satır flex layout, tam label
     def progress_bar(value, max_val, label):
         pct = min(100, (value / max_val) * 100) if max_val else 0
-        return f'''<div style="display:flex;align-items:center;gap:4px;margin:2px 0;">
-            <span style="width:60px;font-size:0.65rem;color:#64748b;flex-shrink:0;">{label}</span>
-            <div style="flex:1;height:5px;background:#e8e8ec;border-radius:3px;overflow:hidden;">
+        return f'''<div style="display:flex;align-items:center;gap:6px;margin:3px 0;">
+            <span style="width:60px;font-size:0.7rem;color:#64748b;flex-shrink:0;">{label}</span>
+            <div style="flex:1;height:6px;background:#e8e8ec;border-radius:3px;overflow:hidden;">
                 <div style="height:100%;width:{pct}%;background:{main_color};border-radius:3px;"></div>
             </div>
-            <span style="width:34px;text-align:right;font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:#1e293b;flex-shrink:0;">{value}/{max_val}</span>
+            <span style="width:36px;text-align:right;font-size:0.7rem;font-family:'JetBrains Mono',monospace;color:#1e293b;flex-shrink:0;">{value}/{max_val}</span>
         </div>'''
 
     html = f'''<!DOCTYPE html>
@@ -222,14 +222,14 @@ body {{ font-family: 'DM Sans', sans-serif; max-width: 800px; margin: 0 auto; pa
 .hinfo h1 {{ font-size: 0.85rem; font-weight: 600; margin-bottom: 1px; word-break: break-word; overflow-wrap: break-word; }}
 .hinfo p {{ font-size: 0.65rem; opacity: 0.85; word-break: break-word; overflow-wrap: break-word; }}
 .hdate {{ text-align: right; font-size: 0.6rem; opacity: 0.75; flex-shrink: 0; }}
-.top {{ display: flex; gap: 10px; margin-bottom: 8px; }}
-.radar-box {{ width: 180px; flex-shrink: 0; background: #f8fafc; border-radius: 6px; padding: 6px; text-align: center; overflow: hidden; }}
+.top {{ display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 8px; background: #f8fafc; border-radius: 6px; padding: 10px; }}
+.radar-box {{ text-align: center; }}
 .radar-box svg {{ display: block; margin: 0 auto; }}
 .total-display {{ margin-top: 4px; }}
 .total-num {{ font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: {main_color}; line-height: 1; }}
 .total-label {{ font-size: 0.55rem; color: #64748b; }}
 .verdict-badge {{ display: inline-block; background: {verdict_bg}; color: {main_color}; padding: 2px 8px; border-radius: 10px; font-size: 0.6rem; font-weight: 600; margin-top: 3px; }}
-.scores-box {{ flex: 1; background: #f8fafc; border-radius: 6px; padding: 8px; min-width: 0; }}
+.scores-box {{ width: 100%; }}
 .verdicts {{ display: flex; gap: 6px; margin-bottom: 8px; }}
 .vcard {{ flex: 1; background: #f8fafc; border-radius: 6px; padding: 6px 8px; text-align: center; word-break: break-word; overflow-wrap: break-word; }}
 .vcard .lbl {{ font-size: 0.55rem; color: #94a3b8; margin-bottom: 2px; }}
@@ -264,22 +264,22 @@ body {{ font-family: 'DM Sans', sans-serif; max-width: 800px; margin: 0 auto; pa
 
 <div class="top">
     <div class="radar-box">
-        <svg width="180" height="180" viewBox="0 0 180 180">
+        <svg width="160" height="160" viewBox="0 0 160 160">
             <polygon points="{grid_points(100)}" fill="none" stroke="#e2e8f0" stroke-width="1"/>
             <polygon points="{grid_points(75)}" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
             <polygon points="{grid_points(50)}" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
             <polygon points="{grid_points(25)}" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
-            <line x1="90" y1="90" x2="90" y2="20" stroke="#e2e8f0" stroke-width="0.5"/>
-            <line x1="90" y1="90" x2="156.6" y2="68.4" stroke="#e2e8f0" stroke-width="0.5"/>
-            <line x1="90" y1="90" x2="131.1" y2="146.6" stroke="#e2e8f0" stroke-width="0.5"/>
-            <line x1="90" y1="90" x2="48.9" y2="146.6" stroke="#e2e8f0" stroke-width="0.5"/>
-            <line x1="90" y1="90" x2="23.4" y2="68.4" stroke="#e2e8f0" stroke-width="0.5"/>
+            <line x1="80" y1="80" x2="80" y2="20" stroke="#e2e8f0" stroke-width="0.5"/>
+            <line x1="80" y1="80" x2="137.1" y2="61.5" stroke="#e2e8f0" stroke-width="0.5"/>
+            <line x1="80" y1="80" x2="115.3" y2="128.5" stroke="#e2e8f0" stroke-width="0.5"/>
+            <line x1="80" y1="80" x2="44.7" y2="128.5" stroke="#e2e8f0" stroke-width="0.5"/>
+            <line x1="80" y1="80" x2="22.9" y2="61.5" stroke="#e2e8f0" stroke-width="0.5"/>
             <polygon points="{radar_points}" fill="{main_color}22" stroke="{main_color}" stroke-width="2"/>
-            <text x="90" y="12" text-anchor="middle" font-size="9" fill="#64748b">Poz</text>
-            <text x="172" y="72" text-anchor="end" font-size="9" fill="#64748b">Teknik</text>
-            <text x="138" y="162" text-anchor="middle" font-size="9" fill="#64748b">Den</text>
-            <text x="42" y="162" text-anchor="middle" font-size="9" fill="#64748b">Eği</text>
-            <text x="8" y="72" text-anchor="start" font-size="9" fill="#64748b">Ele</text>
+            <text x="80" y="12" text-anchor="middle" font-size="9" fill="#64748b">Poz</text>
+            <text x="152" y="65" text-anchor="end" font-size="9" fill="#64748b">Teknik</text>
+            <text x="122" y="142" text-anchor="middle" font-size="9" fill="#64748b">Den</text>
+            <text x="38" y="142" text-anchor="middle" font-size="9" fill="#64748b">Eği</text>
+            <text x="8" y="65" text-anchor="start" font-size="9" fill="#64748b">Ele</text>
         </svg>
         <div class="total-display">
             <div class="total-num">{total}</div>

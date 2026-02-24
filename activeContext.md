@@ -32,6 +32,11 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 24.02.2026
+- eval_report_v2.py: Radar ve bar ALT ALTA layout (v8 - 358 satır)
+  - .top: flex-direction:column - radar üstte, bar'lar altta
+  - .scores-box: width:100% - full genişlik
+  - Radar 160x160, ortalanmış
+  - Progress bar'lar kesilmeden tam görünüyor
 - eval_report_v2.py: Radar ve progress bar düzeltmesi (v7 - 358 satır)
   - Radar chart: 140x140 → 180x180 (daha büyük, okunabilir)
   - Progress bar label: width:60px, skor: width:34px
