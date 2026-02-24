@@ -32,6 +32,10 @@ Son guncelleme: 24.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 25.02.2026
+- "Pozisyon" sütun başlığı "CV'de Belirtilen Unvan" olarak güncellendi:
+  - candidates/index.tsx satır 266: Tablo başlığı
+  - candidates/index.tsx satır 350: Detay görünümü label
+  - havuzlar/index.tsx satır 674: Tablo başlığı
 - Dashboard widget başlığı güncellendi:
   - "Son Email Başvuruları" → "Son Eklenen Adaylar"
   - "Email ile gelen son başvurular" → "Son eklenen adaylar"

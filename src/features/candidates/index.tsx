@@ -263,7 +263,7 @@ export default function Candidates() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Ad Soyad</TableHead>
-                    <TableHead>Pozisyon</TableHead>
+                    <TableHead>CV'de Belirtilen Unvan</TableHead>
                     <TableHead>Lokasyon</TableHead>
                     <TableHead>Deneyim</TableHead>
                     <TableHead>Durum</TableHead>
@@ -347,7 +347,7 @@ export default function Candidates() {
                   <div><span className='text-sm text-muted-foreground'>Telefon:</span> <span className='font-medium'>{String(detailData.telefon || '-')}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Lokasyon:</span> <span className='font-medium'>{String(detailData.lokasyon || '-')}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Deneyim:</span> <span className='font-medium'>{detailData.toplam_deneyim_yil ? detailData.toplam_deneyim_yil + ' yıl' : '-'}</span></div>
-                  <div><span className='text-sm text-muted-foreground'>Pozisyon:</span> <span className='font-medium'>{String(detailData.mevcut_pozisyon || '-')}</span></div>
+                  <div><span className='text-sm text-muted-foreground'>CV'deki Unvan:</span> <span className='font-medium'>{String(detailData.mevcut_pozisyon || '-')}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Şirket:</span> <span className='font-medium'>{String(detailData.mevcut_sirket || '-')}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Eğitim:</span> <span className='font-medium'>{String(detailData.egitim || '-')}</span></div>
                   <div><span className='text-sm text-muted-foreground'>Üniversite:</span> <span className='font-medium'>{String(detailData.universite || '-')}</span></div>

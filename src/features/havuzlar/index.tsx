@@ -671,7 +671,7 @@ export default function Havuzlar() {
                       <TableRow>
                         <TableHead className="w-8"><Checkbox checked={selectedCandidates.size === filteredCandidates.length && filteredCandidates.length > 0} onCheckedChange={toggleAllCandidates} /></TableHead>
                         <TableHead className="w-[220px]">Ad Soyad</TableHead>
-                        <TableHead className="w-[180px]">Pozisyon</TableHead>
+                        <TableHead className="w-[180px]">CV'de Belirtilen Unvan</TableHead>
                         <TableHead className="w-[80px]">Deneyim</TableHead>
                         <TableHead className="w-[120px]">Lokasyon</TableHead>
                         <TableHead className="w-[80px]">Skor</TableHead>
