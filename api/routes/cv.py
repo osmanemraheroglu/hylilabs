@@ -126,11 +126,11 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
 
 @router.get("/stats")
 def cv_stats(current_user: dict = Depends(get_current_user)):
-    """CV toplama istatistikleri"""
+    """CV toplama istatistikleri - gerçek aday sayıları ve dosya istatistikleri"""
     company_id = current_user["company_id"]
     try:
         collection_stats = get_email_collection_stats(company_id=company_id)
-        storage_stats = get_cv_storage_stats()
+        storage_stats = get_cv_storage_stats(company_id=company_id)
         return {
             "success": True,
             "data": {

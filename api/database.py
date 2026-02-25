@@ -1646,7 +1646,7 @@ def get_email_collection_stats(
     days: int = 30
 ) -> dict:
     """
-    Email toplama istatistiklerini getir
+    CV toplama istatistiklerini getir - gerçek aday sayıları candidates tablosundan
 
     Returns:
         {
@@ -1662,41 +1662,60 @@ def get_email_collection_stats(
     with get_connection() as conn:
         cursor = conn.cursor()
 
+        # Gerçek aday sayıları (candidates tablosundan)
+        if company_id:
+            cursor.execute("""
+                SELECT COUNT(*) FROM candidates WHERE company_id = ?
+            """, (company_id,))
+            toplam_cv = cursor.fetchone()[0] or 0
+
+            cursor.execute("""
+                SELECT COUNT(*) FROM candidates
+                WHERE company_id = ? AND cv_dosya_yolu IS NOT NULL AND cv_dosya_yolu != ''
+            """, (company_id,))
+            toplam_basarili = cursor.fetchone()[0] or 0
+        else:
+            cursor.execute("SELECT COUNT(*) FROM candidates")
+            toplam_cv = cursor.fetchone()[0] or 0
+
+            cursor.execute("""
+                SELECT COUNT(*) FROM candidates
+                WHERE cv_dosya_yolu IS NOT NULL AND cv_dosya_yolu != ''
+            """)
+            toplam_basarili = cursor.fetchone()[0] or 0
+
+        # Başarı oranı hesapla
+        basari_orani = round((toplam_basarili / toplam_cv * 100), 1) if toplam_cv > 0 else 0
+
+        # Email tarama geçmişi (log verisi - bilgi amaçlı)
         start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
-        # Genel istatistikler
-        base_query = """
+        log_query = """
             SELECT
                 COUNT(*) as toplam_islem,
                 COALESCE(SUM(taranan_email), 0) as toplam_taranan,
-                COALESCE(SUM(bulunan_cv), 0) as toplam_cv,
-                COALESCE(SUM(basarili_cv), 0) as toplam_basarili,
                 COALESCE(SUM(hatali_cv), 0) as toplam_hatali,
                 COALESCE(SUM(mevcut_aday), 0) as toplam_mevcut
             FROM email_collection_logs
             WHERE tarih >= ?
         """
-        params = [start_date]
+        log_params = [start_date]
 
         if company_id:
-            base_query += " AND company_id = ?"
-            params.append(company_id)
+            log_query += " AND company_id = ?"
+            log_params.append(company_id)
 
-        cursor.execute(base_query, params)
-        row = cursor.fetchone()
-
-        toplam_cv = row["toplam_cv"] or 0
-        toplam_basarili = row["toplam_basarili"] or 0
-        basari_orani = (toplam_basarili / toplam_cv * 100) if toplam_cv > 0 else 0
+        cursor.execute(log_query, log_params)
+        log_row = cursor.fetchone()
 
         stats = {
-            "toplam_islem": row["toplam_islem"] or 0,
-            "toplam_taranan": row["toplam_taranan"] or 0,
+            "toplam_islem": log_row["toplam_islem"] or 0,
+            "toplam_taranan": log_row["toplam_taranan"] or 0,
             "toplam_cv": toplam_cv,
             "toplam_basarili": toplam_basarili,
-            "toplam_hatali": row["toplam_hatali"] or 0,
-            "toplam_mevcut": row["toplam_mevcut"] or 0,
-            "basari_orani": round(basari_orani, 1)
+            "toplam_hatali": log_row["toplam_hatali"] or 0,
+            "toplam_mevcut": log_row["toplam_mevcut"] or 0,
+            "basari_orani": basari_orani
         }
 
         # Hesap bazlı istatistikler

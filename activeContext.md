@@ -32,6 +32,13 @@ Son guncelleme: 25.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 25.02.2026
+- CV Topla İstatistik Düzeltmeleri:
+  - database.py get_email_collection_stats(): toplam_cv ve toplam_basarili artık candidates tablosundan
+  - cv_parser.py get_cv_storage_stats(): company_id parametresi + rglob ile recursive dosya sayma
+  - cv.py /stats endpoint: get_cv_storage_stats(company_id=company_id) çağrısı
+  - Önceki değerler: toplam_cv=331, storage.count=2 (yanlış)
+  - Yeni değerler: toplam_cv=56, storage.count=59 (doğru)
+  - 36 yetim log kaydı silindi (company_id=NULL)
 - Havuz Tutarlılığı Fix (5 parça):
   - PARÇA A: Veri temizliği - 3 aday düzeltildi (395, 428, 431)
   - PARÇA B: candidates.py ise_al endpoint - havuz=NULL eklendi
@@ -308,6 +315,7 @@ Son guncelleme: 25.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+df118eb - fix: CV Topla istatistik düzeltmeleri - gerçek aday sayıları ve dosya istatistikleri
 1a41071 - fix: havuz tutarlılığı - veri temizliği + ise_al havuz=NULL + mülakat iptal/silme mantık düzeltmesi
 70fa8b2 - fix: Türkçe karakter düzeltme (59 mesaj) + UNIQUE constraint yakalama (pools.py)
 7a6d7e9 - fix: durum downgrade koruması - ise_alindi/arsiv adaylar 3 katmanlı savunma

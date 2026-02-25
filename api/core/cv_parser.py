@@ -231,14 +231,25 @@ def validate_cv_access(cv_path: str, company_id: int) -> bool:
     return True
 
 
-def get_cv_storage_stats() -> dict:
-    """CV depolama istatistiklerini getir"""
+def get_cv_storage_stats(company_id: Optional[int] = None) -> dict:
+    """CV depolama istatistiklerini döndürür - firma bazlı veya tüm sistem"""
     try:
         if not CV_STORAGE_PATH.exists():
             return {"count": 0, "total_size_mb": 0}
 
-        files = list(CV_STORAGE_PATH.glob("*"))
-        total_size = sum(f.stat().st_size for f in files if f.is_file())
+        # Firma bazlı veya tüm sistem
+        if company_id:
+            base_path = CV_STORAGE_PATH / str(company_id)
+            if not base_path.exists():
+                return {"count": 0, "total_size_mb": 0}
+        else:
+            base_path = CV_STORAGE_PATH
+
+        # Recursive olarak tüm dosyaları bul (sadece dosyalar, klasörler değil)
+        files = [f for f in base_path.rglob("*") if f.is_file()]
+
+        # Toplam boyut hesapla
+        total_size = sum(f.stat().st_size for f in files)
 
         return {
             "count": len(files),
