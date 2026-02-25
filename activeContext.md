@@ -32,6 +32,12 @@ Son guncelleme: 25.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 25.02.2026
+- Matches Tablosu v2 Skorlama Fix (2 ADIM):
+  - ADIM 1: matches tablosuna UNIQUE(candidate_id, position_id) constraint eklendi
+  - ADIM 2: pull_matching_candidates_to_position fonksiyonuna matches INSERT eklendi
+  - v2_result JSON olarak detayli_analiz kolonuna kaydediliyor
+  - UI/Rapor artık gerçek v2 skorları gösterecek (0 yerine)
+  - Korunan sistemlere dokunulmadı (scoring_v2.py, eval_report_v2.py, pools.py)
 - Havuz Pydantic Model Fix:
   - models.py satır 46: havuz: str → havuz: Optional[str] = "genel_havuz"
   - ise_alindi adaylar (havuz=NULL) artık Pydantic hatasına yol açmaz
@@ -360,7 +366,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Kariyer Sayfasi guvenlik taramasi ve gelistirme.
+ADIM 3-4: Mevcut adaylar için migration script + test
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

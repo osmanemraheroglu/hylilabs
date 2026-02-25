@@ -3945,6 +3945,27 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
                 logger.error(f"candidate_positions INSERT hatası: {e}", exc_info=True)
                 inserted = False
 
+            # ✅ YENİ: matches tablosuna v2_result kaydet (ADIM 2)
+            if inserted and v2_result:
+                try:
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO matches (
+                            candidate_id, position_id, uyum_puani, detayli_analiz,
+                            deneyim_puani, egitim_puani, beceri_puani, company_id
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        candidate_id,
+                        position_pool_id,
+                        v2_result.get('total', 0),
+                        json.dumps(v2_result, ensure_ascii=False),
+                        v2_result.get('experience_score', 0),
+                        v2_result.get('education_score', 0),
+                        v2_result.get('technical_score', 0),
+                        company_id
+                    ))
+                except Exception as e:
+                    logger.warning(f"matches tablosuna kayıt hatası: {e}")
+
             # ESKİ SİSTEM: candidate_pool_assignments tablosuna da ekle (uyumluluk için)
             try:
                 cursor.execute("""
