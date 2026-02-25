@@ -32,6 +32,19 @@ Son guncelleme: 25.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 25.02.2026
+- ADIM 6: Yeniden Hesapla Butonu:
+  - Backend: POST /{pool_id}/candidates/{candidate_id}/rescore endpoint (pools.py satır 1253)
+  - calculate_match_score_v2 kullanarak v2 skorunu yeniden hesaplar
+  - candidate_positions.match_score, matches.uyum_puani, ai_evaluations.v2_score güncellenir
+  - Frontend: rescoring state (satır 115), handleRescore fonksiyonu (satır 443)
+  - RefreshCw butonu mavi renkte (satır 725)
+  - Commit: cc2a339
+- ADIM 5: ai_evaluations.v2_score Migration:
+  - 10 kayıt analiz edildi, hepsi v2_score=0
+  - Root cause: Kayıtlar ADIM 4 migration'dan önce oluşturulmuş
+  - UPDATE ile matches.uyum_puani ai_evaluations.v2_score'a kopyalandı
+  - 7 kayıt güncellendi, 3 orphan kayıt (matches kaydı yok) 0 kaldı
+  - Serkan'ın v2_score: 41 (doğrulandı)
 - KEYWORD_SYNONYMS TR↔EN Genişletme (ADIM 3):
   - candidate_matcher.py'de 40 yeni synonym eklendi (toplam 78 key)
   - Bakım/Onarım: bakım-onarım, önleyici bakım, periyodik bakım, arıza takibi
@@ -333,6 +346,7 @@ Son guncelleme: 25.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+cc2a339 - feat: Yeniden Hesapla butonu - ADIM 6 (pools.py rescore endpoint + frontend RefreshCw button)
 8394118 - fix: havuz alanı Optional yapıldı - ise_alindi adaylar için NULL kabul eder
 df118eb - fix: CV Topla istatistik düzeltmeleri - gerçek aday sayıları ve dosya istatistikleri
 1a41071 - fix: havuz tutarlılığı - veri temizliği + ise_al havuz=NULL + mülakat iptal/silme mantık düzeltmesi
@@ -374,7 +388,9 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-ADIM 3-4: Mevcut adaylar için migration script + test
+ADIM 6 tamamlandı. V2 skorlama sistemi tam çalışır durumda.
+- Yeniden Hesapla butonu aktif (havuzlar sayfası)
+- ai_evaluations.v2_score değerleri güncel
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)
