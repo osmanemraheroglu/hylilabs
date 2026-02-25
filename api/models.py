@@ -43,7 +43,7 @@ class Candidate(BaseModel):
     cv_dosya_yolu: Optional[str] = None  # Kaydedilen CV dosyasinin yolu
 
     # Durum
-    havuz: str = "genel_havuz"
+    havuz: Optional[str] = "genel_havuz"
     durum: str = "yeni"
     notlar: Optional[str] = None
 
