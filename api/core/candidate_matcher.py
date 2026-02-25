@@ -120,6 +120,67 @@ KEYWORD_SYNONYMS = {
     'ms project': ['ms project', 'microsoft project', 'project'],
     'scrum': ['scrum', 'agile', 'çevik'],
     'proje yönetimi': ['proje yönetimi', 'project management', 'pm'],
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # ADIM 3: TR↔EN SYNONYM'LER (40 yeni key)
+    # ═══════════════════════════════════════════════════════════════════════
+
+    # ═══ BAKIM & ONARIM ═══
+    'bakım-onarım': ['bakım-onarım', 'bakım', 'onarım', 'maintenance', 'repair', 'maintenance & repair'],
+    'bakım': ['bakım', 'maintenance', 'bakım-onarım'],
+    'önleyici bakım': ['önleyici bakım', 'preventive maintenance', 'predictive maintenance', 'pm'],
+    'periyodik bakım': ['periyodik bakım', 'periodic maintenance', 'scheduled maintenance'],
+    'arıza takibi': ['arıza takibi', 'troubleshooting', 'fault tracking', 'arıza tespit'],
+
+    # ═══ MAKİNA & EKİPMAN ═══
+    'iş makineleri': ['iş makineleri', 'iş makinası', 'heavy equipment', 'construction equipment', 'construction machinery'],
+    'ekipman yönetimi': ['ekipman yönetimi', 'equipment management', 'equipment supervision'],
+    'makine mühendisliği': ['makine mühendisliği', 'mechanical engineering', 'makine müh.'],
+
+    # ═══ YÖNETİM & ORGANİZASYON ═══
+    'koordinasyon': ['koordinasyon', 'coordination', 'koordine'],
+    'planlama': ['planlama', 'planning', 'scheduling', 'plan'],
+    'takım çalışması': ['takım çalışması', 'teamwork', 'team working', 'team work', 'ekip çalışması'],
+    'yönetim': ['yönetim', 'management', 'yöneticilik'],
+    'takım liderliği': ['takım liderliği', 'team leadership', 'team lead', 'ekip liderliği'],
+    'takip': ['takip', 'tracking', 'follow-up', 'izleme'],
+    'raporlama': ['raporlama', 'reporting', 'rapor', 'report'],
+
+    # ═══ KALİTE & GÜVENLİK ═══
+    'kalite kontrol': ['kalite kontrol', 'quality control', 'qc', 'kalite kontrolü'],
+    'kalite güvence': ['kalite güvence', 'quality assurance', 'qa'],
+    'güvenlik': ['güvenlik', 'safety', 'security', 'hse'],
+    'iş güvenliği': ['iş güvenliği', 'occupational safety', 'work safety', 'isg', 'ohs'],
+
+    # ═══ FİNANS & MALİYET ═══
+    'maliyet analizi': ['maliyet analizi', 'cost analysis', 'maliyet', 'cost control'],
+    'maliyet kontrol': ['maliyet kontrol', 'cost control', 'cost management'],
+    'bütçe yönetimi': ['bütçe yönetimi', 'budget management', 'budgeting'],
+    'satın alma': ['satın alma', 'procurement', 'purchasing', 'satınalma'],
+    'stok yönetimi': ['stok yönetimi', 'inventory management', 'stock management'],
+
+    # ═══ GENEL BECERİLER ═══
+    'problem çözme': ['problem çözme', 'problem solving', 'sorun çözme'],
+    'analitik düşünme': ['analitik düşünme', 'analytical thinking', 'analytical skills'],
+    'iletişim': ['iletişim', 'communication', 'iletişim becerileri'],
+    'karar verme': ['karar verme', 'decision making', 'karar alma'],
+    'liderlik': ['liderlik', 'leadership', 'leader'],
+
+    # ═══ MÜHENDİSLİK ═══
+    'yapı mühendisliği': ['yapı mühendisliği', 'structural engineering', 'civil engineering'],
+    'inşaat mühendisliği': ['inşaat mühendisliği', 'civil engineering', 'construction engineering'],
+    'elektrik mühendisliği': ['elektrik mühendisliği', 'electrical engineering'],
+    'mekatronik': ['mekatronik', 'mechatronics', 'mekatronik mühendisliği'],
+
+    # ═══ ÇİFT YÖNLÜ (EN → TR) ═══
+    'maintenance': ['maintenance', 'bakım', 'bakım-onarım', 'onarım'],
+    'heavy equipment': ['heavy equipment', 'iş makineleri', 'iş makinası', 'ağır ekipman'],
+    'troubleshooting': ['troubleshooting', 'arıza takibi', 'arıza tespit', 'sorun giderme'],
+    'teamwork': ['teamwork', 'takım çalışması', 'ekip çalışması'],
+    'quality control': ['quality control', 'kalite kontrol', 'qc'],
+    'procurement': ['procurement', 'satın alma', 'satınalma', 'tedarik'],
+    'scheduling': ['scheduling', 'planlama', 'programlama'],
+    'coordination': ['coordination', 'koordinasyon', 'koordine'],
 }
 
 # Katman 3: Fuzzy matching eşik değeri

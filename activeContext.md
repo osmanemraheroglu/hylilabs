@@ -32,6 +32,14 @@ Son guncelleme: 25.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 25.02.2026
+- KEYWORD_SYNONYMS TR↔EN Genişletme (ADIM 3):
+  - candidate_matcher.py'de 40 yeni synonym eklendi (toplam 78 key)
+  - Bakım/Onarım: bakım-onarım, önleyici bakım, periyodik bakım, arıza takibi
+  - Makina/Ekipman: iş makineleri, ekipman yönetimi, makine mühendisliği
+  - Yönetim: koordinasyon, planlama, takım çalışması, takım liderliği
+  - Kalite/Güvenlik: kalite kontrol, kalite güvence, iş güvenliği
+  - Finans: maliyet analizi, satın alma, stok yönetimi
+  - Çift yönlü EN→TR: maintenance, heavy equipment, troubleshooting, teamwork
 - Matches Tablosu v2 Skorlama Fix (2 ADIM):
   - ADIM 1: matches tablosuna UNIQUE(candidate_id, position_id) constraint eklendi
   - ADIM 2: pull_matching_candidates_to_position fonksiyonuna matches INSERT eklendi
