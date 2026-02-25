@@ -31,7 +31,15 @@ Son guncelleme: 25.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
-### 25.02.2026
+### 25.02.2026 - Puanlama Duzeltmesi (7 Adim)
+- ADIM 1: UNIQUE constraint (idx_matches_candidate_position)
+- ADIM 2: matches v2_result kayit (42cf5b0)
+- ADIM 3: KEYWORD_SYNONYMS 40 key (af6edc2)
+- ADIM 4: Migration 13 aday rescore
+- ADIM 5: ai_evaluations 7 kayit
+- ADIM 6: Yeniden Hesapla butonu (cc2a339)
+- ADIM 7: Dokumantasyon
+Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - ADIM 6: Yeniden Hesapla Butonu:
   - Backend: POST /{pool_id}/candidates/{candidate_id}/rescore endpoint (pools.py satır 1253)
   - calculate_match_score_v2 kullanarak v2 skorunu yeniden hesaplar

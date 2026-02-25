@@ -86,6 +86,9 @@ Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
 13. create_candidate() duplicate kontrolu (email + telefon) kaldirilmaz
 14. CV dosyalari firma bazli izole: /data/cvs/{company_id}/. save_cv_file() company_id zorunlu. validate_cv_access() okuma kontrolu zorunlu. Flat yapiya geri donulemez. 2x3 guvenlik kontrolu DEGISTIRILEMEZ
 15. DB CASCADE DELETE aktif: applications, matches, candidate_pool_assignments, position_pools, ai_evaluations -> candidates ON DELETE CASCADE. position_keywords_v2 -> department_pools ON DELETE CASCADE. interviews -> candidates, department_pools, companies ON DELETE CASCADE. ai_analyses, hr_evaluations -> candidates, positions. position_requirements, position_sector_preferences, position_title_mappings -> department_pools. candidate_merge_logs -> candidates. company_settings, email_accounts, email_templates -> companies. PRAGMA foreign_keys=ON her connectionda zorunlu. Tablo yapilari DEGISTIRILEMEZ. CASCADE kaldirilmaz.
+16. KEYWORD_SYNONYMS TR↔EN: candidate_matcher.py 78 key DEGISMEZ (25.02.2026)
+17. matches v2_result: database.py sync INSERT kodu DEGISMEZ (commit 42cf5b0)
+18. rescore_candidate: pools.py:1253 DEGISMEZ (commit cc2a339)
 
 ## Stil
 - Fonksiyon ve degisken: snake_case (Python), camelCase (TypeScript)
