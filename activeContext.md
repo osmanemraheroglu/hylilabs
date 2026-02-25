@@ -32,6 +32,10 @@ Son guncelleme: 25.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 25.02.2026
+- Havuz Pydantic Model Fix:
+  - models.py satır 46: havuz: str → havuz: Optional[str] = "genel_havuz"
+  - ise_alindi adaylar (havuz=NULL) artık Pydantic hatasına yol açmaz
+  - Adaylar sayfası artık düzgün açılıyor
 - CV Topla İstatistik Düzeltmeleri:
   - database.py get_email_collection_stats(): toplam_cv ve toplam_basarili artık candidates tablosundan
   - cv_parser.py get_cv_storage_stats(): company_id parametresi + rglob ile recursive dosya sayma
@@ -315,6 +319,7 @@ Son guncelleme: 25.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+8394118 - fix: havuz alanı Optional yapıldı - ise_alindi adaylar için NULL kabul eder
 df118eb - fix: CV Topla istatistik düzeltmeleri - gerçek aday sayıları ve dosya istatistikleri
 1a41071 - fix: havuz tutarlılığı - veri temizliği + ise_al havuz=NULL + mülakat iptal/silme mantık düzeltmesi
 70fa8b2 - fix: Türkçe karakter düzeltme (59 mesaj) + UNIQUE constraint yakalama (pools.py)
