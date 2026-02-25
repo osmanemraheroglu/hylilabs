@@ -210,17 +210,45 @@ def update_existing_interview(
         if body.get("durum") == "iptal" and candidate_id:
             with get_connection() as conn:
                 cursor = conn.cursor()
+                # Başka aktif mülakat var mı kontrol et
                 cursor.execute(
-                    """UPDATE candidates SET durum = 'pozisyona_atandi'
-                       WHERE id = ? AND company_id = ?
-                       AND NOT EXISTS (
-                           SELECT 1 FROM interviews i
-                           JOIN candidates c ON c.id = i.candidate_id
-                           WHERE i.candidate_id = ? AND i.durum = 'planlanmis'
-                           AND c.company_id = ?
-                       )""",
-                    (candidate_id, company_id, candidate_id, company_id)
+                    """SELECT COUNT(*) as cnt FROM interviews i
+                       JOIN candidates c ON c.id = i.candidate_id
+                       WHERE i.candidate_id = ? AND i.durum = 'planlanmis'
+                       AND c.company_id = ?""",
+                    (candidate_id, company_id)
                 )
+                active_count = cursor.fetchone()['cnt']
+                
+                if active_count == 0:
+                    # Korumalı durum kontrolü — ise_alindi/arsiv adaylar downgrade edilemez
+                    cursor.execute(
+                        "SELECT durum FROM candidates WHERE id = ? AND company_id = ?",
+                        (candidate_id, company_id)
+                    )
+                    cand_row = cursor.fetchone()
+                    if cand_row and cand_row['durum'] in ('ise_alindi', 'arsiv'):
+                        logger.info(f"Mülakat iptal: candidate_id={candidate_id} korumalı durumda ({cand_row['durum']}), durum değiştirilmedi")
+                    else:
+                        # Adayın gerçek durumunu belirle
+                        cursor.execute(
+                            "SELECT COUNT(*) as cnt FROM candidate_positions WHERE candidate_id = ? AND status = 'aktif'",
+                            (candidate_id,)
+                        )
+                        pos_count = cursor.fetchone()['cnt']
+                        
+                        if pos_count > 0:
+                            cursor.execute(
+                                """UPDATE candidates SET durum = 'pozisyona_atandi', havuz = 'pozisyona_aktarilan'
+                                   WHERE id = ? AND company_id = ?""",
+                                (candidate_id, company_id)
+                            )
+                        else:
+                            cursor.execute(
+                                """UPDATE candidates SET durum = 'yeni', havuz = 'genel_havuz'
+                                   WHERE id = ? AND company_id = ?""",
+                                (candidate_id, company_id)
+                            )
                 conn.commit()
 
         return {"success": True, "message": "Mülakat güncellendi"}
@@ -263,17 +291,45 @@ def delete_existing_interview(
         if candidate_id:
             with get_connection() as conn:
                 cursor = conn.cursor()
+                # Başka aktif mülakat var mı kontrol et
                 cursor.execute(
-                    """UPDATE candidates SET durum = 'pozisyona_atandi'
-                       WHERE id = ? AND company_id = ?
-                       AND NOT EXISTS (
-                           SELECT 1 FROM interviews i
-                           JOIN candidates c ON c.id = i.candidate_id
-                           WHERE i.candidate_id = ? AND i.durum = 'planlanmis'
-                           AND c.company_id = ?
-                       )""",
-                    (candidate_id, company_id, candidate_id, company_id)
+                    """SELECT COUNT(*) as cnt FROM interviews i
+                       JOIN candidates c ON c.id = i.candidate_id
+                       WHERE i.candidate_id = ? AND i.durum = 'planlanmis'
+                       AND c.company_id = ?""",
+                    (candidate_id, company_id)
                 )
+                active_count = cursor.fetchone()['cnt']
+                
+                if active_count == 0:
+                    # Korumalı durum kontrolü — ise_alindi/arsiv adaylar downgrade edilemez
+                    cursor.execute(
+                        "SELECT durum FROM candidates WHERE id = ? AND company_id = ?",
+                        (candidate_id, company_id)
+                    )
+                    cand_row = cursor.fetchone()
+                    if cand_row and cand_row['durum'] in ('ise_alindi', 'arsiv'):
+                        logger.info(f"Mülakat silme: candidate_id={candidate_id} korumalı durumda ({cand_row['durum']}), durum değiştirilmedi")
+                    else:
+                        # Adayın gerçek durumunu belirle
+                        cursor.execute(
+                            "SELECT COUNT(*) as cnt FROM candidate_positions WHERE candidate_id = ? AND status = 'aktif'",
+                            (candidate_id,)
+                        )
+                        pos_count = cursor.fetchone()['cnt']
+                        
+                        if pos_count > 0:
+                            cursor.execute(
+                                """UPDATE candidates SET durum = 'pozisyona_atandi', havuz = 'pozisyona_aktarilan'
+                                   WHERE id = ? AND company_id = ?""",
+                                (candidate_id, company_id)
+                            )
+                        else:
+                            cursor.execute(
+                                """UPDATE candidates SET durum = 'yeni', havuz = 'genel_havuz'
+                                   WHERE id = ? AND company_id = ?""",
+                                (candidate_id, company_id)
+                            )
                 conn.commit()
 
         return {"success": True, "message": "Mülakat silindi"}

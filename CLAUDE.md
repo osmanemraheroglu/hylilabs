@@ -158,10 +158,14 @@ Tüm frontend UI metinleri doğru Türkçe karakter kullanmalı.
 - Dashboard pie chart, CV Topla badge, Toplama Geçmişi badge dahil
 - DEGISTIRME
 
-### Mülakat-Aday Durum Senkronizasyonu (22.02.2026) — DEGISMEZ
+### Mülakat-Aday Durum Senkronizasyonu (22.02.2026, güncelleme 25.02.2026) — DEGISMEZ
 - Mülakat oluşturulunca candidates.durum = 'mulakat' otomatik güncellenir
-- Mülakat iptal/silinince başka aktif mülakat yoksa durum geri alınır
-- api/routes/interviews.py — DEGISTIRME
+- Mülakat iptal/silinince başka aktif mülakat yoksa:
+  - ise_alindi/arsiv adaylar → durum DEĞİŞTİRİLMEZ (korumalı)
+  - candidate_positions kaydı varsa → durum='pozisyona_atandi', havuz='pozisyona_aktarilan'
+  - candidate_positions kaydı yoksa → durum='yeni', havuz='genel_havuz'
+- ise_al endpoint: durum='ise_alindi', havuz=NULL
+- api/routes/interviews.py, api/routes/candidates.py — DEGISTIRME
 
 ### Max Aday Limit Sistemi (22.02.2026) — DEGISMEZ
 - Plan dropdown kaldırıldı, max_aday manuel belirlenir

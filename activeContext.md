@@ -32,6 +32,12 @@ Son guncelleme: 25.02.2026
 
 ## Son 72 Saatte Tamamlananlar
 ### 25.02.2026
+- Havuz Tutarlılığı Fix (5 parça):
+  - PARÇA A: Veri temizliği - 3 aday düzeltildi (395, 428, 431)
+  - PARÇA B: candidates.py ise_al endpoint - havuz=NULL eklendi
+  - PARÇA C: interviews.py mülakat iptal - candidate_positions kontrolü + ise_alindi/arsiv koruması
+  - PARÇA D: interviews.py mülakat silme - candidate_positions kontrolü + ise_alindi/arsiv koruması
+  - PARÇA E: CLAUDE.md güncellendi - Mülakat-Aday Durum Senkronizasyonu kuralı genişletildi
 - Türkçe Hata Mesajları Fix (59 mesaj, 9 dosya):
   - PARÇA A: pools.py UNIQUE constraint yakalama (409 hatası)
   - PARÇA A: approved_title_mappings INSERT OR IGNORE (race condition önlemi)
@@ -302,6 +308,7 @@ Son guncelleme: 25.02.2026
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+1a41071 - fix: havuz tutarlılığı - veri temizliği + ise_al havuz=NULL + mülakat iptal/silme mantık düzeltmesi
 70fa8b2 - fix: Türkçe karakter düzeltme (59 mesaj) + UNIQUE constraint yakalama (pools.py)
 7a6d7e9 - fix: durum downgrade koruması - ise_alindi/arsiv adaylar 3 katmanlı savunma
 6c4410b - fix: havuzlar frontend cift sayim duzeltildi - totalCandidates artik backendden geliyor

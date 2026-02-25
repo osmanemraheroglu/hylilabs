@@ -297,7 +297,7 @@ def ise_al_candidate(candidate_id: int, current_user: dict = Depends(get_current
             # Durumu güncelle
             cursor.execute("""
                 UPDATE candidates
-                SET durum = 'ise_alindi'
+                SET durum = 'ise_alindi', havuz = NULL
                 WHERE id = ? AND company_id = ?
             """, (candidate_id, company_id))
             conn.commit()
