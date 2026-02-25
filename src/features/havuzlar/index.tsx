@@ -112,6 +112,7 @@ export default function Havuzlar() {
 
   // AI Evaluation
   const [evaluating, setEvaluating] = useState(false)
+  const [rescoring, setRescoring] = useState(false)
   const [downloadingCVs, setDownloadingCVs] = useState(false)
 
   const loadTree = useCallback(() => {
@@ -437,6 +438,23 @@ export default function Havuzlar() {
       .finally(() => setEvaluating(false))
   }
 
+
+  // Yeniden Hesapla
+  const handleRescore = (candidateId: number) => {
+    if (!selectedPoolId) return
+    setRescoring(true)
+    fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/rescore`, { method: 'POST', headers: H() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          toast.success(`Skor güncellendi: ${res.old_score} → ${res.new_score}`)
+          loadDetail(candidateId)
+          loadCandidates(selectedPoolId)
+        } else { toast.error(res.detail || 'Hata') }
+      })
+      .catch(e => toast.error('Hata: ' + e))
+      .finally(() => setRescoring(false))
+  }
   // Rapor İndir
   const handleDownloadReport = (candidateId: number) => {
     if (!selectedPoolId) return
@@ -704,6 +722,7 @@ export default function Havuzlar() {
                               </TableCell>
                               <TableCell onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center gap-1">
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleRescore(c.id)} disabled={rescoring} title="Skoru Yeniden Hesapla"><RefreshCw className="h-3.5 w-3.5 text-blue-500" /></Button>
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEvaluate(c.id)} disabled={evaluating} title="AI Değerlendir"><Brain className="h-3.5 w-3.5 text-purple-500" /></Button>
                                   <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRemoveCandidate(c.id)} title="Çıkar"><Trash2 className="h-3.5 w-3.5" /></Button>
                                 </div>

@@ -1247,3 +1247,125 @@ def get_candidate_cv(pool_id: int, candidate_id: int, current_user: dict = Depen
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{pool_id}/candidates/{candidate_id}/rescore")
+def rescore_candidate(pool_id: int, candidate_id: int, current_user: dict = Depends(get_current_user)):
+    """Tek aday için v2 skorunu yeniden hesapla"""
+    from scoring_v2 import calculate_match_score_v2
+    import json as json_lib
+    
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erişim yetkiniz yok")
+        
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Eski skoru al
+            cursor.execute("""
+                SELECT match_score FROM candidate_positions 
+                WHERE candidate_id = ? AND position_id = ?
+            """, (candidate_id, pool_id))
+            old_row = cursor.fetchone()
+            old_score = old_row["match_score"] if old_row else 0
+            
+            # Aday bilgileri
+            cursor.execute("""
+                SELECT id, ad_soyad, teknik_beceriler, toplam_deneyim_yil,
+                       egitim, lokasyon, cv_raw_text, deneyim_detay,
+                       mevcut_pozisyon, mevcut_sirket
+                FROM candidates WHERE id = ? AND company_id = ?
+            """, (candidate_id, company_id))
+            cand = cursor.fetchone()
+            if not cand:
+                raise HTTPException(status_code=404, detail="Aday bulunamadı")
+            
+            # Pozisyon bilgileri
+            cursor.execute("""
+                SELECT id, name, keywords, gerekli_deneyim_yil, gerekli_egitim, lokasyon
+                FROM department_pools WHERE id = ? AND company_id = ? AND pool_type = 'position'
+            """, (pool_id, company_id))
+            pos = cursor.fetchone()
+            if not pos:
+                raise HTTPException(status_code=404, detail="Pozisyon bulunamadı")
+            
+            # Dict'leri oluştur
+            candidate_dict = {
+                'id': cand['id'],
+                'ad_soyad': cand['ad_soyad'] or '',
+                'teknik_beceriler': cand['teknik_beceriler'] or '',
+                'toplam_deneyim_yil': cand['toplam_deneyim_yil'] or 0,
+                'egitim': cand['egitim'] or '',
+                'lokasyon': cand['lokasyon'] or '',
+                'cv_raw_text': cand['cv_raw_text'] or '',
+                'deneyim_detay': cand['deneyim_detay'] or '',
+                'mevcut_pozisyon': cand['mevcut_pozisyon'] or '',
+                'mevcut_sirket': cand['mevcut_sirket'] or ''
+            }
+            
+            position_dict = {
+                'id': pos['id'],
+                'name': pos['name'] or '',
+                'keywords': pos['keywords'] or '[]',
+                'gerekli_deneyim_yil': pos['gerekli_deneyim_yil'] or 0,
+                'gerekli_egitim': pos['gerekli_egitim'] or '',
+                'lokasyon': pos['lokasyon'] or ''
+            }
+            
+            # V2 skorlama
+            v2_result = calculate_match_score_v2(candidate_dict, position_dict)
+            
+            if not v2_result:
+                raise HTTPException(status_code=500, detail="Skorlama başarısız")
+            
+            new_score = v2_result.get('total', 0)
+            
+            # candidate_positions güncelle
+            cursor.execute("""
+                UPDATE candidate_positions SET match_score = ?
+                WHERE candidate_id = ? AND position_id = ?
+            """, (new_score, candidate_id, pool_id))
+            
+            # matches tablosunu güncelle
+            cursor.execute("""
+                INSERT OR REPLACE INTO matches (
+                    candidate_id, position_id, uyum_puani, detayli_analiz,
+                    deneyim_puani, egitim_puani, beceri_puani, company_id,
+                    hesaplama_tarihi
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            """, (
+                candidate_id,
+                pool_id,
+                new_score,
+                json_lib.dumps(v2_result, ensure_ascii=False),
+                v2_result.get('experience_score', 0),
+                v2_result.get('education_score', 0),
+                v2_result.get('technical_score', 0),
+                company_id
+            ))
+            
+            # ai_evaluations.v2_score güncelle (varsa)
+            cursor.execute("""
+                UPDATE ai_evaluations SET v2_score = ?
+                WHERE candidate_id = ? AND position_id = ?
+            """, (new_score, candidate_id, pool_id))
+            
+            conn.commit()
+            
+            return {
+                "success": True,
+                "old_score": old_score,
+                "new_score": new_score,
+                "candidate_id": candidate_id,
+                "position_id": pool_id,
+                "v2_result": v2_result
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
