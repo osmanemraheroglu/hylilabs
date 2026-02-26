@@ -435,3 +435,18 @@ ADIM 6 tamamlandı. V2 skorlama sistemi tam çalışır durumda.
   - Mevcut pozisyon bilgisi gösteriliyor
   - ise_alindi adaylar listede gösterilmiyor (frontend filtre)
   - shadcn/ui Command + Popover bileşenleri kullanıldı
+
+### 26.02.2026 - Aday Ata Bug Fix (Pozisyon Tablosu)
+- BUG: API 200 döndürüyordu ama aday pozisyona eklenmiyordu
+- KÖK NEDEN: assign_candidate endpoint HEP candidate_pool_assignments tablosuna yazıyordu
+  - Ama pozisyon havuzları candidate_positions tablosundan okunuyor
+  - İKİ FARKLI TABLO → veri tutarsızlığı
+- FIX: pools.py endpoint'te pool_type kontrolü eklendi
+  - pool_type == "position" → add_candidate_to_position() (candidate_positions)
+  - Diğer → assign_candidate_to_department_pool() (candidate_pool_assignments)
+- GÜNCELLENEN DOSYALAR:
+  - database.py: add_candidate_to_position() fonksiyonu güncellendi
+    - arsiv kontrolü kaldırıldı (sadece ise_alindi engeller)
+    - company_id parametresi eklendi (güvenlik)
+    - Dict döndürüyor (detaylı hata mesajları)
+  - pools.py: assign_candidate endpoint pool_type kontrolü eklendi

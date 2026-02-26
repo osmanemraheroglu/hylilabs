@@ -10,12 +10,11 @@ from database import (
     assign_candidate_to_department_pool, remove_candidate_from_department_pool,
     remove_candidate_from_pool, transfer_candidates_to_position,
     batch_update_pool_status, verify_department_pool_ownership,
-    move_candidate_to_pool, get_position_candidates
+    move_candidate_to_pool, get_position_candidates, add_candidate_to_position
 )
 from typing import Optional
 import traceback
 import json
-from urllib.parse import quote
 
 router = APIRouter(prefix="/api/pools", tags=["pools"])
 
@@ -253,21 +252,38 @@ def assign_candidate(pool_id: int, body: dict, current_user: dict = Depends(get_
     try:
         company_id = current_user["company_id"]
         if not verify_department_pool_ownership(pool_id, company_id):
-            raise HTTPException(status_code=403, detail="Bu havuza erisim yetkiniz yok")
+            raise HTTPException(status_code=403, detail="Bu havuza erişim yetkiniz yok")
 
         candidate_id = body.get("candidate_id")
         if not candidate_id:
             raise HTTPException(status_code=400, detail="candidate_id zorunludur")
 
-        assign_id = assign_candidate_to_department_pool(
-            candidate_id=candidate_id,
-            pool_id=pool_id,
-            company_id=company_id,
-            assignment_type="manual",
-            match_score=body.get("match_score", 0),
-            match_reason=body.get("reason", "Manuel atama")
-        )
-        return {"success": True, "id": assign_id, "message": "Aday havuza atandi"}
+        # Pool tipini kontrol et
+        pool = get_department_pool(pool_id)
+        pool_type = pool.get("pool_type", "department") if pool else "department"
+
+        if pool_type == "position":
+            # Pozisyon havuzu → candidate_positions tablosuna
+            result = add_candidate_to_position(
+                candidate_id=candidate_id,
+                position_id=pool_id,
+                match_score=body.get("match_score", 0),
+                company_id=company_id
+            )
+            if not result["success"]:
+                raise HTTPException(status_code=400, detail=result["error"])
+            return {"success": True, "message": "Aday pozisyona atandı"}
+        else:
+            # Departman/sistem havuzu → candidate_pool_assignments tablosuna
+            assign_id = assign_candidate_to_department_pool(
+                candidate_id=candidate_id,
+                pool_id=pool_id,
+                company_id=company_id,
+                assignment_type="manual",
+                match_score=body.get("match_score", 0),
+                match_reason=body.get("reason", "Manuel atama")
+            )
+            return {"success": True, "id": assign_id, "message": "Aday havuza atandı"}
     except HTTPException:
         raise
     except Exception as e:
@@ -1240,7 +1256,7 @@ def get_candidate_cv(pool_id: int, candidate_id: int, current_user: dict = Depen
                 content=file_bytes,
                 media_type=media_type,
                 headers={
-                    "Content-Disposition": f"inline; filename=\"{quote(cv_filename, safe='')}\"; filename*=UTF-8''{quote(cv_filename, safe='')}"
+                    "Content-Disposition": f'inline; filename="{cv_filename}"'
                 }
             )
     except HTTPException:

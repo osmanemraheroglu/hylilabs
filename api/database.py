@@ -8555,37 +8555,44 @@ def seed_default_department_templates(company_id: int):
 
 # ============ CANDIDATE_POSITIONS CRUD ============
 
-def add_candidate_to_position(candidate_id: int, position_id: int, match_score: int = 0) -> bool:
-    """Adayı pozisyona ekle
+def add_candidate_to_position(candidate_id: int, position_id: int, match_score: int = 0, company_id: int = None) -> dict:
+    """Adayı pozisyona ekle (manuel atama için)
 
     Args:
         candidate_id: Aday ID
         position_id: Pozisyon ID
         match_score: Eşleşme skoru (0-100)
+        company_id: Şirket ID (güvenlik kontrolü için)
 
     Returns:
-        True: Başarılı, False: Zaten mevcut veya hata
+        dict: {"success": True/False, "error": hata mesajı veya None}
     """
     with get_connection() as conn:
         cursor = conn.cursor()
 
-        # Korumalı durum kontrolü — ise_alindi/arsiv adaylar eklenemez
-        cursor.execute("SELECT durum FROM candidates WHERE id = ?", (candidate_id,))
+        # 1. Aday var mı ve şirket kontrolü
+        cursor.execute("SELECT durum, company_id FROM candidates WHERE id = ?", (candidate_id,))
         cand_row = cursor.fetchone()
         if not cand_row:
-            return False
-        if cand_row['durum'] in ('ise_alindi', 'arsiv'):
-            logger.info(f"add_candidate_to_position: candidate_id={candidate_id} korumalı durumda ({cand_row['durum']}), eklenmedi")
-            return False
+            return {"success": False, "error": "Aday bulunamadı"}
+
+        # 2. company_id kontrolü (güvenlik)
+        if company_id and cand_row['company_id'] != company_id:
+            return {"success": False, "error": "Bu adaya erişim yetkiniz yok"}
+
+        # 3. Sadece ise_alindi engelle (arsiv atanabilir!)
+        if cand_row['durum'] == 'ise_alindi':
+            logger.info(f"add_candidate_to_position: candidate_id={candidate_id} işe alınmış, eklenmedi")
+            return {"success": False, "error": "İşe alınmış aday pozisyona atanamaz"}
 
         try:
             cursor.execute("""
                 INSERT INTO candidate_positions (candidate_id, position_id, match_score)
                 VALUES (?, ?, ?)
             """, (candidate_id, position_id, match_score))
-            return cursor.rowcount > 0
+            return {"success": True, "error": None}
         except sqlite3.IntegrityError:
-            return False  # UNIQUE constraint - zaten mevcut
+            return {"success": False, "error": "Aday bu pozisyona zaten atanmış"}
 
 
 def get_candidate_details(candidate_id: int) -> dict:
