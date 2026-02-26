@@ -89,6 +89,9 @@ Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
 16. KEYWORD_SYNONYMS TR↔EN: candidate_matcher.py 78 key DEGISMEZ (25.02.2026)
 17. matches v2_result: database.py sync INSERT kodu DEGISMEZ (commit 42cf5b0)
 18. rescore_candidate: pools.py:1253 DEGISMEZ (commit cc2a339)
+19. try-except değişken kuralı: try içinde tanımlanan değişkenler try bloğu dışında kullanılacaksa MUTLAKA except bloğunda veya try öncesi None/default değer tanımlanmalı. Aksi halde UnboundLocalError riski. DEGISMEZ.
+20. PM2 restart kuralı: ecosystem.config.cjs env değişikliğinde sadece pm2 restart YETERSİZ. pm2 delete + pm2 start kullanılmalı. DEGISMEZ.
+21. Import guard kuralı: core/ altındaki modüller import edilirken try-except ile fallback yazılmalı (from X except: from core.X). DEGISMEZ.
 
 ## Stil
 - Fonksiyon ve degisken: snake_case (Python), camelCase (TypeScript)

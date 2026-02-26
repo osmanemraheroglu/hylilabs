@@ -106,7 +106,10 @@ def check_emails_for_account(account: dict) -> dict:
 
                     # v2 scoring sistemi ile pozisyonlara eşleştir (fallback ile)
                     try:
-                        from candidate_matcher import match_candidate_to_positions_keyword
+                        try:
+                            from candidate_matcher import match_candidate_to_positions_keyword
+                        except ImportError:
+                            from core.candidate_matcher import match_candidate_to_positions_keyword
                         from database import get_approved_titles, get_pool_by_name, assign_candidate_to_department_pool, create_system_pools
                         from scoring_v2 import turkish_lower
                         try:

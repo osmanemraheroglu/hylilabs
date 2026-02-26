@@ -3910,6 +3910,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
             except Exception as e:
                 logger.warning(f"v2 scoring hatası, title_match_score kullanılıyor: {e}")
                 match_score = title_match_score
+                v2_result = None
 
             # YENİ SİSTEM: candidate_positions tablosuna ekle
             try:

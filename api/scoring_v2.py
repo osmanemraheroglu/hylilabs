@@ -382,7 +382,10 @@ def calculate_technical_score(
     """
     # Aday bilgilerini al
     # Lazy import to avoid circular dependency
-    from candidate_matcher import check_keyword_match
+    try:
+        from candidate_matcher import check_keyword_match
+    except ImportError:
+        from core.candidate_matcher import check_keyword_match
     skills = safe_get(candidate, 'teknik_beceriler', '') or ''
     cv_text = safe_get(candidate, 'cv_raw_text', '') or ''
     experience_detail = safe_get(candidate, 'deneyim_detay', '') or ''

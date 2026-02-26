@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 25.02.2026
+Son guncelleme: 26.02.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -31,6 +31,15 @@ Son guncelleme: 25.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 26.02.2026 - Bug Fix: v2_result UnboundLocalError
+- Sorun: PM2 PYTHONPATH eksik → candidate_matcher import hata → v2_result tanımsız → 500 Error
+- Kısa vadeli fix: database.py except bloğuna v2_result = None eklendi
+- Uzun vadeli fix: scoring_v2.py, email_worker.py, workflows.py import guard eklendi
+- CLAUDE.md: 3 yeni kural eklendi (19, 20, 21) 
+- PM2: delete+start ile PYTHONPATH yüklendi
+- Etkilenen: Tüm yeni pozisyonlara aday atanamıyordu (Position 7782 dahil)
+- Çözüm: Kapsamlı fix uygulandı, test edildi
+
 ### 25.02.2026 - Puanlama Duzeltmesi (7 Adim)
 - ADIM 1: UNIQUE constraint (idx_matches_candidate_position)
 - ADIM 2: matches v2_result kayit (42cf5b0)

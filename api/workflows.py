@@ -21,10 +21,16 @@ from database import (
     process_candidate_with_dedup, create_application, add_candidate_to_pool,
     save_ai_analysis, log_api_usage, update_candidate
 )
-from candidate_matcher import (
-    match_candidate_to_positions_ai, match_candidate_to_position_criteria,
-    auto_match_candidate_to_all_positions, calculate_match_score
-)
+try:
+    from candidate_matcher import (
+        match_candidate_to_positions_ai, match_candidate_to_position_criteria,
+        auto_match_candidate_to_all_positions, calculate_match_score
+    )
+except ImportError:
+    from core.candidate_matcher import (
+        match_candidate_to_positions_ai, match_candidate_to_position_criteria,
+        auto_match_candidate_to_all_positions, calculate_match_score
+    )
 from models import Application
 from events import trigger_event
 
