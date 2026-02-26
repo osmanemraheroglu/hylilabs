@@ -3858,7 +3858,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
             if not title_match_found or title_match_score == 0:
                 continue
             
-            stats['matched'] += 1
+
 
             # Aday max 5 pozisyonda olabilir - kontrol et
             current_pos_count = get_candidate_position_count(candidate_id)
@@ -3930,6 +3930,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
                     logger.warning(f"position_id={position_pool_id} bulunamadı veya pozisyon değil, atlanıyor")
                     continue
                 
+                stats['matched'] += 1
                 cursor.execute("""
                     INSERT OR IGNORE INTO candidate_positions
                     (candidate_id, position_id, match_score, status, created_at)

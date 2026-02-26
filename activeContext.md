@@ -419,3 +419,9 @@ ADIM 6 tamamlandı. V2 skorlama sistemi tam çalışır durumda.
 - JWT_SECRET fallback kaldirildi, .env zorunlu
 - Public endpoint rate limiting hazir (check_public_apply_limit, check_public_positions_limit)
 - Mulakat izolasyonu dogrulandi (0 NULL company_id kayit)
+
+### 26.02.2026 - CV Çek Tutarsızlığı Fix
+- BUG: X aday eşleşti mesajı ile tabloda görünen aday sayısı uyuşmuyordu
+- KÖK NEDEN: stats[matched]++ korumalı durum kontrolünden ÖNCE çalışıyordu
+- FIX: stats[matched]++ satırı 3861den 3933e taşındı (INSERTten hemen önce)
+- Artık korumalı adaylar (ise_alindi/arsiv) matched sayısına dahil edilmiyor
