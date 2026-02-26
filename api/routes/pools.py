@@ -15,6 +15,7 @@ from database import (
 from typing import Optional
 import traceback
 import json
+from urllib.parse import quote
 
 router = APIRouter(prefix="/api/pools", tags=["pools"])
 
@@ -1239,7 +1240,7 @@ def get_candidate_cv(pool_id: int, candidate_id: int, current_user: dict = Depen
                 content=file_bytes,
                 media_type=media_type,
                 headers={
-                    "Content-Disposition": f'inline; filename="{cv_filename}"'
+                    "Content-Disposition": f"inline; filename=\"{quote(cv_filename, safe='')}\"; filename*=UTF-8''{quote(cv_filename, safe='')}"
                 }
             )
     except HTTPException:
