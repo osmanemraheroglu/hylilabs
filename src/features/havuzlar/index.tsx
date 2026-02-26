@@ -14,8 +14,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   FolderTree, Plus, Edit, Trash2, RefreshCw, ChevronRight, ChevronDown,
   Archive, Inbox, Building2, Target, UserPlus, ArrowRightLeft, Search,
-  Download, ChevronUp, Brain, FileText, Link, X
+  Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown
 } from 'lucide-react'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
 
 const API = 'http://***REMOVED***:8000'
 const H = () => ({ 'Authorization': `Bearer ${localStorage.getItem('access_token')}`, 'Content-Type': 'application/json' })
@@ -83,6 +86,9 @@ export default function Havuzlar() {
   // Forms
   const [poolForm, setPoolForm] = useState({ name: '', pool_type: 'department', parent_id: '', icon: '', keywords: '', description: '', gerekli_deneyim_yil: '0', gerekli_egitim: '', lokasyon: '' })
   const [assignCandidateId, setAssignCandidateId] = useState('')
+  const [candidateSearchOpen, setCandidateSearchOpen] = useState(false)
+  const [candidateList, setCandidateList] = useState<{id: number, ad_soyad: string, mevcut_pozisyon?: string}[]>([])
+  const [selectedCandidate, setSelectedCandidate] = useState<{id: number, ad_soyad: string} | null>(null)
   const [transferTargetId, setTransferTargetId] = useState('')
   const [statusValue, setStatusValue] = useState('')
   const [allPools, setAllPools] = useState<Array<{ id: number; name: string; pool_type: string }>>([])
@@ -136,6 +142,29 @@ export default function Havuzlar() {
 
   useEffect(() => { loadTree(); loadAllPools() }, [loadTree, loadAllPools])
   useEffect(() => { if (selectedPoolId) loadCandidates(selectedPoolId) }, [selectedPoolId, loadCandidates])
+
+  // Aday Ata - Combobox için aday listesi
+  const fetchCandidatesForAssign = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/candidates`, { headers: H() })
+      const data = await res.json()
+      if (data.success) {
+        const assignable = (data.data.candidates || []).filter((c: {durum?: string}) => c.durum !== 'ise_alindi')
+        setCandidateList(assignable)
+      }
+    } catch (error) {
+      console.error('Aday listesi alınamadı:', error)
+      toast.error('Aday listesi yüklenemedi')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (assignDialogOpen) {
+      fetchCandidatesForAssign()
+      setSelectedCandidate(null)
+      setCandidateSearchOpen(false)
+    }
+  }, [assignDialogOpen, fetchCandidatesForAssign])
 
   const toggleDept = (id: number) => setExpandedDepts(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const toggleCandidate = (id: number) => setSelectedCandidates(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
@@ -1135,9 +1164,48 @@ export default function Havuzlar() {
       </Dialog>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Aday Ata</DialogTitle></DialogHeader>
-          <div><Label className="text-sm">Aday ID</Label><Input type="number" value={assignCandidateId} onChange={e => setAssignCandidateId(e.target.value)} placeholder="Örnek: 421" /></div>
-          <DialogFooter><Button variant="outline" onClick={() => setAssignDialogOpen(false)}>İptal</Button><Button onClick={handleAssignCandidate} disabled={!assignCandidateId}>Ata</Button></DialogFooter>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Aday Ata</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm mb-2 block">Aday Seç</Label>
+              <Popover open={candidateSearchOpen} onOpenChange={setCandidateSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between">
+                    {selectedCandidate ? selectedCandidate.ad_soyad : "Aday ara veya seç..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[350px] p-0">
+                  <Command>
+                    <CommandInput placeholder="İsim ile ara..." />
+                    <CommandList>
+                      <CommandEmpty>Aday bulunamadı.</CommandEmpty>
+                      <CommandGroup>
+                        {candidateList.map((c) => (
+                          <CommandItem key={c.id} value={c.ad_soyad} onSelect={() => {
+                            setSelectedCandidate(c)
+                            setAssignCandidateId(String(c.id))
+                            setCandidateSearchOpen(false)
+                          }}>
+                            <Check className={cn("mr-2 h-4 w-4", selectedCandidate?.id === c.id ? "opacity-100" : "opacity-0")} />
+                            <div className="flex flex-col">
+                              <span className="font-medium">{c.ad_soyad}</span>
+                              {c.mevcut_pozisyon && <span className="text-xs text-muted-foreground">{c.mevcut_pozisyon}</span>}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>İptal</Button>
+            <Button onClick={handleAssignCandidate} disabled={!selectedCandidate}>Ata</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -426,8 +426,12 @@ ADIM 6 tamamlandı. V2 skorlama sistemi tam çalışır durumda.
 - FIX: stats[matched]++ satırı 3861den 3933e taşındı (INSERTten hemen önce)
 - Artık korumalı adaylar (ise_alindi/arsiv) matched sayısına dahil edilmiyor
 
-### 26.02.2026 - CV Indirme Turkce Karakter Fix
-- BUG: HTTP header latin-1 encoding, Turkce karakterler encode edilemiyordu
-- ETKI: 17 aday (%25.8) CV indiremiyordu
-- FIX: pools.py:1243 RFC 5987 encoding (quote + filename*=UTF-8) uygulanadi
-- CLAUDE.md: Kural 22 eklendi
+### 26.02.2026 - Aday Ata Combobox
+- SORUN: Modal Aday ID soruyordu, kullanıcı ID bilmiyordu
+- ÇÖZÜM: Command + Popover Combobox ile ad soyad araması
+- Backend: candidates.py limit kısıtlaması kaldırıldı (le=200 → sınırsız)
+- Frontend: Combobox implementasyonu (havuzlar/index.tsx)
+  - İsim ile arama yapılabiliyor
+  - Mevcut pozisyon bilgisi gösteriliyor
+  - ise_alindi adaylar listede gösterilmiyor (frontend filtre)
+  - shadcn/ui Command + Popover bileşenleri kullanıldı
