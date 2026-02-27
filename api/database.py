@@ -8558,15 +8558,12 @@ def seed_default_department_templates(company_id: int):
 def add_candidate_to_position(candidate_id: int, position_id: int, match_score: int = 0, company_id: int = None) -> dict:
     """Adayı pozisyona ekle (manuel atama için)
 
-    Args:
-        candidate_id: Aday ID
-        position_id: Pozisyon ID
-        match_score: Eşleşme skoru (0-100)
-        company_id: Şirket ID (güvenlik kontrolü için)
-
-    Returns:
-        dict: {"success": True/False, "error": hata mesajı veya None}
+    CLAUDE.md Pool Assignments Kuralları:
+    - durum='pozisyona_atandi' → Genel Havuzda DEĞİL
+    - Hiçbir aday 2 havuzda aynı anda olamaz
     """
+    import json
+
     with get_connection() as conn:
         cursor = conn.cursor()
 
@@ -8580,16 +8577,61 @@ def add_candidate_to_position(candidate_id: int, position_id: int, match_score: 
         if company_id and cand_row['company_id'] != company_id:
             return {"success": False, "error": "Bu adaya erişim yetkiniz yok"}
 
-        # 3. Sadece ise_alindi engelle (arsiv atanabilir!)
+        # 3. Sadece ise_alindi engelle (arsiv atanabilir - kullanıcı talebi)
         if cand_row['durum'] == 'ise_alindi':
-            logger.info(f"add_candidate_to_position: candidate_id={candidate_id} işe alınmış, eklenmedi")
             return {"success": False, "error": "İşe alınmış aday pozisyona atanamaz"}
 
         try:
+            # 4. candidate_positions'a INSERT
             cursor.execute("""
                 INSERT INTO candidate_positions (candidate_id, position_id, match_score)
                 VALUES (?, ?, ?)
             """, (candidate_id, position_id, match_score))
+
+            # 5. candidates.durum ve havuz güncelle
+            cursor.execute("""
+                UPDATE candidates
+                SET havuz = 'pozisyona_aktarilan', durum = 'pozisyona_atandi'
+                WHERE id = ? AND durum NOT IN ('ise_alindi')
+            """, (candidate_id,))
+
+            # 6. Genel Havuz'dan sil
+            cursor.execute("""
+                DELETE FROM candidate_pool_assignments
+                WHERE candidate_id = ? AND department_pool_id IN (
+                    SELECT id FROM department_pools WHERE name='Genel Havuz' AND company_id = ?
+                )
+            """, (candidate_id, company_id))
+
+            # 7. Arşiv'den de sil (arsiv adayı pozisyona atandıysa)
+            cursor.execute("""
+                DELETE FROM candidate_pool_assignments
+                WHERE candidate_id = ? AND department_pool_id IN (
+                    SELECT id FROM department_pools WHERE name='Arşiv' AND company_id = ?
+                )
+            """, (candidate_id, company_id))
+
+            # 8. matches tablosuna INSERT (manuel atama kaydı)
+            cursor.execute("""
+                INSERT OR REPLACE INTO matches (
+                    candidate_id, position_id, uyum_puani, detayli_analiz,
+                    deneyim_puani, egitim_puani, beceri_puani, company_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                candidate_id,
+                position_id,
+                match_score,
+                json.dumps({
+                    "source": "manuel_atama",
+                    "total": match_score,
+                    "note": "Manuel olarak atandı - detaylı analiz yok"
+                }, ensure_ascii=False),
+                0,  # deneyim_puani - hesaplanmadı
+                0,  # egitim_puani - hesaplanmadı
+                0,  # beceri_puani - hesaplanmadı
+                company_id
+            ))
+
             return {"success": True, "error": None}
         except sqlite3.IntegrityError:
             return {"success": False, "error": "Aday bu pozisyona zaten atanmış"}
