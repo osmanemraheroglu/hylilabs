@@ -17,6 +17,7 @@ from database import (
 from models import Application
 from core.cv_parser import parse_cv, save_cv_file, get_cv_storage_stats
 from routes.auth import get_current_user
+from rate_limiter import check_cv_upload_limit, record_cv_upload
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,16 @@ class ScanEmailsRequest(BaseModel):
 @router.post("/upload")
 async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     """Manuel CV yukleme - dosya parse et ve aday olustur"""
+    # === CV UPLOAD RATE LIMIT KONTROLÜ (27.02.2026) ===
+    user_id = str(current_user.get("id", "unknown"))
+    allowed, msg = check_cv_upload_limit(user_id)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Saatlik CV yükleme limitine ulaştınız (20 dosya/saat). Lütfen daha sonra tekrar deneyin."
+        )
+    # === KONTROL SONU ===
+
     if not file.filename:
         raise HTTPException(status_code=400, detail="Dosya adi bos")
 
@@ -102,6 +113,9 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
             create_application(app, company_id)
         except Exception as e:
             logger.warning(f"Application kaydi olusturulamadi: {e}")
+
+        # Başarılı upload'ı rate limit sayacına kaydet
+        record_cv_upload(user_id)
 
         return {
             "success": True,

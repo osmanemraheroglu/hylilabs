@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import sys
 sys.path.append("/var/www/hylilabs/api")
 from database import verify_user, get_user, get_connection
+from rate_limiter import check_login_limit, record_login_attempt, clear_login_attempts
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer()
@@ -66,8 +67,19 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 @router.post("/login")
 def login(request: LoginRequest):
+    # === LOGIN RATE LIMIT KONTROLÜ (27.02.2026) ===
+    allowed, msg = check_login_limit(request.email)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Çok fazla başarısız giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin."
+        )
+    # === KONTROL SONU ===
+
     user = verify_user(request.email, request.password)
     if not user:
+        # Başarısız giriş denemesini kaydet
+        record_login_attempt(request.email, success=False)
         raise HTTPException(status_code=401, detail="Email veya şifre hatalı")
 
     # Kullanıcı aktif mi kontrol et
@@ -85,7 +97,10 @@ def login(request: LoginRequest):
                 raise HTTPException(status_code=403, detail="Firmanız pasif durumda.")
 
     token = create_access_token(user["id"])
-    
+
+    # Başarılı giriş - rate limit sayacını temizle
+    clear_login_attempts(request.email)
+
     # Hassas bilgileri çıkar
     user_info = {
         "id": user["id"],

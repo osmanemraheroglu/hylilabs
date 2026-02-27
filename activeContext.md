@@ -31,6 +31,19 @@ Son guncelleme: 27.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 27.02.2026 - Login ve CV Upload Rate Limit Aktivasyonu
+- AMAÇ: Brute force saldırıları ve spam koruması
+- FIX 1: auth.py login endpoint rate limit eklendi
+  - check_login_limit() → 5 deneme / 15 dakika
+  - Başarısız giriş → record_login_attempt()
+  - Başarılı giriş → clear_login_attempts()
+  - 429 status code ile Türkçe hata mesajı
+- FIX 2: cv.py upload endpoint rate limit eklendi
+  - check_cv_upload_limit() → 20 dosya / saat
+  - Başarılı upload → record_cv_upload()
+  - 429 status code ile Türkçe hata mesajı
+- rate_limiter.py fonksiyonları aktifleştirildi
+
 ### 27.02.2026 - AI Değerlendirme Tekrar Kontrolü
 - SORUN: evaluate_candidate her çağrıda Claude API kullanıyordu (maliyet + gereksiz)
 - ÇÖZÜM: Mevcut değerlendirme kontrolü eklendi - her aday+pozisyon için sadece 1 kere AI çağrılır
@@ -385,7 +398,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-7f54af2 - feat: AI değerlendirme tekrar kontrolü - mevcut değerlendirme cache sistemi
+2a8c048 - feat: Login ve CV upload rate limit aktifleştirildi
+b4bcafd - feat: AI değerlendirme tekrar kontrolü - mevcut değerlendirme cache sistemi
 8cdb600 - refactor: havuzlar UI temizliği - gereksiz butonlar kaldırıldı + aday ata pool_type fix
 cc2a339 - feat: Yeniden Hesapla butonu - ADIM 6 (pools.py rescore endpoint + frontend RefreshCw button)
 8394118 - fix: havuz alanı Optional yapıldı - ise_alindi adaylar için NULL kabul eder
@@ -429,12 +443,11 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-AI Değerlendirme Tekrar Kontrolü tamamlandı (lokal):
-- pools.py değişikliği yapıldı ve commit edilecek
-- Sunucu bağlantısı sonrası deploy ve UNIQUE INDEX eklenecek
+Login ve CV Upload Rate Limit tamamlandı:
+- auth.py: check_login_limit() aktif (5/15dk)
+- cv.py: check_cv_upload_limit() aktif (20/saat)
 
 Sırada (Eksik Limitler):
-- Login Rate Limit aktivasyonu
 - AI Günlük Limit (plans.daily_ai_limit)
 - Pozisyon Eşleşme Limiti
 - CV Çek Batch İşleme
