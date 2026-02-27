@@ -31,7 +31,7 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
-### 28.02.2026 - Keyword Synonym Yönetim Sistemi (ADIM 1.1 + 1.2)
+### 28.02.2026 - Keyword Synonym Yönetim Sistemi (ADIM 1.1 + 1.2 + 2.1 + 2.2)
 - AMAÇ: AI + İK onay sistemli synonym yönetimi için altyapı
 - ADIM 1.1: keyword_synonyms tablosu oluşturuldu (database.py:678-703)
   - 11 kolon: id, company_id, keyword, synonym, synonym_type, source, status, created_by, approved_by, created_at, approved_at
@@ -44,7 +44,24 @@ Son guncelleme: 28.02.2026
   - 81 keyword, ~193 synonym (self-reference hariç) migrate edilecek
   - source='migrated', status='approved', company_id=NULL (global)
   - Idempotent: Zaten migrate edilmişse tekrar çalışmaz
-- SONRAKI: API endpoint'leri ve frontend UI
+- ADIM 2.1: get_synonyms_for_keyword() fonksiyonu (database.py:1034-1093)
+  - İmza: get_synonyms_for_keyword(keyword: str, company_id: int = None) -> list[str]
+  - Status filtresi: sadece 'approved'
+  - Company_id filtresi: firma + global birleşik
+  - Self-reference kontrolü: keyword != synonym
+  - Exception handling: try/except, boş liste döner
+- ADIM 2.2: 9 CRUD fonksiyonu eklendi (database.py:1096-1570)
+  - save_generated_synonyms() - AI synonym kaydet (1096-1162)
+  - get_pending_synonyms() - Onay bekleyenleri listele (1165-1210)
+  - get_pending_synonyms_count() - Pending sayısı badge (1213-1245)
+  - approve_synonyms() - Toplu onay (1248-1303)
+  - reject_synonyms() - Toplu red (1306-1355)
+  - add_manual_synonym() - İK manuel ekle (1358-1413)
+  - delete_synonym() - Synonym sil (1416-1460)
+  - get_keyword_synonyms() - Keyword synonym listesi (1463-1519)
+  - check_synonym_exists() - Duplicate kontrolü (1522-1570)
+  - Tüm fonksiyonlarda: turkish_lower(), logger, try/except, company_id güvenliği
+- SONRAKI: candidate_matcher.py entegrasyonu ve cache
 
 ### 27.02.2026 - CV Çek Batch İşleme (Bellek Optimizasyonu)
 - AMAÇ: 1000+ aday için bellek sorununu önle

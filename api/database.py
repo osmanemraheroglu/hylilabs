@@ -1027,6 +1027,549 @@ def init_database():
     migrate_email_passwords()
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# KEYWORD SYNONYMS API
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def get_synonyms_for_keyword(keyword: str, company_id: int = None) -> list[str]:
+    """
+    Keyword için onaylı synonym listesi döndür.
+
+    Args:
+        keyword: Aranacak keyword (turkish_lower uygulanacak)
+        company_id: Firma ID (None = sadece global)
+
+    Returns:
+        list[str]: Onaylı synonym listesi (boş liste olabilir)
+
+    Öncelik:
+        1. Firma bazlı (company_id = X, status = 'approved')
+        2. Global (company_id = NULL, status = 'approved')
+
+    Note:
+        - Sonuçlar küçük harfe çevrilmiş olarak döner
+        - Self-reference dahil edilmez (keyword == synonym olanlar)
+    """
+    keyword_lower = turkish_lower(keyword.strip())
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            if company_id:
+                # Firma + Global birleşik
+                cursor.execute("""
+                    SELECT DISTINCT synonym FROM keyword_synonyms
+                    WHERE keyword = ?
+                      AND status = 'approved'
+                      AND (company_id IS NULL OR company_id = ?)
+                    ORDER BY
+                        CASE WHEN company_id IS NOT NULL THEN 0 ELSE 1 END,
+                        synonym
+                """, (keyword_lower, company_id))
+            else:
+                # Sadece global
+                cursor.execute("""
+                    SELECT DISTINCT synonym FROM keyword_synonyms
+                    WHERE keyword = ?
+                      AND status = 'approved'
+                      AND company_id IS NULL
+                    ORDER BY synonym
+                """, (keyword_lower,))
+
+            rows = cursor.fetchall()
+
+            # Synonym'ları lowercase olarak döndür, self-reference hariç
+            synonyms = []
+            for row in rows:
+                syn_lower = turkish_lower(row['synonym'])
+                if syn_lower != keyword_lower:  # Self-reference kontrolü
+                    synonyms.append(syn_lower)
+
+            return synonyms
+
+    except Exception as e:
+        logger.warning(f"get_synonyms_for_keyword hatası ({keyword}): {e}")
+        return []
+
+
+def save_generated_synonyms(
+    keyword: str,
+    synonyms: list[dict],
+    company_id: int = None,
+    created_by: int = None
+) -> dict:
+    """
+    AI tarafından oluşturulan synonym'ları kaydet.
+
+    Args:
+        keyword: Ana keyword
+        synonyms: [{'synonym': str, 'synonym_type': str}]
+        company_id: Firma ID (None = global)
+        created_by: Oluşturan kullanıcı ID
+
+    Returns:
+        {"success": True, "inserted": int, "skipped": int}
+        {"success": False, "error": str}
+    """
+    if not keyword or not synonyms:
+        return {"success": False, "error": "Keyword ve synonyms gerekli"}
+
+    keyword_lower = turkish_lower(keyword.strip())
+    inserted = 0
+    skipped = 0
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            for syn_data in synonyms:
+                synonym = syn_data.get('synonym', '').strip()
+                synonym_type = syn_data.get('synonym_type', 'english')
+
+                if not synonym:
+                    skipped += 1
+                    continue
+
+                synonym_lower = turkish_lower(synonym)
+
+                # Self-reference kontrolü
+                if synonym_lower == keyword_lower:
+                    skipped += 1
+                    continue
+
+                try:
+                    cursor.execute("""
+                        INSERT OR IGNORE INTO keyword_synonyms
+                        (company_id, keyword, synonym, synonym_type, source, status, created_by)
+                        VALUES (?, ?, ?, ?, 'ai', 'pending', ?)
+                    """, (company_id, keyword_lower, synonym_lower, synonym_type, created_by))
+
+                    if cursor.rowcount > 0:
+                        inserted += 1
+                    else:
+                        skipped += 1
+                except sqlite3.IntegrityError:
+                    skipped += 1
+
+        if inserted > 0:
+            logger.info(f"save_generated_synonyms: {keyword} için {inserted} synonym eklendi")
+
+        return {"success": True, "inserted": inserted, "skipped": skipped}
+
+    except Exception as e:
+        logger.error(f"save_generated_synonyms hatası ({keyword}): {e}")
+        return {"success": False, "error": str(e)}
+
+
+def get_pending_synonyms(
+    company_id: int = None,
+    keyword: str = None,
+    limit: int = 100
+) -> list[dict]:
+    """
+    Onay bekleyen synonym'ları getir.
+
+    Args:
+        company_id: Firma ID (None = global dahil tümü)
+        keyword: Belirli keyword için filtrele (opsiyonel)
+        limit: Maksimum kayıt sayısı
+
+    Returns:
+        [{'id', 'keyword', 'synonym', 'synonym_type', 'source', 'created_at', 'created_by'}]
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = """
+                SELECT id, keyword, synonym, synonym_type, source, created_at, created_by
+                FROM keyword_synonyms
+                WHERE status = 'pending'
+            """
+            params = []
+
+            if company_id is not None:
+                query += " AND (company_id IS NULL OR company_id = ?)"
+                params.append(company_id)
+
+            if keyword:
+                query += " AND keyword = ?"
+                params.append(turkish_lower(keyword.strip()))
+
+            query += " ORDER BY keyword, created_at DESC LIMIT ?"
+            params.append(limit)
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+            return [dict(row) for row in rows]
+
+    except Exception as e:
+        logger.error(f"get_pending_synonyms hatası: {e}")
+        return []
+
+
+def get_pending_synonyms_count(company_id: int = None) -> int:
+    """
+    Onay bekleyen synonym sayısını döndür.
+    Dashboard badge için.
+
+    Args:
+        company_id: Firma ID (None = global dahil tümü)
+
+    Returns:
+        int: Pending sayısı
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            if company_id is not None:
+                cursor.execute("""
+                    SELECT COUNT(*) as cnt FROM keyword_synonyms
+                    WHERE status = 'pending'
+                    AND (company_id IS NULL OR company_id = ?)
+                """, (company_id,))
+            else:
+                cursor.execute("""
+                    SELECT COUNT(*) as cnt FROM keyword_synonyms
+                    WHERE status = 'pending'
+                """)
+
+            row = cursor.fetchone()
+            return row['cnt'] if row else 0
+
+    except Exception as e:
+        logger.error(f"get_pending_synonyms_count hatası: {e}")
+        return 0
+
+
+def approve_synonyms(
+    synonym_ids: list[int],
+    approved_by: int,
+    company_id: int = None
+) -> dict:
+    """
+    Seçilen synonym'ları onayla.
+
+    Args:
+        synonym_ids: Onaylanacak synonym ID'leri
+        approved_by: Onaylayan kullanıcı ID
+        company_id: Firma ID (güvenlik için)
+
+    Returns:
+        {"success": True, "updated": int}
+        {"success": False, "error": str}
+    """
+    if not synonym_ids:
+        return {"success": False, "error": "Synonym ID'leri gerekli"}
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            placeholders = ','.join(['?'] * len(synonym_ids))
+
+            if company_id is not None:
+                cursor.execute(f"""
+                    UPDATE keyword_synonyms
+                    SET status = 'approved',
+                        approved_by = ?,
+                        approved_at = CURRENT_TIMESTAMP
+                    WHERE id IN ({placeholders})
+                    AND status = 'pending'
+                    AND (company_id IS NULL OR company_id = ?)
+                """, [approved_by] + synonym_ids + [company_id])
+            else:
+                cursor.execute(f"""
+                    UPDATE keyword_synonyms
+                    SET status = 'approved',
+                        approved_by = ?,
+                        approved_at = CURRENT_TIMESTAMP
+                    WHERE id IN ({placeholders})
+                    AND status = 'pending'
+                """, [approved_by] + synonym_ids)
+
+            updated = cursor.rowcount
+
+        if updated > 0:
+            logger.info(f"approve_synonyms: {updated} synonym onaylandı (user: {approved_by})")
+
+        return {"success": True, "updated": updated}
+
+    except Exception as e:
+        logger.error(f"approve_synonyms hatası: {e}")
+        return {"success": False, "error": str(e)}
+
+
+def reject_synonyms(
+    synonym_ids: list[int],
+    company_id: int = None
+) -> dict:
+    """
+    Seçilen synonym'ları reddet.
+
+    Args:
+        synonym_ids: Reddedilecek synonym ID'leri
+        company_id: Firma ID (güvenlik için)
+
+    Returns:
+        {"success": True, "updated": int}
+        {"success": False, "error": str}
+    """
+    if not synonym_ids:
+        return {"success": False, "error": "Synonym ID'leri gerekli"}
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            placeholders = ','.join(['?'] * len(synonym_ids))
+
+            if company_id is not None:
+                cursor.execute(f"""
+                    UPDATE keyword_synonyms
+                    SET status = 'rejected'
+                    WHERE id IN ({placeholders})
+                    AND status = 'pending'
+                    AND (company_id IS NULL OR company_id = ?)
+                """, synonym_ids + [company_id])
+            else:
+                cursor.execute(f"""
+                    UPDATE keyword_synonyms
+                    SET status = 'rejected'
+                    WHERE id IN ({placeholders})
+                    AND status = 'pending'
+                """, synonym_ids)
+
+            updated = cursor.rowcount
+
+        if updated > 0:
+            logger.info(f"reject_synonyms: {updated} synonym reddedildi")
+
+        return {"success": True, "updated": updated}
+
+    except Exception as e:
+        logger.error(f"reject_synonyms hatası: {e}")
+        return {"success": False, "error": str(e)}
+
+
+def add_manual_synonym(
+    keyword: str,
+    synonym: str,
+    synonym_type: str = None,
+    company_id: int = None,
+    created_by: int = None,
+    auto_approve: bool = False
+) -> dict:
+    """
+    İK tarafından manuel synonym ekle.
+
+    Args:
+        keyword: Ana keyword
+        synonym: Eklenecek synonym
+        synonym_type: 'turkish', 'english', 'abbreviation', 'variation'
+        company_id: Firma ID (None = global)
+        created_by: Oluşturan kullanıcı ID
+        auto_approve: True ise direkt 'approved', False ise 'pending'
+
+    Returns:
+        {"success": True, "id": int}
+        {"success": False, "error": str}
+    """
+    if not keyword or not synonym:
+        return {"success": False, "error": "Keyword ve synonym gerekli"}
+
+    keyword_lower = turkish_lower(keyword.strip())
+    synonym_lower = turkish_lower(synonym.strip())
+
+    # Self-reference kontrolü
+    if keyword_lower == synonym_lower:
+        return {"success": False, "error": "Keyword ve synonym aynı olamaz"}
+
+    status = 'approved' if auto_approve else 'pending'
+    approved_by = created_by if auto_approve else None
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                INSERT INTO keyword_synonyms
+                (company_id, keyword, synonym, synonym_type, source, status, created_by, approved_by, approved_at)
+                VALUES (?, ?, ?, ?, 'manual', ?, ?, ?, CASE WHEN ? = 'approved' THEN CURRENT_TIMESTAMP ELSE NULL END)
+            """, (company_id, keyword_lower, synonym_lower, synonym_type, status, created_by, approved_by, status))
+
+            new_id = cursor.lastrowid
+
+        logger.info(f"add_manual_synonym: '{keyword}' -> '{synonym}' eklendi (id: {new_id}, status: {status})")
+        return {"success": True, "id": new_id}
+
+    except sqlite3.IntegrityError:
+        return {"success": False, "error": "Bu synonym zaten mevcut"}
+    except Exception as e:
+        logger.error(f"add_manual_synonym hatası ({keyword} -> {synonym}): {e}")
+        return {"success": False, "error": str(e)}
+
+
+def delete_synonym(
+    synonym_id: int,
+    company_id: int = None
+) -> bool:
+    """
+    Synonym sil.
+
+    Args:
+        synonym_id: Silinecek synonym ID
+        company_id: Firma ID (güvenlik için, None ise global kontrol)
+
+    Returns:
+        bool: Silme başarılı mı
+    """
+    if not synonym_id:
+        return False
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            if company_id is not None:
+                # Firma bazlı güvenlik kontrolü
+                cursor.execute("""
+                    DELETE FROM keyword_synonyms
+                    WHERE id = ?
+                    AND (company_id IS NULL OR company_id = ?)
+                """, (synonym_id, company_id))
+            else:
+                # Global silme (admin)
+                cursor.execute("""
+                    DELETE FROM keyword_synonyms
+                    WHERE id = ?
+                """, (synonym_id,))
+
+            deleted = cursor.rowcount > 0
+
+        if deleted:
+            logger.info(f"delete_synonym: ID {synonym_id} silindi")
+
+        return deleted
+
+    except Exception as e:
+        logger.error(f"delete_synonym hatası (id: {synonym_id}): {e}")
+        return False
+
+
+def get_keyword_synonyms(
+    keyword: str,
+    company_id: int = None,
+    status: str = None,
+    include_global: bool = True
+) -> list[dict]:
+    """
+    Bir keyword'ün synonym'larını getir (yönetim paneli için).
+
+    Args:
+        keyword: Aranacak keyword
+        company_id: Firma ID
+        status: Filtre - 'pending', 'approved', 'rejected' veya None (tümü)
+        include_global: Global synonym'ları dahil et
+
+    Returns:
+        [{'id', 'synonym', 'synonym_type', 'source', 'status', 'created_at', 'approved_at'}]
+    """
+    if not keyword:
+        return []
+
+    keyword_lower = turkish_lower(keyword.strip())
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = """
+                SELECT id, synonym, synonym_type, source, status, created_at, approved_at, company_id
+                FROM keyword_synonyms
+                WHERE keyword = ?
+            """
+            params = [keyword_lower]
+
+            # Company filtresi
+            if company_id is not None:
+                if include_global:
+                    query += " AND (company_id IS NULL OR company_id = ?)"
+                else:
+                    query += " AND company_id = ?"
+                params.append(company_id)
+
+            # Status filtresi
+            if status:
+                query += " AND status = ?"
+                params.append(status)
+
+            query += " ORDER BY status, synonym"
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+            return [dict(row) for row in rows]
+
+    except Exception as e:
+        logger.error(f"get_keyword_synonyms hatası ({keyword}): {e}")
+        return []
+
+
+def check_synonym_exists(
+    keyword: str,
+    synonym: str,
+    company_id: int = None
+) -> bool:
+    """
+    Synonym zaten var mı kontrol et.
+    Form validation için kullanılır.
+
+    Args:
+        keyword: Ana keyword
+        synonym: Kontrol edilecek synonym
+        company_id: Firma ID (None = sadece global kontrol)
+
+    Returns:
+        bool: Mevcut mu
+    """
+    if not keyword or not synonym:
+        return False
+
+    keyword_lower = turkish_lower(keyword.strip())
+    synonym_lower = turkish_lower(synonym.strip())
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            if company_id is not None:
+                cursor.execute("""
+                    SELECT 1 FROM keyword_synonyms
+                    WHERE keyword = ?
+                    AND synonym = ?
+                    AND (company_id IS NULL OR company_id = ?)
+                    LIMIT 1
+                """, (keyword_lower, synonym_lower, company_id))
+            else:
+                cursor.execute("""
+                    SELECT 1 FROM keyword_synonyms
+                    WHERE keyword = ?
+                    AND synonym = ?
+                    AND company_id IS NULL
+                    LIMIT 1
+                """, (keyword_lower, synonym_lower))
+
+            return cursor.fetchone() is not None
+
+    except Exception as e:
+        logger.error(f"check_synonym_exists hatası ({keyword} -> {synonym}): {e}")
+        return False
+
+
 def _init_default_email_templates(cursor):
     """Varsayilan email sablonlarini olustur"""
     default_templates = [
