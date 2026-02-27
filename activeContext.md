@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 27.02.2026
+Son guncelleme: 28.02.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -31,6 +31,21 @@ Son guncelleme: 27.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 28.02.2026 - Keyword Synonym Yönetim Sistemi (ADIM 1.1 + 1.2)
+- AMAÇ: AI + İK onay sistemli synonym yönetimi için altyapı
+- ADIM 1.1: keyword_synonyms tablosu oluşturuldu (database.py:678-703)
+  - 11 kolon: id, company_id, keyword, synonym, synonym_type, source, status, created_by, approved_by, created_at, approved_at
+  - 4 index: company, keyword, status, lookup (composite)
+  - UNIQUE(company_id, keyword, synonym) constraint
+  - source: 'ai'/'manual'/'migrated', status: 'pending'/'approved'/'rejected'
+- ADIM 1.2: KEYWORD_SYNONYMS dict migration (database.py:705-789)
+  - _migrate_keyword_synonyms(cursor) fonksiyonu eklendi
+  - detect_synonym_type() iç fonksiyonu: turkish/english/abbreviation/variation
+  - 81 keyword, ~193 synonym (self-reference hariç) migrate edilecek
+  - source='migrated', status='approved', company_id=NULL (global)
+  - Idempotent: Zaten migrate edilmişse tekrar çalışmaz
+- SONRAKI: API endpoint'leri ve frontend UI
+
 ### 27.02.2026 - CV Çek Batch İşleme (Bellek Optimizasyonu)
 - AMAÇ: 1000+ aday için bellek sorununu önle
 - database.py: pull_matching_candidates_to_position fonksiyonuna batch işleme eklendi

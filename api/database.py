@@ -675,6 +675,119 @@ def init_database():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_keyword_dict_keyword ON keyword_dictionary(keyword)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_keyword_dict_category ON keyword_dictionary(category)")
 
+        # ═══════════════════════════════════════════════════════════════════════════
+        # KEYWORD SYNONYMS - AI + İK ONAY SİSTEMİ
+        # ═══════════════════════════════════════════════════════════════════════════
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS keyword_synonyms (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER,
+                keyword TEXT NOT NULL,
+                synonym TEXT NOT NULL,
+                synonym_type TEXT,
+                source TEXT DEFAULT 'ai',
+                status TEXT DEFAULT 'pending',
+                created_by INTEGER,
+                approved_by INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                approved_at TIMESTAMP,
+                FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+                FOREIGN KEY (created_by) REFERENCES users(id),
+                FOREIGN KEY (approved_by) REFERENCES users(id),
+                UNIQUE(company_id, keyword, synonym)
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_keyword_synonyms_company ON keyword_synonyms(company_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_keyword_synonyms_keyword ON keyword_synonyms(keyword)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_keyword_synonyms_status ON keyword_synonyms(status)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_keyword_synonyms_lookup ON keyword_synonyms(company_id, keyword, status)")
+
+        # ═══════════════════════════════════════════════════════════════════════════
+        # SYSTEM SYNONYMS - KEYWORD_SYNONYMS dict'inden otomatik migrate
+        # ═══════════════════════════════════════════════════════════════════════════
+        def _migrate_keyword_synonyms(cursor):
+            """
+            candidate_matcher.py'deki KEYWORD_SYNONYMS dict'ini
+            keyword_synonyms tablosuna migrate et.
+
+            - company_id = NULL (global, tüm firmalar)
+            - source = 'migrated' (dict'ten taşındı)
+            - status = 'approved' (onaylı)
+            - Self-reference'lar dahil edilmez (keyword == synonym)
+            """
+            # Zaten migrate edilmiş mi kontrol et
+            cursor.execute("SELECT COUNT(*) FROM keyword_synonyms WHERE source = 'migrated'")
+            if cursor.fetchone()[0] > 0:
+                return 0  # Zaten migrate edilmiş
+
+            # KEYWORD_SYNONYMS dict'ini import et
+            try:
+                import sys
+                import os
+                # core klasörünü path'e ekle
+                core_path = os.path.join(os.path.dirname(__file__), 'core')
+                if core_path not in sys.path:
+                    sys.path.insert(0, core_path)
+                from candidate_matcher import KEYWORD_SYNONYMS
+            except ImportError as e:
+                logger.error(f"KEYWORD_SYNONYMS import hatası: {e}")
+                return 0
+
+            # Synonym type belirleme fonksiyonu
+            def detect_synonym_type(keyword, synonym):
+                """Synonym tipini otomatik belirle"""
+                syn_lower = synonym.lower()
+
+                # Türkçe karakter içeriyorsa
+                turkish_chars = set('şğüöıçŞĞÜÖİÇ')
+                if any(c in synonym for c in turkish_chars):
+                    return 'turkish'
+
+                # Çok kısa ise (kısaltma)
+                if len(synonym) <= 4 and synonym.isupper():
+                    return 'abbreviation'
+
+                # Nokta, tire veya boşluk farkı varsa (varyasyon)
+                kw_clean = keyword.replace('.', '').replace('-', '').replace(' ', '').lower()
+                syn_clean = syn_lower.replace('.', '').replace('-', '').replace(' ', '')
+                if kw_clean == syn_clean and keyword.lower() != syn_lower:
+                    return 'variation'
+
+                # Varsayılan olarak İngilizce
+                return 'english'
+
+            # Migration işlemi
+            migrated_count = 0
+            for keyword, synonyms in KEYWORD_SYNONYMS.items():
+                keyword_lower = keyword.lower().strip()
+
+                for synonym in synonyms:
+                    synonym_lower = synonym.lower().strip()
+
+                    # Self-reference kontrolü (keyword == synonym)
+                    if keyword_lower == synonym_lower:
+                        continue
+
+                    # Synonym type belirle
+                    syn_type = detect_synonym_type(keyword, synonym)
+
+                    try:
+                        cursor.execute("""
+                            INSERT OR IGNORE INTO keyword_synonyms
+                            (company_id, keyword, synonym, synonym_type, source, status)
+                            VALUES (?, ?, ?, ?, 'migrated', 'approved')
+                        """, (None, keyword_lower, synonym_lower, syn_type))
+                        migrated_count += 1
+                    except Exception as e:
+                        logger.warning(f"Synonym migration hatası: {keyword} -> {synonym}: {e}")
+
+            return migrated_count
+
+        # Migration'ı çalıştır
+        migrated_count = _migrate_keyword_synonyms(cursor)
+        if migrated_count > 0:
+            logger.info(f"keyword_synonyms: {migrated_count} synonym migrate edildi")
+
         # Keyword seed data - tablo boşsa doldur
         cursor.execute("SELECT COUNT(*) FROM keyword_dictionary")
         if cursor.fetchone()[0] == 0:
