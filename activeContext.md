@@ -31,6 +31,15 @@ Son guncelleme: 27.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 27.02.2026 - AI Değerlendirme Tekrar Kontrolü
+- SORUN: evaluate_candidate her çağrıda Claude API kullanıyordu (maliyet + gereksiz)
+- ÇÖZÜM: Mevcut değerlendirme kontrolü eklendi - her aday+pozisyon için sadece 1 kere AI çağrılır
+- FIX: pools.py evaluate_candidate endpoint'ine get_ai_evaluation() kontrolü eklendi
+  - Mevcut değerlendirme varsa → cache'den döndürülür (API çağrısı yapılmaz)
+  - Response'a "cached": true ekleniyor (frontend'de cache göstergesi olabilir)
+- BEKLİYOR: ai_evaluations tablosuna UNIQUE INDEX (sunucu bağlantısı sonrası)
+  - CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_eval_candidate_position ON ai_evaluations(candidate_id, position_id)
+
 ### 27.02.2026 - Manuel Aday Ata Sistemik Tutarlılık Fix
 - BUG: Manuel "Aday Ata" sadece candidate_positions INSERT yapıyordu
 - SORUN: candidates.durum ve havuz güncellenmiyordu, Genel Havuz kaydı silinmiyordu
@@ -376,6 +385,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+7f54af2 - feat: AI değerlendirme tekrar kontrolü - mevcut değerlendirme cache sistemi
 8cdb600 - refactor: havuzlar UI temizliği - gereksiz butonlar kaldırıldı + aday ata pool_type fix
 cc2a339 - feat: Yeniden Hesapla butonu - ADIM 6 (pools.py rescore endpoint + frontend RefreshCw button)
 8394118 - fix: havuz alanı Optional yapıldı - ise_alindi adaylar için NULL kabul eder
@@ -419,9 +429,15 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-GÖREV 3 ve 4 tamamlandı:
-- Aday Ata: Combobox ile isim araması + pool_type kontrolü fix
-- Havuzlar UI: Gereksiz butonlar temizlendi (checkbox, transfer, durum, zip CV)
+AI Değerlendirme Tekrar Kontrolü tamamlandı (lokal):
+- pools.py değişikliği yapıldı ve commit edilecek
+- Sunucu bağlantısı sonrası deploy ve UNIQUE INDEX eklenecek
+
+Sırada (Eksik Limitler):
+- Login Rate Limit aktivasyonu
+- AI Günlük Limit (plans.daily_ai_limit)
+- Pozisyon Eşleşme Limiti
+- CV Çek Batch İşleme
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

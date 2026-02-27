@@ -970,11 +970,24 @@ def evaluate_candidate(pool_id: int, candidate_id: int, current_user: dict = Dep
     import anthropic
     import os
     import json as json_lib
-    
+
     try:
         company_id = current_user["company_id"]
         if not verify_department_pool_ownership(pool_id, company_id):
             raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
+
+        # Mevcut değerlendirme kontrolü - her aday+pozisyon için sadece 1 kere AI çağrılır
+        from database import get_ai_evaluation
+        existing_eval = get_ai_evaluation(candidate_id, pool_id)
+        if existing_eval:
+            return {
+                "success": True,
+                "evaluation": {
+                    "text": existing_eval.get("evaluation_text", ""),
+                    "v2_score": existing_eval.get("v2_score", 0)
+                },
+                "cached": True
+            }
 
         with get_connection() as conn:
             cursor = conn.cursor()
