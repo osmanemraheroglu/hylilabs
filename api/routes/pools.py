@@ -419,19 +419,23 @@ def update_candidates_status(
 
 
 @router.post("/{pool_id}/pull-candidates")
-def pull_candidates(pool_id: int, current_user: dict = Depends(get_current_user)):
-    """Pozisyon icin eslesen adaylari cek (CV Cek)"""
+def pull_candidates(
+    pool_id: int,
+    limit: int = Query(default=50, ge=1, le=500, description="Maksimum eşleşme sayısı (varsayılan 50, max 500)"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Pozisyon için eşleşen adayları çek (CV Çek) - En yüksek skorlu TOP N aday"""
     try:
         company_id = current_user["company_id"]
         if not verify_department_pool_ownership(pool_id, company_id):
-            raise HTTPException(status_code=403, detail="Bu havuza erisim yetkiniz yok")
+            raise HTTPException(status_code=403, detail="Bu havuza erişim yetkiniz yok")
 
         from database import pull_matching_candidates_to_position
-        result = pull_matching_candidates_to_position(pool_id, company_id)
+        result = pull_matching_candidates_to_position(pool_id, company_id, limit=limit)
         return {
             "success": True,
             "data": result,
-            "message": f"{result.get('transferred', 0)} aday eşleşti ve aktarıldı"
+            "message": f"{result.get('transferred', 0)} aday eşleşti ve aktarıldı (skor sıralı, limit: {limit})"
         }
     except HTTPException:
         raise

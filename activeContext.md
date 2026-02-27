@@ -31,6 +31,18 @@ Son guncelleme: 27.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 27.02.2026 - Pozisyon Eşleşme Limiti (CV Çek)
+- AMAÇ: CV Çek yapıldığında en yüksek skorlu TOP N aday gelsin
+- database.py: pull_matching_candidates_to_position fonksiyonu refactor edildi
+  - limit parametresi eklendi (varsayılan 50, -1 = sınırsız)
+  - Adaylar önce toplanıyor, sonra match_score'a göre sıralanıyor (DESC)
+  - Limit uygulanıp sadece TOP N aday ekleniyor
+  - stats['limit_applied'] response'a eklendi
+- pools.py: pull-candidates endpoint'ine limit Query parametresi eklendi
+  - Query(default=50, ge=1, le=500)
+  - Response mesajına limit bilgisi eklendi
+- Diğer çağrı noktaları (save-parsed, approve-titles) varsayılan 50 kullanıyor
+
 ### 27.02.2026 - AI Günlük Kullanım Limiti (Plan Bazlı)
 - AMAÇ: Maliyet kontrolü için plan bazlı günlük AI limiti
 - DB: plans tablosuna daily_ai_limit kolonu eklendi
@@ -410,7 +422,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-5e86b61 - feat: AI günlük kullanım limiti eklendi (plan bazlı)
+3aedb93 - feat: Pozisyon eşleşme limiti eklendi (varsayılan 50, skor sıralı)
+abd3f05 - feat: AI günlük kullanım limiti eklendi (plan bazlı)
 3683ce5 - feat: Login ve CV upload rate limit aktifleştirildi
 b4bcafd - feat: AI değerlendirme tekrar kontrolü - mevcut değerlendirme cache sistemi
 8cdb600 - refactor: havuzlar UI temizliği - gereksiz butonlar kaldırıldı + aday ata pool_type fix
@@ -456,14 +469,15 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-AI Günlük Kullanım Limiti tamamlandı:
-- plans.daily_ai_limit: trial=10, starter=50, professional=200, enterprise=sınırsız
-- database.py: get_company_daily_ai_limit(), get_daily_ai_usage(), check_ai_daily_limit()
-- pools.py: evaluate_candidate'de limit kontrolü
+Pozisyon Eşleşme Limiti tamamlandı:
+- database.py: pull_matching_candidates_to_position() refactor edildi
+  - limit parametresi eklendi (varsayılan 50)
+  - Adaylar match_score'a göre sıralanıp TOP N seçiliyor
+- pools.py: pull-candidates endpoint'ine limit Query parametresi eklendi
+  - Query(default=50, ge=1, le=500)
 
 Sırada (Eksik Limitler):
-- Pozisyon Eşleşme Limiti
-- CV Çek Batch İşleme
+- CV Çek Batch İşleme (opsiyonel)
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

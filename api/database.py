@@ -3717,19 +3717,24 @@ def get_candidates_expiring_soon(company_id: int, days: int = 7) -> list[dict]:
     return sorted(results, key=lambda x: x['remaining_days'])
 
 
-def pull_matching_candidates_to_position(position_pool_id: int, company_id: int) -> dict:
+def pull_matching_candidates_to_position(position_pool_id: int, company_id: int, limit: int = 50) -> dict:
     """Pozisyonun onaylı başlıklarına uyan CV'leri Genel Havuz ve Arşiv'den çek (v2 Title Match)
 
     Kullanıcı "CV Çek" butonuna tıkladığında çağrılır.
     SADECE pozisyon başlığı eşleşmesi olan adayları pozisyona ekler.
     Keyword ve sektör eşleşmesi tek başına yetmez.
 
+    Args:
+        position_pool_id: Pozisyon havuzu ID
+        company_id: Firma ID
+        limit: Maksimum eşleşme sayısı (varsayılan 50, -1 = sınırsız)
+
     Returns:
         {'total_scanned': int, 'matched': int, 'transferred': int, 'already_exists': int,
-         'from_general': int, 'from_archive': int}
+         'from_general': int, 'from_archive': int, 'limit_applied': int}
     """
     stats = {'total_scanned': 0, 'matched': 0, 'transferred': 0, 'already_exists': 0,
-             'from_general': 0, 'from_archive': 0}
+             'from_general': 0, 'from_archive': 0, 'limit_applied': limit}
 
     # Pozisyon bilgilerini al
     with get_connection() as conn:
@@ -3771,6 +3776,10 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
     archive_pool = get_pool_by_name(company_id, 'Arşiv')
     general_pool_id = general_pool['id'] if general_pool else None
     archive_pool_id = archive_pool['id'] if archive_pool else None
+
+    # === POZİSYON EŞLEŞME LİMİTİ (27.02.2026) ===
+    # Eşleşen adayları topla, sonra sıralayıp limit uygula
+    matched_candidates_list = []
 
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -3912,25 +3921,52 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int)
                 match_score = title_match_score
                 v2_result = None
 
+            # Foreign key kontrolü: candidate_id ve position_id geçerli mi?
+            # AYNI ZAMANDA durum kontrolü — ise_alindi/arsiv adaylar atlamalı
+            cursor.execute("SELECT durum FROM candidates WHERE id = ?", (candidate_id,))
+            cand_row = cursor.fetchone()
+            if not cand_row:
+                logger.warning(f"candidate_id={candidate_id} bulunamadı, atlanıyor")
+                continue
+            if cand_row['durum'] in ('ise_alindi', 'arsiv'):
+                logger.info(f"candidate_id={candidate_id} korumalı durumda ({cand_row['durum']}), atlanıyor")
+                continue
+
+            cursor.execute("SELECT 1 FROM department_pools WHERE id = ? AND pool_type = 'position'", (position_pool_id,))
+            if not cursor.fetchone():
+                logger.warning(f"position_id={position_pool_id} bulunamadı veya pozisyon değil, atlanıyor")
+                continue
+
+            # Adayı listeye ekle (henüz INSERT yapma)
+            matched_candidates_list.append({
+                'candidate_id': candidate_id,
+                'match_score': match_score,
+                'v2_result': v2_result,
+                'candidate_dict': candidate_dict,
+                'position_dict': position_dict
+            })
+
+        # === SIRALAMA VE LİMİT UYGULA (27.02.2026) ===
+        # Sonuçları match_score'a göre sırala (yüksekten düşüğe)
+        if matched_candidates_list:
+            matched_candidates_list.sort(key=lambda x: x.get('match_score', 0), reverse=True)
+
+            # Limit uygula (limit=-1 ise sınırsız)
+            total_before_limit = len(matched_candidates_list)
+            if limit > 0 and total_before_limit > limit:
+                matched_candidates_list = matched_candidates_list[:limit]
+                logger.info(f"Pozisyon {position_pool_id}: {total_before_limit} eşleşmeden {limit} tanesi alındı (skor sıralı)")
+
+        stats['matched'] = len(matched_candidates_list)
+
+        # === SIRALANMIŞ VE LİMİTLENMİŞ ADAYLARI EKLE ===
+        for match_data in matched_candidates_list:
+            candidate_id = match_data['candidate_id']
+            match_score = match_data['match_score']
+            v2_result = match_data['v2_result']
+
             # YENİ SİSTEM: candidate_positions tablosuna ekle
             try:
-                # Foreign key kontrolü: candidate_id ve position_id geçerli mi?
-                # AYNI ZAMANDA durum kontrolü — ise_alindi/arsiv adaylar atlamalı
-                cursor.execute("SELECT durum FROM candidates WHERE id = ?", (candidate_id,))
-                cand_row = cursor.fetchone()
-                if not cand_row:
-                    logger.warning(f"candidate_id={candidate_id} bulunamadı, atlanıyor")
-                    continue
-                if cand_row['durum'] in ('ise_alindi', 'arsiv'):
-                    logger.info(f"candidate_id={candidate_id} korumalı durumda ({cand_row['durum']}), atlanıyor")
-                    continue
-                
-                cursor.execute("SELECT 1 FROM department_pools WHERE id = ? AND pool_type = 'position'", (position_pool_id,))
-                if not cursor.fetchone():
-                    logger.warning(f"position_id={position_pool_id} bulunamadı veya pozisyon değil, atlanıyor")
-                    continue
-                
-                stats['matched'] += 1
                 cursor.execute("""
                     INSERT OR IGNORE INTO candidate_positions
                     (candidate_id, position_id, match_score, status, created_at)
