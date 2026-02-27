@@ -31,6 +31,19 @@ Son guncelleme: 27.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 27.02.2026 - Manuel Aday Ata Sistemik Tutarlılık Fix
+- BUG: Manuel "Aday Ata" sadece candidate_positions INSERT yapıyordu
+- SORUN: candidates.durum ve havuz güncellenmiyordu, Genel Havuz kaydı silinmiyordu
+- ETKİ: Dashboard ve Adaylar sayfasında tutarsız veriler
+- FIX: add_candidate_to_position fonksiyonu tamamlandı:
+  1. candidates.durum = "pozisyona_atandi" UPDATE
+  2. candidates.havuz = "pozisyona_aktarilan" UPDATE
+  3. Genel Havuz DELETE
+  4. Arşiv DELETE
+  5. matches INSERT (manuel_atama notu ile)
+- CLAUDE.md Pool Assignments kurallarına uygun hale getirildi
+- Commit: 6596f6b
+
 ### 26.02.2026 - Bug Fix: v2_result UnboundLocalError
 - Sorun: PM2 PYTHONPATH eksik → candidate_matcher import hata → v2_result tanımsız → 500 Error
 - Kısa vadeli fix: database.py except bloğuna v2_result = None eklendi
