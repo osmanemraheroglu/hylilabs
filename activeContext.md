@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 26.02.2026
+Son guncelleme: 27.02.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -363,6 +363,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+8cdb600 - refactor: havuzlar UI temizliği - gereksiz butonlar kaldırıldı + aday ata pool_type fix
 cc2a339 - feat: Yeniden Hesapla butonu - ADIM 6 (pools.py rescore endpoint + frontend RefreshCw button)
 8394118 - fix: havuz alanı Optional yapıldı - ise_alindi adaylar için NULL kabul eder
 df118eb - fix: CV Topla istatistik düzeltmeleri - gerçek aday sayıları ve dosya istatistikleri
@@ -405,9 +406,9 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-ADIM 6 tamamlandı. V2 skorlama sistemi tam çalışır durumda.
-- Yeniden Hesapla butonu aktif (havuzlar sayfası)
-- ai_evaluations.v2_score değerleri güncel
+GÖREV 3 ve 4 tamamlandı:
+- Aday Ata: Combobox ile isim araması + pool_type kontrolü fix
+- Havuzlar UI: Gereksiz butonlar temizlendi (checkbox, transfer, durum, zip CV)
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)
@@ -435,6 +436,23 @@ ADIM 6 tamamlandı. V2 skorlama sistemi tam çalışır durumda.
   - Mevcut pozisyon bilgisi gösteriliyor
   - ise_alindi adaylar listede gösterilmiyor (frontend filtre)
   - shadcn/ui Command + Popover bileşenleri kullanıldı
+
+### 27.02.2026 - Havuzlar UI Temizliği
+- GÖREV 4: Gereksiz butonlar ve UI elementleri kaldırıldı
+- KALDIRILANLAR:
+  - Üstteki "CV İndir" butonu (işlevsiz - zip download)
+  - Transfer ve Durum toplu işlem butonları
+  - Tablo header ve satır checkbox'ları
+  - Transfer ve Status dialog'ları
+  - selectedCandidates, allPools state'leri
+  - toggleCandidate, toggleAllCandidates, handleTransfer, handleStatusUpdate, handleDownloadPoolCVs fonksiyonları
+  - loadAllPools fonksiyonu
+  - ArrowRightLeft import
+- KORUNANLAR:
+  - CSV export butonu (handleExport)
+  - Aday detay CV butonu (handleViewCV)
+  - Akıllı Havuz başlık onayı için Checkbox
+- SONUÇ: 1236 → 1145 satır (~90 satır temizlendi)
 
 ### 26.02.2026 - Aday Ata Bug Fix (Pozisyon Tablosu)
 - BUG: API 200 döndürüyordu ama aday pozisyona eklenmiyordu
