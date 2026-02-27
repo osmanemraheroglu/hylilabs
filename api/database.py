@@ -9120,8 +9120,8 @@ def get_ai_evaluation(candidate_id: int, position_id: int) -> dict:
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT evaluation_text, v2_score, created_at 
-                FROM ai_evaluations 
+                SELECT evaluation_text, v2_score, created_at
+                FROM ai_evaluations
                 WHERE candidate_id = ? AND position_id = ?
             """, (candidate_id, position_id))
             row = cursor.fetchone()
@@ -9131,3 +9131,65 @@ def get_ai_evaluation(candidate_id: int, position_id: int) -> dict:
     except Exception as e:
         logger.error(f"get_ai_evaluation hatası: {e}")
         return None
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AI GÜNLÜK KULLANIM LİMİTİ FONKSİYONLARI (27.02.2026)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def get_company_daily_ai_limit(company_id: int) -> int:
+    """Şirketin plan bazlı günlük AI limitini döndür (-1 = sınırsız)"""
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT p.daily_ai_limit
+                FROM companies c
+                JOIN plans p ON c.plan_id = p.id
+                WHERE c.id = ?
+            """, (company_id,))
+            row = cursor.fetchone()
+            if row:
+                return row['daily_ai_limit'] if row['daily_ai_limit'] is not None else -1
+            return 10  # Varsayılan limit
+    except Exception as e:
+        logger.error(f"get_company_daily_ai_limit hatası: {e}")
+        return 10
+
+
+def get_daily_ai_usage(company_id: int) -> int:
+    """Şirketin bugünkü AI kullanım sayısını döndür"""
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT COUNT(*) as count
+                FROM ai_evaluations
+                WHERE company_id = ?
+                AND date(created_at) = date('now')
+            """, (company_id,))
+            row = cursor.fetchone()
+            return row['count'] if row else 0
+    except Exception as e:
+        logger.error(f"get_daily_ai_usage hatası: {e}")
+        return 0
+
+
+def check_ai_daily_limit(company_id: int) -> tuple:
+    """
+    Şirketin günlük AI limitini kontrol et
+    Returns: (izin_var_mi: bool, mesaj: str, kalan: int)
+    """
+    limit = get_company_daily_ai_limit(company_id)
+
+    # Sınırsız plan
+    if limit == -1:
+        return True, "", -1
+
+    current_usage = get_daily_ai_usage(company_id)
+    remaining = limit - current_usage
+
+    if remaining <= 0:
+        return False, f"Günlük AI değerlendirme limitinize ulaştınız ({limit}). Yarın tekrar deneyebilirsiniz.", 0
+
+    return True, "", remaining

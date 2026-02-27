@@ -31,6 +31,18 @@ Son guncelleme: 27.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 27.02.2026 - AI Günlük Kullanım Limiti (Plan Bazlı)
+- AMAÇ: Maliyet kontrolü için plan bazlı günlük AI limiti
+- DB: plans tablosuna daily_ai_limit kolonu eklendi
+  - trial: 10, starter: 50, professional: 200, enterprise: -1 (sınırsız)
+- database.py: 3 yeni fonksiyon eklendi
+  - get_company_daily_ai_limit() → Plan bazlı limit
+  - get_daily_ai_usage() → Bugünkü kullanım sayısı
+  - check_ai_daily_limit() → Limit kontrolü (izin, mesaj, kalan)
+- pools.py: evaluate_candidate'de limit kontrolü
+  - Cache kontrolünden SONRA, API çağrısından ÖNCE
+  - Limit aşıldığında 429 + Türkçe hata mesajı
+
 ### 27.02.2026 - Login ve CV Upload Rate Limit Aktivasyonu
 - AMAÇ: Brute force saldırıları ve spam koruması
 - FIX 1: auth.py login endpoint rate limit eklendi
@@ -398,7 +410,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-2a8c048 - feat: Login ve CV upload rate limit aktifleştirildi
+5e86b61 - feat: AI günlük kullanım limiti eklendi (plan bazlı)
+3683ce5 - feat: Login ve CV upload rate limit aktifleştirildi
 b4bcafd - feat: AI değerlendirme tekrar kontrolü - mevcut değerlendirme cache sistemi
 8cdb600 - refactor: havuzlar UI temizliği - gereksiz butonlar kaldırıldı + aday ata pool_type fix
 cc2a339 - feat: Yeniden Hesapla butonu - ADIM 6 (pools.py rescore endpoint + frontend RefreshCw button)
@@ -443,12 +456,12 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Login ve CV Upload Rate Limit tamamlandı:
-- auth.py: check_login_limit() aktif (5/15dk)
-- cv.py: check_cv_upload_limit() aktif (20/saat)
+AI Günlük Kullanım Limiti tamamlandı:
+- plans.daily_ai_limit: trial=10, starter=50, professional=200, enterprise=sınırsız
+- database.py: get_company_daily_ai_limit(), get_daily_ai_usage(), check_ai_daily_limit()
+- pools.py: evaluate_candidate'de limit kontrolü
 
 Sırada (Eksik Limitler):
-- AI Günlük Limit (plans.daily_ai_limit)
 - Pozisyon Eşleşme Limiti
 - CV Çek Batch İşleme
 

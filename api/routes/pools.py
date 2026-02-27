@@ -977,7 +977,7 @@ def evaluate_candidate(pool_id: int, candidate_id: int, current_user: dict = Dep
             raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
 
         # Mevcut değerlendirme kontrolü - her aday+pozisyon için sadece 1 kere AI çağrılır
-        from database import get_ai_evaluation
+        from database import get_ai_evaluation, check_ai_daily_limit
         existing_eval = get_ai_evaluation(candidate_id, pool_id)
         if existing_eval:
             return {
@@ -988,6 +988,15 @@ def evaluate_candidate(pool_id: int, candidate_id: int, current_user: dict = Dep
                 },
                 "cached": True
             }
+
+        # === AI GÜNLÜK LİMİT KONTROLÜ (27.02.2026) ===
+        allowed, limit_msg, remaining = check_ai_daily_limit(company_id)
+        if not allowed:
+            raise HTTPException(
+                status_code=429,
+                detail=limit_msg
+            )
+        # === LİMİT KONTROL SONU ===
 
         with get_connection() as conn:
             cursor = conn.cursor()
