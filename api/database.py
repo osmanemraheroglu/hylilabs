@@ -3777,174 +3777,201 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
     general_pool_id = general_pool['id'] if general_pool else None
     archive_pool_id = archive_pool['id'] if archive_pool else None
 
-    # === POZİSYON EŞLEŞME LİMİTİ (27.02.2026) ===
+    # === POZİSYON EŞLEŞME LİMİTİ + BATCH İŞLEME (27.02.2026) ===
     # Eşleşen adayları topla, sonra sıralayıp limit uygula
+    # BATCH işleme ile bellek optimizasyonu (1000+ aday için güvenli)
+    BATCH_SIZE = 100  # Her seferde işlenecek aday sayısı
     matched_candidates_list = []
 
     with get_connection() as conn:
         cursor = conn.cursor()
 
-        # TÜM firma adaylarını al (hangi havuzda olursa olsun)
-        # NOT: ise_alindi ve arsiv durumundaki adaylar hariç tutulur (korumalı durumlar)
+        # === BATCH İŞLEME: Toplam aday sayısını al ===
         cursor.execute("""
-            SELECT DISTINCT c.id, c.ad_soyad, c.cv_raw_text, c.teknik_beceriler, c.mevcut_pozisyon,
-                   c.deneyim_detay, c.toplam_deneyim_yil, c.egitim, c.lokasyon, c.mevcut_sirket
-            FROM candidates c
-            WHERE c.company_id = ?
-              AND c.durum NOT IN ('ise_alindi', 'arsiv')
+            SELECT COUNT(*) as total
+            FROM candidates
+            WHERE company_id = ? AND durum NOT IN ('ise_alindi', 'arsiv')
         """, (company_id,))
+        total_candidates = cursor.fetchone()['total']
+        stats['total_scanned'] = total_candidates
+        stats['batches_processed'] = 0
 
-        candidates = cursor.fetchall()
-        stats['total_scanned'] = len(candidates)
+        logger.info(f"Pozisyon {position_pool_id}: Toplam {total_candidates} aday taranacak (batch={BATCH_SIZE})")
 
-        for cand in candidates:
-            # sqlite3.Row objesi dict gibi erişilebilir
-            candidate_id = cand['id']
-            ad_soyad = cand['ad_soyad'] or ''
-            cv_text = cand['cv_raw_text'] or ''
-            skills = cand['teknik_beceriler'] or ''
-            current_pos = cand['mevcut_pozisyon'] or ''
-            experience = cand['deneyim_detay'] or ''
-            exp_years = cand['toplam_deneyim_yil'] or 0
-            education = cand['egitim'] or ''
-            location = cand['lokasyon'] or ''
-            company = cand['mevcut_sirket'] or ''
-
-            # Adayın pozisyon başlıklarını bul
-            candidate_titles = []
-            if current_pos:
-                candidate_titles.append(current_pos)
-            
-            # deneyim_detay'dan pozisyon başlıkları çıkar
-            import re
-            if experience:
-                pos_patterns = re.findall(r'(?:Pozisyon|Unvan|Görev)[:\s]+([^,\n]+)', experience, re.IGNORECASE)
-                candidate_titles.extend(pos_patterns)
-            
-            # Title eşleşmesi kontrolü
-            title_match_found = False
-            title_match_score = 0
-            
-            for title in candidate_titles:
-                title_normalized = turkish_lower(title.strip())
-                if not title_normalized:
-                    continue
-                
-                # Exact match
-                for exact_title in title_mappings.get('exact', []):
-                    if turkish_lower(exact_title) == title_normalized:
-                        title_match_found = True
-                        title_match_score = 23
-                        break
-                
-                if title_match_found:
-                    break
-                
-                # Close match (fuzzy >= 85)
-                if fuzz:
-                    for close_title in title_mappings.get('close', []):
-                        ratio = fuzz.ratio(title_normalized, turkish_lower(close_title))
-                        if ratio >= 85:
-                            if title_match_score < 14:
-                                title_match_score = 14
-                                title_match_found = True
-                                break
-                
-                if title_match_found and title_match_score >= 14:
-                    break
-                
-                # Partial match (fuzzy >= 70)
-                if fuzz:
-                    for partial_title in title_mappings.get('partial', []):
-                        ratio = fuzz.ratio(title_normalized, turkish_lower(partial_title))
-                        if ratio >= 70:
-                            if title_match_score < 7:
-                                title_match_score = 7
-                                title_match_found = True
-                                break
-            
-            # title_match_score == 0 ise skip et (pozisyon başlığı eşleşmesi yok)
-            if not title_match_found or title_match_score == 0:
-                continue
-            
-
-
-            # Aday max 5 pozisyonda olabilir - kontrol et
-            current_pos_count = get_candidate_position_count(candidate_id)
-            if current_pos_count >= 1:
-                continue  # Limit dolmuş, atla
-
-            # Zaten bu pozisyonda mı kontrol et (candidate_positions tablosu)
+        # === BATCH DÖNGÜSÜ ===
+        offset = 0
+        while offset < total_candidates:
+            # Batch'i çek (LIMIT/OFFSET ile bellek optimizasyonu)
             cursor.execute("""
-                SELECT 1 FROM candidate_positions
-                WHERE candidate_id = ? AND position_id = ?
-            """, (candidate_id, position_pool_id))
+                SELECT DISTINCT c.id, c.ad_soyad, c.cv_raw_text, c.teknik_beceriler, c.mevcut_pozisyon,
+                       c.deneyim_detay, c.toplam_deneyim_yil, c.egitim, c.lokasyon, c.mevcut_sirket
+                FROM candidates c
+                WHERE c.company_id = ?
+                  AND c.durum NOT IN ('ise_alindi', 'arsiv')
+                ORDER BY c.id
+                LIMIT ? OFFSET ?
+            """, (company_id, BATCH_SIZE, offset))
 
-            if cursor.fetchone():
-                stats['already_exists'] += 1
-                continue
+            batch = cursor.fetchall()
+            if not batch:
+                break
 
-            # v2 scoring ile skor hesapla
-            candidate_dict = {
-                'id': candidate_id,
-                'ad_soyad': ad_soyad or '',
-                'teknik_beceriler': skills or '',
-                'toplam_deneyim_yil': exp_years or 0,
-                'egitim': education or '',
-                'lokasyon': location or '',
-                'cv_raw_text': cv_text or '',
-                'deneyim_detay': experience or '',
-                'mevcut_pozisyon': current_pos or '',
-                'mevcut_sirket': company or ''
-            }
-            
-            position_dict = {
-                'id': position_pool_id,
-                'name': position_name,
-                'keywords': position_keywords,
-                'gerekli_deneyim_yil': position_exp_years or 0,
-                'gerekli_egitim': position_education or '',
-                'lokasyon': position_location or ''
-            }
-            
-            # v2 scoring ile skor hesapla
-            try:
-                from scoring_v2 import calculate_match_score_v2
-                v2_result = calculate_match_score_v2(candidate_dict, position_dict)
-                if v2_result:
-                    match_score = v2_result.get('total', 0)
-                else:
-                    # v2 verisi yok, title_match_score'u kullan
+            stats['batches_processed'] += 1
+
+            # === BU BATCH'TEKİ ADAYLARI İŞLE ===
+            for cand in batch:
+                # sqlite3.Row objesi dict gibi erişilebilir
+                candidate_id = cand['id']
+                ad_soyad = cand['ad_soyad'] or ''
+                cv_text = cand['cv_raw_text'] or ''
+                skills = cand['teknik_beceriler'] or ''
+                current_pos = cand['mevcut_pozisyon'] or ''
+                experience = cand['deneyim_detay'] or ''
+                exp_years = cand['toplam_deneyim_yil'] or 0
+                education = cand['egitim'] or ''
+                location = cand['lokasyon'] or ''
+                company = cand['mevcut_sirket'] or ''
+
+                # Adayın pozisyon başlıklarını bul
+                candidate_titles = []
+                if current_pos:
+                    candidate_titles.append(current_pos)
+
+                # deneyim_detay'dan pozisyon başlıkları çıkar
+                import re
+                if experience:
+                    pos_patterns = re.findall(r'(?:Pozisyon|Unvan|Görev)[:\s]+([^,\n]+)', experience, re.IGNORECASE)
+                    candidate_titles.extend(pos_patterns)
+
+                # Title eşleşmesi kontrolü
+                title_match_found = False
+                title_match_score = 0
+
+                for title in candidate_titles:
+                    title_normalized = turkish_lower(title.strip())
+                    if not title_normalized:
+                        continue
+
+                    # Exact match
+                    for exact_title in title_mappings.get('exact', []):
+                        if turkish_lower(exact_title) == title_normalized:
+                            title_match_found = True
+                            title_match_score = 23
+                            break
+
+                    if title_match_found:
+                        break
+
+                    # Close match (fuzzy >= 85)
+                    if fuzz:
+                        for close_title in title_mappings.get('close', []):
+                            ratio = fuzz.ratio(title_normalized, turkish_lower(close_title))
+                            if ratio >= 85:
+                                if title_match_score < 14:
+                                    title_match_score = 14
+                                    title_match_found = True
+                                    break
+
+                    if title_match_found and title_match_score >= 14:
+                        break
+
+                    # Partial match (fuzzy >= 70)
+                    if fuzz:
+                        for partial_title in title_mappings.get('partial', []):
+                            ratio = fuzz.ratio(title_normalized, turkish_lower(partial_title))
+                            if ratio >= 70:
+                                if title_match_score < 7:
+                                    title_match_score = 7
+                                    title_match_found = True
+                                    break
+
+                # title_match_score == 0 ise skip et (pozisyon başlığı eşleşmesi yok)
+                if not title_match_found or title_match_score == 0:
+                    continue
+
+                # Aday max 5 pozisyonda olabilir - kontrol et
+                current_pos_count = get_candidate_position_count(candidate_id)
+                if current_pos_count >= 1:
+                    continue  # Limit dolmuş, atla
+
+                # Zaten bu pozisyonda mı kontrol et (candidate_positions tablosu)
+                cursor.execute("""
+                    SELECT 1 FROM candidate_positions
+                    WHERE candidate_id = ? AND position_id = ?
+                """, (candidate_id, position_pool_id))
+
+                if cursor.fetchone():
+                    stats['already_exists'] += 1
+                    continue
+
+                # v2 scoring ile skor hesapla
+                candidate_dict = {
+                    'id': candidate_id,
+                    'ad_soyad': ad_soyad or '',
+                    'teknik_beceriler': skills or '',
+                    'toplam_deneyim_yil': exp_years or 0,
+                    'egitim': education or '',
+                    'lokasyon': location or '',
+                    'cv_raw_text': cv_text or '',
+                    'deneyim_detay': experience or '',
+                    'mevcut_pozisyon': current_pos or '',
+                    'mevcut_sirket': company or ''
+                }
+
+                position_dict = {
+                    'id': position_pool_id,
+                    'name': position_name,
+                    'keywords': position_keywords,
+                    'gerekli_deneyim_yil': position_exp_years or 0,
+                    'gerekli_egitim': position_education or '',
+                    'lokasyon': position_location or ''
+                }
+
+                # v2 scoring ile skor hesapla
+                try:
+                    from scoring_v2 import calculate_match_score_v2
+                    v2_result = calculate_match_score_v2(candidate_dict, position_dict)
+                    if v2_result:
+                        match_score = v2_result.get('total', 0)
+                    else:
+                        # v2 verisi yok, title_match_score'u kullan
+                        match_score = title_match_score
+                except Exception as e:
+                    logger.warning(f"v2 scoring hatası, title_match_score kullanılıyor: {e}")
                     match_score = title_match_score
-            except Exception as e:
-                logger.warning(f"v2 scoring hatası, title_match_score kullanılıyor: {e}")
-                match_score = title_match_score
-                v2_result = None
+                    v2_result = None
 
-            # Foreign key kontrolü: candidate_id ve position_id geçerli mi?
-            # AYNI ZAMANDA durum kontrolü — ise_alindi/arsiv adaylar atlamalı
-            cursor.execute("SELECT durum FROM candidates WHERE id = ?", (candidate_id,))
-            cand_row = cursor.fetchone()
-            if not cand_row:
-                logger.warning(f"candidate_id={candidate_id} bulunamadı, atlanıyor")
-                continue
-            if cand_row['durum'] in ('ise_alindi', 'arsiv'):
-                logger.info(f"candidate_id={candidate_id} korumalı durumda ({cand_row['durum']}), atlanıyor")
-                continue
+                # Foreign key kontrolü: candidate_id ve position_id geçerli mi?
+                # AYNI ZAMANDA durum kontrolü — ise_alindi/arsiv adaylar atlamalı
+                cursor.execute("SELECT durum FROM candidates WHERE id = ?", (candidate_id,))
+                cand_row = cursor.fetchone()
+                if not cand_row:
+                    logger.warning(f"candidate_id={candidate_id} bulunamadı, atlanıyor")
+                    continue
+                if cand_row['durum'] in ('ise_alindi', 'arsiv'):
+                    logger.info(f"candidate_id={candidate_id} korumalı durumda ({cand_row['durum']}), atlanıyor")
+                    continue
 
-            cursor.execute("SELECT 1 FROM department_pools WHERE id = ? AND pool_type = 'position'", (position_pool_id,))
-            if not cursor.fetchone():
-                logger.warning(f"position_id={position_pool_id} bulunamadı veya pozisyon değil, atlanıyor")
-                continue
+                cursor.execute("SELECT 1 FROM department_pools WHERE id = ? AND pool_type = 'position'", (position_pool_id,))
+                if not cursor.fetchone():
+                    logger.warning(f"position_id={position_pool_id} bulunamadı veya pozisyon değil, atlanıyor")
+                    continue
 
-            # Adayı listeye ekle (henüz INSERT yapma)
-            matched_candidates_list.append({
-                'candidate_id': candidate_id,
-                'match_score': match_score,
-                'v2_result': v2_result,
-                'candidate_dict': candidate_dict,
-                'position_dict': position_dict
-            })
+                # Adayı listeye ekle (henüz INSERT yapma)
+                matched_candidates_list.append({
+                    'candidate_id': candidate_id,
+                    'match_score': match_score,
+                    'v2_result': v2_result,
+                    'candidate_dict': candidate_dict,
+                    'position_dict': position_dict
+                })
+
+            # === BATCH SONRASI ===
+            offset += BATCH_SIZE
+
+            # Her 5 batch'te bir ilerleme logu
+            if stats['batches_processed'] % 5 == 0:
+                logger.info(f"Pozisyon {position_pool_id}: {min(offset, total_candidates)}/{total_candidates} aday işlendi")
 
         # === SIRALAMA VE LİMİT UYGULA (27.02.2026) ===
         # Sonuçları match_score'a göre sırala (yüksekten düşüğe)

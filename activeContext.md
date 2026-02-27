@@ -31,6 +31,17 @@ Son guncelleme: 27.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 27.02.2026 - CV Çek Batch İşleme (Bellek Optimizasyonu)
+- AMAÇ: 1000+ aday için bellek sorununu önle
+- database.py: pull_matching_candidates_to_position fonksiyonuna batch işleme eklendi
+  - BATCH_SIZE = 100 (her seferde 100 aday işlenir)
+  - Eski: fetchall() ile TÜM adaylar belleğe (O(n) bellek)
+  - Yeni: LIMIT/OFFSET ile parça parça (O(100) sabit bellek)
+  - stats['batches_processed'] eklendi
+  - Her 5 batch'te ilerleme logu
+- AKIŞ: COUNT → WHILE (LIMIT/OFFSET) → SIRALA → LİMİTLE → INSERT
+- Mevcut skor hesaplama kodu (scoring_v2) korundu
+
 ### 27.02.2026 - Pozisyon Eşleşme Limiti (CV Çek)
 - AMAÇ: CV Çek yapıldığında en yüksek skorlu TOP N aday gelsin
 - database.py: pull_matching_candidates_to_position fonksiyonu refactor edildi
@@ -422,7 +433,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-3aedb93 - feat: Pozisyon eşleşme limiti eklendi (varsayılan 50, skor sıralı)
+2eb11a9 - perf: CV Çek batch işleme eklendi (bellek optimizasyonu)
+4b16983 - feat: Pozisyon eşleşme limiti eklendi (varsayılan 50, skor sıralı)
 abd3f05 - feat: AI günlük kullanım limiti eklendi (plan bazlı)
 3683ce5 - feat: Login ve CV upload rate limit aktifleştirildi
 b4bcafd - feat: AI değerlendirme tekrar kontrolü - mevcut değerlendirme cache sistemi
@@ -469,15 +481,20 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-Pozisyon Eşleşme Limiti tamamlandı:
-- database.py: pull_matching_candidates_to_position() refactor edildi
-  - limit parametresi eklendi (varsayılan 50)
-  - Adaylar match_score'a göre sıralanıp TOP N seçiliyor
-- pools.py: pull-candidates endpoint'ine limit Query parametresi eklendi
-  - Query(default=50, ge=1, le=500)
+CV Çek Batch İşleme tamamlandı:
+- database.py: pull_matching_candidates_to_position() batch işleme eklendi
+  - BATCH_SIZE = 100 ile LIMIT/OFFSET sorguları
+  - Bellek kullanımı O(n) → O(100) sabit
+  - stats['batches_processed'] eklendi
+  - 1000+ aday için güvenli
 
-Sırada (Eksik Limitler):
-- CV Çek Batch İşleme (opsiyonel)
+Tüm limitler tamamlandı:
+- ✅ AI Değerlendirme Tekrar Kontrolü
+- ✅ Login Rate Limit (5 deneme/15 dk)
+- ✅ CV Upload Rate Limit (20 dosya/saat)
+- ✅ AI Günlük Kullanım Limiti (plan bazlı)
+- ✅ Pozisyon Eşleşme Limiti (TOP 50)
+- ✅ CV Çek Batch İşleme (bellek optimizasyonu)
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)
