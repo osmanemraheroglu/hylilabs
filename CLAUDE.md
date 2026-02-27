@@ -293,3 +293,28 @@ DEGISTIRME
 - get_position_candidates() fonksiyonu c.* ile tüm aday alanlarını döndürür
 - Dosyalar: api/routes/pools.py (satır 215-216), api/database.py (satır 8577-8599)
 - Commit: 6641c11 — DEGISTIRME
+
+### Sistem Limitleri (27.02.2026) — DEĞİŞTİRİLMEMELİ
+
+1. **AI Tekrar Kontrolü**: Her aday+pozisyon için Claude API sadece 1 kere çağrılır.
+   - ai_evaluations tablosunda UNIQUE(candidate_id, position_id)
+   - Mevcut değerlendirme varsa cache'den döner
+   - pools.py evaluate_candidate'de kontrol var
+
+2. **Rate Limitler**:
+   - Login: 5 deneme / 15 dk (check_login_limit)
+   - CV Upload: 20 dosya / saat (check_cv_upload_limit)
+   - rate_limiter.py fonksiyonları aktif
+
+3. **AI Günlük Limit** (plan bazlı):
+   - trial: 10, starter: 50, professional: 200, enterprise: sınırsız
+   - plans.daily_ai_limit kolonu
+   - check_ai_daily_limit() fonksiyonu
+
+4. **CV Çek Limitleri**:
+   - Pozisyon başına varsayılan 50 aday (max 500)
+   - match_score DESC sıralı
+   - BATCH_SIZE=100 ile bellek optimizasyonu
+   - pull_matching_candidates_to_position(limit=50)
+
+Bu limitler DEĞİŞTİRİLMEMELİ.
