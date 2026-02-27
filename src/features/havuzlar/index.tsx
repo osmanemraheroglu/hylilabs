@@ -8,14 +8,17 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   FolderTree, Plus, Edit, Trash2, RefreshCw, ChevronRight, ChevronDown,
-  Archive, Inbox, Building2, Target, UserPlus, ArrowRightLeft, Search,
-  Download, ChevronUp, Brain, FileText, Link, X
+  Archive, Inbox, Building2, Target, UserPlus, Search,
+  Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown
 } from 'lucide-react'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const API = 'http://***REMOVED***:8000'
 const H = () => ({ 'Authorization': `Bearer ${localStorage.getItem('access_token')}`, 'Content-Type': 'application/json' })
@@ -57,7 +60,6 @@ export default function Havuzlar() {
   const [poolInfo, setPoolInfo] = useState<Pool | null>(null)
   const [candidatesLoading, setCandidatesLoading] = useState(false)
   const [expandedDepts, setExpandedDepts] = useState<Set<number>>(new Set())
-  const [selectedCandidates, setSelectedCandidates] = useState<Set<number>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
   const [syncing, setSyncing] = useState(false)
   const [pulling, setPulling] = useState(false)
@@ -77,15 +79,13 @@ export default function Havuzlar() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
-  const [transferDialogOpen, setTransferDialogOpen] = useState(false)
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false)
 
   // Forms
   const [poolForm, setPoolForm] = useState({ name: '', pool_type: 'department', parent_id: '', icon: '', keywords: '', description: '', gerekli_deneyim_yil: '0', gerekli_egitim: '', lokasyon: '' })
   const [assignCandidateId, setAssignCandidateId] = useState('')
-  const [transferTargetId, setTransferTargetId] = useState('')
-  const [statusValue, setStatusValue] = useState('')
-  const [allPools, setAllPools] = useState<Array<{ id: number; name: string; pool_type: string }>>([])
+  const [candidateSearchOpen, setCandidateSearchOpen] = useState(false)
+  const [candidateList, setCandidateList] = useState<{id: number, ad_soyad: string, mevcut_pozisyon?: string}[]>([])
+  const [selectedCandidate, setSelectedCandidate] = useState<{id: number, ad_soyad: string} | null>(null)
 
   // Position Add with URL/Manual
   const [urlInput, setUrlInput] = useState('')
@@ -113,7 +113,6 @@ export default function Havuzlar() {
   // AI Evaluation
   const [evaluating, setEvaluating] = useState(false)
   const [rescoring, setRescoring] = useState(false)
-  const [downloadingCVs, setDownloadingCVs] = useState(false)
 
   const loadTree = useCallback(() => {
     setLoading(true)
@@ -123,22 +122,40 @@ export default function Havuzlar() {
       }).catch(console.error).finally(() => setLoading(false))
   }, [])
 
-  const loadAllPools = useCallback(() => {
-    fetch(`${API}/api/pools`, { headers: H() }).then(r => r.json()).then(res => { if (res.success) setAllPools(res.data) }).catch(console.error)
-  }, [])
-
   const loadCandidates = useCallback((poolId: number) => {
-    setCandidatesLoading(true); setSelectedCandidates(new Set()); setExpandedCandidate(null); setCandidateDetail(null)
+    setCandidatesLoading(true); setExpandedCandidate(null); setCandidateDetail(null)
     fetch(`${API}/api/pools/${poolId}/candidates`, { headers: H() })
       .then(r => r.json()).then(res => { if (res.success) { setCandidates(res.data); setPoolInfo(res.pool) } })
       .catch(console.error).finally(() => setCandidatesLoading(false))
   }, [])
 
-  useEffect(() => { loadTree(); loadAllPools() }, [loadTree, loadAllPools])
+  useEffect(() => { loadTree() }, [loadTree])
   useEffect(() => { if (selectedPoolId) loadCandidates(selectedPoolId) }, [selectedPoolId, loadCandidates])
 
+  // Aday Ata - Combobox için aday listesi
+  const fetchCandidatesForAssign = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/candidates`, { headers: H() })
+      const data = await res.json()
+      if (data.success) {
+        const assignable = (data.data.candidates || []).filter((c: {durum?: string}) => c.durum !== 'ise_alindi')
+        setCandidateList(assignable)
+      }
+    } catch (error) {
+      console.error('Aday listesi alınamadı:', error)
+      toast.error('Aday listesi yüklenemedi')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (assignDialogOpen) {
+      fetchCandidatesForAssign()
+      setSelectedCandidate(null)
+      setCandidateSearchOpen(false)
+    }
+  }, [assignDialogOpen, fetchCandidatesForAssign])
+
   const toggleDept = (id: number) => setExpandedDepts(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
-  const toggleCandidate = (id: number) => setSelectedCandidates(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
 
   // Candidate Detail
   const loadDetail = (candidateId: number) => {
@@ -175,19 +192,19 @@ export default function Havuzlar() {
     const payload: Record<string, unknown> = { name: poolForm.name, pool_type: poolForm.pool_type, icon: poolForm.pool_type === 'position' ? '\uD83C\uDFAF' : '\uD83D\uDCC1', keywords: poolForm.keywords ? poolForm.keywords.split(',').map(k => k.trim()).filter(Boolean) : [], description: poolForm.description, gerekli_deneyim_yil: Number(poolForm.gerekli_deneyim_yil) || 0, gerekli_egitim: poolForm.gerekli_egitim, lokasyon: poolForm.lokasyon }
     if (poolForm.parent_id) payload.parent_id = Number(poolForm.parent_id)
     fetch(`${API}/api/pools`, { method: 'POST', headers: H(), body: JSON.stringify(payload) })
-      .then(r => r.json()).then(res => { if (res.success) { setCreateDialogOpen(false); resetPoolForm(); loadTree(); loadAllPools() } else toast.error(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { setCreateDialogOpen(false); resetPoolForm(); loadTree() } else toast.error(res.detail || 'Hata') })
   }
 
   const handleUpdatePool = () => {
     if (!selectedPoolId || !poolForm.name) return
     fetch(`${API}/api/pools/${selectedPoolId}`, { method: 'PUT', headers: H(), body: JSON.stringify({ name: poolForm.name, keywords: poolForm.keywords ? poolForm.keywords.split(',').map(k => k.trim()).filter(Boolean) : [], description: poolForm.description }) })
-      .then(r => r.json()).then(res => { if (res.success) { setEditDialogOpen(false); loadTree(); loadAllPools(); loadCandidates(selectedPoolId) } else toast.error(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { setEditDialogOpen(false); loadTree(); loadCandidates(selectedPoolId) } else toast.error(res.detail || 'Hata') })
   }
 
   const handleDeletePool = () => {
     if (!deleteConfirm) return
     fetch(`${API}/api/pools/${deleteConfirm}`, { method: 'DELETE', headers: H() })
-      .then(r => r.json()).then(res => { if (res.success) { setDeleteConfirm(null); if (selectedPoolId === deleteConfirm) { setSelectedPoolId(null); setCandidates([]); setPoolInfo(null) }; loadTree(); loadAllPools() } else toast.error(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { setDeleteConfirm(null); if (selectedPoolId === deleteConfirm) { setSelectedPoolId(null); setCandidates([]); setPoolInfo(null) }; loadTree() } else toast.error(res.detail || 'Hata') })
   }
 
   const handleAssignCandidate = () => {
@@ -210,22 +227,10 @@ export default function Havuzlar() {
     }
   }
 
-  const handleTransfer = () => {
-    if (!selectedPoolId || !transferTargetId || selectedCandidates.size === 0) return
-    fetch(`${API}/api/pools/transfer`, { method: 'POST', headers: H(), body: JSON.stringify({ candidate_ids: Array.from(selectedCandidates), source_pool_id: selectedPoolId, target_pool_id: Number(transferTargetId) }) })
-      .then(r => r.json()).then(res => { if (res.success) { setTransferDialogOpen(false); setTransferTargetId(''); setSelectedCandidates(new Set()); loadCandidates(selectedPoolId); loadTree() } else toast.error(res.detail || 'Hata') })
-  }
-
-  const handleStatusUpdate = () => {
-    if (!selectedPoolId || !statusValue || selectedCandidates.size === 0) return
-    fetch(`${API}/api/pools/${selectedPoolId}/candidates/status`, { method: 'PUT', headers: H(), body: JSON.stringify({ candidate_ids: Array.from(selectedCandidates), durum: statusValue }) })
-      .then(r => r.json()).then(res => { if (res.success) { setStatusDialogOpen(false); setStatusValue(''); setSelectedCandidates(new Set()); loadCandidates(selectedPoolId) } else toast.error(res.detail || 'Hata') })
-  }
-
   const handleSyncAll = () => {
     setSyncing(true)
     fetch(`${API}/api/pools/sync-all`, { method: 'POST', headers: H() })
-      .then(r => r.json()).then(res => { if (res.success) { toast.success('Senkronizasyon Tamamlandı', { description: `${res.data.positions_scanned} pozisyon tarandı, ${res.data.total_transferred} aday aktarıldı` }); loadTree(); loadAllPools(); if (selectedPoolId) loadCandidates(selectedPoolId) } else toast.error(res.detail || 'Hata') })
+      .then(r => r.json()).then(res => { if (res.success) { toast.success('Senkronizasyon Tamamlandı', { description: `${res.data.positions_scanned} pozisyon tarandı, ${res.data.total_transferred} aday aktarıldı` }); loadTree(); if (selectedPoolId) loadCandidates(selectedPoolId) } else toast.error(res.detail || 'Hata') })
       .catch(console.error).finally(() => setSyncing(false))
   }
 
@@ -246,36 +251,6 @@ export default function Havuzlar() {
         a.href = url; a.download = `${poolInfo?.name || 'havuz'}_adaylar.csv`
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
       }).catch(console.error)
-  }
-
-  const handleDownloadPoolCVs = async () => {
-    if (!selectedPoolId) return
-    setDownloadingCVs(true)
-    try {
-      const token = localStorage.getItem("access_token")
-      const response = await fetch(`${API}/api/candidates/export/download-cvs?pool_id=${selectedPoolId}`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      })
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}))
-        throw new Error(errData.detail || "İndirme hatası")
-      }
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `havuz_${selectedPoolId}_cvler.zip`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
-      toast.success("CV dosyaları indirildi")
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Bilinmeyen hata"
-      toast.error(message)
-    } finally {
-      setDownloadingCVs(false)
-    }
   }
 
   // URL ile Pozisyon Parse
@@ -320,7 +295,7 @@ export default function Havuzlar() {
         if (res.success) {
           setCreateDialogOpen(false); resetPoolForm(); setUrlInput(''); setParsedData(null)
           setPositionForm({ pozisyon_adi: '', lokasyon: '', deneyim_yil: '0', egitim_seviyesi: '', keywords: '', aranan_nitelikler: '', is_tanimi: '' })
-          loadTree(); loadAllPools()
+          loadTree()
           toast.success('Pozisyon başarıyla eklendi')
         } else { toast.error(res.detail || 'Kayıt hatası') }
       }).catch(e => toast.error('Hata: ' + e)).finally(() => setSavingPosition(false))
@@ -507,11 +482,6 @@ export default function Havuzlar() {
     return 0
   })
 
-  const toggleAllCandidates = () => {
-    if (selectedCandidates.size === filteredCandidates.length) setSelectedCandidates(new Set())
-    else setSelectedCandidates(new Set(filteredCandidates.map(c => c.id)))
-  }
-
   const totalCandidates = tree?.total_candidates || 0
 
   // V2 Detail Renderer
@@ -558,7 +528,7 @@ export default function Havuzlar() {
           <p className="text-muted-foreground text-sm">Departman ve pozisyon havuzlarını yönetin</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => { loadTree(); loadAllPools(); if (selectedPoolId) loadCandidates(selectedPoolId) }} disabled={loading}><RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />Yenile</Button>
+          <Button variant="outline" size="sm" onClick={() => { loadTree(); if (selectedPoolId) loadCandidates(selectedPoolId) }} disabled={loading}><RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />Yenile</Button>
           <Button size="sm" variant="outline" onClick={handleSyncAll} disabled={syncing}>{syncing ? <RefreshCw className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}Eşleştir</Button>
           <Button size="sm" onClick={() => openCreate('department')}><Plus className="h-4 w-4 mr-1" />Departman</Button>
         </div>
@@ -568,7 +538,7 @@ export default function Havuzlar() {
       <div className="grid grid-cols-4 gap-3">
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold">{totalCandidates}</div><div className="text-xs text-muted-foreground">Toplam Aday</div></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-blue-600">{tree?.system_pools?.find(s => s.name === 'Genel Havuz')?.candidate_count || 0}</div><div className="text-xs text-muted-foreground">Genel Havuz</div></CardContent></Card>
-        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-orange-600">{tree?.system_pools?.find(s => s.name === 'Ar\u015Fiv')?.candidate_count || 0}</div><div className="text-xs text-muted-foreground">Arşiv</div></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-orange-600">{tree?.system_pools?.find(s => s.name === 'Arşiv')?.candidate_count || 0}</div><div className="text-xs text-muted-foreground">Arşiv</div></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-bold text-green-600">{tree?.departments?.length || 0}</div><div className="text-xs text-muted-foreground">Departman</div></CardContent></Card>
       </div>
 
@@ -580,7 +550,7 @@ export default function Havuzlar() {
             <div className="text-sm font-medium text-muted-foreground mb-2">Havuz Ağacı</div>
             {tree?.system_pools?.map(sp => (
               <div key={sp.id} className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-muted ${selectedPoolId === sp.id ? 'bg-muted border border-primary' : ''}`} onClick={() => setSelectedPoolId(sp.id)}>
-                <div className="flex items-center gap-2">{sp.name === 'Ar\u015Fiv' ? <Archive className="h-4 w-4 text-orange-500" /> : <Inbox className="h-4 w-4 text-blue-500" />}<span className="text-sm font-medium">{sp.name}</span></div>
+                <div className="flex items-center gap-2">{sp.name === 'Arşiv' ? <Archive className="h-4 w-4 text-orange-500" /> : <Inbox className="h-4 w-4 text-blue-500" />}<span className="text-sm font-medium">{sp.name}</span></div>
                 <Badge variant="secondary" className="text-xs">{sp.candidate_count}</Badge>
               </div>
             ))}
@@ -623,7 +593,7 @@ export default function Havuzlar() {
                 <div className="flex gap-1.5">
                   {poolInfo && !poolInfo.is_system && (<><Button variant="outline" size="sm" onClick={openEdit}><Edit className="h-3.5 w-3.5 mr-1" />Düzenle</Button><Button variant="outline" size="sm" className="text-red-500" onClick={() => setDeleteConfirm(selectedPoolId)}><Trash2 className="h-3.5 w-3.5 mr-1" />Sil</Button></>)}
                   {poolInfo && poolInfo.pool_type === 'position' && !poolInfo.is_system && (
-                    <Button variant="default" size="sm" onClick={handlePullCandidates} disabled={pulling}>{pulling ? <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1" />}CV Cek</Button>
+                    <Button variant="default" size="sm" onClick={handlePullCandidates} disabled={pulling}>{pulling ? <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1" />}CV Çek</Button>
                   )}
                   <Button variant="outline" size="sm" onClick={() => setAssignDialogOpen(true)}><UserPlus className="h-3.5 w-3.5 mr-1" />Aday Ata</Button>
                 </div>
@@ -640,7 +610,7 @@ export default function Havuzlar() {
                   <SelectContent>
                     <SelectItem value="all">Tüm Skorlar</SelectItem>
                     <SelectItem value="high">80+ Tam Uyum</SelectItem>
-                    <SelectItem value="medium">50-79 Kismi</SelectItem>
+                    <SelectItem value="medium">50-79 Kısmi</SelectItem>
                     <SelectItem value="low">0-49 Uyumsuz</SelectItem>
                   </SelectContent>
                 </Select>
@@ -665,14 +635,7 @@ export default function Havuzlar() {
 
               {/* Action Bar */}
               <div className="flex items-center gap-2">
-                {selectedCandidates.size > 0 && (
-                  <>
-                    <Button size="sm" variant="outline" onClick={() => setTransferDialogOpen(true)}><ArrowRightLeft className="h-3.5 w-3.5 mr-1" />Transfer ({selectedCandidates.size})</Button>
-                    <Button size="sm" variant="outline" onClick={() => setStatusDialogOpen(true)}>Durum ({selectedCandidates.size})</Button>
-                  </>
-                )}
                 <div className="flex-1" />
-                <Button size="sm" variant="outline" onClick={handleDownloadPoolCVs} disabled={downloadingCVs || filteredCandidates.length === 0}>{downloadingCVs ? <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}CV İndir</Button>
                 <Button size="sm" variant="ghost" onClick={handleExport}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
                 <Badge variant="outline">{filteredCandidates.length} aday</Badge>
               </div>
@@ -687,7 +650,6 @@ export default function Havuzlar() {
                   <Table className="table-fixed w-full">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-8"><Checkbox checked={selectedCandidates.size === filteredCandidates.length && filteredCandidates.length > 0} onCheckedChange={toggleAllCandidates} /></TableHead>
                         <TableHead className="w-[220px]">Ad Soyad</TableHead>
                         <TableHead className="w-[180px]">CV'de Belirtilen Unvan</TableHead>
                         <TableHead className="w-[80px]">Deneyim</TableHead>
@@ -702,8 +664,7 @@ export default function Havuzlar() {
                         const si = c.match_score ? scoreIcon(c.match_score) : null
                         return (
                           <Fragment key={c.id}>
-                            <TableRow className={`${selectedCandidates.has(c.id) ? 'bg-muted/50' : ''} cursor-pointer`} onClick={() => loadDetail(c.id)}>
-                              <TableCell onClick={e => e.stopPropagation()}><Checkbox checked={selectedCandidates.has(c.id)} onCheckedChange={() => toggleCandidate(c.id)} /></TableCell>
+                            <TableRow className="cursor-pointer" onClick={() => loadDetail(c.id)}>
                               <TableCell>
                                 <div className="font-medium text-sm flex items-center gap-1">{expandedCandidate === c.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}{c.ad_soyad}</div>
                                 {c.email && <div className="text-xs text-muted-foreground ml-4">{c.email}</div>}
@@ -731,7 +692,7 @@ export default function Havuzlar() {
                             {/* Expanded Detail Row */}
                             {expandedCandidate === c.id && (
                               <TableRow key={`detail-${c.id}`}>
-                                <TableCell colSpan={8} className="bg-muted/30 p-4">
+                                <TableCell colSpan={7} className="bg-muted/30 p-4">
                                   {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const v2d = (candidateDetail as any).v2_detail; const aie = (candidateDetail as any).ai_evaluation; return (
                                     <div className="space-y-3">
                                       {/* Kisisel Bilgiler */}
@@ -758,7 +719,7 @@ export default function Havuzlar() {
                                       {/* v2 Score Detail */}
                                       {v2d && (
                                         <div className="border rounded p-3 bg-white">
-                                          <div className="text-xs font-medium mb-1 flex items-center gap-1"><FileText className="h-3 w-3" />v2 Skor Detayi (Toplam: {String((v2d)?.uyum_puani || (candidateDetail as any).position_score || '-')})</div>
+                                          <div className="text-xs font-medium mb-1 flex items-center gap-1"><FileText className="h-3 w-3" />v2 Skor Detayı (Toplam: {String((v2d)?.uyum_puani || (candidateDetail as any).position_score || '-')})</div>
                                           {renderV2Detail(v2d)}
                                         </div>
                                       )}
@@ -897,14 +858,14 @@ export default function Havuzlar() {
             <Tabs defaultValue="url" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="url"><Link className="h-3.5 w-3.5 mr-1" />URL ile Ekle</TabsTrigger>
-                <TabsTrigger value="document"><FileText className="h-3.5 w-3.5 mr-1" />Dokumandan Ekle</TabsTrigger>
-                <TabsTrigger value="manual"><Edit className="h-3.5 w-3.5 mr-1" />Manuel Giris</TabsTrigger>
+                <TabsTrigger value="document"><FileText className="h-3.5 w-3.5 mr-1" />Dokümandan Ekle</TabsTrigger>
+                <TabsTrigger value="manual"><Edit className="h-3.5 w-3.5 mr-1" />Manuel Giriş</TabsTrigger>
               </TabsList>
 
               {/* TAB 1: URL ile Ekle */}
               <TabsContent value="url" className="space-y-3 mt-3">
                 <div>
-                  <Label className="text-sm">Kariyer.net Ilan URL</Label>
+                  <Label className="text-sm">Kariyer.net İlan URL</Label>
                   <div className="flex gap-2 mt-1">
                     <Input value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://www.kariyer.net/is-ilani/..." className="flex-1" />
                     <Button onClick={handleParseUrl} disabled={parseLoading || !urlInput}>
@@ -918,11 +879,11 @@ export default function Havuzlar() {
                   <div className="space-y-3 border-t pt-3">
                     <div className="text-sm font-medium text-green-600">Analiz başarılı! Aşağıdaki bilgileri düzenleyebilirsiniz:</div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} /></div>
+                      <div><Label className="text-sm">Pozisyon Adı *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} /></div>
                       <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
+                      <div><Label className="text-sm">Deneyim (yıl)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
                       <div>
                         <Label className="text-sm">Eğitim Seviyesi</Label>
                         <Select value={positionForm.egitim_seviyesi || "none"} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v === "none" ? "" : v})}>
@@ -938,7 +899,7 @@ export default function Havuzlar() {
                         </Select>
                       </div>
                     </div>
-                    <div><Label className="text-sm">Anahtar Kelimeler (virgul ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} /></div>
+                    <div><Label className="text-sm">Anahtar Kelimeler (virgül ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} /></div>
                     <div><Label className="text-sm">Aranan Nitelikler</Label><Textarea value={positionForm.aranan_nitelikler} onChange={e => setPositionForm({...positionForm, aranan_nitelikler: e.target.value})} rows={3} /></div>
                     <div><Label className="text-sm">İş Tanımı</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} /></div>
                     <Button onClick={handleSaveParsed} disabled={savingPosition || !positionForm.pozisyon_adi} className="w-full">
@@ -948,12 +909,12 @@ export default function Havuzlar() {
                 )}
               </TabsContent>
 
-              {/* TAB 2: Dokumandan Ekle */}
+              {/* TAB 2: Dokümandan Ekle */}
               <TabsContent value="document" className="space-y-3 mt-3">
                 <div>
-                  <Label className="text-sm">Ilan Dokumani (PDF, Word, JPEG)</Label>
-                  <Input 
-                    type="file" 
+                  <Label className="text-sm">İlan Dokümanı (PDF, Word, JPEG)</Label>
+                  <Input
+                    type="file"
                     accept=".pdf,.docx,.doc,.jpg,.jpeg,.png"
                     onChange={e => {
                       const file = e.target.files?.[0]
@@ -995,7 +956,7 @@ export default function Havuzlar() {
 
                 {parseLoading && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <RefreshCw className="h-4 w-4 animate-spin" /> Dokuman analiz ediliyor...
+                    <RefreshCw className="h-4 w-4 animate-spin" /> Doküman analiz ediliyor...
                   </div>
                 )}
 
@@ -1003,11 +964,11 @@ export default function Havuzlar() {
                   <div className="space-y-3 border-t pt-3">
                     <div className="text-sm font-medium text-green-600">Analiz başarılı! Aşağıdaki bilgileri düzenleyebilirsiniz:</div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} /></div>
+                      <div><Label className="text-sm">Pozisyon Adı *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} /></div>
                       <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
+                      <div><Label className="text-sm">Deneyim (yıl)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
                       <div>
                         <Label className="text-sm">Eğitim Seviyesi</Label>
                         <Select value={positionForm.egitim_seviyesi || "none"} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v === "none" ? "" : v})}>
@@ -1023,7 +984,7 @@ export default function Havuzlar() {
                         </Select>
                       </div>
                     </div>
-                    <div><Label className="text-sm">Anahtar Kelimeler (virgul ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} /></div>
+                    <div><Label className="text-sm">Anahtar Kelimeler (virgül ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} /></div>
                     <div><Label className="text-sm">Aranan Nitelikler</Label><Textarea value={positionForm.aranan_nitelikler} onChange={e => setPositionForm({...positionForm, aranan_nitelikler: e.target.value})} rows={3} /></div>
                     <div><Label className="text-sm">İş Tanımı</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} /></div>
                     <Button onClick={handleSaveParsed} disabled={savingPosition || !positionForm.pozisyon_adi} className="w-full">
@@ -1033,14 +994,14 @@ export default function Havuzlar() {
                 )}
               </TabsContent>
 
-              {/* TAB 3: Manuel Giris */}
+              {/* TAB 3: Manuel Giriş */}
               <TabsContent value="manual" className="space-y-3 mt-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <div><Label className="text-sm">Pozisyon Adi *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} placeholder="Örnek: Frontend Developer" /></div>
-                  <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} placeholder="Istanbul" /></div>
+                  <div><Label className="text-sm">Pozisyon Adı *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} placeholder="Örnek: Frontend Developer" /></div>
+                  <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} placeholder="İstanbul" /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div><Label className="text-sm">Deneyim (yil)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
+                  <div><Label className="text-sm">Deneyim (yıl)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
                   <div>
                     <Label className="text-sm">Eğitim Seviyesi</Label>
                     <Select value={positionForm.egitim_seviyesi || "none"} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v === "none" ? "" : v})}>
@@ -1056,9 +1017,9 @@ export default function Havuzlar() {
                     </Select>
                   </div>
                 </div>
-                <div><Label className="text-sm">Anahtar Kelimeler (virgul ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} placeholder="react, typescript, node.js" /></div>
+                <div><Label className="text-sm">Anahtar Kelimeler (virgül ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} placeholder="react, typescript, node.js" /></div>
                 <div><Label className="text-sm">Aranan Nitelikler</Label><Textarea value={positionForm.aranan_nitelikler} onChange={e => setPositionForm({...positionForm, aranan_nitelikler: e.target.value})} rows={3} placeholder="Gerekli beceriler ve nitelikler..." /></div>
-                <div><Label className="text-sm">İş Tanımı</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} placeholder="Pozisyon hakkinda detaylar..." /></div>
+                <div><Label className="text-sm">İş Tanımı</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} placeholder="Pozisyon hakkında detaylar..." /></div>
                 <Button onClick={handleSaveParsed} disabled={savingPosition || !positionForm.pozisyon_adi} className="w-full">
                   {savingPosition ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : null}Kaydet
                 </Button>
@@ -1067,7 +1028,7 @@ export default function Havuzlar() {
           ) : (
             /* Departman ekleme (eski basit form) */
             <div className="space-y-3">
-              <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} placeholder="Örnek: Yazilim Gelistirme" /></div>
+              <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} placeholder="Örnek: Yazılım Geliştirme" /></div>
               <div><Label className="text-sm">Açıklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
               <DialogFooter><Button variant="outline" onClick={() => setCreateDialogOpen(false)}>İptal</Button><Button onClick={handleCreatePool} disabled={!poolForm.name}>Oluştur</Button></DialogFooter>
             </div>
@@ -1082,7 +1043,7 @@ export default function Havuzlar() {
             <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} /></div>
             <div><Label className="text-sm">Açıklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
 
-            {/* Keyword Yonetimi */}
+            {/* Keyword Yönetimi */}
             {poolInfo?.pool_type === 'position' && (
               <div className="border rounded-md p-3 space-y-3">
                 <Label className="text-sm font-medium">Anahtar Kelimeler</Label>
@@ -1129,37 +1090,54 @@ export default function Havuzlar() {
 
       <Dialog open={deleteConfirm !== null} onOpenChange={o => { if (!o) setDeleteConfirm(null) }}>
         <DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Havuz Sil</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">Bu havuzu silmek istediginizden emin misiniz? Adaylar Genel Havuz'a tasinacaktir.</p>
+          <p className="text-sm text-muted-foreground">Bu havuzu silmek istediğinizden emin misiniz? Adaylar Genel Havuz'a taşınacaktır.</p>
           <DialogFooter><Button variant="outline" onClick={() => setDeleteConfirm(null)}>İptal</Button><Button variant="destructive" onClick={handleDeletePool}>Sil</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Aday Ata</DialogTitle></DialogHeader>
-          <div><Label className="text-sm">Aday ID</Label><Input type="number" value={assignCandidateId} onChange={e => setAssignCandidateId(e.target.value)} placeholder="Örnek: 421" /></div>
-          <DialogFooter><Button variant="outline" onClick={() => setAssignDialogOpen(false)}>İptal</Button><Button onClick={handleAssignCandidate} disabled={!assignCandidateId}>Ata</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
-        <DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Transfer ({selectedCandidates.size} aday)</DialogTitle></DialogHeader>
-          <div><Label className="text-sm">Hedef Havuz</Label>
-            <Select value={transferTargetId} onValueChange={setTransferTargetId}><SelectTrigger><SelectValue placeholder="Havuz secin..." /></SelectTrigger>
-              <SelectContent>{allPools.filter(p => p.id !== selectedPoolId).map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}</SelectContent>
-            </Select>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Aday Ata</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm mb-2 block">Aday Seç</Label>
+              <Popover open={candidateSearchOpen} onOpenChange={setCandidateSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between">
+                    {selectedCandidate ? selectedCandidate.ad_soyad : "Aday ara veya seç..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[350px] p-0">
+                  <Command>
+                    <CommandInput placeholder="İsim ile ara..." />
+                    <CommandList>
+                      <CommandEmpty>Aday bulunamadı.</CommandEmpty>
+                      <CommandGroup>
+                        {candidateList.map((c) => (
+                          <CommandItem key={c.id} value={c.ad_soyad} onSelect={() => {
+                            setSelectedCandidate(c)
+                            setAssignCandidateId(String(c.id))
+                            setCandidateSearchOpen(false)
+                          }}>
+                            <Check className={cn("mr-2 h-4 w-4", selectedCandidate?.id === c.id ? "opacity-100" : "opacity-0")} />
+                            <div className="flex flex-col">
+                              <span className="font-medium">{c.ad_soyad}</span>
+                              {c.mevcut_pozisyon && <span className="text-xs text-muted-foreground">{c.mevcut_pozisyon}</span>}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setTransferDialogOpen(false)}>İptal</Button><Button onClick={handleTransfer} disabled={!transferTargetId}>Transfer</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Durum Guncelle ({selectedCandidates.size} aday)</DialogTitle></DialogHeader>
-          <div><Label className="text-sm">Yeni Durum</Label>
-            <Select value={statusValue} onValueChange={setStatusValue}><SelectTrigger><SelectValue placeholder="Durum secin..." /></SelectTrigger>
-              <SelectContent>{Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <DialogFooter><Button variant="outline" onClick={() => setStatusDialogOpen(false)}>İptal</Button><Button onClick={handleStatusUpdate} disabled={!statusValue}>Guncelle</Button></DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>İptal</Button>
+            <Button onClick={handleAssignCandidate} disabled={!selectedCandidate}>Ata</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -38,7 +38,7 @@ def list_candidates(
     havuz: Optional[str] = None,
     durum: Optional[str] = None,
     arama: Optional[str] = None,
-    limit: int = Query(default=50, le=200),
+    limit: int = Query(default=50),
     offset: int = Query(default=0, ge=0),
     current_user: dict = Depends(get_current_user)
 ):
