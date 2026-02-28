@@ -296,7 +296,17 @@ export default function Havuzlar() {
           setCreateDialogOpen(false); resetPoolForm(); setUrlInput(''); setParsedData(null)
           setPositionForm({ pozisyon_adi: '', lokasyon: '', deneyim_yil: '0', egitim_seviyesi: '', keywords: '', aranan_nitelikler: '', is_tanimi: '' })
           loadTree()
-          toast.success('Pozisyon başarıyla eklendi')
+          // FAZ 6.4: Synonym sonucu göster
+          const synRes = res.synonym_result
+          if (synRes?.success && synRes?.inserted > 0) {
+            toast.success('Pozisyon oluşturuldu', {
+              description: `${res.transferred} aday eşleştirildi. ${synRes.inserted} synonym üretildi (onay bekliyor).`
+            })
+          } else {
+            toast.success('Pozisyon başarıyla eklendi', {
+              description: `${res.transferred} aday eşleştirildi`
+            })
+          }
         } else { toast.error(res.detail || 'Kayıt hatası') }
       }).catch(e => toast.error('Hata: ' + e)).finally(() => setSavingPosition(false))
   }

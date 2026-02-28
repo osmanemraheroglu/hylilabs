@@ -31,6 +31,14 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 28.02.2026 - FAZ 6.4 Frontend Toast Bildirimi (FAZ 6 TAMAMLANDI)
+- havuzlar/index.tsx handleSaveParsed fonksiyonu güncellendi
+- Backend'den gelen synonym_result toast'ta gösteriliyor
+- Başarılı: "X aday eşleştirildi. Y synonym üretildi (onay bekliyor)."
+- Optional chaining (?.) ile null safety
+- Sonner toast description özelliği kullanıldı
+- Fonksiyon konumu: satır 299-309
+
 ### 28.02.2026 - FAZ 6.3 Pozisyon Kaydetme Synonym Entegrasyonu
 - pools.py save_parsed_position endpoint'ine synonym üretimi eklendi
 - Pozisyon kaydedilince keyword'ler için otomatik synonym üretimi
@@ -580,20 +588,13 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-FAZ 6 Pozisyon Kaydetme Otomatik Synonym Üretimi:
+FAZ 6 Pozisyon Kaydetme Otomatik Synonym Üretimi: ✅ TAMAMLANDI
 - ✅ FAZ 6.1: Batch Rate Limit (rate_limiter.py)
-  - SYNONYM_BATCH_GENERATE_MAX = 5
-  - SYNONYM_BATCH_GENERATE_WINDOW_MINUTES = 60
-  - check_synonym_batch_generate_limit() fonksiyonu
-  - record_synonym_batch_generate() fonksiyonu
 - ✅ FAZ 6.2: Batch Synonym Üretim Fonksiyonu (synonyms.py)
-  - _generate_synonyms_batch_internal() fonksiyonu
-  - Tek Claude API ile çoklu keyword işleme
-  - Rate limit + Error handling + Logging
 - ✅ FAZ 6.3: save_parsed_position Entegrasyonu (pools.py)
-  - Keyword'ler için batch synonym üretimi
-  - Response'a synonym_result eklendi
-- ⏳ FAZ 6.4: Frontend Toast Bildirimi (havuzlar)
+- ✅ FAZ 6.4: Frontend Toast Bildirimi (havuzlar)
+
+Sonraki: FAZ 6.5 Test (Production üzerinde manuel test)
 
 FAZ 5 Frontend Synonym Yönetimi TAMAMLANDI:
 - ✅ ADIM 5.1: Route + Sidebar Entegrasyonu
