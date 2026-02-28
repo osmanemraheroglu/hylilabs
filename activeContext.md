@@ -31,6 +31,14 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 28.02.2026 - FAZ 6.2 Batch Synonym Üretim Fonksiyonu
+- synonyms.py'ye _generate_synonyms_batch_internal() fonksiyonu eklendi
+- Tek Claude API çağrısı ile çoklu keyword işleme
+- Rate limit entegrasyonu (check_synonym_batch_generate_limit)
+- Error handling ve logging
+- Mevcut generate_synonyms endpoint'i KORUNDU
+- Fonksiyon konumu: satır 363-610
+
 ### 28.02.2026 - FAZ 6.1 Batch Rate Limit
 - rate_limiter.py'ye batch synonym üretimi için rate limit eklendi
 - SYNONYM_BATCH_GENERATE_MAX = 5 (sabitler)
@@ -569,7 +577,10 @@ FAZ 6 Pozisyon Kaydetme Otomatik Synonym Üretimi:
   - SYNONYM_BATCH_GENERATE_WINDOW_MINUTES = 60
   - check_synonym_batch_generate_limit() fonksiyonu
   - record_synonym_batch_generate() fonksiyonu
-- ⏳ FAZ 6.2: Batch Synonym Üretim Fonksiyonu (synonyms.py)
+- ✅ FAZ 6.2: Batch Synonym Üretim Fonksiyonu (synonyms.py)
+  - _generate_synonyms_batch_internal() fonksiyonu
+  - Tek Claude API ile çoklu keyword işleme
+  - Rate limit + Error handling + Logging
 - ⏳ FAZ 6.3: save_parsed_position Entegrasyonu (pools.py)
 - ⏳ FAZ 6.4: Frontend Toast Bildirimi (havuzlar)
 

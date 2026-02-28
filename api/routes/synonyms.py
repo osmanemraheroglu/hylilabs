@@ -24,7 +24,12 @@ from database import (
     log_api_usage
 )
 from routes.auth import get_current_user
-from rate_limiter import check_synonym_generate_limit, record_synonym_generate
+from rate_limiter import (
+    check_synonym_generate_limit,
+    record_synonym_generate,
+    check_synonym_batch_generate_limit,
+    record_synonym_batch_generate
+)
 
 logger = logging.getLogger(__name__)
 
@@ -349,6 +354,260 @@ def reject_synonym_list(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# INTERNAL: Batch Synonym Üretimi (Pozisyon kaydederken çağrılır)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _generate_synonyms_batch_internal(
+    keywords: List[str],
+    company_id: int,
+    user_id: int
+) -> dict:
+    """
+    Toplu synonym üretimi (internal).
+    Pozisyon kaydederken çağrılır, tek API çağrısı ile tüm keyword'ler işlenir.
+
+    Args:
+        keywords: Keyword listesi (max 25)
+        company_id: Şirket ID
+        user_id: Kullanıcı ID
+
+    Returns:
+        dict: {
+            "success": bool,
+            "total_keywords": int,
+            "generated": int,
+            "inserted": int,
+            "skipped": int,
+            "failed_keywords": [],
+            "message": str
+        }
+    """
+    import re
+
+    # Boş liste kontrolü
+    if not keywords:
+        return {
+            "success": True,
+            "total_keywords": 0,
+            "generated": 0,
+            "inserted": 0,
+            "skipped": 0,
+            "failed_keywords": [],
+            "message": "Keyword listesi boş"
+        }
+
+    # Rate limit kontrolü
+    user_id_str = str(user_id)
+    allowed, limit_msg = check_synonym_batch_generate_limit(user_id_str)
+    if not allowed:
+        return {
+            "success": False,
+            "total_keywords": len(keywords),
+            "generated": 0,
+            "inserted": 0,
+            "skipped": 0,
+            "failed_keywords": keywords,
+            "message": limit_msg
+        }
+
+    # API key kontrolü
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        return {
+            "success": False,
+            "total_keywords": len(keywords),
+            "generated": 0,
+            "inserted": 0,
+            "skipped": 0,
+            "failed_keywords": keywords,
+            "message": "ANTHROPIC_API_KEY ayarlanmamış"
+        }
+
+    # Batch prompt
+    prompt = f"""Sen bir İK (İnsan Kaynakları) alanında uzman bir asistansın.
+Verilen HER keyword için Türkiye İK sektörüne uygun synonym ve ilişkili terimler üret.
+
+Keywords: {json.dumps(keywords, ensure_ascii=False)}
+
+Kurallar:
+1. HER keyword için 3-5 synonym üret
+2. Hem Türkçe hem İngilizce karşılıkları ver
+3. Kısaltmalar varsa ekle
+4. Sektörel varyasyonlar ekle
+5. Her öneri için tip belirt: turkish, english, abbreviation, variation
+6. Keyword'ün kendisini EKLEME
+
+SADECE JSON formatında yanıt ver:
+{{
+  "results": [
+    {{
+      "keyword": "python",
+      "synonyms": [
+        {{"synonym": "py", "synonym_type": "abbreviation"}},
+        {{"synonym": "python programlama", "synonym_type": "turkish"}}
+      ]
+    }}
+  ]
+}}"""
+
+    start_time = time.time()
+    total_generated = 0
+    total_inserted = 0
+    total_skipped = 0
+    failed_keywords = []
+
+    try:
+        # Claude API çağrısı
+        client = anthropic.Anthropic(api_key=api_key, timeout=90.0)
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=2048,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        response_text = message.content[0].text.strip()
+
+        # JSON parse
+        try:
+            data = json.loads(response_text)
+        except json.JSONDecodeError:
+            json_match = re.search(r'\{[\s\S]*\}', response_text)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group())
+                except json.JSONDecodeError:
+                    return {
+                        "success": False,
+                        "total_keywords": len(keywords),
+                        "generated": 0,
+                        "inserted": 0,
+                        "skipped": 0,
+                        "failed_keywords": keywords,
+                        "message": "AI yanıtı geçerli JSON formatında değil"
+                    }
+            else:
+                return {
+                    "success": False,
+                    "total_keywords": len(keywords),
+                    "generated": 0,
+                    "inserted": 0,
+                    "skipped": 0,
+                    "failed_keywords": keywords,
+                    "message": "AI yanıtında JSON bulunamadı"
+                }
+
+        # Sonuçları işle
+        results = data.get("results", [])
+
+        for item in results:
+            kw = item.get("keyword", "").lower().strip()
+            synonyms_list = item.get("synonyms", [])
+
+            if not kw or not synonyms_list:
+                if kw:
+                    failed_keywords.append(kw)
+                continue
+
+            total_generated += len(synonyms_list)
+
+            # Database'e kaydet
+            result = save_generated_synonyms(
+                keyword=kw,
+                synonyms=synonyms_list,
+                company_id=company_id,
+                created_by=user_id
+            )
+
+            if result.get("success"):
+                total_inserted += result.get("inserted", 0)
+                total_skipped += result.get("skipped", 0)
+            else:
+                failed_keywords.append(kw)
+
+        # Başarılı - rate limit kaydet
+        record_synonym_batch_generate(user_id_str)
+
+        elapsed_ms = int((time.time() - start_time) * 1000)
+
+        # Log
+        try:
+            log_api_usage(
+                islem_tipi="synonym_batch_generate",
+                input_tokens=message.usage.input_tokens,
+                output_tokens=message.usage.output_tokens,
+                model="claude-sonnet-4-20250514",
+                company_id=company_id,
+                user_id=user_id,
+                basarili=True,
+                islem_suresi_ms=elapsed_ms,
+                detay=json.dumps({
+                    "keywords_count": len(keywords),
+                    "generated": total_generated,
+                    "inserted": total_inserted,
+                    "skipped": total_skipped
+                })
+            )
+        except Exception:
+            pass  # Loglama hatası ana işlemi etkilemesin
+
+        return {
+            "success": True,
+            "total_keywords": len(keywords),
+            "generated": total_generated,
+            "inserted": total_inserted,
+            "skipped": total_skipped,
+            "failed_keywords": failed_keywords,
+            "message": f"{total_inserted} synonym eklendi, {total_skipped} atlandı"
+        }
+
+    except anthropic.APITimeoutError:
+        return {
+            "success": False,
+            "total_keywords": len(keywords),
+            "generated": 0,
+            "inserted": 0,
+            "skipped": 0,
+            "failed_keywords": keywords,
+            "message": "Claude API zaman aşımı"
+        }
+    except anthropic.APIConnectionError:
+        return {
+            "success": False,
+            "total_keywords": len(keywords),
+            "generated": 0,
+            "inserted": 0,
+            "skipped": 0,
+            "failed_keywords": keywords,
+            "message": "Claude API bağlantı hatası"
+        }
+    except Exception as e:
+        elapsed_ms = int((time.time() - start_time) * 1000)
+        try:
+            log_api_usage(
+                islem_tipi="synonym_batch_generate",
+                input_tokens=0,
+                output_tokens=0,
+                model="claude-sonnet-4-20250514",
+                company_id=company_id,
+                user_id=user_id,
+                basarili=False,
+                islem_suresi_ms=elapsed_ms,
+                hata_mesaji=str(e)
+            )
+        except Exception:
+            pass
+        return {
+            "success": False,
+            "total_keywords": len(keywords),
+            "generated": 0,
+            "inserted": 0,
+            "skipped": 0,
+            "failed_keywords": keywords,
+            "message": f"Hata: {str(e)}"
+        }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
