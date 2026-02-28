@@ -44,6 +44,12 @@ Son guncelleme: 28.02.2026
   - API fonksiyonları placeholder (TODO: sonraki adımlarda)
   - Helper fonksiyonlar: toggleSelect, getStatusBadge, getTypeBadge
   - UI: Tabs, Card, Table, Checkbox, Input, Select, Button, Badge
+- ADIM 5.3: Tab 1 - Onay Bekleyenler API implementasyonu
+  - loadPendingCount(): GET /api/synonyms/pending/count
+  - loadPendingList(): GET /api/synonyms/pending
+  - handleApprove(): POST /api/synonyms/approve
+  - handleReject(): POST /api/synonyms/reject
+  - Toast mesajları Türkçe, error handling, loading state
 
 ### 28.02.2026 - Keyword Synonym Yönetim Sistemi (ADIM 1.1 + 1.2 + 2.1 + 2.2)
 - AMAÇ: AI + İK onay sistemli synonym yönetimi için altyapı
@@ -530,7 +536,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 FAZ 5 Frontend Synonym Yönetimi devam ediyor:
 - ✅ ADIM 5.1: Route + Sidebar Entegrasyonu
 - ✅ ADIM 5.2: Ana sayfa iskelet + Tab yapısı
-- ⏳ ADIM 5.3: Tab 1 - Onay Bekleyenler
+- ✅ ADIM 5.3: Tab 1 - Onay Bekleyenler
 - ⏳ ADIM 5.4: Tab 2 - Tüm Eş Anlamlılar + Arama
 - ⏳ ADIM 5.5: Tab 3 - AI Üretimi
 - ⏳ ADIM 5.6: Tab 4 - Manuel Ekleme

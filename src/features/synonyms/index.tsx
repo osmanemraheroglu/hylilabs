@@ -81,27 +81,87 @@ export default function Synonyms() {
   }, [activeTab])
 
   // ═══════════════════════════════════════════════════════════════════
-  // API FONKSİYONLARI (placeholder - sonraki adımlarda doldurulacak)
+  // API FONKSİYONLARI
   // ═══════════════════════════════════════════════════════════════════
 
   const loadPendingCount = async () => {
-    // TODO: ADIM 5.3'te implement edilecek
-    console.log('loadPendingCount')
+    try {
+      const res = await fetch(`${API}/api/synonyms/pending/count`, { headers: H() })
+      const data = await res.json()
+      if (data.success) {
+        setPendingCount(data.data.count)
+      }
+    } catch (err) {
+      console.error('loadPendingCount error:', err)
+    }
   }
 
   const loadPendingList = async () => {
-    // TODO: ADIM 5.3'te implement edilecek
-    console.log('loadPendingList')
+    setPendingLoading(true)
+    try {
+      const res = await fetch(`${API}/api/synonyms/pending`, { headers: H() })
+      const data = await res.json()
+      if (data.success) {
+        setPendingList(data.data.synonyms || [])
+      } else {
+        toast.error(data.detail || 'Liste alınamadı')
+      }
+    } catch (err) {
+      console.error('loadPendingList error:', err)
+      toast.error('Bağlantı hatası')
+    } finally {
+      setPendingLoading(false)
+    }
   }
 
   const handleApprove = async () => {
-    // TODO: ADIM 5.3'te implement edilecek
-    console.log('handleApprove', selectedIds)
+    if (selectedIds.length === 0) return
+
+    try {
+      const res = await fetch(`${API}/api/synonyms/approve`, {
+        method: 'POST',
+        headers: H(),
+        body: JSON.stringify({ synonym_ids: selectedIds })
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        toast.success(`${data.data.updated || selectedIds.length} eş anlamlı onaylandı`)
+        setSelectedIds([])
+        loadPendingList()
+        loadPendingCount()
+      } else {
+        toast.error(data.detail || 'Onaylama başarısız')
+      }
+    } catch (err) {
+      console.error('handleApprove error:', err)
+      toast.error('Bağlantı hatası')
+    }
   }
 
   const handleReject = async () => {
-    // TODO: ADIM 5.3'te implement edilecek
-    console.log('handleReject', selectedIds)
+    if (selectedIds.length === 0) return
+
+    try {
+      const res = await fetch(`${API}/api/synonyms/reject`, {
+        method: 'POST',
+        headers: H(),
+        body: JSON.stringify({ synonym_ids: selectedIds })
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        toast.success(`${data.data.updated || selectedIds.length} eş anlamlı reddedildi`)
+        setSelectedIds([])
+        loadPendingList()
+        loadPendingCount()
+      } else {
+        toast.error(data.detail || 'Reddetme başarısız')
+      }
+    } catch (err) {
+      console.error('handleReject error:', err)
+      toast.error('Bağlantı hatası')
+    }
   }
 
   const handleSearch = async () => {
