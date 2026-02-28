@@ -38,6 +38,12 @@ Son guncelleme: 28.02.2026
   - sidebar-data.ts: Languages icon import, synonymlar menu item eklendi
   - company_admin ve user rollerine 'synonymlar' eklendi
   - URL: /synonyms, Menü: "Eş Anlamlılar"
+- ADIM 5.2: Ana sayfa iskelet + Tab yapısı (493 satır)
+  - 4 Tab: pending, all, generate, manual
+  - State'ler: pendingList, synonymList, selectedIds, generateKeyword, manualKeyword, etc.
+  - API fonksiyonları placeholder (TODO: sonraki adımlarda)
+  - Helper fonksiyonlar: toggleSelect, getStatusBadge, getTypeBadge
+  - UI: Tabs, Card, Table, Checkbox, Input, Select, Button, Badge
 
 ### 28.02.2026 - Keyword Synonym Yönetim Sistemi (ADIM 1.1 + 1.2 + 2.1 + 2.2)
 - AMAÇ: AI + İK onay sistemli synonym yönetimi için altyapı
@@ -523,7 +529,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 ## Sonraki Gorev
 FAZ 5 Frontend Synonym Yönetimi devam ediyor:
 - ✅ ADIM 5.1: Route + Sidebar Entegrasyonu
-- ⏳ ADIM 5.2: Ana sayfa iskelet + Tab yapısı
+- ✅ ADIM 5.2: Ana sayfa iskelet + Tab yapısı
 - ⏳ ADIM 5.3: Tab 1 - Onay Bekleyenler
 - ⏳ ADIM 5.4: Tab 2 - Tüm Eş Anlamlılar + Arama
 - ⏳ ADIM 5.5: Tab 3 - AI Üretimi
