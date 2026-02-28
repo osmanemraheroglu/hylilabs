@@ -31,6 +31,15 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 01.03.2026 - FAZ 7.6 Data Cleanup (Bozuk Veri Temizliği)
+- 15 bozuk keyword silindi (ID 1314-1328, JSON escape hataları)
+- 24 rejected synonym silindi
+- 1 test keyword synonym silindi (test_keyword)
+- 36 değerli keyword eklendi (veri analizi, yazılım geliştirme, machine learning, vs.)
+- Yetim synonym sorunu çözüldü (123 → 0)
+- Yeni durum: 240 keyword, 286 synonym (212 approved, 74 pending)
+- Usage count dağılımı: 213 seed (0), 27 aktif (1)
+
 ### 01.03.2026 - FAZ 7.3 Usage Count Sistemi
 - database.py'ye 3 fonksiyon eklendi (satır 1130-1287):
   - increment_keyword_usage(keywords, source): usage_count +1, yoksa oluştur
@@ -624,11 +633,11 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-FAZ 7 Keyword Yönetimi: DEVAM EDİYOR
+FAZ 7 Keyword Yönetimi: ✅ TAMAMLANDI
 - ✅ FAZ 7.1: BLACKLIST Keyword Filtresi (pools.py)
 - ✅ FAZ 7.2: Smart Synonym (AI skip if approved exists)
 - ✅ FAZ 7.3: Usage Count System (database.py, pools.py)
-- ⏳ FAZ 7.6: Data Cleanup
+- ✅ FAZ 7.6: Data Cleanup (bozuk keyword, yetim synonym temizliği)
 
 FAZ 6 Pozisyon Kaydetme Otomatik Synonym Üretimi: ✅ TAMAMLANDI
 - ✅ FAZ 6.1: Batch Rate Limit (rate_limiter.py)
