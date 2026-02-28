@@ -165,13 +165,53 @@ export default function Synonyms() {
   }
 
   const handleSearch = async () => {
-    // TODO: ADIM 5.4'te implement edilecek
-    console.log('handleSearch', searchKeyword)
+    if (!searchKeyword.trim()) return
+
+    setSearchLoading(true)
+    try {
+      const res = await fetch(
+        `${API}/api/synonyms?keyword=${encodeURIComponent(searchKeyword.trim())}`,
+        { headers: H() }
+      )
+      const data = await res.json()
+
+      if (data.success) {
+        setSynonymList(data.data.synonyms || [])
+        if ((data.data.synonyms || []).length === 0) {
+          toast.success('Bu keyword için eş anlamlı bulunamadı')
+        }
+      } else {
+        toast.error(data.detail || 'Arama başarısız')
+      }
+    } catch (err) {
+      console.error('handleSearch error:', err)
+      toast.error('Bağlantı hatası')
+    } finally {
+      setSearchLoading(false)
+    }
   }
 
   const handleDelete = async (id: number) => {
-    // TODO: ADIM 5.4'te implement edilecek
-    console.log('handleDelete', id)
+    if (!confirm('Bu eş anlamlıyı silmek istediğinizden emin misiniz?')) return
+
+    try {
+      const res = await fetch(`${API}/api/synonyms/${id}`, {
+        method: 'DELETE',
+        headers: H()
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        toast.success('Eş anlamlı silindi')
+        setSynonymList(prev => prev.filter(s => s.id !== id))
+        loadPendingCount()
+      } else {
+        toast.error(data.detail || 'Silme başarısız')
+      }
+    } catch (err) {
+      console.error('handleDelete error:', err)
+      toast.error('Bağlantı hatası')
+    }
   }
 
   const handleGenerate = async () => {
