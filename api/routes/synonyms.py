@@ -21,6 +21,7 @@ from database import (
     save_generated_synonyms
 )
 from routes.auth import get_current_user
+from rate_limiter import check_synonym_generate_limit, record_synonym_generate
 
 router = APIRouter(prefix="/api/synonyms", tags=["synonyms"])
 
@@ -352,6 +353,12 @@ def generate_synonyms(
         user_id = current_user["id"]
         keyword = request.keyword.strip().lower()
 
+        # Rate limit kontrolü
+        user_id_str = str(user_id)
+        allowed, limit_msg = check_synonym_generate_limit(user_id_str)
+        if not allowed:
+            raise HTTPException(status_code=429, detail=limit_msg)
+
         # API key kontrolü
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
@@ -441,6 +448,9 @@ SADECE JSON formatında yanıt ver, başka açıklama ekleme:
         )
 
         if result.get("success"):
+            # Rate limit kaydı (başarılı işlem sonrası)
+            record_synonym_generate(user_id_str)
+
             return {
                 "success": True,
                 "data": {

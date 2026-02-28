@@ -51,6 +51,11 @@ class RateLimitConfig:
     PUBLIC_GENERAL_MAX = 120
     PUBLIC_GENERAL_WINDOW_MINUTES = 1
 
+    # === AI SYNONYM GENERATE LIMITI ===
+    # AI synonym üretimi: 10 istek / saat / kullanıcı
+    SYNONYM_GENERATE_MAX = 10
+    SYNONYM_GENERATE_WINDOW_MINUTES = 60
+
 
 # ============ VERITABANI ============
 
@@ -431,6 +436,49 @@ def get_rate_limit_stats(identifier: str = None) -> dict:
             stats[row["action_type"]] = row["count"]
 
         return stats
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AI SYNONYM GENERATE RATE LIMIT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def check_synonym_generate_limit(user_id: str) -> Tuple[bool, str]:
+    """
+    AI synonym üretimi rate limit kontrolü.
+
+    Args:
+        user_id: Kullanıcı ID (string)
+
+    Returns:
+        Tuple[bool, str]: (izin_var_mı, hata_mesajı)
+    """
+    allowed, count, remaining = check_rate_limit(
+        user_id,
+        "synonym_generate",
+        RateLimitConfig.SYNONYM_GENERATE_MAX,
+        RateLimitConfig.SYNONYM_GENERATE_WINDOW_MINUTES
+    )
+
+    if not allowed:
+        wait_time = get_wait_time(
+            user_id,
+            "synonym_generate",
+            RateLimitConfig.SYNONYM_GENERATE_WINDOW_MINUTES
+        )
+        wait_minutes = max(1, wait_time // 60)
+        return False, f"Saatlik AI synonym üretim limitine ulaştınız ({RateLimitConfig.SYNONYM_GENERATE_MAX}/saat). {wait_minutes} dakika sonra tekrar deneyin."
+
+    return True, ""
+
+
+def record_synonym_generate(user_id: str) -> None:
+    """
+    Başarılı AI synonym üretimini kaydet.
+
+    Args:
+        user_id: Kullanıcı ID (string)
+    """
+    record_action(user_id, "synonym_generate")
 
 
 # Modul yuklendiginde tabloyu olustur
