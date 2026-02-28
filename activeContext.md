@@ -31,6 +31,20 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 28.02.2026 - FAZ 7.2 Smart Synonym (AI Skip if Approved)
+- database.py'ye get_approved_synonym_count() fonksiyonu eklendi (satır 1093-1127)
+  - Keyword için onaylı synonym sayısını döndürür
+  - company_id filtresi: firma + global birleşik
+  - Exception handling: try/except, 0 döner
+- synonyms.py _generate_synonyms_batch_internal() güncellendi:
+  - skipped_has_approved = [] scope için erken tanımlama (satır 392)
+  - Smart synonym kontrolü: get_approved_synonym_count() çağrısı (satır 407-414)
+  - Onaylı synonym varsa AI çağrısı atlanır, keyword keywords_to_process'e eklenmez
+  - Tüm return ifadelerine skipped_has_approved alanı eklendi (9 return)
+  - Başarılı return mesajına "(X keyword onaylı synonym nedeniyle atlandı)" eklendi
+- MALİYET TASARRUFU: Her batch'te mevcut onaylı synonym'ler için Claude API çağrısı yapılmaz
+- Response alanları: skipped_has_approved listesi eklendi
+
 ### 28.02.2026 - FAZ 7.1 BLACKLIST Keyword Filtresi
 - pools.py'ye KEYWORD_BLACKLIST seti eklendi (~57 terim)
 - filter_keywords() fonksiyonu eklendi
@@ -599,7 +613,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 ## Sonraki Gorev
 FAZ 7 Keyword Yönetimi: DEVAM EDİYOR
 - ✅ FAZ 7.1: BLACKLIST Keyword Filtresi (pools.py)
-- ⏳ FAZ 7.2: Smart Synonym (AI skip if approved exists)
+- ✅ FAZ 7.2: Smart Synonym (AI skip if approved exists)
 - ⏳ FAZ 7.3: Usage Count System
 - ⏳ FAZ 7.6: Data Cleanup
 

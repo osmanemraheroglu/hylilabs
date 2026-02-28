@@ -1090,6 +1090,43 @@ def get_synonyms_for_keyword(keyword: str, company_id: int = None) -> list[str]:
     return cached_get(cache_key, fetch_from_db)
 
 
+def get_approved_synonym_count(keyword: str, company_id: int = None) -> int:
+    """
+    Keyword için onaylı synonym sayısını döndür.
+
+    Smart synonym sistemi için: Eğer onaylı synonym varsa AI çağrısı atlanır.
+
+    Args:
+        keyword: Kontrol edilecek keyword
+        company_id: Firma ID (None = global)
+
+    Returns:
+        Onaylı synonym sayısı
+    """
+    keyword_lower = turkish_lower(keyword.strip())
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            if company_id:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM keyword_synonyms
+                    WHERE keyword = ?
+                      AND status = 'approved'
+                      AND (company_id IS NULL OR company_id = ?)
+                """, (keyword_lower, company_id))
+            else:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM keyword_synonyms
+                    WHERE keyword = ?
+                      AND status = 'approved'
+                      AND company_id IS NULL
+                """, (keyword_lower,))
+            return cursor.fetchone()[0]
+    except Exception as e:
+        logger.warning(f"get_approved_synonym_count hatası ({keyword}): {e}")
+        return 0
+
+
 def invalidate_synonym_cache():
     """
     Tüm synonym cache'ini temizle.

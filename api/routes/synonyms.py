@@ -21,6 +21,7 @@ from database import (
     approve_synonyms,
     reject_synonyms,
     save_generated_synonyms,
+    get_approved_synonym_count,
     log_api_usage
 )
 from routes.auth import get_current_user
@@ -387,6 +388,9 @@ def _generate_synonyms_batch_internal(
     """
     import re
 
+    # FAZ 7.2: skipped_has_approved scope için erken tanımlama
+    skipped_has_approved = []
+
     # Boş liste kontrolü
     if not keywords:
         return {
@@ -395,9 +399,35 @@ def _generate_synonyms_batch_internal(
             "generated": 0,
             "inserted": 0,
             "skipped": 0,
+            "skipped_has_approved": [],
             "failed_keywords": [],
             "message": "Keyword listesi boş"
         }
+
+    # FAZ 7.2: Smart Synonym - Onaylı synonym varsa AI çağrısı atla
+    keywords_to_process = []
+    for kw in keywords:
+        approved_count = get_approved_synonym_count(kw, company_id)
+        if approved_count > 0:
+            skipped_has_approved.append(kw)
+        else:
+            keywords_to_process.append(kw)
+
+    # Tüm keyword'ler zaten onaylı synonym'e sahipse
+    if not keywords_to_process:
+        return {
+            "success": True,
+            "total_keywords": len(keywords),
+            "generated": 0,
+            "inserted": 0,
+            "skipped": 0,
+            "skipped_has_approved": skipped_has_approved,
+            "failed_keywords": [],
+            "message": f"Tüm keyword'ler için onaylı synonym mevcut ({len(skipped_has_approved)} keyword atlandı)"
+        }
+
+    # Orijinal keywords listesini güncelle (sadece işlenecek olanlar)
+    keywords = keywords_to_process
 
     # Rate limit kontrolü
     user_id_str = str(user_id)
@@ -409,6 +439,7 @@ def _generate_synonyms_batch_internal(
             "generated": 0,
             "inserted": 0,
             "skipped": 0,
+            "skipped_has_approved": skipped_has_approved,
             "failed_keywords": keywords,
             "message": limit_msg
         }
@@ -422,6 +453,7 @@ def _generate_synonyms_batch_internal(
             "generated": 0,
             "inserted": 0,
             "skipped": 0,
+            "skipped_has_approved": skipped_has_approved,
             "failed_keywords": keywords,
             "message": "ANTHROPIC_API_KEY ayarlanmamış"
         }
@@ -485,6 +517,7 @@ SADECE JSON formatında yanıt ver:
                         "generated": 0,
                         "inserted": 0,
                         "skipped": 0,
+                        "skipped_has_approved": skipped_has_approved,
                         "failed_keywords": keywords,
                         "message": "AI yanıtı geçerli JSON formatında değil"
                     }
@@ -495,6 +528,7 @@ SADECE JSON formatında yanıt ver:
                     "generated": 0,
                     "inserted": 0,
                     "skipped": 0,
+                    "skipped_has_approved": skipped_has_approved,
                     "failed_keywords": keywords,
                     "message": "AI yanıtında JSON bulunamadı"
                 }
@@ -553,14 +587,20 @@ SADECE JSON formatında yanıt ver:
         except Exception:
             pass  # Loglama hatası ana işlemi etkilemesin
 
+        # FAZ 7.2: skipped_has_approved bilgisini ekle
+        skip_msg = ""
+        if skipped_has_approved:
+            skip_msg = f" ({len(skipped_has_approved)} keyword onaylı synonym nedeniyle atlandı)"
+
         return {
             "success": True,
-            "total_keywords": len(keywords),
+            "total_keywords": len(keywords) + len(skipped_has_approved),
             "generated": total_generated,
             "inserted": total_inserted,
             "skipped": total_skipped,
+            "skipped_has_approved": skipped_has_approved,
             "failed_keywords": failed_keywords,
-            "message": f"{total_inserted} synonym eklendi, {total_skipped} atlandı"
+            "message": f"{total_inserted} synonym eklendi, {total_skipped} atlandı{skip_msg}"
         }
 
     except anthropic.APITimeoutError:
@@ -570,6 +610,7 @@ SADECE JSON formatında yanıt ver:
             "generated": 0,
             "inserted": 0,
             "skipped": 0,
+            "skipped_has_approved": skipped_has_approved,
             "failed_keywords": keywords,
             "message": "Claude API zaman aşımı"
         }
@@ -580,6 +621,7 @@ SADECE JSON formatında yanıt ver:
             "generated": 0,
             "inserted": 0,
             "skipped": 0,
+            "skipped_has_approved": skipped_has_approved,
             "failed_keywords": keywords,
             "message": "Claude API bağlantı hatası"
         }
@@ -605,6 +647,7 @@ SADECE JSON formatında yanıt ver:
             "generated": 0,
             "inserted": 0,
             "skipped": 0,
+            "skipped_has_approved": skipped_has_approved,
             "failed_keywords": keywords,
             "message": f"Hata: {str(e)}"
         }
