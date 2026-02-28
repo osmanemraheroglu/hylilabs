@@ -1,11 +1,14 @@
 """
 FAZ 3 - Synonym Yönetimi API Routes
-7 Endpoint: list, pending, pending_count, create, delete, approve, reject
+8 Endpoint: list, pending, pending_count, create, delete, approve, reject, generate
 """
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
 from typing import Optional, List
 import sys
+import os
+import json
+import anthropic
 sys.path.append("/var/www/hylilabs/api")
 from database import (
     get_keyword_synonyms,
@@ -14,7 +17,8 @@ from database import (
     add_manual_synonym,
     delete_synonym,
     approve_synonyms,
-    reject_synonyms
+    reject_synonyms,
+    save_generated_synonyms
 )
 from routes.auth import get_current_user
 
@@ -47,6 +51,10 @@ class SynonymCreateRequest(BaseModel):
 
 class SynonymBulkActionRequest(BaseModel):
     synonym_ids: List[int] = Field(..., min_length=1)
+
+
+class SynonymGenerateRequest(BaseModel):
+    keyword: str = Field(..., min_length=1, max_length=100)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -323,3 +331,138 @@ def reject_synonym_list(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINT 8: POST /api/synonyms/generate - AI ile synonym üret
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.post("/generate")
+def generate_synonyms(
+    request: SynonymGenerateRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    AI ile keyword için synonym önerileri oluştur.
+    Öneriler 'pending' durumunda kaydedilir, İK onayı bekler.
+    """
+    try:
+        require_company_user(current_user)
+        company_id = current_user["company_id"]
+        user_id = current_user["id"]
+        keyword = request.keyword.strip().lower()
+
+        # API key kontrolü
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise HTTPException(
+                status_code=500,
+                detail="ANTHROPIC_API_KEY ayarlanmamış"
+            )
+
+        # Claude prompt
+        prompt = f"""Sen bir İK (İnsan Kaynakları) alanında uzman bir asistansın.
+Verilen keyword için Türkiye İK sektörüne uygun synonym ve ilişkili terimler üret.
+
+Keyword: {keyword}
+
+Kurallar:
+1. Hem Türkçe hem İngilizce karşılıkları ver
+2. Kısaltmalar varsa ekle (örn: İK = HR)
+3. Sektörel varyasyonlar ekle
+4. Maksimum 10 öneri üret
+5. Her öneri için tip belirt: turkish, english, abbreviation, variation
+6. Keyword'ün kendisini EKLEME
+
+SADECE JSON formatında yanıt ver, başka açıklama ekleme:
+{{
+  "synonyms": [
+    {{"synonym": "insan kaynakları", "synonym_type": "turkish"}},
+    {{"synonym": "human resources", "synonym_type": "english"}},
+    {{"synonym": "İK", "synonym_type": "abbreviation"}}
+  ]
+}}"""
+
+        # Claude API çağrısı
+        client = anthropic.Anthropic(api_key=api_key, timeout=60.0)
+
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        response_text = message.content[0].text.strip()
+
+        # JSON parse (fallback ile)
+        try:
+            # Direkt parse dene
+            data = json.loads(response_text)
+        except json.JSONDecodeError:
+            # JSON kısmını bulmaya çalış
+            import re
+            json_match = re.search(r'\{[\s\S]*\}', response_text)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group())
+                except json.JSONDecodeError:
+                    raise HTTPException(
+                        status_code=500,
+                        detail="AI yanıtı geçerli JSON formatında değil"
+                    )
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail="AI yanıtı geçerli JSON formatında değil"
+                )
+
+        # Synonyms listesini al
+        synonyms_list = data.get("synonyms", [])
+
+        if not synonyms_list:
+            return {
+                "success": True,
+                "data": {
+                    "keyword": keyword,
+                    "generated": 0,
+                    "inserted": 0,
+                    "skipped": 0,
+                    "synonyms": [],
+                    "message": "AI öneri üretemedi"
+                }
+            }
+
+        # Database'e kaydet
+        result = save_generated_synonyms(
+            keyword=keyword,
+            synonyms=synonyms_list,
+            company_id=company_id,
+            created_by=user_id
+        )
+
+        if result.get("success"):
+            return {
+                "success": True,
+                "data": {
+                    "keyword": keyword,
+                    "generated": len(synonyms_list),
+                    "inserted": result.get("inserted", 0),
+                    "skipped": result.get("skipped", 0),
+                    "synonyms": synonyms_list,
+                    "message": f"{result.get('inserted', 0)} synonym eklendi, {result.get('skipped', 0)} atlandı"
+                }
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=result.get("error", "Synonym kaydetme hatası")
+            )
+
+    except anthropic.APITimeoutError:
+        raise HTTPException(status_code=504, detail="Claude API zaman aşımı")
+    except anthropic.APIConnectionError:
+        raise HTTPException(status_code=503, detail="Claude API bağlantı hatası")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Hata: {str(e)}")
