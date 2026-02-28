@@ -259,8 +259,47 @@ export default function Synonyms() {
   }
 
   const handleManualAdd = async () => {
-    // TODO: ADIM 5.6'da implement edilecek
-    console.log('handleManualAdd', manualKeyword, manualSynonym, manualType)
+    if (!manualKeyword.trim() || !manualSynonym.trim()) return
+
+    setManualLoading(true)
+
+    try {
+      const res = await fetch(`${API}/api/synonyms`, {
+        method: 'POST',
+        headers: H(),
+        body: JSON.stringify({
+          keyword: manualKeyword.trim().toLowerCase(),
+          synonym: manualSynonym.trim().toLowerCase(),
+          synonym_type: manualType,
+          auto_approve: false
+        })
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        toast.success('Eş anlamlı başarıyla eklendi')
+        // Formu temizle
+        setManualKeyword('')
+        setManualSynonym('')
+        setManualType('turkish')
+        // Pending count'u güncelle
+        loadPendingCount()
+      } else {
+        // Duplicate hatası kontrolü
+        if (data.detail && data.detail.includes('zaten mevcut')) {
+          toast.error('Bu eş anlamlı zaten mevcut')
+        } else if (data.detail && data.detail.includes('aynı olamaz')) {
+          toast.error('Keyword ve eş anlamlı aynı olamaz')
+        } else {
+          toast.error(data.detail || 'Ekleme başarısız')
+        }
+      }
+    } catch (err) {
+      console.error('handleManualAdd error:', err)
+      toast.error('Bağlantı hatası')
+    } finally {
+      setManualLoading(false)
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════
