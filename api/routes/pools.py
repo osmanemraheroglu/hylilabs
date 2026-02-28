@@ -731,11 +731,28 @@ def save_parsed_position(data: dict, current_user: dict = Depends(get_current_us
             print(f"[save-parsed] pull_matching hatasi (devam ediliyor): {pull_err}")
 
         print(f"[save-parsed] SUCCESS - pool_id={pool_id}, transferred={transferred}")
+
+        # FAZ 6.3: Keyword'ler için batch synonym üret
+        synonym_result = None
+        if keywords:
+            try:
+                user_id = current_user["id"]
+                from routes.synonyms import _generate_synonyms_batch_internal
+                synonym_result = _generate_synonyms_batch_internal(
+                    keywords=keywords,
+                    company_id=company_id,
+                    user_id=user_id
+                )
+                print(f"[save-parsed] Synonym üretimi: {synonym_result.get('message', '')}")
+            except Exception as syn_err:
+                print(f"[save-parsed] Synonym üretimi hatası (devam ediliyor): {syn_err}")
+
         return {
             "success": True,
             "pool_id": pool_id,
             "transferred": transferred,
-            "message": f"Pozisyon oluşturuldu, {transferred} aday eşleştirildi"
+            "message": f"Pozisyon oluşturuldu, {transferred} aday eşleştirildi",
+            "synonym_result": synonym_result
         }
     except HTTPException:
         raise

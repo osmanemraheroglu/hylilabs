@@ -31,6 +31,15 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 28.02.2026 - FAZ 6.3 Pozisyon Kaydetme Synonym Entegrasyonu
+- pools.py save_parsed_position endpoint'ine synonym üretimi eklendi
+- Pozisyon kaydedilince keyword'ler için otomatik synonym üretimi
+- _generate_synonyms_batch_internal() çağrısı (routes.synonyms import)
+- user_id parametresi current_user["id"]'den alınıyor
+- Error handling: try/except ile ana fonksiyon korunuyor
+- Response'a synonym_result alanı eklendi
+- Fonksiyon konumu: satır 735-748
+
 ### 28.02.2026 - FAZ 6.2 Batch Synonym Üretim Fonksiyonu
 - synonyms.py'ye _generate_synonyms_batch_internal() fonksiyonu eklendi
 - Tek Claude API çağrısı ile çoklu keyword işleme
@@ -581,7 +590,9 @@ FAZ 6 Pozisyon Kaydetme Otomatik Synonym Üretimi:
   - _generate_synonyms_batch_internal() fonksiyonu
   - Tek Claude API ile çoklu keyword işleme
   - Rate limit + Error handling + Logging
-- ⏳ FAZ 6.3: save_parsed_position Entegrasyonu (pools.py)
+- ✅ FAZ 6.3: save_parsed_position Entegrasyonu (pools.py)
+  - Keyword'ler için batch synonym üretimi
+  - Response'a synonym_result eklendi
 - ⏳ FAZ 6.4: Frontend Toast Bildirimi (havuzlar)
 
 FAZ 5 Frontend Synonym Yönetimi TAMAMLANDI:
