@@ -86,7 +86,7 @@ Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
 13. create_candidate() duplicate kontrolu (email + telefon) kaldirilmaz
 14. CV dosyalari firma bazli izole: /data/cvs/{company_id}/. save_cv_file() company_id zorunlu. validate_cv_access() okuma kontrolu zorunlu. Flat yapiya geri donulemez. 2x3 guvenlik kontrolu DEGISTIRILEMEZ
 15. DB CASCADE DELETE aktif: applications, matches, candidate_pool_assignments, position_pools, ai_evaluations -> candidates ON DELETE CASCADE. position_keywords_v2 -> department_pools ON DELETE CASCADE. interviews -> candidates, department_pools, companies ON DELETE CASCADE. ai_analyses, hr_evaluations -> candidates, positions. position_requirements, position_sector_preferences, position_title_mappings -> department_pools. candidate_merge_logs -> candidates. company_settings, email_accounts, email_templates -> companies. PRAGMA foreign_keys=ON her connectionda zorunlu. Tablo yapilari DEGISTIRILEMEZ. CASCADE kaldirilmaz.
-16. KEYWORD_SYNONYMS TR↔EN: candidate_matcher.py 78 key DEGISMEZ (25.02.2026)
+16. KEYWORD_SYNONYMS: candidate_matcher.py dict KORUNMALI (migration kaynağı). check_keyword_match() synonym'ları DB'den okuyor (get_synonyms_for_keyword, cache'li). keyword_synonyms tablosu: 191 synonym, FAZ 1-2-3 tamamlandı (28.02.2026). API: 8 endpoint /api/synonyms/* (list, pending, create, delete, approve, reject, generate).
 17. matches v2_result: database.py sync INSERT kodu DEGISMEZ (commit 42cf5b0)
 18. rescore_candidate: pools.py:1253 DEGISMEZ (commit cc2a339)
 22. HTTP filename kuralı: Content-Disposition header'ında filename kullanırken RFC 5987 encoding (quote + filename*=UTF-8) kullanılmalı. Türkçe karakterler latin-1'de encode edilemez. DEĞİŞMEZ.
