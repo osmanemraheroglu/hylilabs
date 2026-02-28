@@ -9848,15 +9848,6 @@ def add_keyword(keyword: str, category: str = 'genel', source: str = 'user_edit'
         return False
 
 
-def increment_keyword_usage(keyword: str):
-    """Kullanım sayısını artır"""
-    with get_connection() as conn:
-        conn.execute(
-            "UPDATE keyword_dictionary SET usage_count = usage_count + 1 WHERE keyword = ?",
-            (keyword.lower().strip(),)
-        )
-
-
 def search_keywords_in_text(text: str) -> list:
     """Metinde keyword_dictionary'deki terimleri bul"""
     if not text:
