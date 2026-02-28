@@ -32,7 +32,7 @@ from models import Candidate, Position, Match
 from database import (
     save_match, update_candidate, get_position_criteria,
     add_candidate_to_pool, update_pool_candidate, get_position_pool,
-    log_api_usage
+    log_api_usage, get_synonyms_for_keyword
 )
 from scoring_v2 import calculate_match_score_v2
 
@@ -218,7 +218,7 @@ def check_keyword_match(keyword, search_text, skills_text, turkish_lower_func):
         return True, kw_lower, 'exact'
     
     # ═══ KATMAN 2: Synonym eşleşme (word boundary ile) ═══
-    synonyms = KEYWORD_SYNONYMS.get(kw_lower, [])
+    synonyms = get_synonyms_for_keyword(kw_lower)  # DB'den oku (cache'li)
     for syn in synonyms:
         syn_lower = turkish_lower_func(syn)
         if syn_lower == kw_lower:
