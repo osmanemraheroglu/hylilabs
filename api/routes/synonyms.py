@@ -8,6 +8,8 @@ from typing import Optional, List
 import sys
 import os
 import json
+import logging
+import time
 import anthropic
 sys.path.append("/var/www/hylilabs/api")
 from database import (
@@ -18,10 +20,13 @@ from database import (
     delete_synonym,
     approve_synonyms,
     reject_synonyms,
-    save_generated_synonyms
+    save_generated_synonyms,
+    log_api_usage
 )
 from routes.auth import get_current_user
 from rate_limiter import check_synonym_generate_limit, record_synonym_generate
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/synonyms", tags=["synonyms"])
 
@@ -192,6 +197,9 @@ def create_synonym(
         )
 
         if result.get("success"):
+            # Loglama
+            logger.info(f"Synonym created: user={user_id}, company={company_id}, keyword={request.keyword}, synonym={request.synonym}")
+
             return {
                 "success": True,
                 "data": {
@@ -233,6 +241,9 @@ def remove_synonym(
         )
 
         if deleted:
+            # Loglama
+            logger.info(f"Synonym deleted: user={current_user['id']}, company={company_id}, synonym_id={synonym_id}")
+
             return {
                 "success": True,
                 "data": {
@@ -275,6 +286,9 @@ def approve_synonym_list(
         )
 
         if result.get("success"):
+            # Loglama
+            logger.info(f"Synonyms approved: user={user_id}, company={company_id}, count={result.get('updated', 0)}, ids={request.synonym_ids}")
+
             return {
                 "success": True,
                 "data": {
@@ -316,6 +330,9 @@ def reject_synonym_list(
         )
 
         if result.get("success"):
+            # Loglama
+            logger.info(f"Synonyms rejected: user={current_user['id']}, company={company_id}, count={result.get('updated', 0)}, ids={request.synonym_ids}")
+
             return {
                 "success": True,
                 "data": {
@@ -359,6 +376,9 @@ def generate_synonyms(
         if not allowed:
             raise HTTPException(status_code=429, detail=limit_msg)
 
+        # Zaman ölçümü başlat
+        start_time = time.time()
+
         # API key kontrolü
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
@@ -398,6 +418,9 @@ SADECE JSON formatında yanıt ver, başka açıklama ekleme:
             max_tokens=1024,
             messages=[{"role": "user", "content": prompt}]
         )
+
+        # İşlem süresini hesapla
+        elapsed_ms = int((time.time() - start_time) * 1000)
 
         response_text = message.content[0].text.strip()
 
@@ -451,6 +474,22 @@ SADECE JSON formatında yanıt ver, başka açıklama ekleme:
             # Rate limit kaydı (başarılı işlem sonrası)
             record_synonym_generate(user_id_str)
 
+            # API kullanımını logla
+            try:
+                log_api_usage(
+                    islem_tipi="synonym_generate",
+                    input_tokens=message.usage.input_tokens,
+                    output_tokens=message.usage.output_tokens,
+                    model="claude-sonnet-4-20250514",
+                    company_id=company_id,
+                    user_id=user_id,
+                    basarili=True,
+                    islem_suresi_ms=elapsed_ms,
+                    detay=json.dumps({"keyword": keyword, "generated": len(synonyms_list), "inserted": result.get("inserted", 0)})
+                )
+            except Exception:
+                pass  # Loglama hatası ana işlemi etkilemesin
+
             return {
                 "success": True,
                 "data": {
@@ -475,4 +514,17 @@ SADECE JSON formatında yanıt ver, başka açıklama ekleme:
     except HTTPException:
         raise
     except Exception as e:
+        # Hata logla
+        try:
+            elapsed_ms_err = int((time.time() - start_time) * 1000) if 'start_time' in dir() else 0
+            log_api_usage(
+                islem_tipi="synonym_generate",
+                company_id=company_id if 'company_id' in dir() else None,
+                user_id=user_id if 'user_id' in dir() else None,
+                basarili=False,
+                hata_mesaji=str(e),
+                islem_suresi_ms=elapsed_ms_err
+            )
+        except Exception:
+            pass
         raise HTTPException(status_code=500, detail=f"Hata: {str(e)}")
