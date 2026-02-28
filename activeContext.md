@@ -31,6 +31,19 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 01.03.2026 - FAZ 7.3 Usage Count Sistemi
+- database.py'ye 3 fonksiyon eklendi (satır 1130-1287):
+  - increment_keyword_usage(keywords, source): usage_count +1, yoksa oluştur
+  - decrement_keyword_usage(keywords): usage_count -1 (min 0)
+  - get_pool_keywords(pool_id): Pozisyonun keyword listesini döndür
+- pools.py save_parsed_position'da increment çağrısı (satır 775-782)
+- database.py delete_department_pool'da decrement çağrısı (satır 5098-5105)
+- Log: "[save-parsed] USAGE: X güncellendi, Y oluşturuldu"
+- Log: "[delete-pool] USAGE: pool_id=X, Y keyword azaltıldı"
+- Pozisyon oluşturulunca keyword usage_count +1
+- Pozisyon silinince keyword usage_count -1
+- usage_count = 0 olan keyword'ler ileride temizlenebilir
+
 ### 28.02.2026 - FAZ 7.2 Smart Synonym (AI Skip if Approved)
 - database.py'ye get_approved_synonym_count() fonksiyonu eklendi (satır 1093-1127)
   - Keyword için onaylı synonym sayısını döndürür
@@ -614,7 +627,7 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 FAZ 7 Keyword Yönetimi: DEVAM EDİYOR
 - ✅ FAZ 7.1: BLACKLIST Keyword Filtresi (pools.py)
 - ✅ FAZ 7.2: Smart Synonym (AI skip if approved exists)
-- ⏳ FAZ 7.3: Usage Count System
+- ✅ FAZ 7.3: Usage Count System (database.py, pools.py)
 - ⏳ FAZ 7.6: Data Cleanup
 
 FAZ 6 Pozisyon Kaydetme Otomatik Synonym Üretimi: ✅ TAMAMLANDI

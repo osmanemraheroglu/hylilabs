@@ -1127,6 +1127,166 @@ def get_approved_synonym_count(keyword: str, company_id: int = None) -> int:
         return 0
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 7.3: KEYWORD USAGE COUNT SİSTEMİ
+# Pozisyon oluşturulunca +1, silinince -1
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def increment_keyword_usage(keywords: list, source: str = "position") -> dict:
+    """
+    Keyword'lerin usage_count'unu +1 artır.
+    Keyword dictionary'de yoksa yeni ekle.
+
+    Args:
+        keywords: Keyword listesi
+        source: Kaynak (position, manual, vb.)
+
+    Returns:
+        {"success": True, "incremented": int, "created": int}
+    """
+    if not keywords:
+        return {"success": True, "incremented": 0, "created": 0}
+
+    incremented = 0
+    created = 0
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            for kw in keywords:
+                kw_lower = turkish_lower(kw.strip()) if hasattr(kw, 'strip') else str(kw).lower().strip()
+                if not kw_lower:
+                    continue
+
+                # Önce güncellemeyi dene
+                cursor.execute("""
+                    UPDATE keyword_dictionary
+                    SET usage_count = usage_count + 1
+                    WHERE keyword = ?
+                """, (kw_lower,))
+
+                if cursor.rowcount > 0:
+                    incremented += 1
+                else:
+                    # Keyword yoksa ekle (usage_count = 1 ile)
+                    cursor.execute("""
+                        INSERT OR IGNORE INTO keyword_dictionary
+                        (keyword, category, usage_count, source, created_at)
+                        VALUES (?, 'genel', 1, ?, datetime('now'))
+                    """, (kw_lower, source))
+                    if cursor.rowcount > 0:
+                        created += 1
+
+            conn.commit()
+
+        if incremented > 0 or created > 0:
+            print(f"[usage-count] INCREMENT: {incremented} güncellendi, {created} oluşturuldu")
+        return {"success": True, "incremented": incremented, "created": created}
+
+    except Exception as e:
+        print(f"[usage-count] INCREMENT HATA: {e}")
+        return {"success": False, "error": str(e), "incremented": 0, "created": 0}
+
+
+def decrement_keyword_usage(keywords: list) -> dict:
+    """
+    Keyword'lerin usage_count'unu -1 azalt.
+    usage_count 0'ın altına düşmez.
+
+    Args:
+        keywords: Keyword listesi
+
+    Returns:
+        {"success": True, "decremented": int, "zero_count": int}
+    """
+    if not keywords:
+        return {"success": True, "decremented": 0, "zero_count": 0}
+
+    decremented = 0
+    zero_count = 0
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            for kw in keywords:
+                kw_lower = turkish_lower(kw.strip()) if hasattr(kw, 'strip') else str(kw).lower().strip()
+                if not kw_lower:
+                    continue
+
+                # usage_count > 0 ise azalt
+                cursor.execute("""
+                    UPDATE keyword_dictionary
+                    SET usage_count = usage_count - 1
+                    WHERE keyword = ? AND usage_count > 0
+                """, (kw_lower,))
+
+                if cursor.rowcount > 0:
+                    decremented += 1
+
+                    # Şimdi 0 mı oldu kontrol et
+                    cursor.execute("""
+                        SELECT usage_count FROM keyword_dictionary WHERE keyword = ?
+                    """, (kw_lower,))
+                    row = cursor.fetchone()
+                    if row and row[0] == 0:
+                        zero_count += 1
+
+            conn.commit()
+
+        if decremented > 0:
+            print(f"[usage-count] DECREMENT: {decremented} azaltıldı, {zero_count} keyword sıfırlandı")
+        return {"success": True, "decremented": decremented, "zero_count": zero_count}
+
+    except Exception as e:
+        print(f"[usage-count] DECREMENT HATA: {e}")
+        return {"success": False, "error": str(e), "decremented": 0, "zero_count": 0}
+
+
+def get_pool_keywords(pool_id: int) -> list:
+    """
+    Pozisyonun keyword listesini döndür.
+    Silme işleminde decrement için kullanılır.
+
+    Args:
+        pool_id: Pozisyon ID
+
+    Returns:
+        list: Keyword listesi (boş liste olabilir)
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT keywords FROM department_pools WHERE id = ?
+            """, (pool_id,))
+            row = cursor.fetchone()
+
+            if not row or not row[0]:
+                return []
+
+            keywords_raw = row[0]
+
+            # JSON array mı kontrol et
+            if isinstance(keywords_raw, str):
+                keywords_raw = keywords_raw.strip()
+                if keywords_raw.startswith('['):
+                    try:
+                        import json
+                        return json.loads(keywords_raw)
+                    except:
+                        pass
+                # Virgülle ayrılmış string
+                return [k.strip() for k in keywords_raw.split(",") if k.strip()]
+
+            return []
+
+    except Exception as e:
+        print(f"[usage-count] get_pool_keywords HATA ({pool_id}): {e}")
+        return []
+
+
 def invalidate_synonym_cache():
     """
     Tüm synonym cache'ini temizle.
@@ -4934,6 +5094,15 @@ def delete_department_pool(pool_id: int, company_id: int = None) -> bool:
     if company_id:
         if not verify_department_pool_ownership(pool_id, company_id):
             raise PermissionError("Bu havuza erişim yetkiniz yok")
+
+    # ═══ FAZ 7.3: Silmeden önce keyword usage_count azalt ═══
+    try:
+        pool_keywords = get_pool_keywords(pool_id)
+        if pool_keywords:
+            decrement_result = decrement_keyword_usage(pool_keywords)
+            print(f"[delete-pool] USAGE: pool_id={pool_id}, {decrement_result.get('decremented', 0)} keyword azaltıldı")
+    except Exception as usage_err:
+        print(f"[delete-pool] USAGE hatası (devam ediliyor): {usage_err}")
 
     with get_connection() as conn:
         cursor = conn.cursor()

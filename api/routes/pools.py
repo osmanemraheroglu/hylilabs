@@ -10,7 +10,8 @@ from database import (
     assign_candidate_to_department_pool, remove_candidate_from_department_pool,
     remove_candidate_from_pool, transfer_candidates_to_position,
     batch_update_pool_status, verify_department_pool_ownership,
-    move_candidate_to_pool, get_position_candidates, add_candidate_to_position
+    move_candidate_to_pool, get_position_candidates, add_candidate_to_position,
+    increment_keyword_usage  # FAZ 7.3
 )
 from typing import Optional
 import traceback
@@ -770,6 +771,15 @@ def save_parsed_position(data: dict, current_user: dict = Depends(get_current_us
         filtered_count = original_count - len(keywords)
         if filtered_count > 0:
             print(f"[save-parsed] BLACKLIST: {filtered_count} keyword filtrelendi, kalan: {len(keywords)}")
+
+        # ═══ FAZ 7.3: Usage Count Artır ═══
+        if keywords:
+            try:
+                usage_result = increment_keyword_usage(keywords, source="position")
+                if usage_result.get("incremented", 0) > 0 or usage_result.get("created", 0) > 0:
+                    print(f"[save-parsed] USAGE: {usage_result.get('incremented', 0)} güncellendi, {usage_result.get('created', 0)} oluşturuldu")
+            except Exception as usage_err:
+                print(f"[save-parsed] USAGE hatası (devam ediliyor): {usage_err}")
 
         description_parts = []
         if data.get("aranan_nitelikler"):
