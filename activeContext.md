@@ -31,6 +31,15 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 28.02.2026 - FAZ 7.1 BLACKLIST Keyword Filtresi
+- pools.py'ye KEYWORD_BLACKLIST seti eklendi (~57 terim)
+- filter_keywords() fonksiyonu eklendi
+- save_parsed_position'da filtre uygulandı (satır 767-772)
+- Soft skill'ler (iletişim, koordinasyon, takım çalışması, vb.) pozisyonlara EKLENMİYOR
+- Teknik terimler (excel, python, autocad, proje, analiz, vb.) KORUNUYOR
+- Log: "[save-parsed] BLACKLIST: X keyword filtrelendi, kalan: Y"
+- Fonksiyon konumu: satır 77-99
+
 ### 28.02.2026 - FAZ 6.4 Frontend Toast Bildirimi (FAZ 6 TAMAMLANDI)
 - havuzlar/index.tsx handleSaveParsed fonksiyonu güncellendi
 - Backend'den gelen synonym_result toast'ta gösteriliyor
@@ -588,13 +597,18 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
+FAZ 7 Keyword Yönetimi: DEVAM EDİYOR
+- ✅ FAZ 7.1: BLACKLIST Keyword Filtresi (pools.py)
+- ⏳ FAZ 7.2: Smart Synonym (AI skip if approved exists)
+- ⏳ FAZ 7.3: Usage Count System
+- ⏳ FAZ 7.6: Data Cleanup
+
 FAZ 6 Pozisyon Kaydetme Otomatik Synonym Üretimi: ✅ TAMAMLANDI
 - ✅ FAZ 6.1: Batch Rate Limit (rate_limiter.py)
 - ✅ FAZ 6.2: Batch Synonym Üretim Fonksiyonu (synonyms.py)
 - ✅ FAZ 6.3: save_parsed_position Entegrasyonu (pools.py)
 - ✅ FAZ 6.4: Frontend Toast Bildirimi (havuzlar)
-
-Sonraki: FAZ 6.5 Test (Production üzerinde manuel test)
+- ✅ FAZ 6.5: Production Test
 
 FAZ 5 Frontend Synonym Yönetimi TAMAMLANDI:
 - ✅ ADIM 5.1: Route + Sidebar Entegrasyonu

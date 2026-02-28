@@ -19,6 +19,86 @@ import json
 router = APIRouter(prefix="/api/pools", tags=["pools"])
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 7.1: KEYWORD BLACKLIST
+# Soft skill ve genel terimler - pozisyonlara EKLENMEYECEK
+# Bu keyword'ler her ilanda geçtiği için ayırt edici değil
+# ═══════════════════════════════════════════════════════════════════════════════
+KEYWORD_BLACKLIST = {
+    # ═══ SOFT SKILLS ═══
+    'iletişim', 'communication', 'iletişim becerileri',
+    'takım çalışması', 'teamwork', 'takım', 'team', 'ekip çalışması',
+    'liderlik', 'leadership', 'leader', 'lider',
+    'problem çözme', 'problem solving', 'sorun çözme',
+    'analitik düşünme', 'analytical thinking',
+    'organizasyon', 'organization', 'organizasyonel',
+    'koordinasyon', 'coordination', 'koordine', 'eşgüdüm',
+    'sunum', 'presentation', 'sunum becerileri',
+    'planlama', 'planning',
+    'adaptasyon', 'adaptation', 'uyum', 'esneklik',
+    'motivasyon', 'motivation', 'motivasyonel',
+    'yaratıcılık', 'creativity', 'yaratıcı',
+    'zaman yönetimi', 'time management',
+    'müzakere', 'negotiation', 'ikna',
+    'empati', 'empathy',
+    'stres yönetimi', 'stress management',
+    'karar verme', 'decision making',
+    'öğrenme', 'learning', 'öğrenmeye açık',
+
+    # ═══ ÇOK GENEL TERİMLER ═══
+    'eğitim', 'education', 'training',
+    'deneyim', 'experience', 'tecrübe',
+    'yönetim', 'management', 'yönetici',
+    'performans', 'performance',
+    'kontrol', 'control',
+    'kariyer', 'career',
+    'raporlama', 'reporting', 'rapor', 'report',
+    'takip', 'follow-up', 'izleme',
+    'süreç', 'process', 'süreçler',
+    'destek', 'support',
+    'geliştirme', 'development', 'gelişim',
+    'uygulama', 'implementation', 'application',
+    'değerlendirme', 'evaluation', 'assessment',
+
+    # ═══ İK TERİMLERİ ═══
+    'mülakat', 'interview', 'görüşme',
+    'işe alım', 'recruitment', 'hiring',
+    'bordro', 'payroll',
+    'özlük', 'personnel',
+    'yan haklar', 'benefits',
+    'sgk', 'sigorta',
+
+    # ═══ OFİS PROGRAMLARI (Excel HARİÇ) ═══
+    'word', 'powerpoint', 'outlook', 'teams',
+    'ms office', 'microsoft office', 'office',
+}
+
+
+def filter_keywords(keywords: list) -> list:
+    """
+    FAZ 7.1: BLACKLIST'teki keyword'leri filtrele.
+
+    Soft skill ve genel terimler pozisyonlara eklenmez çünkü
+    her ilanda geçtiği için ayırt edici değil.
+
+    Args:
+        keywords: Keyword listesi
+
+    Returns:
+        Filtrelenmiş keyword listesi (blacklist'te olmayanlar)
+    """
+    if not keywords:
+        return []
+
+    filtered = []
+    for kw in keywords:
+        kw_lower = kw.lower().strip()
+        if kw_lower and kw_lower not in KEYWORD_BLACKLIST:
+            filtered.append(kw)
+
+    return filtered
+
+
 @router.get("/hierarchical")
 def get_hierarchical(current_user: dict = Depends(get_current_user)):
     """Hiyerarsik havuz agaci + istatistikler"""
@@ -683,6 +763,13 @@ def save_parsed_position(data: dict, current_user: dict = Depends(get_current_us
         keywords = data.get("keywords", [])
         if isinstance(keywords, str):
             keywords = [k.strip() for k in keywords.split(",") if k.strip()]
+
+        # ═══ FAZ 7.1: BLACKLIST Filtresi ═══
+        original_count = len(keywords)
+        keywords = filter_keywords(keywords)
+        filtered_count = original_count - len(keywords)
+        if filtered_count > 0:
+            print(f"[save-parsed] BLACKLIST: {filtered_count} keyword filtrelendi, kalan: {len(keywords)}")
 
         description_parts = []
         if data.get("aranan_nitelikler"):
