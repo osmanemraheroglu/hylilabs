@@ -215,8 +215,47 @@ export default function Synonyms() {
   }
 
   const handleGenerate = async () => {
-    // TODO: ADIM 5.5'te implement edilecek
-    console.log('handleGenerate', generateKeyword)
+    if (!generateKeyword.trim()) return
+
+    setGenerateLoading(true)
+    setGeneratedSynonyms([])
+
+    try {
+      const res = await fetch(`${API}/api/synonyms/generate`, {
+        method: 'POST',
+        headers: H(),
+        body: JSON.stringify({ keyword: generateKeyword.trim() })
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        // API'den dönen synonyms array'ini göster
+        const synonyms = data.data.synonyms || []
+        const synonymTexts = synonyms.map((s: { synonym: string }) => s.synonym)
+        setGeneratedSynonyms(synonymTexts)
+
+        const inserted = data.data.inserted || 0
+        const skipped = data.data.skipped || 0
+
+        if (inserted > 0) {
+          toast.success(`${inserted} eş anlamlı üretildi ve onay listesine eklendi`)
+          // Pending count'u güncelle
+          loadPendingCount()
+        } else if (skipped > 0) {
+          toast.success(`Tüm öneriler zaten mevcut (${skipped} atlandı)`)
+        } else {
+          toast.error('AI öneri üretemedi')
+        }
+      } else {
+        // Rate limit hatası (429) veya diğer hatalar
+        toast.error(data.detail || 'Üretim başarısız')
+      }
+    } catch (err) {
+      console.error('handleGenerate error:', err)
+      toast.error('Bağlantı hatası')
+    } finally {
+      setGenerateLoading(false)
+    }
   }
 
   const handleManualAdd = async () => {

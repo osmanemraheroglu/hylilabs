@@ -57,6 +57,13 @@ Son guncelleme: 28.02.2026
   - handleDelete(): DELETE /api/synonyms/{id}
     - confirm() ile silme onayı
     - Başarılı silme sonrası liste + pendingCount güncelleme
+- ADIM 5.5: Tab 3 - AI Üretimi API implementasyonu
+  - handleGenerate(): POST /api/synonyms/generate
+    - Loading state: setGenerateLoading(true/false)
+    - Sonuç gösterimi: setGeneratedSynonyms(synonymTexts)
+    - inserted/skipped sayısı ile detaylı mesaj
+    - Pending count güncelleme: loadPendingCount()
+    - Rate limit hatası yakalama (429)
 
 ### 28.02.2026 - Keyword Synonym Yönetim Sistemi (ADIM 1.1 + 1.2 + 2.1 + 2.2)
 - AMAÇ: AI + İK onay sistemli synonym yönetimi için altyapı
@@ -545,7 +552,7 @@ FAZ 5 Frontend Synonym Yönetimi devam ediyor:
 - ✅ ADIM 5.2: Ana sayfa iskelet + Tab yapısı
 - ✅ ADIM 5.3: Tab 1 - Onay Bekleyenler
 - ✅ ADIM 5.4: Tab 2 - Tüm Eş Anlamlılar + Arama
-- ⏳ ADIM 5.5: Tab 3 - AI Üretimi
+- ✅ ADIM 5.5: Tab 3 - AI Üretimi
 - ⏳ ADIM 5.6: Tab 4 - Manuel Ekleme
 - ⏳ ADIM 5.7: Test + Bug fix
 
