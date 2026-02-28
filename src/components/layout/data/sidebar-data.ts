@@ -12,6 +12,7 @@ import {
   AudioWaveform,
   Command,
   GalleryVerticalEnd,
+  Languages,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -26,14 +27,15 @@ const MENU_ITEMS: Record<string, { title: string; url: string; icon: React.Eleme
   kullaniciYonetimi: { title: 'Kullanıcı Yönetimi', url: '/user-management', icon: UserCog },
   firmaYonetimi: { title: 'Firma Yönetimi', url: '/firma-yonetimi', icon: Building2 },
   adminPanel: { title: 'Admin Panel', url: '/admin-panel', icon: Cog },
+  synonymlar: { title: 'Eş Anlamlılar', url: '/synonyms', icon: Languages },
   ayarlar: { title: 'Ayarlar', url: '/settings', icon: Settings },
 }
 
 // Rol bazlı menü tanımları
 const ROLE_MENUS: Record<string, string[]> = {
   super_admin: ['dashboard', 'firmaYonetimi', 'adminPanel', 'ayarlar'],
-  company_admin: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi', 'emailHesaplari', 'kullaniciYonetimi', 'ayarlar'],
-  user: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi'],
+  company_admin: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi', 'emailHesaplari', 'kullaniciYonetimi', 'synonymlar', 'ayarlar'],
+  user: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi', 'synonymlar'],
 }
 
 // Varsayılan teams

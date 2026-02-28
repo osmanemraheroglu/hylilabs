@@ -31,6 +31,14 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 28.02.2026 - FAZ 5 Frontend Synonym Yönetimi
+- ADIM 5.1: Route + Sidebar Entegrasyonu
+  - src/routes/_authenticated/synonyms/index.tsx (YENİ)
+  - src/features/synonyms/index.tsx (YENİ - placeholder)
+  - sidebar-data.ts: Languages icon import, synonymlar menu item eklendi
+  - company_admin ve user rollerine 'synonymlar' eklendi
+  - URL: /synonyms, Menü: "Eş Anlamlılar"
+
 ### 28.02.2026 - Keyword Synonym Yönetim Sistemi (ADIM 1.1 + 1.2 + 2.1 + 2.2)
 - AMAÇ: AI + İK onay sistemli synonym yönetimi için altyapı
 - ADIM 1.1: keyword_synonyms tablosu oluşturuldu (database.py:678-703)
@@ -513,20 +521,14 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-CV Çek Batch İşleme tamamlandı:
-- database.py: pull_matching_candidates_to_position() batch işleme eklendi
-  - BATCH_SIZE = 100 ile LIMIT/OFFSET sorguları
-  - Bellek kullanımı O(n) → O(100) sabit
-  - stats['batches_processed'] eklendi
-  - 1000+ aday için güvenli
-
-Tüm limitler tamamlandı:
-- ✅ AI Değerlendirme Tekrar Kontrolü
-- ✅ Login Rate Limit (5 deneme/15 dk)
-- ✅ CV Upload Rate Limit (20 dosya/saat)
-- ✅ AI Günlük Kullanım Limiti (plan bazlı)
-- ✅ Pozisyon Eşleşme Limiti (TOP 50)
-- ✅ CV Çek Batch İşleme (bellek optimizasyonu)
+FAZ 5 Frontend Synonym Yönetimi devam ediyor:
+- ✅ ADIM 5.1: Route + Sidebar Entegrasyonu
+- ⏳ ADIM 5.2: Ana sayfa iskelet + Tab yapısı
+- ⏳ ADIM 5.3: Tab 1 - Onay Bekleyenler
+- ⏳ ADIM 5.4: Tab 2 - Tüm Eş Anlamlılar + Arama
+- ⏳ ADIM 5.5: Tab 3 - AI Üretimi
+- ⏳ ADIM 5.6: Tab 4 - Manuel Ekleme
+- ⏳ ADIM 5.7: Test + Bug fix
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)
