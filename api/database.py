@@ -1033,7 +1033,7 @@ def init_database():
 
 def get_synonyms_for_keyword(keyword: str, company_id: int = None) -> list[str]:
     """
-    Keyword için onaylı synonym listesi döndür.
+    Keyword için onaylı synonym listesi döndür (CACHE'Lİ).
 
     Args:
         keyword: Aranacak keyword (turkish_lower uygulanacak)
@@ -1042,55 +1042,64 @@ def get_synonyms_for_keyword(keyword: str, company_id: int = None) -> list[str]:
     Returns:
         list[str]: Onaylı synonym listesi (boş liste olabilir)
 
-    Öncelik:
-        1. Firma bazlı (company_id = X, status = 'approved')
-        2. Global (company_id = NULL, status = 'approved')
-
-    Note:
-        - Sonuçlar küçük harfe çevrilmiş olarak döner
-        - Self-reference dahil edilmez (keyword == synonym olanlar)
+    Cache:
+        Key: synonyms_{keyword}_{company_id|global}
+        TTL: 300 saniye (5 dakika)
     """
     keyword_lower = turkish_lower(keyword.strip())
+    cache_key = f"synonyms_{keyword_lower}_{company_id or 'global'}"
 
-    try:
-        with get_connection() as conn:
-            cursor = conn.cursor()
+    def fetch_from_db():
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
 
-            if company_id:
-                # Firma + Global birleşik
-                cursor.execute("""
-                    SELECT DISTINCT synonym FROM keyword_synonyms
-                    WHERE keyword = ?
-                      AND status = 'approved'
-                      AND (company_id IS NULL OR company_id = ?)
-                    ORDER BY
-                        CASE WHEN company_id IS NOT NULL THEN 0 ELSE 1 END,
-                        synonym
-                """, (keyword_lower, company_id))
-            else:
-                # Sadece global
-                cursor.execute("""
-                    SELECT DISTINCT synonym FROM keyword_synonyms
-                    WHERE keyword = ?
-                      AND status = 'approved'
-                      AND company_id IS NULL
-                    ORDER BY synonym
-                """, (keyword_lower,))
+                if company_id:
+                    cursor.execute("""
+                        SELECT DISTINCT synonym FROM keyword_synonyms
+                        WHERE keyword = ?
+                          AND status = 'approved'
+                          AND (company_id IS NULL OR company_id = ?)
+                        ORDER BY
+                            CASE WHEN company_id IS NOT NULL THEN 0 ELSE 1 END,
+                            synonym
+                    """, (keyword_lower, company_id))
+                else:
+                    cursor.execute("""
+                        SELECT DISTINCT synonym FROM keyword_synonyms
+                        WHERE keyword = ?
+                          AND status = 'approved'
+                          AND company_id IS NULL
+                        ORDER BY synonym
+                    """, (keyword_lower,))
 
-            rows = cursor.fetchall()
+                rows = cursor.fetchall()
 
-            # Synonym'ları lowercase olarak döndür, self-reference hariç
-            synonyms = []
-            for row in rows:
-                syn_lower = turkish_lower(row['synonym'])
-                if syn_lower != keyword_lower:  # Self-reference kontrolü
-                    synonyms.append(syn_lower)
+                synonyms = []
+                for row in rows:
+                    syn_lower = turkish_lower(row['synonym'])
+                    if syn_lower != keyword_lower:
+                        synonyms.append(syn_lower)
 
-            return synonyms
+                return synonyms
 
-    except Exception as e:
-        logger.warning(f"get_synonyms_for_keyword hatası ({keyword}): {e}")
-        return []
+        except Exception as e:
+            logger.warning(f"get_synonyms_for_keyword hatası ({keyword}): {e}")
+            return []
+
+    return cached_get(cache_key, fetch_from_db)
+
+
+def invalidate_synonym_cache():
+    """
+    Tüm synonym cache'ini temizle.
+
+    Synonym verileri değiştiğinde çağrılmalı:
+    - approve_synonyms() sonrası
+    - add_manual_synonym(auto_approve=True) sonrası
+    - delete_synonym() sonrası
+    """
+    invalidate_cache("synonyms_")
 
 
 def save_generated_synonyms(
@@ -1294,6 +1303,7 @@ def approve_synonyms(
             updated = cursor.rowcount
 
         if updated > 0:
+            invalidate_synonym_cache()
             logger.info(f"approve_synonyms: {updated} synonym onaylandı (user: {approved_by})")
 
         return {"success": True, "updated": updated}
@@ -1403,6 +1413,9 @@ def add_manual_synonym(
 
             new_id = cursor.lastrowid
 
+        if auto_approve:
+            invalidate_synonym_cache()
+
         logger.info(f"add_manual_synonym: '{keyword}' -> '{synonym}' eklendi (id: {new_id}, status: {status})")
         return {"success": True, "id": new_id}
 
@@ -1451,6 +1464,7 @@ def delete_synonym(
             deleted = cursor.rowcount > 0
 
         if deleted:
+            invalidate_synonym_cache()
             logger.info(f"delete_synonym: ID {synonym_id} silindi")
 
         return deleted
