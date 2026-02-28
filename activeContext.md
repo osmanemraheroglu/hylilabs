@@ -31,6 +31,14 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 28.02.2026 - FAZ 6.1 Batch Rate Limit
+- rate_limiter.py'ye batch synonym üretimi için rate limit eklendi
+- SYNONYM_BATCH_GENERATE_MAX = 5 (sabitler)
+- SYNONYM_BATCH_GENERATE_WINDOW_MINUTES = 60
+- check_synonym_batch_generate_limit(user_id) fonksiyonu
+- record_synonym_batch_generate(user_id) fonksiyonu
+- Pozisyon oluşturulurken toplu synonym üretimi için limit kontrolü
+
 ### 28.02.2026 - FAZ 5 Frontend Synonym Yönetimi
 - ADIM 5.1: Route + Sidebar Entegrasyonu
   - src/routes/_authenticated/synonyms/index.tsx (YENİ)
@@ -555,14 +563,24 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-FAZ 5 Frontend Synonym Yönetimi devam ediyor:
+FAZ 6 Pozisyon Kaydetme Otomatik Synonym Üretimi:
+- ✅ FAZ 6.1: Batch Rate Limit (rate_limiter.py)
+  - SYNONYM_BATCH_GENERATE_MAX = 5
+  - SYNONYM_BATCH_GENERATE_WINDOW_MINUTES = 60
+  - check_synonym_batch_generate_limit() fonksiyonu
+  - record_synonym_batch_generate() fonksiyonu
+- ⏳ FAZ 6.2: Batch Synonym Üretim Fonksiyonu (synonyms.py)
+- ⏳ FAZ 6.3: save_parsed_position Entegrasyonu (pools.py)
+- ⏳ FAZ 6.4: Frontend Toast Bildirimi (havuzlar)
+
+FAZ 5 Frontend Synonym Yönetimi TAMAMLANDI:
 - ✅ ADIM 5.1: Route + Sidebar Entegrasyonu
 - ✅ ADIM 5.2: Ana sayfa iskelet + Tab yapısı
 - ✅ ADIM 5.3: Tab 1 - Onay Bekleyenler
 - ✅ ADIM 5.4: Tab 2 - Tüm Eş Anlamlılar + Arama
 - ✅ ADIM 5.5: Tab 3 - AI Üretimi
 - ✅ ADIM 5.6: Tab 4 - Manuel Ekleme
-- ⏳ ADIM 5.7: Test + Bug fix
+- ✅ ADIM 5.7: Test + Bug fix (deferred - production test)
 
 ## Bilinen Acik Konular
 - SSL henuz yok (HTTP)

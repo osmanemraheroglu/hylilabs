@@ -56,6 +56,11 @@ class RateLimitConfig:
     SYNONYM_GENERATE_MAX = 10
     SYNONYM_GENERATE_WINDOW_MINUTES = 60
 
+    # === AI SYNONYM BATCH GENERATE LİMİTİ ===
+    # Toplu synonym üretimi: 5 batch / saat / kullanıcı
+    SYNONYM_BATCH_GENERATE_MAX = 5
+    SYNONYM_BATCH_GENERATE_WINDOW_MINUTES = 60
+
 
 # ============ VERITABANI ============
 
@@ -479,6 +484,50 @@ def record_synonym_generate(user_id: str) -> None:
         user_id: Kullanıcı ID (string)
     """
     record_action(user_id, "synonym_generate")
+
+
+def check_synonym_batch_generate_limit(user_id: str) -> Tuple[bool, str]:
+    """
+    Toplu AI synonym üretimi rate limit kontrolü.
+    Pozisyon kaydederken kullanılır.
+
+    Args:
+        user_id: Kullanıcı ID (string)
+
+    Returns:
+        Tuple[bool, str]: (izin_var_mı, hata_mesajı)
+    """
+    allowed, count, remaining = check_rate_limit(
+        user_id,
+        "synonym_batch_generate",
+        RateLimitConfig.SYNONYM_BATCH_GENERATE_MAX,
+        RateLimitConfig.SYNONYM_BATCH_GENERATE_WINDOW_MINUTES
+    )
+
+    if not allowed:
+        wait_time = get_wait_time(
+            user_id,
+            "synonym_batch_generate",
+            RateLimitConfig.SYNONYM_BATCH_GENERATE_WINDOW_MINUTES
+        )
+        wait_minutes = max(1, wait_time // 60)
+        return False, (
+            f"Saatlik toplu synonym üretim limitine ulaştınız "
+            f"({RateLimitConfig.SYNONYM_BATCH_GENERATE_MAX}/saat). "
+            f"{wait_minutes} dakika sonra tekrar deneyin."
+        )
+
+    return True, ""
+
+
+def record_synonym_batch_generate(user_id: str) -> None:
+    """
+    Başarılı toplu AI synonym üretimini kaydet.
+
+    Args:
+        user_id: Kullanıcı ID (string)
+    """
+    record_action(user_id, "synonym_batch_generate")
 
 
 # Modul yuklendiginde tabloyu olustur
