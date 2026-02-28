@@ -704,3 +704,12 @@ FAZ 5 Frontend Synonym Yönetimi TAMAMLANDI:
     - company_id parametresi eklendi (güvenlik)
     - Dict döndürüyor (detaylı hata mesajları)
   - pools.py: assign_candidate endpoint pool_type kontrolü eklendi
+
+## İLERİDE YAPILACAKLAR
+
+### PM2 → SYSTEMD GEÇİŞİ
+- **Sorun:** PM2 "waiting" gösteriyor (Uvicorn child process spawn ediyor)
+- **Risk:** Auto-restart çalışmayabilir, crash durumunda manuel müdahale gerekebilir
+- **Çözüm:** systemd service'e geçiş
+- **Ne zaman:** Domain/alan adı bağlandıktan sonra
+- **Öncelik:** Orta
