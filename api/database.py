@@ -10132,3 +10132,134 @@ def check_ai_daily_limit(company_id: int) -> tuple:
         return False, f"Günlük AI değerlendirme limitinize ulaştınız ({limit}). Yarın tekrar deneyebilirsiniz.", 0
 
     return True, "", remaining
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 8.1.7: REJECT STATS RAPORU
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def get_reject_stats(company_id: int = None) -> dict:
+    """
+    Red istatistikleri raporu.
+    FAZ 8.1.7: Sebep bazlı dağılım, kaynak bazlı dağılım, en çok reddedilenler.
+
+    Args:
+        company_id: Firma ID (opsiyonel, None ise tüm firmalar)
+
+    Returns:
+        {
+            "reason_distribution": [{"reason": str, "label": str, "count": int, "percentage": float}],
+            "source_distribution": [{"source": str, "count": int}],
+            "top_rejected_keywords": [{"keyword": str, "count": int}],
+            "totals": {"rejected": int, "with_reason": int, "no_reason": int}
+        }
+    """
+    # Reason labels (REJECT_REASONS'dan)
+    reason_labels = {
+        "too_general": "Çok Genel",
+        "technically_wrong": "Teknik Olarak Yanlış",
+        "out_of_context": "Bağlam Dışı",
+        "duplicate": "Tekrar",
+        "meaningless": "Anlamsız",
+        "different_concept": "Farklı Kavram",
+        "other": "Diğer"
+    }
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Company filter SQL
+            company_filter = ""
+            params = []
+            if company_id is not None:
+                company_filter = " AND (company_id IS NULL OR company_id = ?)"
+                params = [company_id]
+
+            # 1. Totals
+            cursor.execute(f"""
+                SELECT COUNT(*) FROM keyword_synonyms
+                WHERE status = 'rejected' {company_filter}
+            """, params)
+            total_rejected = cursor.fetchone()[0]
+
+            cursor.execute(f"""
+                SELECT COUNT(*) FROM keyword_synonyms
+                WHERE status = 'rejected' AND reject_reason IS NOT NULL {company_filter}
+            """, params)
+            with_reason = cursor.fetchone()[0]
+
+            no_reason = total_rejected - with_reason
+
+            # 2. Reason distribution
+            cursor.execute(f"""
+                SELECT reject_reason, COUNT(*) as count
+                FROM keyword_synonyms
+                WHERE status = 'rejected' AND reject_reason IS NOT NULL {company_filter}
+                GROUP BY reject_reason
+                ORDER BY count DESC
+            """, params)
+            reason_rows = cursor.fetchall()
+
+            reason_distribution = []
+            for row in reason_rows:
+                reason_code = row[0]
+                count = row[1]
+                percentage = round((count / with_reason * 100), 1) if with_reason > 0 else 0
+                reason_distribution.append({
+                    "reason": reason_code,
+                    "label": reason_labels.get(reason_code, reason_code),
+                    "count": count,
+                    "percentage": percentage
+                })
+
+            # 3. Source distribution
+            cursor.execute(f"""
+                SELECT source, COUNT(*) as count
+                FROM keyword_synonyms
+                WHERE status = 'rejected' {company_filter}
+                GROUP BY source
+                ORDER BY count DESC
+            """, params)
+            source_rows = cursor.fetchall()
+
+            source_distribution = [
+                {"source": row[0], "count": row[1]}
+                for row in source_rows
+            ]
+
+            # 4. Top rejected keywords (limit 10)
+            cursor.execute(f"""
+                SELECT keyword, COUNT(*) as count
+                FROM keyword_synonyms
+                WHERE status = 'rejected' {company_filter}
+                GROUP BY keyword
+                ORDER BY count DESC
+                LIMIT 10
+            """, params)
+            keyword_rows = cursor.fetchall()
+
+            top_rejected_keywords = [
+                {"keyword": row[0], "count": row[1]}
+                for row in keyword_rows
+            ]
+
+            return {
+                "reason_distribution": reason_distribution,
+                "source_distribution": source_distribution,
+                "top_rejected_keywords": top_rejected_keywords,
+                "totals": {
+                    "rejected": total_rejected,
+                    "with_reason": with_reason,
+                    "no_reason": no_reason
+                }
+            }
+
+    except Exception as e:
+        logger.error(f"get_reject_stats hatası: {e}")
+        return {
+            "reason_distribution": [],
+            "source_distribution": [],
+            "top_rejected_keywords": [],
+            "totals": {"rejected": 0, "with_reason": 0, "no_reason": 0}
+        }

@@ -22,7 +22,8 @@ from database import (
     reject_synonyms,
     save_generated_synonyms,
     get_approved_synonym_count,
-    log_api_usage
+    log_api_usage,
+    get_reject_stats
 )
 from routes.auth import get_current_user
 from rate_limiter import (
@@ -430,6 +431,34 @@ def get_reject_reasons(
             "data": {
                 "reasons": reasons_list
             }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINT 3.6: GET /api/synonyms/reject_stats - Red istatistikleri raporu
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/reject_stats")
+def get_reject_statistics(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Red istatistikleri raporu.
+    FAZ 8.1.7: Sebep bazlı dağılım, kaynak bazlı dağılım, en çok reddedilenler.
+    """
+    try:
+        require_company_user(current_user)
+        company_id = current_user["company_id"]
+
+        stats = get_reject_stats(company_id=company_id)
+
+        return {
+            "success": True,
+            "data": stats
         }
     except HTTPException:
         raise

@@ -31,6 +31,16 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 01.03.2026 - FAZ 8.1.7 Reject Stats Rapor Endpoint
+- GET /api/synonyms/reject_stats endpoint eklendi
+- database.py: get_reject_stats() fonksiyonu eklendi
+- Response:
+  - reason_distribution: [{reason, label, count, percentage}]
+  - source_distribution: [{source, count}]
+  - top_rejected_keywords: [{keyword, count}]
+  - totals: {rejected, with_reason, no_reason}
+- Frontend gösterimi FAZ 8.2'de yapılacak
+
 ### 01.03.2026 - FAZ 8.1.4-8.1.6 Reject Dialog ve API
 - Backend:
   - GET /api/synonyms/reject_reasons endpoint eklendi (REJECT_REASONS döndürür)
