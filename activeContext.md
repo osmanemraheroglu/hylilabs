@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 28.02.2026
+Son guncelleme: 01.03.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -31,6 +31,28 @@ Son guncelleme: 28.02.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 01.03.2026 - FAZ 7.7 AI Synonym Kalite Sistemi v2
+- synonyms.py'ye kalite kontrol sistemi eklendi:
+  - SYNONYM_BLACKLIST (57 kelime) - Soft skills, kişilik özellikleri, genel iş terimleri
+  - GENERAL_WORDS (25 kelime) - Çok genel kelimeler
+  - SYNONYM_PROMPT_BATCH_V2 - Yeni prompt (confidence score, teknik odaklı)
+  - SYNONYM_PROMPT_SINGLE_V2 - Yeni prompt (confidence score, teknik odaklı)
+  - filter_ai_synonyms() fonksiyonu - AI çıktısını filtreler
+- Filtre kuralları:
+  - Blacklist kontrolü (soft skills, kişilik özellikleri filtrelenir)
+  - General words kontrolü (çok genel terimler filtrelenir)
+  - Confidence threshold: 0.7 (altındakiler filtrelenir)
+  - Max 4 synonym limiti
+  - "variation" tipi kaldırıldı (sadece turkish, english, abbreviation)
+- _generate_synonyms_batch_internal() güncellendi:
+  - SYNONYM_PROMPT_BATCH_V2 kullanıyor
+  - filter_ai_synonyms() çağrısı eklendi
+- generate_synonyms() endpoint güncellendi:
+  - SYNONYM_PROMPT_SINGLE_V2 kullanıyor
+  - filter_ai_synonyms() çağrısı eklendi
+  - Tüm öneriler filtrelenirse "kalite filtresinden geçemedi" mesajı
+- SONUÇ: AI synonym üretimi artık soft skill ve genel terim üretmiyor
+
 ### 01.03.2026 - FAZ 7.6 Data Cleanup (Bozuk Veri Temizliği)
 - 15 bozuk keyword silindi (ID 1314-1328, JSON escape hataları)
 - 24 rejected synonym silindi
@@ -638,6 +660,7 @@ FAZ 7 Keyword Yönetimi: ✅ TAMAMLANDI
 - ✅ FAZ 7.2: Smart Synonym (AI skip if approved exists)
 - ✅ FAZ 7.3: Usage Count System (database.py, pools.py)
 - ✅ FAZ 7.6: Data Cleanup (bozuk keyword, yetim synonym temizliği)
+- ✅ FAZ 7.7: AI Synonym Kalite Sistemi v2 (synonyms.py)
 
 FAZ 6 Pozisyon Kaydetme Otomatik Synonym Üretimi: ✅ TAMAMLANDI
 - ✅ FAZ 6.1: Batch Rate Limit (rate_limiter.py)
