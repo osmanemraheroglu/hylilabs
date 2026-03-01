@@ -93,6 +93,34 @@ REJECT_REASONS = {
 # Basit liste (API response icin)
 REJECT_REASON_CODES = list(REJECT_REASONS.keys())
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 8.2: DINAMIK MAX LIMIT - Yuksek Kapsamli Keyword'ler
+# Bu keyword'ler icin maksimum 5 synonym uretilir (default 3)
+# ═══════════════════════════════════════════════════════════════════════════════
+HIGH_COVERAGE_KEYWORDS = {
+    # Programlama Dilleri
+    "python", "javascript", "java", "sql", "c#", "c++", "php", "ruby", "go", "typescript",
+    "kotlin", "swift", "scala", "rust", "perl", "r", "matlab",
+    # Frontend/Backend Frameworks
+    "react", "angular", "vue", "node", "django", "flask", "spring", ".net", "laravel",
+    "express", "fastapi", "next.js", "nuxt", "svelte",
+    # DevOps & Cloud
+    "docker", "kubernetes", "aws", "azure", "gcp", "linux", "git", "devops", "jenkins",
+    "terraform", "ansible", "ci/cd", "gitlab", "github",
+    # Veritabani
+    "mysql", "postgresql", "mongodb", "redis", "elasticsearch", "oracle", "sql server",
+    # Data & AI
+    "machine learning", "deep learning", "data science", "tableau", "power bi",
+    "tensorflow", "pytorch", "pandas", "numpy", "spark",
+    # Tasarim & Muhendislik Araclari
+    "excel", "autocad", "solidworks", "sap", "revit", "catia", "nx", "creo",
+    "photoshop", "illustrator", "figma", "sketch",
+    # Turkce Yaygin Terimler
+    "yazilim", "yazılım", "gelistirme", "geliştirme", "muhendis", "mühendis",
+    "yonetim", "yönetim", "analiz", "muhasebe", "satis", "satış",
+    "pazarlama", "uretim", "üretim", "kalite", "tasarim", "tasarım", "mimari"
+}
+
 SYNONYM_BLACKLIST = [
     # Soft Skills (Yumuşak Beceriler) - Bunlar keyword olmamalı
     "iletisim", "iletişim", "koordinasyon", "takim calismasi", "takım çalışması",
@@ -117,6 +145,36 @@ GENERAL_WORDS = [
     "analiz", "kontrol", "takip", "destek", "hizmet", "uygulama", "cozum", "çözüm",
     "strateji", "operasyon", "surec", "süreç", "faaliyet"
 ]
+
+
+def get_max_synonym_limit(keyword: str) -> int:
+    """
+    Keyword'e göre dinamik maksimum synonym limiti döndür.
+
+    FAZ 8.2: Dinamik Limit Sistemi
+    - HIGH_COVERAGE_KEYWORDS'de varsa: 5 synonym
+    - 20 karakterden uzun keyword: 4 synonym
+    - Standart keyword: 3 synonym
+
+    Args:
+        keyword: Limit hesaplanacak keyword
+
+    Returns:
+        int: Maksimum synonym sayısı (3, 4, veya 5)
+    """
+    kw = keyword.lower().strip()
+
+    # Yüksek kapsamlı keyword'ler: 5 synonym
+    if kw in HIGH_COVERAGE_KEYWORDS:
+        return 5
+
+    # Uzun keyword'ler: 4 synonym
+    if len(kw) > 20:
+        return 4
+
+    # Standart: 3 synonym
+    return 3
+
 
 SYNONYM_PROMPT_BATCH_V2 = """Sen İK alanında TEKNIK BECERİ uzmanisin.
 Verilen keyword'ler için SADECE teknik/mesleki synonym öner.
@@ -192,7 +250,7 @@ def filter_ai_synonyms(keyword: str, ai_synonyms: list) -> list:
     2. General words kontrolü (çok genel terimler)
     3. Confidence score kontrolü (0.7 threshold)
     4. Keyword ile aynı olanları çıkar
-    5. Max 3 synonym limiti
+    5. Dinamik max synonym limiti (FAZ 8.2: HIGH_COVERAGE=5, uzun=4, standart=3)
 
     Args:
         keyword: Ana keyword
@@ -203,6 +261,7 @@ def filter_ai_synonyms(keyword: str, ai_synonyms: list) -> list:
     """
     filtered = []
     keyword_lower = keyword.lower().strip()
+    max_limit = get_max_synonym_limit(keyword)
 
     for item in ai_synonyms:
         # Dict kontrolü
@@ -248,8 +307,8 @@ def filter_ai_synonyms(keyword: str, ai_synonyms: list) -> list:
             "synonym_type": syn_type
         })
 
-        # Max 3 synonym limiti
-        if len(filtered) >= 3:
+        # Dinamik max synonym limiti (FAZ 8.2)
+        if len(filtered) >= max_limit:
             break
 
     return filtered
