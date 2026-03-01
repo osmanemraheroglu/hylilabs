@@ -31,6 +31,16 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 01.03.2026 - FAZ 8.1.8 Otomatik Blacklist Aday Sistemi
+- blacklist_candidates tablosu oluşturuldu:
+  - company_id, synonym, reject_count, reasons_history, status
+- database.py:
+  - check_and_suggest_blacklist(): 3+ kez reddedilen synonym'ları aday olarak ekler
+  - get_blacklist_candidates(): Adayları listeler
+  - reject_synonyms() sonuna trigger eklendi
+- GET /api/synonyms/blacklist_candidates endpoint eklendi
+- Mantık: Synonym 3+ kez reddedilince otomatik olarak aday listesine eklenir
+
 ### 01.03.2026 - FAZ 8.1.7 Reject Stats Rapor Endpoint
 - GET /api/synonyms/reject_stats endpoint eklendi
 - database.py: get_reject_stats() fonksiyonu eklendi

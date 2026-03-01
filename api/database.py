@@ -1561,8 +1561,29 @@ def reject_synonyms(
 
             updated = cursor.rowcount
 
+            # FAZ 8.1.8: Blacklist aday kontrolü için reddedilen synonym'ları al
+            rejected_synonyms = []
+            if updated > 0:
+                placeholders2 = ','.join(['?'] * len(synonym_ids))
+                cursor.execute(f"""
+                    SELECT synonym FROM keyword_synonyms
+                    WHERE id IN ({placeholders2})
+                """, synonym_ids)
+                rejected_synonyms = [row[0] for row in cursor.fetchall()]
+
         if updated > 0:
             logger.info(f"reject_synonyms: {updated} synonym reddedildi, reason={reject_reason}")
+
+            # FAZ 8.1.8: Her reddedilen synonym için blacklist adayı kontrolü
+            for syn in rejected_synonyms:
+                try:
+                    check_and_suggest_blacklist(
+                        synonym=syn,
+                        company_id=company_id,
+                        reject_reason=reject_reason
+                    )
+                except Exception as e:
+                    logger.warning(f"Blacklist kontrolü hatası ({syn}): {e}")
 
         return {"success": True, "updated": updated}
 
@@ -10263,3 +10284,169 @@ def get_reject_stats(company_id: int = None) -> dict:
             "top_rejected_keywords": [],
             "totals": {"rejected": 0, "with_reason": 0, "no_reason": 0}
         }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 8.1.8: OTOMATIK BLACKLIST ADAY SISTEMI
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# SYNONYM_BLACKLIST import (circular import önlemek için lazy load)
+_SYNONYM_BLACKLIST = None
+
+def _get_synonym_blacklist():
+    """Lazy load SYNONYM_BLACKLIST to avoid circular import."""
+    global _SYNONYM_BLACKLIST
+    if _SYNONYM_BLACKLIST is None:
+        try:
+            from routes.synonyms import SYNONYM_BLACKLIST
+            _SYNONYM_BLACKLIST = set(SYNONYM_BLACKLIST)
+        except ImportError:
+            _SYNONYM_BLACKLIST = set()
+    return _SYNONYM_BLACKLIST
+
+
+def check_and_suggest_blacklist(
+    synonym: str,
+    company_id: int = None,
+    reject_reason: str = None
+) -> dict:
+    """
+    Synonym'un blacklist adayı olup olmadığını kontrol et.
+    FAZ 8.1.8: 3+ kez reddedilen synonym'ları blacklist_candidates'a ekle.
+
+    Args:
+        synonym: Reddedilen synonym
+        company_id: Firma ID
+        reject_reason: Red sebebi kodu
+
+    Returns:
+        {"suggested": bool, "reject_count": int, "message": str}
+    """
+    if not synonym:
+        return {"suggested": False, "reject_count": 0, "message": "Synonym boş"}
+
+    synonym_lower = synonym.lower().strip()
+
+    # SYNONYM_BLACKLIST'te zaten var mı?
+    blacklist = _get_synonym_blacklist()
+    if synonym_lower in blacklist:
+        return {"suggested": False, "reject_count": 0, "message": "Zaten blacklist'te"}
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Bu synonym kaç kez reddedildi?
+            if company_id is not None:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM keyword_synonyms
+                    WHERE LOWER(synonym) = ? AND status = 'rejected'
+                    AND (company_id IS NULL OR company_id = ?)
+                """, [synonym_lower, company_id])
+            else:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM keyword_synonyms
+                    WHERE LOWER(synonym) = ? AND status = 'rejected'
+                """, [synonym_lower])
+
+            reject_count = cursor.fetchone()[0]
+
+            # 3+ kez reddedildi mi?
+            if reject_count >= 3:
+                # blacklist_candidates'a ekle veya güncelle
+                import json
+                import datetime
+
+                # Mevcut kayıt var mı?
+                cursor.execute("""
+                    SELECT id, reject_count, reasons_history FROM blacklist_candidates
+                    WHERE synonym = ? AND (company_id IS NULL OR company_id = ?)
+                """, [synonym_lower, company_id])
+                existing = cursor.fetchone()
+
+                if existing:
+                    # Güncelle
+                    existing_id = existing[0]
+                    existing_reasons = existing[2]
+                    try:
+                        reasons_list = json.loads(existing_reasons) if existing_reasons else []
+                    except:
+                        reasons_list = []
+
+                    if reject_reason and reject_reason not in reasons_list:
+                        reasons_list.append(reject_reason)
+
+                    cursor.execute("""
+                        UPDATE blacklist_candidates
+                        SET reject_count = ?,
+                            reasons_history = ?,
+                            last_rejected_at = ?
+                        WHERE id = ?
+                    """, [reject_count, json.dumps(reasons_list), datetime.datetime.now().isoformat(), existing_id])
+                else:
+                    # Yeni kayıt
+                    reasons_list = [reject_reason] if reject_reason else []
+                    cursor.execute("""
+                        INSERT INTO blacklist_candidates
+                        (company_id, synonym, reject_count, reasons_history, first_rejected_at, last_rejected_at, status)
+                        VALUES (?, ?, ?, ?, ?, ?, 'pending')
+                    """, [
+                        company_id,
+                        synonym_lower,
+                        reject_count,
+                        json.dumps(reasons_list),
+                        datetime.datetime.now().isoformat(),
+                        datetime.datetime.now().isoformat()
+                    ])
+
+                conn.commit()
+                logger.info(f"Blacklist adayı önerildi: {synonym_lower} ({reject_count} kez reddedildi)")
+                return {"suggested": True, "reject_count": reject_count, "message": "Blacklist adayı olarak eklendi"}
+
+            return {"suggested": False, "reject_count": reject_count, "message": f"Henüz {reject_count} kez reddedildi (min 3)"}
+
+    except Exception as e:
+        logger.error(f"check_and_suggest_blacklist hatası: {e}")
+        return {"suggested": False, "reject_count": 0, "message": str(e)}
+
+
+def get_blacklist_candidates(
+    company_id: int = None,
+    status: str = "pending"
+) -> list:
+    """
+    Blacklist adaylarını listele.
+    FAZ 8.1.8: Admin UI için hazırlık.
+
+    Args:
+        company_id: Firma ID (None ise tümü)
+        status: Filtre (pending, approved, ignored)
+
+    Returns:
+        [{id, synonym, reject_count, reasons_history, first_rejected_at, last_rejected_at, status}]
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = "SELECT * FROM blacklist_candidates WHERE 1=1"
+            params = []
+
+            if company_id is not None:
+                query += " AND (company_id IS NULL OR company_id = ?)"
+                params.append(company_id)
+
+            if status:
+                query += " AND status = ?"
+                params.append(status)
+
+            query += " ORDER BY reject_count DESC, last_rejected_at DESC"
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+            return [dict(row) for row in rows]
+
+    except Exception as e:
+        logger.error(f"get_blacklist_candidates hatası: {e}")
+        return []

@@ -23,7 +23,8 @@ from database import (
     save_generated_synonyms,
     get_approved_synonym_count,
     log_api_usage,
-    get_reject_stats
+    get_reject_stats,
+    get_blacklist_candidates
 )
 from routes.auth import get_current_user
 from rate_limiter import (
@@ -459,6 +460,41 @@ def get_reject_statistics(
         return {
             "success": True,
             "data": stats
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINT 3.7: GET /api/synonyms/blacklist_candidates - Blacklist adayları
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/blacklist_candidates")
+def list_blacklist_candidates(
+    status: Optional[str] = Query("pending", description="Filtre: pending, approved, ignored"),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Blacklist adaylarını listele.
+    FAZ 8.1.8: 3+ kez reddedilen synonym'lar otomatik olarak bu listeye eklenir.
+    """
+    try:
+        require_company_user(current_user)
+        company_id = current_user["company_id"]
+
+        candidates = get_blacklist_candidates(
+            company_id=company_id,
+            status=status
+        )
+
+        return {
+            "success": True,
+            "data": {
+                "candidates": candidates,
+                "total": len(candidates)
+            }
         }
     except HTTPException:
         raise
