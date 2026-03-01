@@ -31,6 +31,13 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 01.03.2026 - FAZ 8.1.2-8.1.3 DB Kolonları
+- keyword_synonyms tablosuna 2 yeni kolon eklendi:
+  - reject_reason TEXT: Red kategorisi kodu (REJECT_REASONS key)
+  - reject_note TEXT: Opsiyonel açıklama notu
+- Yedek: talentflow_backup_faz812_20260301_191648.db
+- Sonraki adım: reject endpoint güncelleme + frontend entegrasyonu
+
 ### 01.03.2026 - FAZ 8.1.1 REJECT_REASONS Kategorileri
 - synonyms.py'ye REJECT_REASONS dict eklendi (satır 46-91)
 - 7 red kategorisi tanımlandı:
