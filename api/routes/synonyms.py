@@ -38,6 +38,59 @@ logger = logging.getLogger(__name__)
 # AI SYNONYM KALİTE SİSTEMİ v2 - Blacklist ve Filter Kuralları
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 8.1.1: REJECT REASON KATEGORILERI
+# HR in synonym reddetme sebepleri
+# ═══════════════════════════════════════════════════════════════════════════════
+REJECT_REASONS = {
+    "too_general": {
+        "code": "too_general",
+        "label_tr": "Cok Genel",
+        "label_en": "Too General",
+        "description": "Kelime cok genis kapsamli, spesifik degil"
+    },
+    "technically_wrong": {
+        "code": "technically_wrong",
+        "label_tr": "Teknik Olarak Yanlis",
+        "label_en": "Technically Wrong",
+        "description": "Teknik acidan hatali veya yanlis eslestirme"
+    },
+    "out_of_context": {
+        "code": "out_of_context",
+        "label_tr": "Baglam Disi",
+        "label_en": "Out of Context",
+        "description": "Keyword ile alakasiz, farkli baglamda kullaniliyor"
+    },
+    "duplicate": {
+        "code": "duplicate",
+        "label_tr": "Tekrar",
+        "label_en": "Duplicate",
+        "description": "Zaten mevcut bir synonym ile ayni veya cok benzer"
+    },
+    "meaningless": {
+        "code": "meaningless",
+        "label_tr": "Anlamsiz",
+        "label_en": "Meaningless",
+        "description": "Anlam ifade etmiyor veya ise yaramaz"
+    },
+    "different_concept": {
+        "code": "different_concept",
+        "label_tr": "Farkli Kavram",
+        "label_en": "Different Concept",
+        "description": "Es anlamli degil, tamamen farkli bir kavram"
+    },
+    "other": {
+        "code": "other",
+        "label_tr": "Diger",
+        "label_en": "Other",
+        "description": "Yukaridaki kategorilere girmeyen diger sebepler"
+    }
+}
+
+# Basit liste (API response icin)
+REJECT_REASON_CODES = list(REJECT_REASONS.keys())
+
 SYNONYM_BLACKLIST = [
     # Soft Skills (Yumuşak Beceriler) - Bunlar keyword olmamalı
     "iletisim", "iletişim", "koordinasyon", "takim calismasi", "takım çalışması",
