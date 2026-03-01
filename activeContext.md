@@ -31,6 +31,27 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 01.03.2026 - FAZ 8.2 Dinamik Max Synonym Limit Sistemi
+- HIGH_COVERAGE_KEYWORDS: 93 yüksek kapsamlı keyword tanımlandı
+  - Programlama dilleri: python, javascript, java, sql, c#, c++, php, ruby, go, typescript...
+  - Frontend/Backend: react, angular, vue, node, django, flask, spring, .net, laravel...
+  - DevOps & Cloud: docker, kubernetes, aws, azure, gcp, linux, git, devops, jenkins...
+  - Veritabanı: mysql, postgresql, mongodb, redis, elasticsearch, oracle, sql server
+  - Data & AI: machine learning, deep learning, data science, tableau, tensorflow, pytorch...
+  - Tasarım & Mühendislik: excel, autocad, solidworks, sap, photoshop, figma...
+  - Türkçe yaygın terimler: yazılım, geliştirme, mühendis, yönetim, analiz, muhasebe, satış...
+- get_max_synonym_limit(keyword) fonksiyonu eklendi:
+  - HIGH_COVERAGE keyword: 5 synonym (maksimum)
+  - Uzun keyword (>20 karakter): 4 synonym
+  - Standart keyword: 3 synonym (default)
+- filter_ai_synonyms() dinamik limit entegrasyonu:
+  - Hardcoded >= 3 yerine get_max_synonym_limit() kullanılıyor
+  - Docstring güncellendi
+- Test sonuçları başarılı:
+  - python → 5, react → 5, excel → 5, muhasebe → 5, docker → 5
+  - "proje yönetimi uzmanı becerisi" (30 char) → 4
+  - test → 3, abc → 3
+
 ### 01.03.2026 - FAZ 8.1.8 Otomatik Blacklist Aday Sistemi
 - blacklist_candidates tablosu oluşturuldu:
   - company_id, synonym, reject_count, reasons_history, status
@@ -671,6 +692,10 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+ca62f80 - feat(FAZ 8.2): Dinamik max synonym limit sistemi
+5f54651 - feat(FAZ 8.1.8): Otomatik blacklist aday sistemi
+a2556b9 - feat(FAZ 8.1.7): Reject stats rapor endpoint
+e1cccdc - feat(FAZ 8.1.4-8.1.6): Reject dialog ve API
 2eb11a9 - perf: CV Çek batch işleme eklendi (bellek optimizasyonu)
 4b16983 - feat: Pozisyon eşleşme limiti eklendi (varsayılan 50, skor sıralı)
 abd3f05 - feat: AI günlük kullanım limiti eklendi (plan bazlı)
