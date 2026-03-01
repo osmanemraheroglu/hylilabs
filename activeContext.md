@@ -31,6 +31,27 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 01.03.2026 - FAZ 8.1.1 REJECT_REASONS Kategorileri
+- synonyms.py'ye REJECT_REASONS dict eklendi (satır 46-91)
+- 7 red kategorisi tanımlandı:
+  - too_general: Çok Genel
+  - technically_wrong: Teknik Olarak Yanlış
+  - out_of_context: Bağlam Dışı
+  - duplicate: Tekrar
+  - meaningless: Anlamsız
+  - different_concept: Farklı Kavram
+  - other: Diğer
+- Her kategori için: code, label_tr, label_en, description
+- REJECT_REASON_CODES basit liste eklendi
+- Sonraki adım: DB'ye reject_reason kolonu, API endpoint, frontend entegrasyonu
+
+### 01.03.2026 - AI Synonym Limit Değişikliği (Max 4 → Max 3)
+- filter_ai_synonyms(): len(filtered) >= 4 → >= 3
+- SYNONYM_PROMPT_BATCH_V2: MAX 4 → MAX 3
+- SYNONYM_PROMPT_SINGLE_V2: MAX 4 → MAX 3
+- HR inceleme yükü %25 azaldı
+- Commit: 234d56d
+
 ### 01.03.2026 - FAZ 7.7 AI Synonym Kalite Sistemi v2
 - synonyms.py'ye kalite kontrol sistemi eklendi:
   - SYNONYM_BLACKLIST (57 kelime) - Soft skills, kişilik özellikleri, genel iş terimleri
