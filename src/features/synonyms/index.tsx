@@ -22,6 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 
 // API config
 const API = 'http://***REMOVED***:8000'
@@ -40,6 +50,12 @@ interface Synonym {
   status: 'pending' | 'approved' | 'rejected'
   created_at: string
   company_id: number | null
+}
+
+interface RejectReason {
+  code: string
+  label: string
+  description: string
 }
 
 export default function Synonyms() {
@@ -68,9 +84,17 @@ export default function Synonyms() {
   const [manualType, setManualType] = useState<string>('turkish')
   const [manualLoading, setManualLoading] = useState(false)
 
-  // Load pending count on mount
+  // Reject dialog state
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
+  const [rejectReasons, setRejectReasons] = useState<RejectReason[]>([])
+  const [selectedReason, setSelectedReason] = useState('')
+  const [rejectNote, setRejectNote] = useState('')
+  const [rejectLoading, setRejectLoading] = useState(false)
+
+  // Load pending count and reject reasons on mount
   useEffect(() => {
     loadPendingCount()
+    loadRejectReasons()
   }, [])
 
   // Load pending list when tab changes to pending
@@ -83,6 +107,18 @@ export default function Synonyms() {
   // ═══════════════════════════════════════════════════════════════════
   // API FONKSİYONLARI
   // ═══════════════════════════════════════════════════════════════════
+
+  const loadRejectReasons = async () => {
+    try {
+      const res = await fetch(`${API}/api/synonyms/reject_reasons`, { headers: H() })
+      const data = await res.json()
+      if (data.success) {
+        setRejectReasons(data.data.reasons || [])
+      }
+    } catch (err) {
+      console.error('loadRejectReasons error:', err)
+    }
+  }
 
   const loadPendingCount = async () => {
     try {
@@ -139,28 +175,49 @@ export default function Synonyms() {
     }
   }
 
-  const handleReject = async () => {
+  const openRejectDialog = () => {
     if (selectedIds.length === 0) return
+    setSelectedReason('')
+    setRejectNote('')
+    setRejectDialogOpen(true)
+  }
 
+  const closeRejectDialog = () => {
+    setRejectDialogOpen(false)
+    setSelectedReason('')
+    setRejectNote('')
+  }
+
+  const confirmReject = async () => {
+    if (selectedIds.length === 0 || !selectedReason) return
+
+    setRejectLoading(true)
     try {
       const res = await fetch(`${API}/api/synonyms/reject`, {
         method: 'POST',
         headers: H(),
-        body: JSON.stringify({ synonym_ids: selectedIds })
+        body: JSON.stringify({
+          synonym_ids: selectedIds,
+          reject_reason: selectedReason,
+          reject_note: rejectNote.trim() || null
+        })
       })
       const data = await res.json()
 
       if (data.success) {
         toast.success(`${data.data.updated || selectedIds.length} eş anlamlı reddedildi`)
         setSelectedIds([])
+        closeRejectDialog()
         loadPendingList()
         loadPendingCount()
       } else {
         toast.error(data.detail || 'Reddetme başarısız')
       }
     } catch (err) {
-      console.error('handleReject error:', err)
+      console.error('confirmReject error:', err)
       toast.error('Bağlantı hatası')
+    } finally {
+      setRejectLoading(false)
     }
   }
 
@@ -414,7 +471,7 @@ export default function Synonyms() {
                   Seçilenleri Onayla ({selectedIds.length})
                 </Button>
                 <Button
-                  onClick={handleReject}
+                  onClick={openRejectDialog}
                   disabled={selectedIds.length === 0}
                   variant="destructive"
                 >
@@ -666,6 +723,72 @@ export default function Synonyms() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={(open) => !open && closeRejectDialog()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eş Anlamlı Reddet</DialogTitle>
+            <DialogDescription>
+              {selectedIds.length} eş anlamlı reddedilecek. Lütfen bir sebep seçin.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Red Sebebi Dropdown */}
+            <div className="space-y-2">
+              <Label htmlFor="reject-reason">Red Sebebi *</Label>
+              <Select value={selectedReason} onValueChange={setSelectedReason}>
+                <SelectTrigger id="reject-reason">
+                  <SelectValue placeholder="Sebep seçiniz..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {rejectReasons.map((reason) => (
+                    <SelectItem key={reason.code} value={reason.code}>
+                      {reason.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedReason && (
+                <p className="text-xs text-muted-foreground">
+                  {rejectReasons.find(r => r.code === selectedReason)?.description}
+                </p>
+              )}
+            </div>
+
+            {/* Not Alanı */}
+            <div className="space-y-2">
+              <Label htmlFor="reject-note">Not (opsiyonel)</Label>
+              <Textarea
+                id="reject-note"
+                placeholder="Ek açıklama ekleyin..."
+                value={rejectNote}
+                onChange={(e) => setRejectNote(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={closeRejectDialog}>
+              İptal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmReject}
+              disabled={!selectedReason || rejectLoading}
+            >
+              {rejectLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <XCircle className="h-4 w-4 mr-2" />
+              )}
+              Reddet ({selectedIds.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

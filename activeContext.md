@@ -31,6 +31,22 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 01.03.2026 - FAZ 8.1.4-8.1.6 Reject Dialog ve API
+- Backend:
+  - GET /api/synonyms/reject_reasons endpoint eklendi (REJECT_REASONS döndürür)
+  - POST /api/synonyms/reject güncellendi: reject_reason (zorunlu) + reject_note (opsiyonel)
+  - database.py reject_synonyms() güncellendi: reject_reason ve reject_note parametreleri
+  - SynonymRejectRequest Pydantic modeli eklendi
+- Frontend:
+  - RejectDialog komponenti eklendi (Select dropdown + Textarea)
+  - loadRejectReasons() API fonksiyonu eklendi
+  - openRejectDialog(), closeRejectDialog(), confirmReject() fonksiyonları
+  - Dialog: Red sebebi seçimi (7 kategori) + opsiyonel not alanı
+- Dosyalar:
+  - api/routes/synonyms.py (endpoint + request model)
+  - api/database.py (reject_synonyms güncellendi)
+  - src/features/synonyms/index.tsx (RejectDialog UI)
+
 ### 01.03.2026 - FAZ 8.1.2-8.1.3 DB Kolonları
 - keyword_synonyms tablosuna 2 yeni kolon eklendi:
   - reject_reason TEXT: Red kategorisi kodu (REJECT_REASONS key)

@@ -284,6 +284,12 @@ class SynonymBulkActionRequest(BaseModel):
     synonym_ids: List[int] = Field(..., min_length=1)
 
 
+class SynonymRejectRequest(BaseModel):
+    synonym_ids: List[int] = Field(..., min_length=1)
+    reject_reason: str = Field(..., min_length=1, description="Red sebebi kodu")
+    reject_note: Optional[str] = Field(None, description="Opsiyonel aciklama notu")
+
+
 class SynonymGenerateRequest(BaseModel):
     keyword: str = Field(..., min_length=1, max_length=100)
 
@@ -386,6 +392,43 @@ def get_pending_count(
             "success": True,
             "data": {
                 "count": count
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINT 3.5: GET /api/synonyms/reject_reasons - Red sebepleri listesi
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/reject_reasons")
+def get_reject_reasons(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Red sebepleri listesi.
+    Frontend dropdown için kullanılır.
+    """
+    try:
+        require_company_user(current_user)
+
+        # REJECT_REASONS dict'ini frontend-friendly listeye çevir
+        reasons_list = [
+            {
+                "code": data["code"],
+                "label": data["label_tr"],
+                "description": data["description"]
+            }
+            for data in REJECT_REASONS.values()
+        ]
+
+        return {
+            "success": True,
+            "data": {
+                "reasons": reasons_list
             }
         }
     except HTTPException:
@@ -538,25 +581,35 @@ def approve_synonym_list(
 
 @router.post("/reject")
 def reject_synonym_list(
-    request: SynonymBulkActionRequest,
+    request: SynonymRejectRequest,
     current_user: dict = Depends(get_current_user)
 ):
     """
     Seçili synonym'ları reddet.
     Toplu red için kullanılır.
+    FAZ 8.1.4: reject_reason ve reject_note parametreleri eklendi.
     """
     try:
         require_company_user(current_user)
         company_id = current_user["company_id"]
 
+        # Reject reason validasyonu
+        if request.reject_reason not in REJECT_REASON_CODES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Gecersiz reject_reason: {request.reject_reason}. Gecerli degerler: {REJECT_REASON_CODES}"
+            )
+
         result = reject_synonyms(
             synonym_ids=request.synonym_ids,
-            company_id=company_id
+            company_id=company_id,
+            reject_reason=request.reject_reason,
+            reject_note=request.reject_note
         )
 
         if result.get("success"):
             # Loglama
-            logger.info(f"Synonyms rejected: user={current_user['id']}, company={company_id}, count={result.get('updated', 0)}, ids={request.synonym_ids}")
+            logger.info(f"Synonyms rejected: user={current_user['id']}, company={company_id}, count={result.get('updated', 0)}, reason={request.reject_reason}, ids={request.synonym_ids}")
 
             return {
                 "success": True,

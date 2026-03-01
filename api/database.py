@@ -1512,14 +1512,19 @@ def approve_synonyms(
 
 def reject_synonyms(
     synonym_ids: list[int],
-    company_id: int = None
+    company_id: int = None,
+    reject_reason: str = None,
+    reject_note: str = None
 ) -> dict:
     """
     Seçilen synonym'ları reddet.
+    FAZ 8.1.4: reject_reason ve reject_note parametreleri eklendi.
 
     Args:
         synonym_ids: Reddedilecek synonym ID'leri
         company_id: Firma ID (güvenlik için)
+        reject_reason: Red sebebi kodu (too_general, technically_wrong, vb.)
+        reject_note: Opsiyonel açıklama notu
 
     Returns:
         {"success": True, "updated": int}
@@ -1537,23 +1542,27 @@ def reject_synonyms(
             if company_id is not None:
                 cursor.execute(f"""
                     UPDATE keyword_synonyms
-                    SET status = 'rejected'
+                    SET status = 'rejected',
+                        reject_reason = ?,
+                        reject_note = ?
                     WHERE id IN ({placeholders})
                     AND status = 'pending'
                     AND (company_id IS NULL OR company_id = ?)
-                """, synonym_ids + [company_id])
+                """, [reject_reason, reject_note] + synonym_ids + [company_id])
             else:
                 cursor.execute(f"""
                     UPDATE keyword_synonyms
-                    SET status = 'rejected'
+                    SET status = 'rejected',
+                        reject_reason = ?,
+                        reject_note = ?
                     WHERE id IN ({placeholders})
                     AND status = 'pending'
-                """, synonym_ids)
+                """, [reject_reason, reject_note] + synonym_ids)
 
             updated = cursor.rowcount
 
         if updated > 0:
-            logger.info(f"reject_synonyms: {updated} synonym reddedildi")
+            logger.info(f"reject_synonyms: {updated} synonym reddedildi, reason={reject_reason}")
 
         return {"success": True, "updated": updated}
 
