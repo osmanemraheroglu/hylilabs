@@ -91,6 +91,12 @@ export default function Synonyms() {
   const [rejectNote, setRejectNote] = useState('')
   const [rejectLoading, setRejectLoading] = useState(false)
 
+  // Keyword importance tab state (FAZ 8.2.5)
+  const [importanceList, setImportanceList] = useState<{id: number, keyword: string, importance_level: string, created_at: string}[]>([])
+  const [importanceKeyword, setImportanceKeyword] = useState('')
+  const [importanceLevel, setImportanceLevel] = useState('normal')
+  const [importanceLoading, setImportanceLoading] = useState(false)
+
   // Load pending count and reject reasons on mount
   useEffect(() => {
     loadPendingCount()
@@ -101,6 +107,9 @@ export default function Synonyms() {
   useEffect(() => {
     if (activeTab === 'pending') {
       loadPendingList()
+    }
+    if (activeTab === 'importance') {
+      loadImportanceList()
     }
   }, [activeTab])
 
@@ -360,6 +369,95 @@ export default function Synonyms() {
   }
 
   // ═══════════════════════════════════════════════════════════════════
+  // KEYWORD IMPORTANCE FONKSİYONLARI (FAZ 8.2.5)
+  // ═══════════════════════════════════════════════════════════════════
+
+  const loadImportanceList = async () => {
+    try {
+      setImportanceLoading(true)
+      const res = await fetch(`${API}/api/synonyms/keyword-importance`, { headers: H() })
+      const data = await res.json()
+      if (data.success) {
+        setImportanceList(data.data || [])
+      }
+    } catch (err) {
+      console.error('loadImportanceList error:', err)
+      toast.error('Öncelik listesi yüklenemedi')
+    } finally {
+      setImportanceLoading(false)
+    }
+  }
+
+  const handleAddImportance = async () => {
+    if (!importanceKeyword.trim()) {
+      toast.error('Keyword giriniz')
+      return
+    }
+
+    try {
+      setImportanceLoading(true)
+      const res = await fetch(`${API}/api/synonyms/keyword-importance`, {
+        method: 'POST',
+        headers: H(),
+        body: JSON.stringify({
+          keyword: importanceKeyword.trim().toLowerCase(),
+          importance_level: importanceLevel
+        })
+      })
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        toast.success(`"${importanceKeyword}" ${data.data.action === 'created' ? 'eklendi' : 'güncellendi'}`)
+        setImportanceKeyword('')
+        setImportanceLevel('normal')
+        loadImportanceList()
+      } else {
+        toast.error(data.detail || 'Ekleme başarısız')
+      }
+    } catch (err) {
+      console.error('handleAddImportance error:', err)
+      toast.error('Bağlantı hatası')
+    } finally {
+      setImportanceLoading(false)
+    }
+  }
+
+  const handleDeleteImportance = async (id: number, keyword: string) => {
+    if (!confirm(`"${keyword}" önceliğini silmek istediğinize emin misiniz?`)) {
+      return
+    }
+
+    try {
+      const res = await fetch(`${API}/api/synonyms/keyword-importance/${id}`, {
+        method: 'DELETE',
+        headers: H()
+      })
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        toast.success(data.message)
+        loadImportanceList()
+      } else {
+        toast.error(data.detail || 'Silme başarısız')
+      }
+    } catch (err) {
+      console.error('handleDeleteImportance error:', err)
+      toast.error('Bağlantı hatası')
+    }
+  }
+
+  const getImportanceBadge = (level: string) => {
+    switch (level) {
+      case 'high':
+        return <Badge className="bg-green-500">Yüksek (5)</Badge>
+      case 'low':
+        return <Badge variant="destructive">Düşük (2)</Badge>
+      default:
+        return <Badge variant="secondary">Normal (3)</Badge>
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
   // HELPER FONKSİYONLAR
   // ═══════════════════════════════════════════════════════════════════
 
@@ -428,7 +526,7 @@ export default function Synonyms() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
             Onay Bekleyenler
@@ -447,6 +545,13 @@ export default function Synonyms() {
           <TabsTrigger value="manual" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Manuel Ekleme
+          </TabsTrigger>
+          <TabsTrigger value="importance" className="flex items-center gap-2">
+            🎯
+            Öncelikler
+            {importanceList.length > 0 && (
+              <Badge variant="outline" className="ml-1">{importanceList.length}</Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -719,6 +824,96 @@ export default function Synonyms() {
                   Eş Anlamlı Ekle
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TAB 5: Keyword Öncelikleri (FAZ 8.2.5) */}
+        <TabsContent value="importance">
+          <Card>
+            <CardHeader>
+              <CardTitle>Keyword Öncelikleri</CardTitle>
+              <CardDescription>
+                Keyword başına üretilecek maksimum eş anlamlı sayısını belirleyin.
+                Yüksek: 5, Normal: 3, Düşük: 2
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Ekleme formu */}
+              <div className="flex gap-2 mb-6">
+                <Input
+                  placeholder="Keyword giriniz..."
+                  value={importanceKeyword}
+                  onChange={(e) => setImportanceKeyword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddImportance()}
+                  className="max-w-xs"
+                />
+                <Select value={importanceLevel} onValueChange={setImportanceLevel}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">Yüksek (5)</SelectItem>
+                    <SelectItem value="normal">Normal (3)</SelectItem>
+                    <SelectItem value="low">Düşük (2)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleAddImportance} disabled={importanceLoading}>
+                  {importanceLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  Ekle
+                </Button>
+              </div>
+
+              {/* Liste */}
+              {importanceLoading && importanceList.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  Yükleniyor...
+                </div>
+              ) : importanceList.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Henüz özel öncelik tanımlanmamış.
+                  <br />
+                  <span className="text-sm">
+                    Varsayılan olarak HIGH_COVERAGE keyword'leri 5, uzun keyword'ler 4, diğerleri 3 eş anlamlı alır.
+                  </span>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Keyword</TableHead>
+                      <TableHead>Öncelik</TableHead>
+                      <TableHead>Eklenme</TableHead>
+                      <TableHead className="w-[80px]">İşlem</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {importanceList.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.keyword}</TableCell>
+                        <TableCell>{getImportanceBadge(item.importance_level)}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {new Date(item.created_at).toLocaleDateString('tr-TR')}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteImportance(item.id, item.keyword)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

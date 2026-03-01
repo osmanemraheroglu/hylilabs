@@ -10450,3 +10450,171 @@ def get_blacklist_candidates(
     except Exception as e:
         logger.error(f"get_blacklist_candidates hatası: {e}")
         return []
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 8.2.3: KEYWORD IMPORTANCE CRUD
+# Firma bazlı keyword öncelik yönetimi
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def get_keyword_importance(keyword: str, company_id: int) -> str | None:
+    """
+    Keyword için firma bazlı importance level döndür.
+
+    Args:
+        keyword: Kontrol edilecek keyword
+        company_id: Firma ID
+
+    Returns:
+        'high' | 'normal' | 'low' | None (kayıt yoksa)
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT importance_level
+                FROM keyword_importance
+                WHERE company_id = ? AND LOWER(keyword) = LOWER(?)
+            """, (company_id, keyword.strip()))
+
+            row = cursor.fetchone()
+            return row["importance_level"] if row else None
+
+    except Exception as e:
+        logger.error(f"get_keyword_importance hatası: {e}")
+        return None
+
+
+def set_keyword_importance(
+    keyword: str,
+    company_id: int,
+    level: str,
+    user_id: int = None
+) -> dict:
+    """
+    Keyword importance ayarla (INSERT veya UPDATE).
+
+    Args:
+        keyword: Keyword
+        company_id: Firma ID
+        level: 'high' | 'normal' | 'low'
+        user_id: İşlemi yapan kullanıcı (opsiyonel, loglama için)
+
+    Returns:
+        {"success": True/False, "id": int, "message": str, "action": "created"|"updated"}
+    """
+    if level not in ('high', 'normal', 'low'):
+        return {"success": False, "id": None, "message": f"Geçersiz level: {level}"}
+
+    keyword_lower = keyword.lower().strip()
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Mevcut kayıt var mı?
+            cursor.execute("""
+                SELECT id FROM keyword_importance
+                WHERE company_id = ? AND LOWER(keyword) = ?
+            """, (company_id, keyword_lower))
+
+            existing = cursor.fetchone()
+
+            if existing:
+                # UPDATE
+                cursor.execute("""
+                    UPDATE keyword_importance
+                    SET importance_level = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (level, existing["id"]))
+                conn.commit()
+
+                logger.info(f"[keyword_importance] UPDATE: keyword={keyword_lower}, company={company_id}, level={level}")
+                return {"success": True, "id": existing["id"], "message": "Güncellendi", "action": "updated"}
+            else:
+                # INSERT
+                cursor.execute("""
+                    INSERT INTO keyword_importance (company_id, keyword, importance_level)
+                    VALUES (?, ?, ?)
+                """, (company_id, keyword_lower, level))
+                conn.commit()
+
+                new_id = cursor.lastrowid
+                logger.info(f"[keyword_importance] INSERT: keyword={keyword_lower}, company={company_id}, level={new_id}")
+                return {"success": True, "id": new_id, "message": "Oluşturuldu", "action": "created"}
+
+    except Exception as e:
+        logger.error(f"set_keyword_importance hatası: {e}")
+        return {"success": False, "id": None, "message": str(e)}
+
+
+def get_company_keyword_importances(company_id: int) -> list:
+    """
+    Firma'nın tüm keyword importance ayarlarını listele.
+
+    Args:
+        company_id: Firma ID
+
+    Returns:
+        [{id, keyword, importance_level, created_at, updated_at}, ...]
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, keyword, importance_level, created_at, updated_at
+                FROM keyword_importance
+                WHERE company_id = ?
+                ORDER BY
+                    CASE importance_level
+                        WHEN 'high' THEN 1
+                        WHEN 'normal' THEN 2
+                        WHEN 'low' THEN 3
+                    END,
+                    keyword ASC
+            """, (company_id,))
+
+            return [dict(row) for row in cursor.fetchall()]
+
+    except Exception as e:
+        logger.error(f"get_company_keyword_importances hatası: {e}")
+        return []
+
+
+def delete_keyword_importance(id: int, company_id: int) -> dict:
+    """
+    Keyword importance kaydını sil.
+
+    Args:
+        id: Kayıt ID
+        company_id: Firma ID (güvenlik kontrolü)
+
+    Returns:
+        {"success": True/False, "message": str}
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Önce kaydın bu firmaya ait olduğunu doğrula
+            cursor.execute("""
+                SELECT keyword FROM keyword_importance
+                WHERE id = ? AND company_id = ?
+            """, (id, company_id))
+
+            row = cursor.fetchone()
+            if not row:
+                return {"success": False, "message": "Kayıt bulunamadı veya yetkiniz yok"}
+
+            keyword = row["keyword"]
+
+            # Sil
+            cursor.execute("DELETE FROM keyword_importance WHERE id = ?", (id,))
+            conn.commit()
+
+            logger.info(f"[keyword_importance] DELETE: id={id}, keyword={keyword}, company={company_id}")
+            return {"success": True, "message": f"'{keyword}' silindi"}
+
+    except Exception as e:
+        logger.error(f"delete_keyword_importance hatası: {e}")
+        return {"success": False, "message": str(e)}

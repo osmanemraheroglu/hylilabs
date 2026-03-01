@@ -24,7 +24,12 @@ from database import (
     get_approved_synonym_count,
     log_api_usage,
     get_reject_stats,
-    get_blacklist_candidates
+    get_blacklist_candidates,
+    # FAZ 8.2.3: Keyword Importance
+    get_keyword_importance,
+    set_keyword_importance,
+    get_company_keyword_importances,
+    delete_keyword_importance
 )
 from routes.auth import get_current_user
 from rate_limiter import (
@@ -147,32 +152,44 @@ GENERAL_WORDS = [
 ]
 
 
-def get_max_synonym_limit(keyword: str) -> int:
+def get_max_synonym_limit(keyword: str, company_id: int = None) -> int:
     """
     Keyword'e göre dinamik maksimum synonym limiti döndür.
 
-    FAZ 8.2: Dinamik Limit Sistemi
-    - HIGH_COVERAGE_KEYWORDS'de varsa: 5 synonym
-    - 20 karakterden uzun keyword: 4 synonym
-    - Standart keyword: 3 synonym
+    FAZ 8.2.3: Firma Bazlı Dinamik Limit Sistemi
+    Öncelik sırası:
+    1. DB'de firma bazlı importance varsa: high=5, low=2
+    2. HIGH_COVERAGE_KEYWORDS'de varsa: 5 synonym
+    3. 20 karakterden uzun keyword: 4 synonym
+    4. Standart keyword: 3 synonym
 
     Args:
         keyword: Limit hesaplanacak keyword
+        company_id: Firma ID (opsiyonel, DB kontrolü için)
 
     Returns:
-        int: Maksimum synonym sayısı (3, 4, veya 5)
+        int: Maksimum synonym sayısı (2, 3, 4, veya 5)
     """
     kw = keyword.lower().strip()
 
-    # Yüksek kapsamlı keyword'ler: 5 synonym
+    # 1. Firma bazlı importance kontrolü (DB)
+    if company_id:
+        db_importance = get_keyword_importance(kw, company_id)
+        if db_importance == 'high':
+            return 5
+        elif db_importance == 'low':
+            return 2
+        # 'normal' veya None ise fallback'e devam et
+
+    # 2. Yüksek kapsamlı keyword'ler: 5 synonym
     if kw in HIGH_COVERAGE_KEYWORDS:
         return 5
 
-    # Uzun keyword'ler: 4 synonym
+    # 3. Uzun keyword'ler: 4 synonym
     if len(kw) > 20:
         return 4
 
-    # Standart: 3 synonym
+    # 4. Standart: 3 synonym
     return 3
 
 
@@ -241,7 +258,7 @@ JSON formatı:
 }}"""
 
 
-def filter_ai_synonyms(keyword: str, ai_synonyms: list) -> list:
+def filter_ai_synonyms(keyword: str, ai_synonyms: list, company_id: int = None) -> list:
     """
     AI tarafından üretilen synonym'ları filtrele ve kalite kontrolünden geçir.
 
@@ -250,18 +267,19 @@ def filter_ai_synonyms(keyword: str, ai_synonyms: list) -> list:
     2. General words kontrolü (çok genel terimler)
     3. Confidence score kontrolü (0.7 threshold)
     4. Keyword ile aynı olanları çıkar
-    5. Dinamik max synonym limiti (FAZ 8.2: HIGH_COVERAGE=5, uzun=4, standart=3)
+    5. Dinamik max synonym limiti (FAZ 8.2.3: firma bazlı + HIGH_COVERAGE fallback)
 
     Args:
         keyword: Ana keyword
         ai_synonyms: AI'dan gelen synonym listesi
+        company_id: Firma ID (opsiyonel, dinamik limit için)
 
     Returns:
         Filtrelenmiş synonym listesi (confidence olmadan, synonym_type ile)
     """
     filtered = []
     keyword_lower = keyword.lower().strip()
-    max_limit = get_max_synonym_limit(keyword)
+    max_limit = get_max_synonym_limit(keyword, company_id)
 
     for item in ai_synonyms:
         # Dict kontrolü
@@ -917,8 +935,8 @@ def _generate_synonyms_batch_internal(
                     failed_keywords.append(kw)
                 continue
 
-            # v2: AI synonym'ları filtrele
-            filtered_synonyms = filter_ai_synonyms(kw, synonyms_list)
+            # v2: AI synonym'ları filtrele (firma bazlı limit ile)
+            filtered_synonyms = filter_ai_synonyms(kw, synonyms_list, company_id)
 
             if not filtered_synonyms:
                 # Tüm öneriler filtrelendi
@@ -1123,8 +1141,8 @@ def generate_synonyms(
                 }
             }
 
-        # v2: AI synonym'ları filtrele
-        filtered_synonyms = filter_ai_synonyms(keyword, synonyms_list)
+        # v2: AI synonym'ları filtrele (firma bazlı limit ile)
+        filtered_synonyms = filter_ai_synonyms(keyword, synonyms_list, company_id)
 
         if not filtered_synonyms:
             return {
@@ -1205,3 +1223,96 @@ def generate_synonyms(
         except Exception:
             pass
         raise HTTPException(status_code=500, detail=f"Hata: {str(e)}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 8.2.3: KEYWORD IMPORTANCE API
+# Firma bazlı keyword öncelik yönetimi
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class KeywordImportanceRequest(BaseModel):
+    keyword: str = Field(..., min_length=1, max_length=100)
+    importance_level: str = Field(..., pattern="^(high|normal|low)$")
+
+
+@router.get("/keyword-importance")
+async def list_keyword_importances(current_user: dict = Depends(get_current_user)):
+    """
+    Firma'nın keyword importance ayarlarını listele.
+    """
+    try:
+        company_id = current_user["company_id"]
+        items = get_company_keyword_importances(company_id)
+        return {
+            "success": True,
+            "data": items,
+            "count": len(items)
+        }
+    except Exception as e:
+        logger.error(f"list_keyword_importances hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/keyword-importance")
+async def create_keyword_importance(
+    request: KeywordImportanceRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Keyword importance ekle veya güncelle.
+    """
+    try:
+        company_id = current_user["company_id"]
+        user_id = current_user["id"]
+
+        result = set_keyword_importance(
+            keyword=request.keyword,
+            company_id=company_id,
+            level=request.importance_level,
+            user_id=user_id
+        )
+
+        if result["success"]:
+            return {
+                "success": True,
+                "data": {
+                    "id": result["id"],
+                    "keyword": request.keyword.lower().strip(),
+                    "importance_level": request.importance_level,
+                    "action": result["action"]
+                },
+                "message": result["message"]
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result["message"])
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"create_keyword_importance hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/keyword-importance/{id}")
+async def remove_keyword_importance(
+    id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Keyword importance kaydını sil.
+    """
+    try:
+        company_id = current_user["company_id"]
+
+        result = delete_keyword_importance(id=id, company_id=company_id)
+
+        if result["success"]:
+            return {"success": True, "message": result["message"]}
+        else:
+            raise HTTPException(status_code=404, detail=result["message"])
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"remove_keyword_importance hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
