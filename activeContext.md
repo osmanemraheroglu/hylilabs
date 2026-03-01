@@ -31,6 +31,28 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 01.03.2026 - FAZ 8.2.3+8.2.5 Firma Bazlı Keyword Importance Sistemi
+- keyword_importance tablosu oluşturuldu:
+  - company_id, keyword, importance_level (high/normal/low)
+  - UNIQUE(company_id, keyword) constraint
+- database.py: 4 CRUD fonksiyonu eklendi:
+  - get_keyword_importance(keyword, company_id)
+  - set_keyword_importance(keyword, company_id, level)
+  - get_company_keyword_importances(company_id)
+  - delete_keyword_importance(id, company_id)
+- synonyms.py: 3 API endpoint eklendi:
+  - GET /api/synonyms/keyword-importance - Liste
+  - POST /api/synonyms/keyword-importance - Ekle/Güncelle
+  - DELETE /api/synonyms/keyword-importance/{id} - Sil
+- get_max_synonym_limit(keyword, company_id) güncellendi:
+  - DB importance öncelikli (high=5, low=2)
+  - HIGH_COVERAGE fallback korundu
+- filter_ai_synonyms: company_id entegrasyonu
+- Frontend: Eş Anlamlılar sayfasında 5. tab "Öncelikler"
+  - Keyword input + Select dropdown [Yüksek|Normal|Düşük]
+  - Liste tablosu + Sil butonu
+- Firma izolasyonu test edildi ve doğrulandı
+
 ### 01.03.2026 - FAZ 8.2 Dinamik Max Synonym Limit Sistemi
 - HIGH_COVERAGE_KEYWORDS: 93 yüksek kapsamlı keyword tanımlandı
   - Programlama dilleri: python, javascript, java, sql, c#, c++, php, ruby, go, typescript...
@@ -692,6 +714,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+9cd0997 - feat(FAZ 8.2.3+8.2.5): Firma bazlı keyword importance sistemi
 ca62f80 - feat(FAZ 8.2): Dinamik max synonym limit sistemi
 5f54651 - feat(FAZ 8.1.8): Otomatik blacklist aday sistemi
 a2556b9 - feat(FAZ 8.1.7): Reject stats rapor endpoint
