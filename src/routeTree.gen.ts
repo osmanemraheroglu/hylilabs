@@ -28,6 +28,7 @@ import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authen
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedUserManagementIndexRouteImport } from './routes/_authenticated/user-management/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
+import { Route as AuthenticatedSynonymsIndexRouteImport } from './routes/_authenticated/synonyms/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedSettingsPageIndexRouteImport } from './routes/_authenticated/settings-page/index'
 import { Route as AuthenticatedMulakatTakvimiIndexRouteImport } from './routes/_authenticated/mulakat-takvimi/index'
@@ -142,6 +143,12 @@ const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
   path: '/tasks/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSynonymsIndexRoute =
+  AuthenticatedSynonymsIndexRouteImport.update({
+    id: '/synonyms/',
+    path: '/synonyms/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/',
@@ -286,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/mulakat-takvimi': typeof AuthenticatedMulakatTakvimiIndexRoute
   '/settings-page': typeof AuthenticatedSettingsPageIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/synonyms': typeof AuthenticatedSynonymsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/user-management': typeof AuthenticatedUserManagementIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
@@ -322,6 +330,7 @@ export interface FileRoutesByTo {
   '/mulakat-takvimi': typeof AuthenticatedMulakatTakvimiIndexRoute
   '/settings-page': typeof AuthenticatedSettingsPageIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/synonyms': typeof AuthenticatedSynonymsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/user-management': typeof AuthenticatedUserManagementIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
@@ -363,6 +372,7 @@ export interface FileRoutesById {
   '/_authenticated/mulakat-takvimi/': typeof AuthenticatedMulakatTakvimiIndexRoute
   '/_authenticated/settings-page/': typeof AuthenticatedSettingsPageIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/_authenticated/synonyms/': typeof AuthenticatedSynonymsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/user-management/': typeof AuthenticatedUserManagementIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
@@ -402,6 +412,7 @@ export interface FileRouteTypes {
     | '/mulakat-takvimi'
     | '/settings-page'
     | '/settings/'
+    | '/synonyms'
     | '/tasks'
     | '/user-management'
     | '/users'
@@ -438,6 +449,7 @@ export interface FileRouteTypes {
     | '/mulakat-takvimi'
     | '/settings-page'
     | '/settings'
+    | '/synonyms'
     | '/tasks'
     | '/user-management'
     | '/users'
@@ -478,6 +490,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mulakat-takvimi/'
     | '/_authenticated/settings-page/'
     | '/_authenticated/settings/'
+    | '/_authenticated/synonyms/'
     | '/_authenticated/tasks/'
     | '/_authenticated/user-management/'
     | '/_authenticated/users/'
@@ -631,6 +644,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/synonyms/': {
+      id: '/_authenticated/synonyms/'
+      path: '/synonyms'
+      fullPath: '/synonyms'
+      preLoaderRoute: typeof AuthenticatedSynonymsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/': {
@@ -803,6 +823,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKeywordsIndexRoute: typeof AuthenticatedKeywordsIndexRoute
   AuthenticatedMulakatTakvimiIndexRoute: typeof AuthenticatedMulakatTakvimiIndexRoute
   AuthenticatedSettingsPageIndexRoute: typeof AuthenticatedSettingsPageIndexRoute
+  AuthenticatedSynonymsIndexRoute: typeof AuthenticatedSynonymsIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUserManagementIndexRoute: typeof AuthenticatedUserManagementIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
@@ -824,6 +845,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKeywordsIndexRoute: AuthenticatedKeywordsIndexRoute,
   AuthenticatedMulakatTakvimiIndexRoute: AuthenticatedMulakatTakvimiIndexRoute,
   AuthenticatedSettingsPageIndexRoute: AuthenticatedSettingsPageIndexRoute,
+  AuthenticatedSynonymsIndexRoute: AuthenticatedSynonymsIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUserManagementIndexRoute: AuthenticatedUserManagementIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,

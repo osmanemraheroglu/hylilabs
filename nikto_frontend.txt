@@ -1,0 +1,11 @@
+- Nikto v2.1.5/2.1.5
++ Target Host: localhost
++ Target Port: 3000
++ GET /: Server leaks inodes via ETags, header found with file /, fields: 0xW/999 0xsZZDeiB20BI1njQoVbCTqM3ZqOo 
++ GET /: The anti-clickjacking X-Frame-Options header is not present.
++ GET /clientaccesspolicy.xml: lines
++ GET /crossdomain.xml: /crossdomain.xml contains 0 line which should be manually viewed for improper domains or wildcards.
++ GET /robots.txt: "robots.txt" retrieved but it does not contain any 'disallow' entries (which is odd).
++ OPTIONS *: Uncommon header 'x-content-type-options' found, with contents: nosniff
++ OPTIONS *: Uncommon header 'content-security-policy' found, with contents: default-src 'none'
++ OPTIONS /: Uncommon header 'access-control-allow-methods' found, with contents: GET,HEAD,PUT,PATCH,POST,DELETE

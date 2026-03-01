@@ -79,7 +79,7 @@ SADECE BUNLARI ÜRET:
 - Resmi kısaltma (synonym_type: "abbreviation")
 
 Kurallar:
-1. Her keyword için MAX 3 synonym
+1. Her keyword için MAX 4 synonym
 2. Her öneriye 0.0-1.0 arası confidence puanı ver
 3. Sadece 0.7+ confidence olanları dahil et
 4. Keyword'ün kendisini EKLEME
@@ -113,7 +113,7 @@ SADECE BUNLARI ÜRET:
 - Resmi kısaltma (synonym_type: "abbreviation")
 
 Kurallar:
-1. MAX 3 synonym öner
+1. MAX 4 synonym öner
 2. Her öneriye 0.0-1.0 arası confidence puanı ver
 3. Sadece 0.7+ confidence olanları dahil et
 4. Keyword'ün kendisini EKLEME
@@ -137,7 +137,7 @@ def filter_ai_synonyms(keyword: str, ai_synonyms: list) -> list:
     2. General words kontrolü (çok genel terimler)
     3. Confidence score kontrolü (0.7 threshold)
     4. Keyword ile aynı olanları çıkar
-    5. Max 3 synonym limiti
+    5. Max 4 synonym limiti
 
     Args:
         keyword: Ana keyword
@@ -193,8 +193,8 @@ def filter_ai_synonyms(keyword: str, ai_synonyms: list) -> list:
             "synonym_type": syn_type
         })
 
-        # Max 3 synonym limiti
-        if len(filtered) >= 3:
+        # Max 4 synonym limiti
+        if len(filtered) >= 4:
             break
 
     return filtered

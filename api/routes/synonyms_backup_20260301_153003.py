@@ -34,172 +34,6 @@ from rate_limiter import (
 
 logger = logging.getLogger(__name__)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# AI SYNONYM KALİTE SİSTEMİ v2 - Blacklist ve Filter Kuralları
-# ═══════════════════════════════════════════════════════════════════════════════
-
-SYNONYM_BLACKLIST = [
-    # Soft Skills (Yumuşak Beceriler) - Bunlar keyword olmamalı
-    "iletisim", "iletişim", "koordinasyon", "takim calismasi", "takım çalışması",
-    "liderlik", "problem cozme", "problem çözme", "analitik dusunme", "analitik düşünme",
-    "yaraticilik", "yaratıcılık", "esneklik", "adaptasyon", "motivasyon",
-    "zaman yonetimi", "zaman yönetimi", "stres yonetimi", "stres yönetimi",
-    "karar verme", "empati", "ikna", "muzakere", "müzakere", "sunum",
-    "raporlama", "organizasyon", "planlama", "detay odakli", "detay odaklı",
-    "sonuc odakli", "sonuç odaklı", "inisiyatif", "proaktif", "ozguven", "özgüven",
-    # Kişilik Özellikleri
-    "dinamik", "titiz", "dikkatli", "sabir", "sabır", "azim", "kararlılık",
-    "dürüstlük", "güvenilir", "sorumluluk", "disiplin", "profesyonel",
-    # Genel İş Terimleri (çok geniş)
-    "deneyim", "tecrube", "tecrübe", "uzmanlik", "uzmanlık", "bilgi", "beceri",
-    "yetenek", "kabiliyet", "performans", "verimlilik", "kalite"
-]
-
-GENERAL_WORDS = [
-    # Çok genel kelimeler - synonym olarak anlamsız
-    "is", "iş", "proje", "gorev", "görev", "yonetim", "yönetim", "sistem",
-    "surekli", "sürekli", "gelistirme", "geliştirme", "iyilestirme", "iyileştirme",
-    "analiz", "kontrol", "takip", "destek", "hizmet", "uygulama", "cozum", "çözüm",
-    "strateji", "operasyon", "surec", "süreç", "faaliyet"
-]
-
-SYNONYM_PROMPT_BATCH_V2 = """Sen İK alanında TEKNIK BECERİ uzmanisin.
-Verilen keyword'ler için SADECE teknik/mesleki synonym öner.
-
-Keywords: {keywords}
-
-YASAK ÖNERILER (ASLA ÜRETMEYECEKSİN):
-- Soft skills: iletişim, liderlik, takım çalışması, problem çözme
-- Kişilik özellikleri: dinamik, titiz, proaktif, özgüvenli
-- Genel terimler: deneyim, bilgi, beceri, yetenek, proje, görev
-
-SADECE BUNLARI ÜRET:
-- Türkçe teknik karşılık (synonym_type: "turkish")
-- İngilizce teknik karşılık (synonym_type: "english")
-- Resmi kısaltma (synonym_type: "abbreviation")
-
-Kurallar:
-1. Her keyword için MAX 3 synonym
-2. Her öneriye 0.0-1.0 arası confidence puanı ver
-3. Sadece 0.7+ confidence olanları dahil et
-4. Keyword'ün kendisini EKLEME
-
-JSON formatı:
-{{
-  "results": [
-    {{
-      "keyword": "python",
-      "synonyms": [
-        {{"synonym": "py", "synonym_type": "abbreviation", "confidence": 0.95}},
-        {{"synonym": "python programlama", "synonym_type": "turkish", "confidence": 0.85}}
-      ]
-    }}
-  ]
-}}"""
-
-SYNONYM_PROMPT_SINGLE_V2 = """Sen İK alanında TEKNIK BECERİ uzmanisin.
-Verilen keyword için SADECE teknik/mesleki synonym öner.
-
-Keyword: {keyword}
-
-YASAK ÖNERILER (ASLA ÜRETMEYECEKSİN):
-- Soft skills: iletişim, liderlik, takım çalışması, problem çözme
-- Kişilik özellikleri: dinamik, titiz, proaktif, özgüvenli
-- Genel terimler: deneyim, bilgi, beceri, yetenek, proje, görev
-
-SADECE BUNLARI ÜRET:
-- Türkçe teknik karşılık (synonym_type: "turkish")
-- İngilizce teknik karşılık (synonym_type: "english")
-- Resmi kısaltma (synonym_type: "abbreviation")
-
-Kurallar:
-1. MAX 3 synonym öner
-2. Her öneriye 0.0-1.0 arası confidence puanı ver
-3. Sadece 0.7+ confidence olanları dahil et
-4. Keyword'ün kendisini EKLEME
-
-JSON formatı:
-{{
-  "synonyms": [
-    {{"synonym": "insan kaynakları", "synonym_type": "turkish", "confidence": 0.95}},
-    {{"synonym": "human resources", "synonym_type": "english", "confidence": 0.90}},
-    {{"synonym": "İK", "synonym_type": "abbreviation", "confidence": 0.85}}
-  ]
-}}"""
-
-
-def filter_ai_synonyms(keyword: str, ai_synonyms: list) -> list:
-    """
-    AI tarafından üretilen synonym'ları filtrele ve kalite kontrolünden geçir.
-
-    Filtreler:
-    1. Blacklist kontrolü (soft skills, kişilik özellikleri)
-    2. General words kontrolü (çok genel terimler)
-    3. Confidence score kontrolü (0.7 threshold)
-    4. Keyword ile aynı olanları çıkar
-    5. Max 3 synonym limiti
-
-    Args:
-        keyword: Ana keyword
-        ai_synonyms: AI'dan gelen synonym listesi
-
-    Returns:
-        Filtrelenmiş synonym listesi (confidence olmadan, synonym_type ile)
-    """
-    filtered = []
-    keyword_lower = keyword.lower().strip()
-
-    for item in ai_synonyms:
-        # Dict kontrolü
-        if not isinstance(item, dict):
-            continue
-
-        synonym = item.get("synonym", "").lower().strip()
-        # synonym_type key'ini kontrol et (hem "synonym_type" hem "type" kabul et)
-        syn_type = item.get("synonym_type") or item.get("type", "turkish")
-        confidence = item.get("confidence", 0.8)  # default 0.8
-
-        # Boş synonym kontrolü
-        if not synonym:
-            continue
-
-        # Keyword ile aynı mı kontrolü
-        if synonym == keyword_lower:
-            continue
-
-        # Blacklist kontrolü
-        if synonym in SYNONYM_BLACKLIST:
-            continue
-
-        # General words kontrolü
-        if synonym in GENERAL_WORDS:
-            continue
-
-        # Confidence threshold kontrolü
-        if confidence < 0.7:
-            continue
-
-        # "variation" tipini kaldır - sadece turkish, english, abbreviation kabul et
-        if syn_type == "variation":
-            syn_type = "turkish"
-
-        # Geçerli tip kontrolü
-        if syn_type not in ["turkish", "english", "abbreviation"]:
-            syn_type = "turkish"
-
-        # Sonuca ekle (confidence OLMADAN, sadece synonym ve synonym_type)
-        filtered.append({
-            "synonym": synonym,
-            "synonym_type": syn_type
-        })
-
-        # Max 3 synonym limiti
-        if len(filtered) >= 3:
-            break
-
-    return filtered
-
-
 router = APIRouter(prefix="/api/synonyms", tags=["synonyms"])
 
 
@@ -624,8 +458,32 @@ def _generate_synonyms_batch_internal(
             "message": "ANTHROPIC_API_KEY ayarlanmamış"
         }
 
-    # Batch prompt v2 - Kalite sistemi ile
-    prompt = SYNONYM_PROMPT_BATCH_V2.format(keywords=json.dumps(keywords, ensure_ascii=False))
+    # Batch prompt
+    prompt = f"""Sen bir İK (İnsan Kaynakları) alanında uzman bir asistansın.
+Verilen HER keyword için Türkiye İK sektörüne uygun synonym ve ilişkili terimler üret.
+
+Keywords: {json.dumps(keywords, ensure_ascii=False)}
+
+Kurallar:
+1. HER keyword için 3-5 synonym üret
+2. Hem Türkçe hem İngilizce karşılıkları ver
+3. Kısaltmalar varsa ekle
+4. Sektörel varyasyonlar ekle
+5. Her öneri için tip belirt: turkish, english, abbreviation, variation
+6. Keyword'ün kendisini EKLEME
+
+SADECE JSON formatında yanıt ver:
+{{
+  "results": [
+    {{
+      "keyword": "python",
+      "synonyms": [
+        {{"synonym": "py", "synonym_type": "abbreviation"}},
+        {{"synonym": "python programlama", "synonym_type": "turkish"}}
+      ]
+    }}
+  ]
+}}"""
 
     start_time = time.time()
     total_generated = 0
@@ -687,19 +545,12 @@ def _generate_synonyms_batch_internal(
                     failed_keywords.append(kw)
                 continue
 
-            # v2: AI synonym'ları filtrele
-            filtered_synonyms = filter_ai_synonyms(kw, synonyms_list)
+            total_generated += len(synonyms_list)
 
-            if not filtered_synonyms:
-                # Tüm öneriler filtrelendi
-                continue
-
-            total_generated += len(filtered_synonyms)
-
-            # Database'e kaydet (filtrelenmiş liste ile)
+            # Database'e kaydet
             result = save_generated_synonyms(
                 keyword=kw,
-                synonyms=filtered_synonyms,
+                synonyms=synonyms_list,
                 company_id=company_id,
                 created_by=user_id
             )
@@ -838,8 +689,28 @@ def generate_synonyms(
                 detail="ANTHROPIC_API_KEY ayarlanmamış"
             )
 
-        # Claude prompt v2 - Kalite sistemi ile
-        prompt = SYNONYM_PROMPT_SINGLE_V2.format(keyword=keyword)
+        # Claude prompt
+        prompt = f"""Sen bir İK (İnsan Kaynakları) alanında uzman bir asistansın.
+Verilen keyword için Türkiye İK sektörüne uygun synonym ve ilişkili terimler üret.
+
+Keyword: {keyword}
+
+Kurallar:
+1. Hem Türkçe hem İngilizce karşılıkları ver
+2. Kısaltmalar varsa ekle (örn: İK = HR)
+3. Sektörel varyasyonlar ekle
+4. Maksimum 10 öneri üret
+5. Her öneri için tip belirt: turkish, english, abbreviation, variation
+6. Keyword'ün kendisini EKLEME
+
+SADECE JSON formatında yanıt ver, başka açıklama ekleme:
+{{
+  "synonyms": [
+    {{"synonym": "insan kaynakları", "synonym_type": "turkish"}},
+    {{"synonym": "human resources", "synonym_type": "english"}},
+    {{"synonym": "İK", "synonym_type": "abbreviation"}}
+  ]
+}}"""
 
         # Claude API çağrısı
         client = anthropic.Anthropic(api_key=api_key, timeout=60.0)
@@ -893,26 +764,10 @@ def generate_synonyms(
                 }
             }
 
-        # v2: AI synonym'ları filtrele
-        filtered_synonyms = filter_ai_synonyms(keyword, synonyms_list)
-
-        if not filtered_synonyms:
-            return {
-                "success": True,
-                "data": {
-                    "keyword": keyword,
-                    "generated": 0,
-                    "inserted": 0,
-                    "skipped": len(synonyms_list),
-                    "synonyms": [],
-                    "message": "Tüm öneriler kalite filtresinden geçemedi"
-                }
-            }
-
-        # Database'e kaydet (filtrelenmiş liste ile)
+        # Database'e kaydet
         result = save_generated_synonyms(
             keyword=keyword,
-            synonyms=filtered_synonyms,
+            synonyms=synonyms_list,
             company_id=company_id,
             created_by=user_id
         )
@@ -932,7 +787,7 @@ def generate_synonyms(
                     user_id=user_id,
                     basarili=True,
                     islem_suresi_ms=elapsed_ms,
-                    detay=json.dumps({"keyword": keyword, "generated": len(filtered_synonyms), "inserted": result.get("inserted", 0)})
+                    detay=json.dumps({"keyword": keyword, "generated": len(synonyms_list), "inserted": result.get("inserted", 0)})
                 )
             except Exception:
                 pass  # Loglama hatası ana işlemi etkilemesin
@@ -941,10 +796,10 @@ def generate_synonyms(
                 "success": True,
                 "data": {
                     "keyword": keyword,
-                    "generated": len(filtered_synonyms),
+                    "generated": len(synonyms_list),
                     "inserted": result.get("inserted", 0),
                     "skipped": result.get("skipped", 0),
-                    "synonyms": filtered_synonyms,
+                    "synonyms": synonyms_list,
                     "message": f"{result.get('inserted', 0)} synonym eklendi, {result.get('skipped', 0)} atlandı"
                 }
             }
