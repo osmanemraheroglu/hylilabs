@@ -57,7 +57,7 @@ HyliLabs: AI destekli HR recruitment platformu. React + FastAPI + SQLite. Turkiy
 
 ## KILITLI DOSYALAR — DOKUNMA
 Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
-1. scoring_v2.py — FAZ 9.5 weight entegrasyonu icin dikkatli degistirilebilir
+1. scoring_v2.py — FAZ 9.5 weight + FAZ 10.1 save_match_details entegrasyonu. DIKKATLI DEGISTIR.
 2. job_scraper.py — Kariyer.net parser
 3. eval_report.py — AI degerlendirme
 4. email_worker.py — Email CV worker
@@ -86,7 +86,7 @@ Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
 13. create_candidate() duplicate kontrolu (email + telefon) kaldirilmaz
 14. CV dosyalari firma bazli izole: /data/cvs/{company_id}/. save_cv_file() company_id zorunlu. validate_cv_access() okuma kontrolu zorunlu. Flat yapiya geri donulemez. 2x3 guvenlik kontrolu DEGISTIRILEMEZ
 15. DB CASCADE DELETE aktif: applications, matches, candidate_pool_assignments, position_pools, ai_evaluations -> candidates ON DELETE CASCADE. position_keywords_v2 -> department_pools ON DELETE CASCADE. interviews -> candidates, department_pools, companies ON DELETE CASCADE. ai_analyses, hr_evaluations -> candidates, positions. position_requirements, position_sector_preferences, position_title_mappings -> department_pools. candidate_merge_logs -> candidates. company_settings, email_accounts, email_templates -> companies. PRAGMA foreign_keys=ON her connectionda zorunlu. Tablo yapilari DEGISTIRILEMEZ. CASCADE kaldirilmaz.
-16. KEYWORD_SYNONYMS: candidate_matcher.py dict KORUNMALI (migration kaynağı). check_keyword_match() synonym'ları DB'den okuyor (get_synonyms_for_keyword, cache'li). keyword_synonyms tablosu: 191 synonym, FAZ 1-2-3 tamamlandı (28.02.2026). API: 8 endpoint /api/synonyms/* (list, pending, create, delete, approve, reject, generate).
+16. KEYWORD_SYNONYMS: candidate_matcher.py dict KORUNMALI (migration kaynağı). check_keyword_match() synonym'ları DB'den okuyor (get_synonyms_for_keyword, cache'li). check_keyword_match_weighted() FAZ 9.5 + FAZ 10.1 log_synonym_usage entegrasyonu. keyword_synonyms tablosu: 387 synonym, FAZ 1-10.1 tamamlandı. API: 10 endpoint /api/synonyms/* (list, pending, create, delete, approve, reject, generate, update-confidence, confidence-stats).
 17. matches v2_result: database.py sync INSERT kodu DEGISMEZ (commit 42cf5b0)
 18. rescore_candidate: pools.py:1253 DEGISMEZ (commit cc2a339)
 22. HTTP filename kuralı: Content-Disposition header'ında filename kullanırken RFC 5987 encoding (quote + filename*=UTF-8) kullanılmalı. Türkçe karakterler latin-1'de encode edilemez. DEĞİŞMEZ.
@@ -318,3 +318,39 @@ DEGISTIRME
    - pull_matching_candidates_to_position(limit=50)
 
 Bu limitler DEĞİŞTİRİLMEMELİ.
+
+### FAZ 10.1 Multiple Confidence Source (02.03.2026) — DEGISMEZ
+
+Aşağıdaki dosyalar FAZ 10.1 için güncellendi, KORUNMALI:
+
+1. **database.py** - Yeni fonksiyonlar (satır 1673-1950):
+   - calculate_corpus_relevance() - CV sıklığı skoru
+   - calculate_historical_precision() - Geçmiş başarı oranı
+   - calculate_final_confidence() - Formula: (0.4*AI) + (0.3*corpus) + (0.3*historical)
+   - log_synonym_usage() - UPSERT synonym_usage_stats
+   - save_match_details() - INSERT synonym_match_history
+   - update_hired_stats() - hired_count güncelleme
+
+2. **scoring_v2.py** - save_match_details entegrasyonu
+   - calculate_match_score_v2 içinde match detayları kaydediliyor
+
+3. **candidate_matcher.py** - log_synonym_usage entegrasyonu
+   - check_keyword_match_weighted içinde synonym kullanımı loglanıyor
+
+4. **routes/candidates.py** - update_hired_stats entegrasyonu
+   - ise_al_candidate içinde hired istatistikleri güncelleniyor
+
+5. **routes/synonyms.py** - Yeni endpointler:
+   - POST /update-confidence (satır 1902)
+   - GET /confidence-stats (satır 1950)
+
+6. **Tablolar** (DEGISTIRILEMEZ):
+   - synonym_usage_stats (10 kolon, 3 index)
+   - synonym_match_history (10 kolon, 2 index)
+   - keyword_synonyms.confidence_score kolonu (default 0.58)
+
+7. **Frontend** - src/features/synonyms/index.tsx
+   - Confidence badge (emerald/amber/red renkleri)
+   - getConfidenceBadge() fonksiyonu
+
+Commit: b7d4c10 — DEGISTIRME

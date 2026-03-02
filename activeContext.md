@@ -793,16 +793,56 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
-FAZ 10.1 Multiple Confidence Source: ✅ TAMAMLANDI
-- ✅ GRUP 1: Veritabanı tabloları (synonym_usage_stats, synonym_match_history, confidence_score)
-- ✅ GRUP 2: Hesaplama fonksiyonları (corpus_relevance, historical_precision, final_confidence)
-- ✅ GRUP 3: Veri toplama fonksiyonları (log_usage, save_details, update_hired)
-- ✅ GRUP 4: get_synonyms_with_weights entegrasyonu
-- ✅ GRUP 5: candidate_matcher entegrasyonu
-- ✅ GRUP 6: hired entegrasyonu (ise_al_candidate)
-- ✅ GRUP 7: API endpoints (/update-confidence, /confidence-stats)
-- ✅ GRUP 8: Frontend UI (confidence badge)
-- ✅ GRUP 9: Test ve Deploy
+
+### FAZ 10: HYBRID MIMARI (v3.0) - Synonym Sistemi İyileştirmeleri
+
+#### FAZ 10.1: Çoklu Confidence Kaynağı (7/7) ✅ TAMAMLANDI
+- ✅ 10.1.1 synonym_usage_stats tablosu
+- ✅ 10.1.2 synonym_match_history tablosu
+- ✅ 10.1.3 calculate_corpus_relevance()
+- ✅ 10.1.4 calculate_historical_precision()
+- ✅ 10.1.5 calculate_final_confidence()
+- ✅ 10.1.6 Confidence güncelleme job (POST /update-confidence)
+- ✅ 10.1.7 Confidence trend raporu (GET /confidence-stats)
+
+#### FAZ 10.2: Semantic Similarity Katmanı (0/9) - SIRADA
+- [ ] 10.2.1 SentenceTransformer kurulumu (paraphrase-multilingual-MiniLM-L12-v2)
+- [ ] 10.2.2 semantic_similarity() fonksiyonu - Cosine similarity
+- [ ] 10.2.3 keyword_embeddings tablosu (embedding_vector BLOB)
+- [ ] 10.2.4 synonym_embeddings tablosu (embedding_vector BLOB)
+- [ ] 10.2.5 Pre-compute embeddings scripti
+- [ ] 10.2.6 Semantic threshold kontrolü (similarity < 0.75 → reject)
+- [ ] 10.2.7 Semantic duplicate tespiti
+- [ ] 10.2.8 Semantic clustering
+- [ ] 10.2.9 API endpoint: /api/semantic-search
+
+#### FAZ 10.3: Çoklu Dil Normalizasyonu (0/10)
+- [ ] 10.3.1 detect_language() fonksiyonu
+- [ ] 10.3.2 translate_to_canonical() fonksiyonu
+- [ ] 10.3.3 stem() fonksiyonu
+- [ ] 10.3.4 normalize_keyword() fonksiyonu
+- [ ] 10.3.5 translation_dictionary tablosu
+- [ ] 10.3.6 Teknik terim sözlüğü (IT, İnşaat, Finans, Sağlık)
+- [ ] 10.3.7 Google Translate API entegrasyonu
+- [ ] 10.3.8 DeepL API entegrasyonu (opsiyonel)
+- [ ] 10.3.9 Çeviri doğrulama UI
+- [ ] 10.3.10 Dil istatistikleri raporu
+
+#### FAZ 10.4: ML-Based Auto-Learning (0/12)
+- [ ] 10.4.1 Training data hazırlama
+- [ ] 10.4.2 Feature engineering
+- [ ] 10.4.3 Model seçimi (Classification)
+- [ ] 10.4.4 Model eğitimi (Scikit-learn/XGBoost)
+- [ ] 10.4.5 Model evaluasyonu (Precision, Recall, F1)
+- [ ] 10.4.6 predict_approval_probability()
+- [ ] 10.4.7 Auto-approve threshold (prob > 0.95)
+- [ ] 10.4.8 Auto-reject threshold (prob < 0.20)
+- [ ] 10.4.9 Model versiyonlama
+- [ ] 10.4.10 A/B testing altyapısı
+- [ ] 10.4.11 Model retraining pipeline
+- [ ] 10.4.12 Model performance dashboard
+
+---
 
 FAZ 7 Keyword Yönetimi: ✅ TAMAMLANDI
 - ✅ FAZ 7.1: BLACKLIST Keyword Filtresi (pools.py)
