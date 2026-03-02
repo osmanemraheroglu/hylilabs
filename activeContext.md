@@ -714,6 +714,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `3646dce` - feat(FAZ 9.5): Skorlama weight entegrasyonu
 9cd0997 - feat(FAZ 8.2.3+8.2.5): Firma bazlı keyword importance sistemi
 ca62f80 - feat(FAZ 8.2): Dinamik max synonym limit sistemi
 5f54651 - feat(FAZ 8.1.8): Otomatik blacklist aday sistemi
