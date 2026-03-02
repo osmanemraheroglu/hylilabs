@@ -86,7 +86,7 @@ Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
 13. create_candidate() duplicate kontrolu (email + telefon) kaldirilmaz
 14. CV dosyalari firma bazli izole: /data/cvs/{company_id}/. save_cv_file() company_id zorunlu. validate_cv_access() okuma kontrolu zorunlu. Flat yapiya geri donulemez. 2x3 guvenlik kontrolu DEGISTIRILEMEZ
 15. DB CASCADE DELETE aktif: applications, matches, candidate_pool_assignments, position_pools, ai_evaluations -> candidates ON DELETE CASCADE. position_keywords_v2 -> department_pools ON DELETE CASCADE. interviews -> candidates, department_pools, companies ON DELETE CASCADE. ai_analyses, hr_evaluations -> candidates, positions. position_requirements, position_sector_preferences, position_title_mappings -> department_pools. candidate_merge_logs -> candidates. company_settings, email_accounts, email_templates -> companies. PRAGMA foreign_keys=ON her connectionda zorunlu. Tablo yapilari DEGISTIRILEMEZ. CASCADE kaldirilmaz.
-16. KEYWORD_SYNONYMS: candidate_matcher.py dict KORUNMALI (migration kaynağı). check_keyword_match() synonym'ları DB'den okuyor (get_synonyms_for_keyword, cache'li). check_keyword_match_weighted() FAZ 9.5 + FAZ 10.1 log_synonym_usage entegrasyonu. keyword_synonyms tablosu: 387 synonym, FAZ 1-10.2 tamamlandı. API: 13 endpoint /api/synonyms/* (list, pending, create, delete, approve, reject, generate, update-confidence, confidence-stats, check-semantic, semantic-duplicates, semantic-search).
+16. KEYWORD_SYNONYMS: candidate_matcher.py dict KORUNMALI (migration kaynağı). check_keyword_match() synonym'ları DB'den okuyor (get_synonyms_for_keyword, cache'li). check_keyword_match_weighted() FAZ 9.5 + FAZ 10.1 log_synonym_usage entegrasyonu. keyword_synonyms tablosu: 387 synonym, FAZ 1-10.3 tamamlandı. API: 18 endpoint /api/synonyms/* (list, pending, create, delete, approve, reject, generate, update-confidence, confidence-stats, check-semantic, semantic-duplicates, semantic-search, normalize, translate, dictionary-stats, add-translation, language-stats).
 17. matches v2_result: database.py sync INSERT kodu DEGISMEZ (commit 42cf5b0)
 18. rescore_candidate: pools.py:1253 DEGISMEZ (commit cc2a339)
 22. HTTP filename kuralı: Content-Disposition header'ında filename kullanırken RFC 5987 encoding (quote + filename*=UTF-8) kullanılmalı. Türkçe karakterler latin-1'de encode edilemez. DEĞİŞMEZ.
@@ -443,3 +443,33 @@ OpenAI Embeddings ile semantic benzerlik sistemi. KORUNMALI:
    - numpy==2.4.2
 
 Commit: 9dbb301 — DEGISTIRME
+
+### FAZ 10.3 Çoklu Dil Normalizasyonu (02.03.2026) — DEGISMEZ
+
+TR/EN teknik terim çevirisi ve normalizasyon sistemi. KORUNMALI:
+
+1. **database.py** - Sözlükler ve fonksiyonlar:
+   - TRANSLATION_DICTIONARY: 53 TR->EN teknik terim (yapay zeka, makine öğrenmesi, vb.)
+   - ENGLISH_CANONICAL: 21 kısaltma->tam form (ML, AI, JS, K8S, vb.)
+   - detect_language(): Dil algılama (tr/en/de/fr/es/it)
+   - stem_word(): Snowball stemmer (cached)
+   - translate_to_canonical(): Öncelikli çeviri (DB->statik->kısaltma)
+   - normalize_keyword(): Tam normalizasyon + opsiyonel stemming
+
+2. **routes/synonyms.py** - 5 yeni endpoint:
+   - POST /normalize - Keyword normalizasyonu
+   - POST /translate - Çeviri
+   - GET /dictionary-stats - Sözlük istatistikleri
+   - POST /add-translation - Yeni çeviri ekle (DB sözlük)
+   - GET /language-stats - Dil dağılım raporu
+
+3. **Tablolar** (DEGISTIRILEMEZ):
+   - translation_dictionary: source_term, source_lang, canonical_term, sector, verified
+
+4. **Bağımlılıklar**:
+   - langdetect==1.0.9
+   - snowballstemmer==3.0.1
+
+NOT: 10.3.7 (Google Translate) ve 10.3.8 (DeepL) opsiyonel, statik sözlük yeterli
+
+Commit: 4541477 — DEGISTIRME

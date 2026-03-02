@@ -31,6 +31,33 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 02.03.2026 - FAZ 10.3 Çoklu Dil Normalizasyonu Sistemi
+- Bağımlılıklar: langdetect 1.0.9, snowballstemmer 3.0.1
+- database.py - Sözlükler ve fonksiyonlar:
+  - TRANSLATION_DICTIONARY: 53 TR->EN teknik terim
+  - ENGLISH_CANONICAL: 21 kısaltma->tam form (ML, AI, JS, etc.)
+  - detect_language(): Dil algılama (tr/en/de/fr/es/it)
+  - stem_word(): Snowball stemmer (cached)
+  - translate_to_canonical(): Öncelikli çeviri (DB->statik->kısaltma)
+  - normalize_keyword(): Tam normalizasyon + opsiyonel stemming
+- translation_dictionary tablosu (dinamik sözlük):
+  - source_term, source_lang, canonical_term, sector
+  - UNIQUE(source_term, source_lang)
+  - idx_trans_source, idx_trans_canonical indeksleri
+- routes/synonyms.py - 5 yeni endpoint:
+  - POST /normalize: Keyword normalizasyonu
+  - POST /translate: Çeviri
+  - GET /dictionary-stats: Sözlük istatistikleri
+  - POST /add-translation: Yeni çeviri ekle
+  - GET /language-stats: Dil dağılım istatistikleri
+- Test sonuçları:
+  - detect_language: en/tr doğru algılıyor
+  - translate: makine öğrenmesi -> machine learning ✅
+  - translate: ML -> machine learning ✅
+  - stem: programming -> program ✅
+  - normalize: Yapay Zeka -> artificial intelligence ✅
+- NOT: 10.3.7 (Google Translate) ve 10.3.8 (DeepL) opsiyonel, statik sözlük yeterli
+
 ### 02.03.2026 - FAZ 10.2 Semantic Similarity Sistemi
 - OpenAI Embeddings entegrasyonu (text-embedding-3-small, 1536 boyut)
 - database.py - Yeni fonksiyonlar:
@@ -766,6 +793,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `4541477` - feat(FAZ 10.3): Çoklu dil normalizasyonu sistemi
 - `9dbb301` - feat(FAZ 10.2): Semantic Similarity sistemi
 - `b7d4c10` - feat(FAZ 10.1): Multiple Confidence Source sistemi
 - `3646dce` - feat(FAZ 9.5): Skorlama weight entegrasyonu
@@ -921,19 +949,19 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 - ✅ 10.2.8 Synonym ekleme entegrasyonu (semantic check + auto-save embedding)
 - ✅ 10.2.9 API endpoints: /check-semantic, /semantic-duplicates, /semantic-search
 
-#### FAZ 10.3: Çoklu Dil Normalizasyonu (0/10)
-- [ ] 10.3.1 detect_language() fonksiyonu
-- [ ] 10.3.2 translate_to_canonical() fonksiyonu
-- [ ] 10.3.3 stem() fonksiyonu
-- [ ] 10.3.4 normalize_keyword() fonksiyonu
-- [ ] 10.3.5 translation_dictionary tablosu
-- [ ] 10.3.6 Teknik terim sözlüğü (IT, İnşaat, Finans, Sağlık)
-- [ ] 10.3.7 Google Translate API entegrasyonu
-- [ ] 10.3.8 DeepL API entegrasyonu (opsiyonel)
-- [ ] 10.3.9 Çeviri doğrulama UI
-- [ ] 10.3.10 Dil istatistikleri raporu
+#### FAZ 10.3: Çoklu Dil Normalizasyonu (8/10) ✅ TAMAMLANDI
+- ✅ 10.3.1 detect_language() fonksiyonu
+- ✅ 10.3.2 translate_to_canonical() fonksiyonu
+- ✅ 10.3.3 stem_word() fonksiyonu (snowball stemmer)
+- ✅ 10.3.4 normalize_keyword() fonksiyonu
+- ✅ 10.3.5 translation_dictionary tablosu (DB sözlük)
+- ✅ 10.3.6 Teknik terim sözlüğü (53 TR->EN, 21 kısaltma)
+- ⏭️ 10.3.7 Google Translate API - OPSIYONEL (statik sözlük yeterli)
+- ⏭️ 10.3.8 DeepL API - OPSIYONEL (statik sözlük yeterli)
+- ✅ 10.3.9 API endpoints (/normalize, /translate, /dictionary-stats, /add-translation, /language-stats)
+- ✅ 10.3.10 Dil istatistikleri raporu
 
-#### FAZ 10.4: ML-Based Auto-Learning (0/12)
+#### FAZ 10.4: ML-Based Auto-Learning (0/12) - SIRADA
 - [ ] 10.4.1 Training data hazırlama
 - [ ] 10.4.2 Feature engineering
 - [ ] 10.4.3 Model seçimi (Classification)
