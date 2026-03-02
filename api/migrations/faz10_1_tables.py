@@ -7,7 +7,7 @@ Creates tables and columns for confidence scoring system
 import sqlite3
 import os
 
-DB_PATH = "/var/www/hylilabs/api/keywords.db"
+DB_PATH = "/var/www/hylilabs/api/data/talentflow.db"
 
 def run_migration():
     if not os.path.exists(DB_PATH):

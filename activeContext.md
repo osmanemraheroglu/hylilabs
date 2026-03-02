@@ -31,6 +31,30 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 02.03.2026 - FAZ 10.1 Multiple Confidence Source Sistemi
+- Yeni tablolar:
+  - synonym_usage_stats: cv_occurrence_count, match_count, hired_count
+  - synonym_match_history: candidate_id, position_id, keyword, matched_term, method, weight
+- keyword_synonyms tablosuna confidence_score kolonu (default 0.58)
+- Hesaplama fonksiyonları (database.py):
+  - calculate_corpus_relevance(): 0.3-1.0 (usage bazlı)
+  - calculate_historical_precision(): 0.5 neutral, veya hired_count/match_count
+  - calculate_final_confidence(): (0.4 * AI) + (0.3 * corpus) + (0.3 * historical)
+- Veri toplama fonksiyonları (database.py):
+  - log_synonym_usage(): UPSERT synonym_usage_stats
+  - save_match_details(): INSERT synonym_match_history
+  - update_hired_stats(): hired_count güncelleme
+- Entegrasyonlar:
+  - candidate_matcher.py: check_keyword_match_weighted -> log_synonym_usage
+  - scoring_v2.py: calculate_match_score_v2 -> save_match_details
+  - candidates.py: ise_al_candidate -> update_hired_stats
+- API endpoints (synonyms.py):
+  - POST /update-confidence: Confidence yeniden hesaplama
+  - GET /confidence-stats: İstatistikler
+- Frontend (synonyms/index.tsx):
+  - Confidence badge (emerald/amber/red) sinonim listesinde
+- Migration: api/migrations/faz10_1_tables.py
+
 ### 01.03.2026 - FAZ 8.2.3+8.2.5 Firma Bazlı Keyword Importance Sistemi
 - keyword_importance tablosu oluşturuldu:
   - company_id, keyword, importance_level (high/normal/low)
@@ -714,6 +738,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `b7d4c10` - feat(FAZ 10.1): Multiple Confidence Source sistemi
 - `3646dce` - feat(FAZ 9.5): Skorlama weight entegrasyonu
 9cd0997 - feat(FAZ 8.2.3+8.2.5): Firma bazlı keyword importance sistemi
 ca62f80 - feat(FAZ 8.2): Dinamik max synonym limit sistemi
@@ -768,6 +793,17 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 0fa0186 - docs: update activeContext.md - mulakat form improvements
 
 ## Sonraki Gorev
+FAZ 10.1 Multiple Confidence Source: ✅ TAMAMLANDI
+- ✅ GRUP 1: Veritabanı tabloları (synonym_usage_stats, synonym_match_history, confidence_score)
+- ✅ GRUP 2: Hesaplama fonksiyonları (corpus_relevance, historical_precision, final_confidence)
+- ✅ GRUP 3: Veri toplama fonksiyonları (log_usage, save_details, update_hired)
+- ✅ GRUP 4: get_synonyms_with_weights entegrasyonu
+- ✅ GRUP 5: candidate_matcher entegrasyonu
+- ✅ GRUP 6: hired entegrasyonu (ise_al_candidate)
+- ✅ GRUP 7: API endpoints (/update-confidence, /confidence-stats)
+- ✅ GRUP 8: Frontend UI (confidence badge)
+- ✅ GRUP 9: Test ve Deploy
+
 FAZ 7 Keyword Yönetimi: ✅ TAMAMLANDI
 - ✅ FAZ 7.1: BLACKLIST Keyword Filtresi (pools.py)
 - ✅ FAZ 7.2: Smart Synonym (AI skip if approved exists)
