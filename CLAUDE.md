@@ -319,6 +319,62 @@ DEGISTIRME
 
 Bu limitler DEĞİŞTİRİLMEMELİ.
 
+### FAZ 8 Synonym Quality System (01.03.2026) — DEGISMEZ
+
+#### FAZ 8.1 HR Feedback Loop (8/8)
+Dosyalar:
+- routes/synonyms.py: REJECT_REASONS sabiti, reject endpoint, reject_stats endpoint
+- database.py: blacklist_candidates tablosu, check_and_suggest_blacklist()
+- keyword_synonyms: reject_reason, reject_note kolonları
+Commit'ler: e18099d, 8edd06e, e1cccdc, a2556b9, 5f54651
+
+#### FAZ 8.2 Dinamik Max Limit (5/5)
+Dosyalar:
+- routes/synonyms.py: HIGH_COVERAGE_KEYWORDS (93 keyword), get_max_synonym_limit()
+- database.py: keyword_importance tablosu, get_keyword_importance()
+- filter_ai_synonyms() dinamik limit kullanıyor
+Commit'ler: ca62f80, 9cd0997
+
+#### FAZ 8.3 Match Weight (4/4)
+Dosyalar:
+- routes/synonyms.py: SYNONYM_TYPE_WEIGHTS sabiti
+- database.py: _get_weight() fonksiyonu
+- keyword_synonyms: match_weight kolonu (387 kayıt)
+
+### FAZ 9 Advanced Synonym System (02.03.2026) — DEGISMEZ
+
+#### FAZ 9.1 6 Synonym Tipi (7/7)
+Dosyalar:
+- routes/synonyms.py: SYNONYM_TYPES sabiti (6 tip)
+- keyword_synonyms: synonym_type kolonu
+Tipler: exact_synonym(1.0), abbreviation(0.95), english(0.90), turkish(0.85), broader_term(0.70), narrower_term(0.60)
+
+#### FAZ 9.2 Çakışma Kontrolü (6/6)
+Dosyalar:
+- database.py: check_synonym_conflict() fonksiyonu
+- synonym_primary_mapping tablosu
+- keyword_synonyms: ambiguity_score kolonu
+
+#### FAZ 9.3 İki Seviyeli Blacklist (7/7)
+Dosyalar:
+- routes/synonyms.py: GLOBAL_BLACKLIST, CONTEXTUAL_BLACKLIST, SECTOR_BLACKLISTS
+- routes/synonyms.py: is_contextually_allowed() fonksiyonu
+- database.py: blacklist_candidates tablosu
+
+#### FAZ 9.4 Versiyonlama ve Audit (9/9)
+Dosyalar:
+- keyword_synonyms: version, model_version, updated_by, updated_at, is_active kolonları
+- keyword_synonyms_history tablosu
+- database.py: log_synonym_change() fonksiyonu
+
+#### FAZ 9.5 Skorlama Entegrasyonu (6/6)
+Dosyalar:
+- core/candidate_matcher.py:250 - check_keyword_match_weighted()
+- core/scoring_v2.py - weight bazlı skorlama (4 çağrı noktası)
+- database.py: get_synonyms_with_weights()
+Formül: effective_weight = match_weight * (1 - ambiguity * 0.3)
+Commit: 3646dce
+
 ### FAZ 10.1 Multiple Confidence Source (02.03.2026) — DEGISMEZ
 
 Aşağıdaki dosyalar FAZ 10.1 için güncellendi, KORUNMALI:
