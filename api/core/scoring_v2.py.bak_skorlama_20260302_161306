@@ -382,8 +382,7 @@ def calculate_technical_score(
     """
     # Aday bilgilerini al
     # Lazy import to avoid circular dependency
-    from candidate_matcher import check_keyword_match, check_keyword_match_weighted
-    company_id = safe_get(position, 'company_id')  # FAZ 9.5: Weight entegrasyonu için
+    from candidate_matcher import check_keyword_match
     skills = safe_get(candidate, 'teknik_beceriler', '') or ''
     cv_text = safe_get(candidate, 'cv_raw_text', '') or ''
     experience_detail = safe_get(candidate, 'deneyim_detay', '') or ''
@@ -401,19 +400,17 @@ def calculate_technical_score(
     if must_have_keywords:
         # MOD A: Must-have varsa
         for keyword in must_have_keywords:
-            found, matched_via, method, weight = check_keyword_match_weighted(
-                keyword, search_text, skills_original, turkish_lower, company_id
+            found, matched_via, method = check_keyword_match(
+                keyword, search_text, skills_original, turkish_lower
             )
             if found:
-                must_have_matched.append({'keyword': keyword, 'weight': weight, 'method': method})
+                must_have_matched.append(keyword)
             else:
                 must_have_missing.append(keyword)
         
-        # Must-have: 17 puan (FAZ 9.5: weight bazlı)
-        # Weight toplami / keyword sayisi = weighted ratio
-        total_weight = sum(m['weight'] for m in must_have_matched)
-        weighted_ratio = total_weight / len(must_have_keywords) if must_have_keywords else 0
-        must_have_score = int(weighted_ratio * 17)
+        # Must-have: 17 puan (eksik başına -4 ekstra ceza)
+        matched_ratio = len(must_have_matched) / len(must_have_keywords) if must_have_keywords else 0
+        must_have_score = int(matched_ratio * 17)
         # Eksik başına -4 ekstra ceza
         missing_count = len(must_have_missing)
         must_have_score = max(0, must_have_score - (missing_count * 4))
@@ -425,29 +422,26 @@ def calculate_technical_score(
     
     if critical_keywords:
         for keyword in critical_keywords:
-            found, matched_via, method, weight = check_keyword_match_weighted(
-                keyword, search_text, skills_original, turkish_lower, company_id
+            found, matched_via, method = check_keyword_match(
+                keyword, search_text, skills_original, turkish_lower
             )
             if found:
-                critical_matched.append({'keyword': keyword, 'weight': weight, 'method': method})
+                critical_matched.append(keyword)
             else:
                 critical_missing.append(keyword)
     
-    # Critical score hesaplama (FAZ 9.5: weight bazlı)
+    # Critical score hesaplama
     if must_have_keywords:
-        # MOD A: Must-have varsa → Critical 10 puan (lineer, weight bazlı)
+        # MOD A: Must-have varsa → Critical 10 puan (lineer)
         if critical_keywords:
-            total_weight = sum(m['weight'] for m in critical_matched)
-            weighted_ratio = total_weight / len(critical_keywords)
-            critical_score = int(weighted_ratio * 10)
+            critical_score = int((len(critical_matched) / len(critical_keywords)) * 10)
         else:
             critical_score = 0
     else:
-        # MOD B: Must-have yoksa → Critical 27 puan (exponential, weight bazlı)
+        # MOD B: Must-have yoksa → Critical 27 puan (exponential)
         if critical_keywords:
-            total_weight = sum(m['weight'] for m in critical_matched)
-            weighted_ratio = total_weight / len(critical_keywords)
-            critical_score = int((weighted_ratio ** 1.5) * 27)
+            matched_ratio = len(critical_matched) / len(critical_keywords)
+            critical_score = int((matched_ratio ** 1.5) * 27)
         else:
             critical_score = 0
     
@@ -458,18 +452,15 @@ def calculate_technical_score(
     
     if important_keywords:
         for keyword in important_keywords:
-            found, matched_via, method, weight = check_keyword_match_weighted(
-                keyword, search_text, skills_original, turkish_lower, company_id
+            found, matched_via, method = check_keyword_match(
+                keyword, search_text, skills_original, turkish_lower
             )
             if found:
-                important_matched.append({'keyword': keyword, 'weight': weight, 'method': method})
+                important_matched.append(keyword)
             else:
                 important_missing.append(keyword)
         
-        # FAZ 9.5: weight bazlı
-        total_weight = sum(m['weight'] for m in important_matched)
-        weighted_ratio = total_weight / len(important_keywords)
-        important_score = int(weighted_ratio * 10)
+        important_score = int((len(important_matched) / len(important_keywords)) * 10)
     else:
         important_score = 0
     
@@ -478,11 +469,11 @@ def calculate_technical_score(
     bonus_matched = []
     
     for keyword in bonus_keywords:
-        found, matched_via, method, weight = check_keyword_match_weighted(
-            keyword, search_text, skills_original, turkish_lower, company_id
+        found, matched_via, method = check_keyword_match(
+            keyword, search_text, skills_original, turkish_lower
         )
         if found:
-            bonus_matched.append({'keyword': keyword, 'weight': weight, 'method': method})
+            bonus_matched.append(keyword)
     
     technical_score = must_have_score + critical_score + important_score
     

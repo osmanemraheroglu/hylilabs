@@ -32,7 +32,7 @@ from models import Candidate, Position, Match
 from database import (
     save_match, update_candidate, get_position_criteria,
     add_candidate_to_pool, update_pool_candidate, get_position_pool,
-    log_api_usage, get_synonyms_for_keyword, get_synonyms_with_weights
+    log_api_usage, get_synonyms_for_keyword
 )
 from scoring_v2 import calculate_match_score_v2
 
@@ -245,53 +245,6 @@ def check_keyword_match(keyword, search_text, skills_text, turkish_lower_func):
     
     return False, None, None
 
-
-
-def check_keyword_match_weighted(keyword, search_text, skills_text, turkish_lower_func, company_id=None):
-    """
-    FAZ 9.5: Weight destekli keyword eslestirme
-    
-    Returns:
-        (bool, str, str, float): (eslesti_mi, eslesen_kelime, yontem, effective_weight)
-    
-    Weight degerleri:
-        - exact: 1.0
-        - synonym: effective_weight (DB'den, ambiguity dahil)
-        - fuzzy: 0.5 + 0.3 * (ratio/100)
-        - not found: 0.0
-    """
-    # 1. Mevcut fonksiyonu cagir
-    found, matched_word, method = check_keyword_match(keyword, search_text, skills_text, turkish_lower_func)
-    
-    if not found:
-        return False, None, None, 0.0
-    
-    # 2. Weight hesapla
-    if method == 'exact':
-        weight = 1.0
-    elif method == 'synonym':
-        # DB'den effective_weight al (match_weight * (1 - ambiguity * 0.3))
-        weight = 0.85  # default
-        try:
-            synonyms = get_synonyms_with_weights(keyword, company_id)
-            matched_lower = turkish_lower_func(matched_word) if matched_word else ''
-            for s in synonyms:
-                if turkish_lower_func(s.get('synonym', '')) == matched_lower:
-                    weight = s.get('effective_weight', 0.85)
-                    break
-        except:
-            pass
-    elif method and method.startswith('fuzzy'):
-        # fuzzy(85%) -> 0.5 + 0.3 * 0.85 = 0.755
-        try:
-            ratio = int(method.replace('fuzzy(', '').replace('%)', ''))
-            weight = 0.5 + 0.3 * (ratio / 100)
-        except:
-            weight = 0.6
-    else:
-        weight = 0.5
-    
-    return found, matched_word, method, weight
 
 @dataclass
 class CriteriaMatchResult:
@@ -1669,8 +1622,8 @@ def calculate_match_score_keyword(candidate: dict, position: dict) -> dict:
     logger.debug(f"  Points per keyword: {points_per_keyword}")
     
     for kw in keywords:
-        found, matched_via, match_method, weight = check_keyword_match_weighted(
-            kw, search_text, skills_original, turkish_lower, company_id=None
+        found, matched_via, match_method = check_keyword_match(
+            kw, search_text, skills_original, turkish_lower
         )
         if found:
             kw_points = round(points_per_keyword, 1)

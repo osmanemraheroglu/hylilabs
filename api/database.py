@@ -76,6 +76,24 @@ def turkish_lower(text: str) -> str:
     return text.replace('İ', 'i').replace('I', 'ı').lower()
 
 
+# FAZ 9.1: Gelismis synonym tip sistemi - 6 tip
+# Mevcut: abbreviation, english, turkish
+# Yeni: exact_synonym, broader_term, narrower_term
+_SYNONYM_WEIGHTS = {
+    "abbreviation": 0.95,    # cad -> autocad
+    "english": 0.90,         # bakim -> maintenance
+    "turkish": 0.85,         # maintenance -> bakim
+    "exact_synonym": 1.00,   # hizli = cabuk
+    "broader_term": 0.70,    # python -> programlama
+    "narrower_term": 0.60    # programlama -> python
+}
+
+
+def _get_synonym_weight(synonym_type: str) -> float:
+    """Synonym tipine göre match_weight döndür (6 tip destekli)."""
+    return _SYNONYM_WEIGHTS.get(synonym_type.lower().strip() if synonym_type else "", 0.80)
+
+
 def _parse_keywords(keywords: list) -> list:
     """Keyword listesindeki virgülle ayrılmış elemanları ayrı keyword'lere böl."""
     result = []
@@ -703,6 +721,28 @@ def init_database():
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_keyword_synonyms_lookup ON keyword_synonyms(company_id, keyword, status)")
 
         # ═══════════════════════════════════════════════════════════════════════════
+        # FAZ 9.2: SYNONYM ÇAKIŞMA KONTROLÜ - PRIMARY MAPPING
+        # ═══════════════════════════════════════════════════════════════════════════
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS synonym_primary_mapping (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                synonym TEXT NOT NULL,
+                primary_keyword TEXT NOT NULL,
+                secondary_keywords TEXT,
+                company_id INTEGER,
+                conflict_count INTEGER DEFAULT 1,
+                ambiguity_score REAL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+                UNIQUE(synonym, company_id)
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_synonym_mapping_synonym ON synonym_primary_mapping(synonym)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_synonym_mapping_company ON synonym_primary_mapping(company_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_synonym_mapping_ambiguity ON synonym_primary_mapping(ambiguity_score)")
+
+        # ═══════════════════════════════════════════════════════════════════════════
         # SYSTEM SYNONYMS - KEYWORD_SYNONYMS dict'inden otomatik migrate
         # ═══════════════════════════════════════════════════════════════════════════
         def _migrate_keyword_synonyms(cursor):
@@ -1090,6 +1130,78 @@ def get_synonyms_for_keyword(keyword: str, company_id: int = None) -> list[str]:
     return cached_get(cache_key, fetch_from_db)
 
 
+def get_synonyms_with_weights(keyword: str, company_id: int = None) -> list[dict]:
+    """
+    FAZ 9.2: Keyword için synonym listesi ve effective weight'leri döndür.
+
+    Ambiguity score'a göre weight düşürülür:
+    effective_weight = match_weight * (1 - ambiguity_score * 0.3)
+
+    Args:
+        keyword: Aranacak keyword
+        company_id: Firma ID (None = global)
+
+    Returns:
+        [{"synonym": str, "weight": float, "effective_weight": float, "ambiguity_score": float}]
+    """
+    keyword_lower = turkish_lower(keyword.strip())
+    cache_key = f"synonyms_weights_{keyword_lower}_{company_id or 'global'}"
+
+    def fetch_from_db():
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Synonym'ları ve weight'lerini al
+                if company_id:
+                    cursor.execute("""
+                        SELECT ks.synonym, ks.match_weight, spm.ambiguity_score
+                        FROM keyword_synonyms ks
+                        LEFT JOIN synonym_primary_mapping spm
+                            ON ks.synonym = spm.synonym
+                            AND (spm.company_id = ks.company_id OR spm.company_id IS NULL)
+                        WHERE ks.keyword = ?
+                          AND ks.status = 'approved'
+                          AND (ks.company_id IS NULL OR ks.company_id = ?)
+                    """, (keyword_lower, company_id))
+                else:
+                    cursor.execute("""
+                        SELECT ks.synonym, ks.match_weight, spm.ambiguity_score
+                        FROM keyword_synonyms ks
+                        LEFT JOIN synonym_primary_mapping spm
+                            ON ks.synonym = spm.synonym
+                            AND spm.company_id IS NULL
+                        WHERE ks.keyword = ?
+                          AND ks.status = 'approved'
+                          AND ks.company_id IS NULL
+                    """, (keyword_lower,))
+
+                results = []
+                for row in cursor.fetchall():
+                    synonym = row[0]
+                    match_weight = row[1] or 0.85  # default
+                    ambiguity_score = row[2] or 0
+
+                    # FAZ 9.2: Ağırlık düşürme
+                    # effective_weight = match_weight * (1 - ambiguity_score * 0.3)
+                    effective_weight = match_weight * (1 - ambiguity_score * 0.3)
+
+                    results.append({
+                        "synonym": synonym,
+                        "weight": match_weight,
+                        "effective_weight": round(effective_weight, 3),
+                        "ambiguity_score": ambiguity_score
+                    })
+
+                return results
+
+        except Exception as e:
+            logger.warning(f"get_synonyms_with_weights hatası ({keyword}): {e}")
+            return []
+
+    return cached_get(cache_key, fetch_from_db)
+
+
 def get_approved_synonym_count(keyword: str, company_id: int = None) -> int:
     """
     Keyword için onaylı synonym sayısını döndür.
@@ -1299,6 +1411,305 @@ def invalidate_synonym_cache():
     invalidate_cache("synonyms_")
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 9.2: SYNONYM ÇAKIŞMA KONTROLÜ
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def check_synonym_conflict(
+    synonym: str,
+    keyword: str,
+    company_id: int = None
+) -> dict:
+    """
+    Synonym'un başka keyword'lere atanıp atanmadığını kontrol et.
+
+    Args:
+        synonym: Kontrol edilecek synonym
+        keyword: Yeni atanacak keyword
+        company_id: Firma ID (None = global kontrol)
+
+    Returns:
+        {
+            "has_conflict": bool,
+            "conflict_count": int,
+            "conflicting_keywords": list[str],
+            "ambiguity_score": float  # 0-1 arası
+        }
+    """
+    synonym_lower = turkish_lower(synonym.strip())
+    keyword_lower = turkish_lower(keyword.strip())
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Bu synonym başka hangi keyword'lere atanmış?
+            if company_id:
+                cursor.execute("""
+                    SELECT DISTINCT keyword FROM keyword_synonyms
+                    WHERE synonym = ? AND status = 'approved'
+                    AND (company_id = ? OR company_id IS NULL)
+                    AND keyword != ?
+                """, (synonym_lower, company_id, keyword_lower))
+            else:
+                cursor.execute("""
+                    SELECT DISTINCT keyword FROM keyword_synonyms
+                    WHERE synonym = ? AND status = 'approved'
+                    AND company_id IS NULL
+                    AND keyword != ?
+                """, (synonym_lower, keyword_lower))
+
+            conflicting_keywords = [row[0] for row in cursor.fetchall()]
+            conflict_count = len(conflicting_keywords) + 1  # +1 for current keyword
+
+            # Ambiguity score: 1 - (1 / conflict_count)
+            # 1 keyword: 0, 2 keywords: 0.50, 3 keywords: 0.67
+            ambiguity_score = 1 - (1 / conflict_count) if conflict_count > 1 else 0
+
+            return {
+                "has_conflict": len(conflicting_keywords) > 0,
+                "conflict_count": conflict_count,
+                "conflicting_keywords": conflicting_keywords,
+                "ambiguity_score": round(ambiguity_score, 2)
+            }
+
+    except Exception as e:
+        logger.error(f"check_synonym_conflict hatası ({synonym}): {e}")
+        return {
+            "has_conflict": False,
+            "conflict_count": 1,
+            "conflicting_keywords": [],
+            "ambiguity_score": 0
+        }
+
+
+def update_synonym_mapping(
+    synonym: str,
+    keyword: str,
+    company_id: int = None
+) -> bool:
+    """
+    Synonym mapping tablosunu güncelle.
+
+    Args:
+        synonym: Synonym
+        keyword: Atanan keyword
+        company_id: Firma ID
+
+    Returns:
+        True başarılı, False başarısız
+    """
+    synonym_lower = turkish_lower(synonym.strip())
+    keyword_lower = turkish_lower(keyword.strip())
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Mevcut mapping var mı?
+            cursor.execute("""
+                SELECT id, primary_keyword, secondary_keywords, conflict_count
+                FROM synonym_primary_mapping
+                WHERE synonym = ? AND (company_id = ? OR (company_id IS NULL AND ? IS NULL))
+            """, (synonym_lower, company_id, company_id))
+
+            existing = cursor.fetchone()
+
+            if existing:
+                mapping_id, primary_kw, secondary_kws, conflict_count = existing
+
+                # Aynı keyword zaten primary mi?
+                if primary_kw == keyword_lower:
+                    return True
+
+                # Secondary keywords'e ekle
+                secondary_list = secondary_kws.split(",") if secondary_kws else []
+                if keyword_lower not in secondary_list and keyword_lower != primary_kw:
+                    secondary_list.append(keyword_lower)
+
+                new_conflict_count = 1 + len(secondary_list)
+                ambiguity_score = round(1 - (1 / new_conflict_count), 2) if new_conflict_count > 1 else 0
+
+                cursor.execute("""
+                    UPDATE synonym_primary_mapping
+                    SET secondary_keywords = ?,
+                        conflict_count = ?,
+                        ambiguity_score = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (",".join(secondary_list), new_conflict_count, ambiguity_score, mapping_id))
+
+            else:
+                # Yeni mapping oluştur
+                cursor.execute("""
+                    INSERT INTO synonym_primary_mapping
+                    (synonym, primary_keyword, secondary_keywords, company_id, conflict_count, ambiguity_score)
+                    VALUES (?, ?, NULL, ?, 1, 0)
+                """, (synonym_lower, keyword_lower, company_id))
+
+            return True
+
+    except Exception as e:
+        logger.error(f"update_synonym_mapping hatası ({synonym} -> {keyword}): {e}")
+        return False
+
+
+def build_synonym_mapping_index(company_id: int = None) -> dict:
+    """
+    Mevcut approved synonym'ları tara ve çakışma indexi oluştur.
+
+    Args:
+        company_id: Firma ID (None = sadece global synonymler)
+
+    Returns:
+        {"success": True, "indexed": int, "conflicts": int}
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Çakışan synonym'ları bul
+            if company_id:
+                cursor.execute("""
+                    SELECT synonym, GROUP_CONCAT(DISTINCT keyword) as keywords, COUNT(DISTINCT keyword) as cnt
+                    FROM keyword_synonyms
+                    WHERE status = 'approved' AND (company_id = ? OR company_id IS NULL)
+                    GROUP BY synonym
+                    HAVING cnt > 1
+                """, (company_id,))
+            else:
+                cursor.execute("""
+                    SELECT synonym, GROUP_CONCAT(DISTINCT keyword) as keywords, COUNT(DISTINCT keyword) as cnt
+                    FROM keyword_synonyms
+                    WHERE status = 'approved' AND company_id IS NULL
+                    GROUP BY synonym
+                    HAVING cnt > 1
+                """)
+
+            conflicts = cursor.fetchall()
+            indexed = 0
+            conflict_count = 0
+
+            for synonym, keywords_str, cnt in conflicts:
+                keywords = keywords_str.split(",")
+                primary_keyword = keywords[0]  # İlk keyword primary
+                secondary_keywords = keywords[1:] if len(keywords) > 1 else []
+
+                ambiguity_score = round(1 - (1 / cnt), 2) if cnt > 1 else 0
+
+                cursor.execute("""
+                    INSERT OR REPLACE INTO synonym_primary_mapping
+                    (synonym, primary_keyword, secondary_keywords, company_id, conflict_count, ambiguity_score, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """, (synonym, primary_keyword, ",".join(secondary_keywords), company_id, cnt, ambiguity_score))
+
+                indexed += 1
+                if cnt > 1:
+                    conflict_count += 1
+
+        logger.info(f"build_synonym_mapping_index: {indexed} synonym indexlendi, {conflict_count} çakışma")
+        return {"success": True, "indexed": indexed, "conflicts": conflict_count}
+
+    except Exception as e:
+        logger.error(f"build_synonym_mapping_index hatası: {e}")
+        return {"success": False, "error": str(e)}
+
+
+def get_synonym_conflicts(company_id: int = None, min_ambiguity: float = 0.5) -> list[dict]:
+    """
+    Yüksek ambiguity'li çakışmaları getir.
+
+    Args:
+        company_id: Firma ID
+        min_ambiguity: Minimum ambiguity score (varsayılan 0.5)
+
+    Returns:
+        [{synonym, primary_keyword, secondary_keywords, conflict_count, ambiguity_score}]
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            if company_id:
+                cursor.execute("""
+                    SELECT synonym, primary_keyword, secondary_keywords, conflict_count, ambiguity_score
+                    FROM synonym_primary_mapping
+                    WHERE (company_id = ? OR company_id IS NULL)
+                    AND ambiguity_score >= ?
+                    ORDER BY ambiguity_score DESC, conflict_count DESC
+                """, (company_id, min_ambiguity))
+            else:
+                cursor.execute("""
+                    SELECT synonym, primary_keyword, secondary_keywords, conflict_count, ambiguity_score
+                    FROM synonym_primary_mapping
+                    WHERE company_id IS NULL
+                    AND ambiguity_score >= ?
+                    ORDER BY ambiguity_score DESC, conflict_count DESC
+                """, (min_ambiguity,))
+
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    "synonym": row[0],
+                    "primary_keyword": row[1],
+                    "secondary_keywords": row[2].split(",") if row[2] else [],
+                    "conflict_count": row[3],
+                    "ambiguity_score": row[4]
+                })
+
+            return results
+
+    except Exception as e:
+        logger.error(f"get_synonym_conflicts hatası: {e}")
+        return []
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 9.4: SYNONYM AUDIT LOGGING
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def log_synonym_change(
+    synonym_id: int,
+    action: str,
+    old_values: dict = None,
+    new_values: dict = None,
+    changed_by: int = None
+) -> bool:
+    """
+    FAZ 9.4: Synonym değişikliğini history tablosuna logla.
+
+    Args:
+        synonym_id: Değiştirilen synonym ID
+        action: 'created', 'updated', 'approved', 'rejected', 'deleted'
+        old_values: Eski değerler dict (JSON olarak kaydedilir)
+        new_values: Yeni değerler dict (JSON olarak kaydedilir)
+        changed_by: İşlemi yapan kullanıcı ID
+
+    Returns:
+        True: Başarılı, False: Hata
+    """
+    import json
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO keyword_synonyms_history
+                (synonym_id, action, old_values, new_values, changed_by)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                synonym_id,
+                action,
+                json.dumps(old_values, ensure_ascii=False) if old_values else None,
+                json.dumps(new_values, ensure_ascii=False) if new_values else None,
+                changed_by
+            ))
+            return True
+    except Exception as e:
+        logger.error(f"log_synonym_change hatası: {e}")
+        return False
+
+
 def save_generated_synonyms(
     keyword: str,
     synonyms: list[dict],
@@ -1345,14 +1756,25 @@ def save_generated_synonyms(
                     continue
 
                 try:
+                    # FAZ 8.3: match_weight hesapla
+                    match_weight = _get_synonym_weight(synonym_type)
                     cursor.execute("""
                         INSERT OR IGNORE INTO keyword_synonyms
-                        (company_id, keyword, synonym, synonym_type, source, status, created_by)
-                        VALUES (?, ?, ?, ?, 'ai', 'pending', ?)
-                    """, (company_id, keyword_lower, synonym_lower, synonym_type, created_by))
+                        (company_id, keyword, synonym, synonym_type, source, status, created_by, match_weight)
+                        VALUES (?, ?, ?, ?, 'ai', 'pending', ?, ?)
+                    """, (company_id, keyword_lower, synonym_lower, synonym_type, created_by, match_weight))
 
                     if cursor.rowcount > 0:
                         inserted += 1
+                        # FAZ 9.4: Audit log
+                        new_id = cursor.lastrowid
+                        if new_id:
+                            log_synonym_change(
+                                synonym_id=new_id,
+                                action='created',
+                                new_values={'keyword': keyword_lower, 'synonym': synonym_lower, 'type': synonym_type},
+                                changed_by=created_by
+                            )
                     else:
                         skipped += 1
                 except sqlite3.IntegrityError:
@@ -1389,7 +1811,7 @@ def get_pending_synonyms(
             cursor = conn.cursor()
 
             query = """
-                SELECT id, keyword, synonym, synonym_type, source, created_at, created_by
+                SELECT id, keyword, synonym, synonym_type, source, created_at, created_by, match_weight
                 FROM keyword_synonyms
                 WHERE status = 'pending'
             """
@@ -1465,18 +1887,38 @@ def approve_synonyms(
         company_id: Firma ID (güvenlik için)
 
     Returns:
-        {"success": True, "updated": int}
+        {"success": True, "updated": int, "conflicts": list}
         {"success": False, "error": str}
     """
     if not synonym_ids:
         return {"success": False, "error": "Synonym ID'leri gerekli"}
 
     try:
+        conflicts_found = []
+
         with get_connection() as conn:
             cursor = conn.cursor()
 
             placeholders = ','.join(['?'] * len(synonym_ids))
 
+            # Önce onaylanacak synonym'ların bilgilerini al (FAZ 9.2)
+            if company_id is not None:
+                cursor.execute(f"""
+                    SELECT id, keyword, synonym, company_id FROM keyword_synonyms
+                    WHERE id IN ({placeholders})
+                    AND status = 'pending'
+                    AND (company_id IS NULL OR company_id = ?)
+                """, synonym_ids + [company_id])
+            else:
+                cursor.execute(f"""
+                    SELECT id, keyword, synonym, company_id FROM keyword_synonyms
+                    WHERE id IN ({placeholders})
+                    AND status = 'pending'
+                """, synonym_ids)
+
+            synonyms_to_approve = cursor.fetchall()
+
+            # Şimdi güncelle
             if company_id is not None:
                 cursor.execute(f"""
                     UPDATE keyword_synonyms
@@ -1499,11 +1941,35 @@ def approve_synonyms(
 
             updated = cursor.rowcount
 
+        # FAZ 9.2: Her onaylanan synonym için mapping güncelle
         if updated > 0:
-            invalidate_synonym_cache()
-            logger.info(f"approve_synonyms: {updated} synonym onaylandı (user: {approved_by})")
+            for syn_id, keyword, synonym, syn_company_id in synonyms_to_approve:
+                # FAZ 9.4: Audit log
+                log_synonym_change(
+                    synonym_id=syn_id,
+                    action='approved',
+                    old_values={'status': 'pending'},
+                    new_values={'status': 'approved'},
+                    changed_by=approved_by
+                )
 
-        return {"success": True, "updated": updated}
+                # Çakışma kontrolü
+                conflict = check_synonym_conflict(synonym, keyword, syn_company_id)
+                if conflict["has_conflict"]:
+                    conflicts_found.append({
+                        "synonym": synonym,
+                        "keyword": keyword,
+                        "conflicting_keywords": conflict["conflicting_keywords"],
+                        "ambiguity_score": conflict["ambiguity_score"]
+                    })
+
+                # Mapping tablosunu güncelle
+                update_synonym_mapping(synonym, keyword, syn_company_id)
+
+            invalidate_synonym_cache()
+            logger.info(f"approve_synonyms: {updated} synonym onaylandı (user: {approved_by}), {len(conflicts_found)} çakışma")
+
+        return {"success": True, "updated": updated, "conflicts": conflicts_found}
 
     except Exception as e:
         logger.error(f"approve_synonyms hatası: {e}")
@@ -1566,16 +2032,26 @@ def reject_synonyms(
             if updated > 0:
                 placeholders2 = ','.join(['?'] * len(synonym_ids))
                 cursor.execute(f"""
-                    SELECT synonym FROM keyword_synonyms
+                    SELECT id, synonym FROM keyword_synonyms
                     WHERE id IN ({placeholders2})
                 """, synonym_ids)
-                rejected_synonyms = [row[0] for row in cursor.fetchall()]
+                rejected_synonyms = [(row[0], row[1]) for row in cursor.fetchall()]
 
         if updated > 0:
             logger.info(f"reject_synonyms: {updated} synonym reddedildi, reason={reject_reason}")
 
+            # FAZ 9.4: Audit log - her reddedilen synonym için
+            for syn_id, syn_text in rejected_synonyms:
+                log_synonym_change(
+                    synonym_id=syn_id,
+                    action='rejected',
+                    old_values={'status': 'pending'},
+                    new_values={'status': 'rejected', 'reason': reject_reason, 'note': reject_note},
+                    changed_by=None  # reject işleminde user_id yok, sonra eklenebilir
+                )
+
             # FAZ 8.1.8: Her reddedilen synonym için blacklist adayı kontrolü
-            for syn in rejected_synonyms:
+            for syn_id, syn in rejected_synonyms:
                 try:
                     check_and_suggest_blacklist(
                         synonym=syn,
@@ -1606,13 +2082,13 @@ def add_manual_synonym(
     Args:
         keyword: Ana keyword
         synonym: Eklenecek synonym
-        synonym_type: 'turkish', 'english', 'abbreviation', 'variation'
+        synonym_type: 'turkish', 'english', 'abbreviation', 'variation', 'exact_synonym', 'broader_term', 'narrower_term'
         company_id: Firma ID (None = global)
         created_by: Oluşturan kullanıcı ID
         auto_approve: True ise direkt 'approved', False ise 'pending'
 
     Returns:
-        {"success": True, "id": int}
+        {"success": True, "id": int, "conflict": dict|None}
         {"success": False, "error": str}
     """
     if not keyword or not synonym:
@@ -1628,23 +2104,38 @@ def add_manual_synonym(
     status = 'approved' if auto_approve else 'pending'
     approved_by = created_by if auto_approve else None
 
+    # FAZ 9.2: Çakışma kontrolü (sadece uyarı için, eklemeyi engellemez)
+    conflict_info = None
+    if auto_approve:
+        conflict = check_synonym_conflict(synonym_lower, keyword_lower, company_id)
+        if conflict["has_conflict"]:
+            conflict_info = {
+                "has_conflict": True,
+                "conflicting_keywords": conflict["conflicting_keywords"],
+                "ambiguity_score": conflict["ambiguity_score"]
+            }
+
     try:
         with get_connection() as conn:
             cursor = conn.cursor()
 
+            # FAZ 8.3: match_weight hesapla
+            match_weight = _get_synonym_weight(synonym_type)
             cursor.execute("""
                 INSERT INTO keyword_synonyms
-                (company_id, keyword, synonym, synonym_type, source, status, created_by, approved_by, approved_at)
-                VALUES (?, ?, ?, ?, 'manual', ?, ?, ?, CASE WHEN ? = 'approved' THEN CURRENT_TIMESTAMP ELSE NULL END)
-            """, (company_id, keyword_lower, synonym_lower, synonym_type, status, created_by, approved_by, status))
+                (company_id, keyword, synonym, synonym_type, source, status, created_by, approved_by, approved_at, match_weight)
+                VALUES (?, ?, ?, ?, 'manual', ?, ?, ?, CASE WHEN ? = 'approved' THEN CURRENT_TIMESTAMP ELSE NULL END, ?)
+            """, (company_id, keyword_lower, synonym_lower, synonym_type, status, created_by, approved_by, status, match_weight))
 
             new_id = cursor.lastrowid
 
         if auto_approve:
+            # FAZ 9.2: Mapping tablosunu güncelle
+            update_synonym_mapping(synonym_lower, keyword_lower, company_id)
             invalidate_synonym_cache()
 
         logger.info(f"add_manual_synonym: '{keyword}' -> '{synonym}' eklendi (id: {new_id}, status: {status})")
-        return {"success": True, "id": new_id}
+        return {"success": True, "id": new_id, "conflict": conflict_info}
 
     except sqlite3.IntegrityError:
         return {"success": False, "error": "Bu synonym zaten mevcut"}
@@ -1729,7 +2220,7 @@ def get_keyword_synonyms(
             cursor = conn.cursor()
 
             query = """
-                SELECT id, synonym, synonym_type, source, status, created_at, approved_at, company_id
+                SELECT id, synonym, synonym_type, source, status, created_at, approved_at, company_id, match_weight
                 FROM keyword_synonyms
                 WHERE keyword = ?
             """

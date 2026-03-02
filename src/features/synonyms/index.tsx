@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Loader2, Languages, Plus, Sparkles, CheckCircle, XCircle, Search, Trash2 } from 'lucide-react'
+import { Loader2, Languages, Plus, Sparkles, CheckCircle, XCircle, Search, Trash2, History } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -45,11 +45,21 @@ interface Synonym {
   id: number
   keyword: string
   synonym: string
-  synonym_type: 'turkish' | 'english' | 'abbreviation' | 'variation'
+  synonym_type: 'turkish' | 'english' | 'abbreviation' | 'variation' | 'exact_synonym' | 'broader_term' | 'narrower_term'
   source: 'ai' | 'manual' | 'migrated'
   status: 'pending' | 'approved' | 'rejected'
   created_at: string
   company_id: number | null
+  match_weight?: number  // FAZ 8.3: Eşleşme ağırlığı
+}
+
+// FAZ 9.2: Çakışma bilgisi
+interface SynonymConflict {
+  synonym: string
+  primary_keyword: string
+  secondary_keywords: string[]
+  conflict_count: number
+  ambiguity_score: number
 }
 
 interface RejectReason {
@@ -97,10 +107,24 @@ export default function Synonyms() {
   const [importanceLevel, setImportanceLevel] = useState('normal')
   const [importanceLoading, setImportanceLoading] = useState(false)
 
+  // FAZ 9.2: Çakışma durumu
+  const [conflicts, setConflicts] = useState<SynonymConflict[]>([])
+
+  // FAZ 9.3: Blacklist adayları
+  const [blacklistCandidates, setBlacklistCandidates] = useState<{id: number, synonym: string, reject_count: number, reasons_history: string, status: string, last_rejected_at: string}[]>([])
+  const [blacklistLoading, setBlacklistLoading] = useState(false)
+
+  // FAZ 9.4: History modal
+  const [historyModalOpen, setHistoryModalOpen] = useState(false)
+  const [historyData, setHistoryData] = useState<{id: number, action: string, old_values: string, new_values: string, changed_by_email: string, changed_at: string}[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [selectedSynonymForHistory, setSelectedSynonymForHistory] = useState<{id: number, keyword: string, synonym: string} | null>(null)
+
   // Load pending count and reject reasons on mount
   useEffect(() => {
     loadPendingCount()
     loadRejectReasons()
+    loadConflicts()
   }, [])
 
   // Load pending list when tab changes to pending
@@ -110,6 +134,9 @@ export default function Synonyms() {
     }
     if (activeTab === 'importance') {
       loadImportanceList()
+    }
+    if (activeTab === 'blacklist') {
+      loadBlacklistCandidates()
     }
   }, [activeTab])
 
@@ -138,6 +165,113 @@ export default function Synonyms() {
       }
     } catch (err) {
       console.error('loadPendingCount error:', err)
+    }
+  }
+
+  // FAZ 9.2: Çakışmaları yükle
+  const loadConflicts = async () => {
+    try {
+      const res = await fetch(`${API}/api/synonyms/conflicts`, { headers: H() })
+      const data = await res.json()
+      if (data.success) {
+        setConflicts(data.data || [])
+      }
+    } catch (err) {
+      console.error('loadConflicts error:', err)
+    }
+  }
+
+  // FAZ 9.2: Synonym çakışma kontrolü
+  const hasConflict = (synonym: string): SynonymConflict | undefined => {
+    return conflicts.find(c => c.synonym === synonym.toLowerCase())
+  }
+
+  // FAZ 9.3: Blacklist adaylarını yükle
+  const loadBlacklistCandidates = async () => {
+    setBlacklistLoading(true)
+    try {
+      const res = await fetch(`${API}/api/synonyms/blacklist_candidates`, { headers: H() })
+      const data = await res.json()
+      if (data.success) {
+        setBlacklistCandidates(data.data?.candidates || [])
+      }
+    } catch (err) {
+      console.error('loadBlacklistCandidates error:', err)
+    } finally {
+      setBlacklistLoading(false)
+    }
+  }
+
+  // FAZ 9.3: Blacklist adayını onayla (GLOBAL_BLACKLIST'e ekle)
+  const handleApproveBlacklist = async (id: number, synonym: string) => {
+    try {
+      const res = await fetch(`${API}/api/synonyms/blacklist_candidates/${id}/approve`, {
+        method: 'POST',
+        headers: H()
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(`"${synonym}" blacklist'e eklendi`)
+        loadBlacklistCandidates()
+      } else {
+        toast.error(data.detail || 'Onaylama başarısız')
+      }
+    } catch (err) {
+      console.error('handleApproveBlacklist error:', err)
+      toast.error('Bağlantı hatası')
+    }
+  }
+
+  // FAZ 9.3: Blacklist adayını reddet (listeden kaldır)
+  const handleDismissBlacklist = async (id: number, synonym: string) => {
+    try {
+      const res = await fetch(`${API}/api/synonyms/blacklist_candidates/${id}/dismiss`, {
+        method: 'POST',
+        headers: H()
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(`"${synonym}" aday listesinden kaldırıldı`)
+        loadBlacklistCandidates()
+      } else {
+        toast.error(data.detail || 'İşlem başarısız')
+      }
+    } catch (err) {
+      console.error('handleDismissBlacklist error:', err)
+      toast.error('Bağlantı hatası')
+    }
+  }
+
+  // FAZ 9.4: Synonym geçmişini yükle
+  const loadHistory = async (synonymId: number, keyword: string, synonym: string) => {
+    setSelectedSynonymForHistory({ id: synonymId, keyword, synonym })
+    setHistoryModalOpen(true)
+    setHistoryLoading(true)
+    try {
+      const res = await fetch(`${API}/api/synonyms/${synonymId}/history`, { headers: H() })
+      const data = await res.json()
+      if (data.success) {
+        setHistoryData(data.data || [])
+      } else {
+        toast.error(data.detail || 'Geçmiş alınamadı')
+      }
+    } catch (err) {
+      console.error('loadHistory error:', err)
+      toast.error('Bağlantı hatası')
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
+  // FAZ 9.4: Action label helper
+  const getActionLabel = (action: string) => {
+    switch (action) {
+      case 'created': return { label: 'Oluşturuldu', color: 'bg-blue-100 text-blue-800' }
+      case 'approved': return { label: 'Onaylandı', color: 'bg-green-100 text-green-800' }
+      case 'rejected': return { label: 'Reddedildi', color: 'bg-red-100 text-red-800' }
+      case 'updated': return { label: 'Güncellendi', color: 'bg-yellow-100 text-yellow-800' }
+      case 'deleted': return { label: 'Silindi', color: 'bg-gray-100 text-gray-800' }
+      default: return { label: action, color: 'bg-gray-100 text-gray-800' }
     }
   }
 
@@ -457,6 +591,21 @@ export default function Synonyms() {
     }
   }
 
+  // FAZ 8.3: Match weight badge
+  const getWeightBadge = (weight?: number) => {
+    if (!weight) return null
+    const percent = Math.round(weight * 100)
+    if (weight >= 0.95) {
+      return <Badge className="bg-green-600 text-white text-xs">{percent}%</Badge>
+    } else if (weight >= 0.90) {
+      return <Badge className="bg-blue-500 text-white text-xs">{percent}%</Badge>
+    } else if (weight >= 0.85) {
+      return <Badge className="bg-yellow-500 text-white text-xs">{percent}%</Badge>
+    } else {
+      return <Badge variant="secondary" className="text-xs">{percent}%</Badge>
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════
   // HELPER FONKSİYONLAR
   // ═══════════════════════════════════════════════════════════════════
@@ -490,14 +639,38 @@ export default function Synonyms() {
     }
   }
 
+  // FAZ 9.1: 6 tip için badge
   const getTypeBadge = (type: string) => {
-    const labels: Record<string, string> = {
-      turkish: 'Türkçe',
-      english: 'İngilizce',
-      abbreviation: 'Kısaltma',
-      variation: 'Varyasyon'
+    const typeConfig: Record<string, { label: string; color: string }> = {
+      exact_synonym: { label: 'Birebir', color: 'bg-green-100 text-green-800' },
+      abbreviation: { label: 'Kısaltma', color: 'bg-blue-100 text-blue-800' },
+      english: { label: 'İngilizce', color: 'bg-purple-100 text-purple-800' },
+      turkish: { label: 'Türkçe', color: 'bg-orange-100 text-orange-800' },
+      broader_term: { label: 'Üst Kavram', color: 'bg-yellow-100 text-yellow-800' },
+      narrower_term: { label: 'Alt Kavram', color: 'bg-gray-100 text-gray-800' },
+      variation: { label: 'Varyasyon', color: 'bg-gray-100 text-gray-800' } // Geriye uyumluluk
     }
-    return <Badge variant="outline">{labels[type] || type}</Badge>
+    const config = typeConfig[type] || { label: type, color: '' }
+    return <Badge variant="outline" className={config.color}>{config.label}</Badge>
+  }
+
+  // FAZ 9.2: Çakışma badge'i (sarı uyarı)
+  const getConflictBadge = (synonym: string) => {
+    const conflict = hasConflict(synonym)
+    if (!conflict) return null
+
+    const keywords = [conflict.primary_keyword, ...conflict.secondary_keywords].join(', ')
+    const title = `Bu synonym ${conflict.conflict_count} farklı keyword'de kullanılıyor: ${keywords}`
+
+    return (
+      <Badge
+        variant="outline"
+        className="bg-yellow-100 text-yellow-800 cursor-help ml-1"
+        title={title}
+      >
+        ⚠ {conflict.conflict_count} çakışma
+      </Badge>
+    )
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -551,6 +724,13 @@ export default function Synonyms() {
             Öncelikler
             {importanceList.length > 0 && (
               <Badge variant="outline" className="ml-1">{importanceList.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="blacklist" className="flex items-center gap-2">
+            🚫
+            Blacklist Adayları
+            {blacklistCandidates.length > 0 && (
+              <Badge variant="destructive" className="ml-1">{blacklistCandidates.length}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
@@ -607,6 +787,7 @@ export default function Synonyms() {
                       <TableHead>Keyword</TableHead>
                       <TableHead>Eş Anlamlı</TableHead>
                       <TableHead>Tip</TableHead>
+                      <TableHead>Ağırlık</TableHead>
                       <TableHead>Kaynak</TableHead>
                       <TableHead>Tarih</TableHead>
                     </TableRow>
@@ -621,8 +802,14 @@ export default function Synonyms() {
                           />
                         </TableCell>
                         <TableCell className="font-medium">{item.keyword}</TableCell>
-                        <TableCell>{item.synonym}</TableCell>
+                        <TableCell>
+                          <span className="flex items-center gap-1">
+                            {item.synonym}
+                            {getConflictBadge(item.synonym)}
+                          </span>
+                        </TableCell>
                         <TableCell>{getTypeBadge(item.synonym_type)}</TableCell>
+                        <TableCell>{getWeightBadge(item.match_weight)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">
                             {item.source === 'ai' ? 'AI' : item.source === 'manual' ? 'Manuel' : 'Migrated'}
@@ -681,17 +868,24 @@ export default function Synonyms() {
                       <TableHead>Keyword</TableHead>
                       <TableHead>Eş Anlamlı</TableHead>
                       <TableHead>Tip</TableHead>
+                      <TableHead>Ağırlık</TableHead>
                       <TableHead>Durum</TableHead>
                       <TableHead>Kaynak</TableHead>
-                      <TableHead className="w-20">İşlem</TableHead>
+                      <TableHead className="w-24">İşlem</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {synonymList.map(item => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.keyword}</TableCell>
-                        <TableCell>{item.synonym}</TableCell>
+                        <TableCell>
+                          <span className="flex items-center gap-1">
+                            {item.synonym}
+                            {getConflictBadge(item.synonym)}
+                          </span>
+                        </TableCell>
                         <TableCell>{getTypeBadge(item.synonym_type)}</TableCell>
+                        <TableCell>{getWeightBadge(item.match_weight)}</TableCell>
                         <TableCell>{getStatusBadge(item.status)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">
@@ -699,13 +893,24 @@ export default function Synonyms() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => loadHistory(item.id, item.keyword, item.synonym)}
+                              title="Geçmişi Görüntüle"
+                            >
+                              <History className="h-4 w-4 text-blue-500" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(item.id)}
+                              title="Sil"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -804,10 +1009,13 @@ export default function Synonyms() {
                       <SelectValue placeholder="Tip seçin" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="turkish">Türkçe</SelectItem>
-                      <SelectItem value="english">İngilizce</SelectItem>
-                      <SelectItem value="abbreviation">Kısaltma</SelectItem>
-                      <SelectItem value="variation">Varyasyon</SelectItem>
+                      {/* FAZ 9.1: 6 tip - weight sırasına göre */}
+                      <SelectItem value="exact_synonym">Birebir Eş Anlamlı (1.00)</SelectItem>
+                      <SelectItem value="abbreviation">Kısaltma (0.95)</SelectItem>
+                      <SelectItem value="english">İngilizce Çeviri (0.90)</SelectItem>
+                      <SelectItem value="turkish">Türkçe Çeviri (0.85)</SelectItem>
+                      <SelectItem value="broader_term">Üst Kavram (0.70)</SelectItem>
+                      <SelectItem value="narrower_term">Alt Kavram (0.60)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -917,6 +1125,82 @@ export default function Synonyms() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* TAB 6: Blacklist Adayları */}
+        <TabsContent value="blacklist">
+          <Card>
+            <CardHeader>
+              <CardTitle>Blacklist Adayları</CardTitle>
+              <CardDescription>
+                Çok sık reddedilen eş anlamlılar. Onayla butonuyla GLOBAL_BLACKLIST'e kalıcı olarak ekleyebilirsiniz.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {blacklistLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  Yükleniyor...
+                </div>
+              ) : blacklistCandidates.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Henüz blacklist adayı bulunmuyor.
+                  <br />
+                  <span className="text-sm">
+                    3+ kez reddedilen eş anlamlılar otomatik olarak burada görünecek.
+                  </span>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Eş Anlamlı</TableHead>
+                      <TableHead>Red Sayısı</TableHead>
+                      <TableHead>Red Sebepleri</TableHead>
+                      <TableHead>Son Red</TableHead>
+                      <TableHead className="w-[150px]">İşlem</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {blacklistCandidates.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.synonym}</TableCell>
+                        <TableCell>
+                          <Badge variant="destructive">{item.reject_count}x</Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
+                          {item.reasons_history || '-'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {item.last_rejected_at ? new Date(item.last_rejected_at).toLocaleDateString('tr-TR') : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="bg-red-600 hover:bg-red-700"
+                              onClick={() => handleApproveBlacklist(item.id, item.synonym)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Onayla
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDismissBlacklist(item.id, item.synonym)}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Reject Dialog */}
@@ -980,6 +1264,70 @@ export default function Synonyms() {
                 <XCircle className="h-4 w-4 mr-2" />
               )}
               Reddet ({selectedIds.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* FAZ 9.4: History Modal */}
+      <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Değişiklik Geçmişi
+            </DialogTitle>
+            {selectedSynonymForHistory && (
+              <DialogDescription>
+                <span className="font-medium">{selectedSynonymForHistory.keyword}</span> → <span className="font-medium">{selectedSynonymForHistory.synonym}</span>
+              </DialogDescription>
+            )}
+          </DialogHeader>
+
+          <div className="max-h-[400px] overflow-y-auto">
+            {historyLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                Yükleniyor...
+              </div>
+            ) : historyData.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Henüz değişiklik kaydı bulunmuyor.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {historyData.map((item) => {
+                  const actionInfo = getActionLabel(item.action)
+                  return (
+                    <div key={item.id} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Badge className={actionInfo.color}>
+                          {actionInfo.label}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(item.changed_at).toLocaleString('tr-TR')}
+                        </span>
+                      </div>
+                      {item.changed_by_email && (
+                        <div className="text-sm text-muted-foreground">
+                          Kullanıcı: {item.changed_by_email}
+                        </div>
+                      )}
+                      {item.new_values && (
+                        <div className="text-xs bg-muted p-2 rounded">
+                          {item.new_values}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHistoryModalOpen(false)}>
+              Kapat
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -201,12 +201,7 @@ HIGH_COVERAGE_KEYWORDS = {
     "pazarlama", "uretim", "üretim", "kalite", "tasarim", "tasarım", "mimari"
 }
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# FAZ 9.3: İKİ SEVİYELİ BLACKLIST SİSTEMİ
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# GLOBAL_BLACKLIST: Her zaman engellenen kelimeler (bağlamdan bağımsız)
-GLOBAL_BLACKLIST = [
+SYNONYM_BLACKLIST = [
     # Soft Skills (Yumuşak Beceriler) - Bunlar keyword olmamalı
     "iletisim", "iletişim", "koordinasyon", "takim calismasi", "takım çalışması",
     "liderlik", "problem cozme", "problem çözme", "analitik dusunme", "analitik düşünme",
@@ -223,34 +218,6 @@ GLOBAL_BLACKLIST = [
     "yetenek", "kabiliyet", "performans", "verimlilik", "kalite"
 ]
 
-# Geriye uyumluluk alias
-SYNONYM_BLACKLIST = GLOBAL_BLACKLIST
-
-# CONTEXTUAL_BLACKLIST: Bağlama göre izin verilen kelimeler
-# Key: Tek başına engellenecek kelime
-# Value: Bu keyword'lerle birlikte kullanılırsa İZİN VERİLİR
-CONTEXTUAL_BLACKLIST = {
-    "analiz": ["risk", "veri", "sistem", "maliyet", "iş", "finansal", "data", "swot", "gap"],
-    "yönetim": ["proje", "risk", "kalite", "üretim", "stok", "müşteri", "tedarik", "zaman"],
-    "yonetim": ["proje", "risk", "kalite", "uretim", "stok", "musteri", "tedarik", "zaman"],
-    "sistem": ["erp", "crm", "bilgi", "yönetim", "otomasyon", "entegrasyon", "veritabani"],
-    "süreç": ["iş", "üretim", "kalite", "tedarik", "onay", "satın alma"],
-    "surec": ["is", "uretim", "kalite", "tedarik", "onay", "satin alma"],
-    "planlama": ["üretim", "kaynak", "proje", "stratejik", "kapasite", "malzeme"],
-    "kontrol": ["kalite", "stok", "maliyet", "bütçe", "envanter"],
-    "takip": ["proje", "sipariş", "sevkiyat", "stok", "iş"],
-}
-
-# SECTOR_BLACKLISTS: Sektör bazlı özel engeller (ileride doldurulacak)
-SECTOR_BLACKLISTS = {
-    "IT": set(),
-    "Insaat": set(),
-    "Finans": set(),
-    "Uretim": set(),
-    "Saglik": set(),
-}
-
-# GENERAL_WORDS: Çok genel kelimeler (tek başına anlamsız)
 GENERAL_WORDS = [
     # Çok genel kelimeler - synonym olarak anlamsız
     "is", "iş", "proje", "gorev", "görev", "yonetim", "yönetim", "sistem",
@@ -258,45 +225,6 @@ GENERAL_WORDS = [
     "analiz", "kontrol", "takip", "destek", "hizmet", "uygulama", "cozum", "çözüm",
     "strateji", "operasyon", "surec", "süreç", "faaliyet"
 ]
-
-
-def is_contextually_allowed(synonym: str, keyword: str) -> bool:
-    """
-    FAZ 9.3: Synonym'un keyword bağlamında izin verilip verilmediğini kontrol et.
-
-    CONTEXTUAL_BLACKLIST'te olan kelimeler:
-    - Tek başına synonym olarak → BLOCKED
-    - Keyword ile bağlam oluşturuyorsa → ALLOWED
-
-    Örnek:
-    - "analiz" tek başına → False (blocked)
-    - "risk analizi" keyword için "analiz" → True (allowed, çünkü "risk" bağlamı var)
-
-    Args:
-        synonym: Kontrol edilecek synonym
-        keyword: Ana keyword
-
-    Returns:
-        True: İzin verilir (bağlam var veya blacklist'te değil)
-        False: Engellenir (bağlam yok)
-    """
-    synonym_lower = synonym.lower().strip()
-    keyword_lower = keyword.lower().strip()
-
-    # CONTEXTUAL_BLACKLIST'te değilse → izin ver
-    if synonym_lower not in CONTEXTUAL_BLACKLIST:
-        return True
-
-    # Keyword'de izin verilen bağlam kelimeleri var mı?
-    allowed_contexts = CONTEXTUAL_BLACKLIST.get(synonym_lower, [])
-
-    for context in allowed_contexts:
-        # Keyword içinde bağlam kelimesi varsa izin ver
-        if context in keyword_lower:
-            return True
-
-    # Bağlam bulunamadı → engelle
-    return False
 
 
 def get_max_synonym_limit(keyword: str, company_id: int = None) -> int:
@@ -421,13 +349,12 @@ def filter_ai_synonyms(keyword: str, ai_synonyms: list, company_id: int = None) 
     """
     AI tarafından üretilen synonym'ları filtrele ve kalite kontrolünden geçir.
 
-    FAZ 9.3: İki seviyeli blacklist sistemi:
-    1. GLOBAL_BLACKLIST kontrolü (soft skills, kişilik - HER ZAMAN engelle)
-    2. CONTEXTUAL_BLACKLIST kontrolü (bağlama göre izin ver)
-    3. GENERAL_WORDS kontrolü (çok genel terimler)
-    4. Confidence score kontrolü (0.7 threshold)
-    5. Keyword ile aynı olanları çıkar
-    6. Dinamik max synonym limiti (FAZ 8.2.3)
+    Filtreler:
+    1. Blacklist kontrolü (soft skills, kişilik özellikleri)
+    2. General words kontrolü (çok genel terimler)
+    3. Confidence score kontrolü (0.7 threshold)
+    4. Keyword ile aynı olanları çıkar
+    5. Dinamik max synonym limiti (FAZ 8.2.3: firma bazlı + HIGH_COVERAGE fallback)
 
     Args:
         keyword: Ana keyword
@@ -459,16 +386,12 @@ def filter_ai_synonyms(keyword: str, ai_synonyms: list, company_id: int = None) 
         if synonym == keyword_lower:
             continue
 
-        # FAZ 9.3: GLOBAL_BLACKLIST kontrolü (HER ZAMAN engelle)
-        if synonym in GLOBAL_BLACKLIST:
+        # Blacklist kontrolü
+        if synonym in SYNONYM_BLACKLIST:
             continue
 
-        # FAZ 9.3: CONTEXTUAL_BLACKLIST kontrolü (bağlama göre izin ver)
-        if not is_contextually_allowed(synonym, keyword):
-            continue
-
-        # General words kontrolü (CONTEXTUAL_BLACKLIST'te olmayanlar için)
-        if synonym in GENERAL_WORDS and synonym not in CONTEXTUAL_BLACKLIST:
+        # General words kontrolü
+        if synonym in GENERAL_WORDS:
             continue
 
         # Confidence threshold kontrolü
@@ -737,259 +660,6 @@ def list_blacklist_candidates(
                 "candidates": candidates,
                 "total": len(candidates)
             }
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINT 3.8: POST /api/synonyms/blacklist_candidates/{id}/approve
-# ═══════════════════════════════════════════════════════════════════════════════
-
-@router.post("/blacklist_candidates/{candidate_id}/approve")
-def approve_blacklist_candidate(
-    candidate_id: int,
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    FAZ 9.3: Blacklist adayını onayla -> GLOBAL_BLACKLIST'e ekle (approved status).
-    Not: Gerçek GLOBAL_BLACKLIST Python'da sabit liste, bu sadece status günceller.
-    """
-    try:
-        require_company_user(current_user)
-        company_id = current_user["company_id"]
-
-        conn = get_db_connection()
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
-
-        # Adayı bul
-        cursor.execute(
-            "SELECT synonym FROM blacklist_candidates WHERE id = ? AND company_id = ?",
-            (candidate_id, company_id)
-        )
-        row = cursor.fetchone()
-        if not row:
-            conn.close()
-            raise HTTPException(status_code=404, detail="Aday bulunamadı")
-
-        synonym = row[0]
-
-        # Status'u approved yap
-        cursor.execute(
-            "UPDATE blacklist_candidates SET status = 'approved' WHERE id = ?",
-            (candidate_id,)
-        )
-        conn.commit()
-        conn.close()
-
-        return {
-            "success": True,
-            "message": f"'{synonym}' blacklist'e eklendi",
-            "data": {"synonym": synonym, "status": "approved"}
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINT 3.9: POST /api/synonyms/blacklist_candidates/{id}/dismiss
-# ═══════════════════════════════════════════════════════════════════════════════
-
-@router.post("/blacklist_candidates/{candidate_id}/dismiss")
-def dismiss_blacklist_candidate(
-    candidate_id: int,
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    FAZ 9.3: Blacklist adayını reddet -> listeden kaldır (dismissed status).
-    """
-    try:
-        require_company_user(current_user)
-        company_id = current_user["company_id"]
-
-        conn = get_db_connection()
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
-
-        # Adayı bul
-        cursor.execute(
-            "SELECT synonym FROM blacklist_candidates WHERE id = ? AND company_id = ?",
-            (candidate_id, company_id)
-        )
-        row = cursor.fetchone()
-        if not row:
-            conn.close()
-            raise HTTPException(status_code=404, detail="Aday bulunamadı")
-
-        synonym = row[0]
-
-        # Status'u dismissed yap
-        cursor.execute(
-            "UPDATE blacklist_candidates SET status = 'dismissed' WHERE id = ?",
-            (candidate_id,)
-        )
-        conn.commit()
-        conn.close()
-
-        return {
-            "success": True,
-            "message": f"'{synonym}' aday listesinden kaldırıldı",
-            "data": {"synonym": synonym, "status": "dismissed"}
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINT 3.10: GET /api/synonyms/audit - Genel audit raporu
-# ═══════════════════════════════════════════════════════════════════════════════
-
-@router.get("/audit")
-def get_synonym_audit(
-    user_id: Optional[int] = Query(None, description="Kullanıcı ID filtresi"),
-    from_date: Optional[str] = Query(None, description="Başlangıç tarihi (YYYY-MM-DD)"),
-    to_date: Optional[str] = Query(None, description="Bitiş tarihi (YYYY-MM-DD)"),
-    action: Optional[str] = Query(None, description="Action filtresi (created, approved, rejected)"),
-    limit: int = Query(100, description="Maksimum kayıt sayısı"),
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    FAZ 9.4: Genel synonym audit raporu.
-    """
-    try:
-        require_company_user(current_user)
-        company_id = current_user["company_id"]
-
-        conn = get_db_connection()
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
-
-        # Base query
-        query = """
-            SELECT h.id, h.synonym_id, h.action, h.old_values, h.new_values,
-                   h.changed_by, h.changed_at, u.email as changed_by_email,
-                   s.keyword, s.synonym
-            FROM keyword_synonyms_history h
-            LEFT JOIN users u ON h.changed_by = u.id
-            LEFT JOIN keyword_synonyms s ON h.synonym_id = s.id
-            WHERE (s.company_id IS NULL OR s.company_id = ?)
-        """
-        params = [company_id]
-
-        # Filtreler
-        if user_id is not None:
-            query += " AND h.changed_by = ?"
-            params.append(user_id)
-
-        if from_date:
-            query += " AND h.changed_at >= ?"
-            params.append(from_date + " 00:00:00")
-
-        if to_date:
-            query += " AND h.changed_at <= ?"
-            params.append(to_date + " 23:59:59")
-
-        if action:
-            query += " AND h.action = ?"
-            params.append(action)
-
-        query += " ORDER BY h.changed_at DESC LIMIT ?"
-        params.append(limit)
-
-        cursor.execute(query, params)
-
-        audit_logs = []
-        for row in cursor.fetchall():
-            audit_logs.append({
-                "id": row[0],
-                "synonym_id": row[1],
-                "action": row[2],
-                "old_values": row[3],
-                "new_values": row[4],
-                "changed_by": row[5],
-                "changed_at": row[6],
-                "changed_by_email": row[7],
-                "keyword": row[8],
-                "synonym": row[9]
-            })
-
-        conn.close()
-
-        return {
-            "success": True,
-            "data": audit_logs,
-            "total": len(audit_logs)
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINT 3.11: GET /api/synonyms/{id}/history - Tek synonym değişiklik geçmişi
-# ═══════════════════════════════════════════════════════════════════════════════
-
-@router.get("/{synonym_id}/history")
-def get_synonym_history(
-    synonym_id: int,
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    FAZ 9.4: Tek synonym için değişiklik geçmişini getir.
-    """
-    try:
-        require_company_user(current_user)
-        company_id = current_user["company_id"]
-
-        conn = get_db_connection()
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
-
-        # Synonym'un bu firmaya ait olduğunu doğrula
-        cursor.execute(
-            "SELECT id FROM keyword_synonyms WHERE id = ? AND (company_id IS NULL OR company_id = ?)",
-            (synonym_id, company_id)
-        )
-        if not cursor.fetchone():
-            conn.close()
-            raise HTTPException(status_code=404, detail="Synonym bulunamadı")
-
-        # History kayıtlarını getir
-        cursor.execute("""
-            SELECT h.id, h.synonym_id, h.action, h.old_values, h.new_values,
-                   h.changed_by, h.changed_at, u.email as changed_by_email
-            FROM keyword_synonyms_history h
-            LEFT JOIN users u ON h.changed_by = u.id
-            WHERE h.synonym_id = ?
-            ORDER BY h.changed_at DESC
-        """, (synonym_id,))
-
-        history = []
-        for row in cursor.fetchall():
-            history.append({
-                "id": row[0],
-                "synonym_id": row[1],
-                "action": row[2],
-                "old_values": row[3],
-                "new_values": row[4],
-                "changed_by": row[5],
-                "changed_at": row[6],
-                "changed_by_email": row[7]
-            })
-
-        conn.close()
-
-        return {
-            "success": True,
-            "data": history
         }
     except HTTPException:
         raise
