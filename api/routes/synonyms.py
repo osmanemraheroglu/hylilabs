@@ -29,7 +29,10 @@ from database import (
     get_keyword_importance,
     set_keyword_importance,
     get_company_keyword_importances,
-    delete_keyword_importance
+    delete_keyword_importance,
+    # FAZ 10.1: Confidence sistemi
+    calculate_final_confidence,
+    get_connection
 )
 from routes.auth import get_current_user
 from rate_limiter import (
@@ -1883,4 +1886,141 @@ async def build_conflict_index(
         raise
     except Exception as e:
         logger.error(f"build_conflict_index hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 10.1: CONFIDENCE ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class UpdateConfidenceRequest(BaseModel):
+    keyword: str
+    synonym: str
+    ai_confidence: float = Field(default=0.85, ge=0.0, le=1.0)
+
+
+@router.post("/update-confidence")
+def update_synonym_confidence(
+    request: UpdateConfidenceRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.1: Synonym confidence değerini yeniden hesapla ve güncelle.
+
+    Formül: (0.4 * AI) + (0.3 * corpus) + (0.3 * historical)
+    """
+    try:
+        company_id = current_user.get("company_id")
+
+        # Final confidence hesapla
+        new_confidence = calculate_final_confidence(
+            keyword=request.keyword,
+            synonym=request.synonym,
+            ai_confidence=request.ai_confidence,
+            company_id=company_id
+        )
+
+        # DB'de güncelle
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE keyword_synonyms
+                SET confidence_score = ?
+                WHERE keyword = ? AND synonym = ?
+                AND (company_id IS NULL OR company_id = ?)
+            """, (new_confidence, request.keyword.lower(), request.synonym.lower(), company_id))
+            updated = cursor.rowcount
+            conn.commit()
+
+        return {
+            "success": True,
+            "data": {
+                "keyword": request.keyword,
+                "synonym": request.synonym,
+                "new_confidence": new_confidence,
+                "updated_count": updated
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"update_confidence hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/confidence-stats")
+def get_confidence_stats(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.1: Synonym confidence istatistiklerini getir.
+    """
+    try:
+        company_id = current_user.get("company_id")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Genel istatistikler
+            cursor.execute("""
+                SELECT
+                    COUNT(*) as total,
+                    AVG(confidence_score) as avg_confidence,
+                    MIN(confidence_score) as min_confidence,
+                    MAX(confidence_score) as max_confidence,
+                    SUM(CASE WHEN confidence_score >= 0.8 THEN 1 ELSE 0 END) as high_confidence,
+                    SUM(CASE WHEN confidence_score >= 0.5 AND confidence_score < 0.8 THEN 1 ELSE 0 END) as medium_confidence,
+                    SUM(CASE WHEN confidence_score < 0.5 THEN 1 ELSE 0 END) as low_confidence
+                FROM keyword_synonyms
+                WHERE status = 'approved'
+                AND (company_id IS NULL OR company_id = ?)
+            """, (company_id,))
+            row = cursor.fetchone()
+
+            stats = {
+                "total": row[0] or 0,
+                "avg_confidence": round(row[1] or 0, 3),
+                "min_confidence": round(row[2] or 0, 3),
+                "max_confidence": round(row[3] or 0, 3),
+                "high_confidence_count": row[4] or 0,
+                "medium_confidence_count": row[5] or 0,
+                "low_confidence_count": row[6] or 0
+            }
+
+            # Usage stats
+            cursor.execute("""
+                SELECT
+                    COUNT(*) as total_usage,
+                    SUM(match_count) as total_matches,
+                    SUM(hired_count) as total_hired
+                FROM synonym_usage_stats
+                WHERE company_id IS NULL OR company_id = ?
+            """, (company_id,))
+            usage_row = cursor.fetchone()
+
+            stats["usage"] = {
+                "tracked_synonyms": usage_row[0] or 0,
+                "total_matches": usage_row[1] or 0,
+                "total_hired": usage_row[2] or 0,
+                "precision": round((usage_row[2] or 0) / (usage_row[1] or 1), 3)
+            }
+
+            # En düşük confidence'a sahip synonym'lar
+            cursor.execute("""
+                SELECT keyword, synonym, confidence_score
+                FROM keyword_synonyms
+                WHERE status = 'approved'
+                AND (company_id IS NULL OR company_id = ?)
+                ORDER BY confidence_score ASC
+                LIMIT 10
+            """, (company_id,))
+
+            stats["lowest_confidence"] = [
+                {"keyword": r[0], "synonym": r[1], "confidence": round(r[2] or 0, 3)}
+                for r in cursor.fetchall()
+            ]
+
+        return {"success": True, "data": stats}
+
+    except Exception as e:
+        logger.error(f"confidence_stats hatası: {e}")
         raise HTTPException(status_code=500, detail=str(e))

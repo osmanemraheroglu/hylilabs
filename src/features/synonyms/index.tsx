@@ -51,6 +51,7 @@ interface Synonym {
   created_at: string
   company_id: number | null
   match_weight?: number  // FAZ 8.3: Eşleşme ağırlığı
+  confidence_score?: number  // FAZ 10.1: Confidence skoru
 }
 
 // FAZ 9.2: Çakışma bilgisi
@@ -606,6 +607,19 @@ export default function Synonyms() {
     }
   }
 
+  // FAZ 10.1: Confidence score badge
+  const getConfidenceBadge = (confidence?: number) => {
+    if (!confidence && confidence !== 0) return null
+    const percent = Math.round(confidence * 100)
+    if (confidence >= 0.8) {
+      return <Badge className="bg-emerald-600 text-white text-xs" title="Yüksek güven">{percent}%</Badge>
+    } else if (confidence >= 0.5) {
+      return <Badge className="bg-amber-500 text-white text-xs" title="Orta güven">{percent}%</Badge>
+    } else {
+      return <Badge className="bg-red-500 text-white text-xs" title="Düşük güven">{percent}%</Badge>
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════
   // HELPER FONKSİYONLAR
   // ═══════════════════════════════════════════════════════════════════
@@ -869,6 +883,7 @@ export default function Synonyms() {
                       <TableHead>Eş Anlamlı</TableHead>
                       <TableHead>Tip</TableHead>
                       <TableHead>Ağırlık</TableHead>
+                      <TableHead>Güven</TableHead>
                       <TableHead>Durum</TableHead>
                       <TableHead>Kaynak</TableHead>
                       <TableHead className="w-24">İşlem</TableHead>
@@ -886,6 +901,7 @@ export default function Synonyms() {
                         </TableCell>
                         <TableCell>{getTypeBadge(item.synonym_type)}</TableCell>
                         <TableCell>{getWeightBadge(item.match_weight)}</TableCell>
+                        <TableCell>{getConfidenceBadge(item.confidence_score)}</TableCell>
                         <TableCell>{getStatusBadge(item.status)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">

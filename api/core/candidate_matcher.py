@@ -32,7 +32,8 @@ from models import Candidate, Position, Match
 from database import (
     save_match, update_candidate, get_position_criteria,
     add_candidate_to_pool, update_pool_candidate, get_position_pool,
-    log_api_usage, get_synonyms_for_keyword, get_synonyms_with_weights
+    log_api_usage, get_synonyms_for_keyword, get_synonyms_with_weights,
+    log_synonym_usage  # FAZ 10.1
 )
 from scoring_v2 import calculate_match_score_v2
 
@@ -249,11 +250,11 @@ def check_keyword_match(keyword, search_text, skills_text, turkish_lower_func):
 
 def check_keyword_match_weighted(keyword, search_text, skills_text, turkish_lower_func, company_id=None):
     """
-    FAZ 9.5: Weight destekli keyword eslestirme
-    
+    FAZ 9.5 + FAZ 10.1: Weight destekli keyword eslestirme + logging
+
     Returns:
         (bool, str, str, float): (eslesti_mi, eslesen_kelime, yontem, effective_weight)
-    
+
     Weight degerleri:
         - exact: 1.0
         - synonym: effective_weight (DB'den, ambiguity dahil)
@@ -262,10 +263,10 @@ def check_keyword_match_weighted(keyword, search_text, skills_text, turkish_lowe
     """
     # 1. Mevcut fonksiyonu cagir
     found, matched_word, method = check_keyword_match(keyword, search_text, skills_text, turkish_lower_func)
-    
+
     if not found:
         return False, None, None, 0.0
-    
+
     # 2. Weight hesapla
     if method == 'exact':
         weight = 1.0
@@ -279,6 +280,8 @@ def check_keyword_match_weighted(keyword, search_text, skills_text, turkish_lowe
                 if turkish_lower_func(s.get('synonym', '')) == matched_lower:
                     weight = s.get('effective_weight', 0.85)
                     break
+            # FAZ 10.1: Log synonym usage
+            log_synonym_usage(keyword, matched_word, method, company_id)
         except:
             pass
     elif method and method.startswith('fuzzy'):
@@ -290,7 +293,7 @@ def check_keyword_match_weighted(keyword, search_text, skills_text, turkish_lowe
             weight = 0.6
     else:
         weight = 0.5
-    
+
     return found, matched_word, method, weight
 
 @dataclass

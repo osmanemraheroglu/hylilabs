@@ -696,16 +696,41 @@ def calculate_match_score_v2(
     # Title mappings ve sector preferences
     title_mappings = get_title_mappings(position_id)
     sector_preferences = get_sector_preferences(position_id)
-    
+
+    # FAZ 10.1: company_id ve candidate_id al
+    company_id = safe_get(position, 'company_id')
+    candidate_id = safe_get(candidate, 'id') or safe_get(candidate, 'candidate_id')
+
     # 4 katmanı hesapla
     position_result = calculate_position_match_score(
         candidate, position, title_mappings, sector_preferences
     )
-    
+
     technical_result = calculate_technical_score(
         candidate, position, v2_keywords
     )
-    
+
+    # FAZ 10.1: Log match details
+    if candidate_id and position_id:
+        from database import save_match_details
+        all_matches = (
+            technical_result.get('must_have_matched', []) +
+            technical_result.get('critical_matched', []) +
+            technical_result.get('important_matched', []) +
+            technical_result.get('bonus_matched', [])
+        )
+        for match in all_matches:
+            if isinstance(match, dict):  # New format with details
+                save_match_details(
+                    candidate_id=candidate_id,
+                    position_id=position_id,
+                    keyword=match.get('keyword', ''),
+                    matched_term=match.get('keyword', ''),  # matched keyword
+                    method=match.get('method', 'unknown'),
+                    weight=match.get('weight', 1.0),
+                    company_id=company_id
+                )
+
     general_result = calculate_general_score(
         candidate, position
     )

@@ -278,12 +278,24 @@ def ise_al_candidate(candidate_id: int, current_user: dict = Depends(get_current
     require_company_user(current_user)
     company_id = current_user["company_id"]
     try:
-        from database import get_connection, verify_candidate_ownership
+        from database import get_connection, verify_candidate_ownership, update_hired_stats
         if not verify_candidate_ownership(candidate_id, company_id):
             raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
         with get_connection() as conn:
             cursor = conn.cursor()
+
+            # FAZ 10.1: Pozisyon ID'lerini al ÖNCE silmeden
+            cursor.execute(
+                "SELECT position_id FROM candidate_positions WHERE candidate_id = ?",
+                (candidate_id,)
+            )
+            position_ids = [row[0] for row in cursor.fetchall()]
+
+            # FAZ 10.1: Her pozisyon için synonym istatistiklerini güncelle
+            for position_id in position_ids:
+                update_hired_stats(candidate_id, position_id)
+
             # Pozisyon atamasını sil
             cursor.execute(
                 "DELETE FROM candidate_positions WHERE candidate_id = ?",

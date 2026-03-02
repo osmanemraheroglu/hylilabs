@@ -1132,7 +1132,7 @@ def get_synonyms_for_keyword(keyword: str, company_id: int = None) -> list[str]:
 
 def get_synonyms_with_weights(keyword: str, company_id: int = None) -> list[dict]:
     """
-    FAZ 9.2: Keyword için synonym listesi ve effective weight'leri döndür.
+    FAZ 9.2 + FAZ 10.1: Keyword için synonym listesi, weight ve confidence döndür.
 
     Ambiguity score'a göre weight düşürülür:
     effective_weight = match_weight * (1 - ambiguity_score * 0.3)
@@ -1142,7 +1142,8 @@ def get_synonyms_with_weights(keyword: str, company_id: int = None) -> list[dict
         company_id: Firma ID (None = global)
 
     Returns:
-        [{"synonym": str, "weight": float, "effective_weight": float, "ambiguity_score": float}]
+        [{"synonym": str, "weight": float, "effective_weight": float,
+          "ambiguity_score": float, "confidence_score": float}]
     """
     keyword_lower = turkish_lower(keyword.strip())
     cache_key = f"synonyms_weights_{keyword_lower}_{company_id or 'global'}"
@@ -1152,10 +1153,10 @@ def get_synonyms_with_weights(keyword: str, company_id: int = None) -> list[dict
             with get_connection() as conn:
                 cursor = conn.cursor()
 
-                # Synonym'ları ve weight'lerini al
+                # Synonym'ları, weight'lerini ve confidence'ı al
                 if company_id:
                     cursor.execute("""
-                        SELECT ks.synonym, ks.match_weight, spm.ambiguity_score
+                        SELECT ks.synonym, ks.match_weight, spm.ambiguity_score, ks.confidence_score
                         FROM keyword_synonyms ks
                         LEFT JOIN synonym_primary_mapping spm
                             ON ks.synonym = spm.synonym
@@ -1166,7 +1167,7 @@ def get_synonyms_with_weights(keyword: str, company_id: int = None) -> list[dict
                     """, (keyword_lower, company_id))
                 else:
                     cursor.execute("""
-                        SELECT ks.synonym, ks.match_weight, spm.ambiguity_score
+                        SELECT ks.synonym, ks.match_weight, spm.ambiguity_score, ks.confidence_score
                         FROM keyword_synonyms ks
                         LEFT JOIN synonym_primary_mapping spm
                             ON ks.synonym = spm.synonym
@@ -1181,16 +1182,17 @@ def get_synonyms_with_weights(keyword: str, company_id: int = None) -> list[dict
                     synonym = row[0]
                     match_weight = row[1] or 0.85  # default
                     ambiguity_score = row[2] or 0
+                    confidence_score = row[3] or 0.58  # FAZ 10.1 default
 
                     # FAZ 9.2: Ağırlık düşürme
-                    # effective_weight = match_weight * (1 - ambiguity_score * 0.3)
                     effective_weight = match_weight * (1 - ambiguity_score * 0.3)
 
                     results.append({
                         "synonym": synonym,
                         "weight": match_weight,
                         "effective_weight": round(effective_weight, 3),
-                        "ambiguity_score": ambiguity_score
+                        "ambiguity_score": ambiguity_score,
+                        "confidence_score": confidence_score  # FAZ 10.1
                     })
 
                 return results
@@ -1662,6 +1664,284 @@ def get_synonym_conflicts(company_id: int = None, min_ambiguity: float = 0.5) ->
     except Exception as e:
         logger.error(f"get_synonym_conflicts hatası: {e}")
         return []
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 10.1 GRUP 2: CONFIDENCE HESAPLAMA FONKSİYONLARI
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def calculate_corpus_relevance(keyword: str, synonym: str, company_id: int = None) -> float:
+    """
+    FAZ 10.1: CV ve eşleşmelerde ne sıklıkla geçti?
+
+    Formül:
+        - total = 0 → 0.3 (bilinmiyor)
+        - total 1-10 → 0.3-0.6
+        - total 10-50 → 0.6-0.9
+        - total 50+ → 0.9-1.0
+
+    Returns: 0.3 - 1.0
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = """
+                SELECT COALESCE(cv_occurrence_count, 0) + COALESCE(match_count, 0) as total
+                FROM synonym_usage_stats
+                WHERE keyword = ? AND synonym = ?
+            """
+            params = [turkish_lower(keyword.strip()), turkish_lower(synonym.strip())]
+
+            if company_id is not None:
+                query += " AND company_id = ?"
+                params.append(company_id)
+            else:
+                query += " AND company_id IS NULL"
+
+            cursor.execute(query, params)
+            row = cursor.fetchone()
+
+            if not row:
+                return 0.3  # Hiç veri yok
+
+            total = row[0] or 0
+
+            if total == 0:
+                return 0.3
+            elif total <= 10:
+                return 0.3 + (total / 10) * 0.3  # 0.3 - 0.6
+            elif total <= 50:
+                return 0.6 + ((total - 10) / 40) * 0.3  # 0.6 - 0.9
+            else:
+                return min(0.9 + ((total - 50) / 100) * 0.1, 1.0)  # 0.9 - 1.0
+
+    except Exception as e:
+        logger.error(f"calculate_corpus_relevance hatası: {e}")
+        return 0.3
+
+
+def calculate_historical_precision(keyword: str, synonym: str, company_id: int = None) -> float:
+    """
+    FAZ 10.1: Geçmiş eşleşme başarısı.
+
+    Formül:
+        - match_count < 5 → 0.5 (yeterli veri yok, nötr)
+        - match_count >= 5 → hired_count / match_count
+
+    Returns: 0.0 - 1.0
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = """
+                SELECT COALESCE(match_count, 0), COALESCE(hired_count, 0)
+                FROM synonym_usage_stats
+                WHERE keyword = ? AND synonym = ?
+            """
+            params = [turkish_lower(keyword.strip()), turkish_lower(synonym.strip())]
+
+            if company_id is not None:
+                query += " AND company_id = ?"
+                params.append(company_id)
+            else:
+                query += " AND company_id IS NULL"
+
+            cursor.execute(query, params)
+            row = cursor.fetchone()
+
+            if not row:
+                return 0.5  # Veri yok, nötr
+
+            match_count, hired_count = row[0] or 0, row[1] or 0
+
+            if match_count < 5:
+                return 0.5  # Yeterli veri yok, nötr değer
+
+            return round(hired_count / match_count, 3)
+
+    except Exception as e:
+        logger.error(f"calculate_historical_precision hatası: {e}")
+        return 0.5
+
+
+def calculate_final_confidence(
+    keyword: str,
+    synonym: str,
+    ai_confidence: float = 0.85,
+    company_id: int = None
+) -> float:
+    """
+    FAZ 10.1: Final confidence hesaplama.
+
+    Formül: (0.4 * AI) + (0.3 * corpus) + (0.3 * historical)
+
+    Yeni synonym için:
+        - corpus = 0.3 (veri yok)
+        - historical = 0.5 (nötr)
+        - ai = 0.85 (varsayılan)
+        - final = (0.4 * 0.85) + (0.3 * 0.3) + (0.3 * 0.5) = 0.34 + 0.09 + 0.15 = 0.58
+
+    Returns: 0.0 - 1.0
+    """
+    corpus = calculate_corpus_relevance(keyword, synonym, company_id)
+    historical = calculate_historical_precision(keyword, synonym, company_id)
+
+    final = (0.4 * ai_confidence) + (0.3 * corpus) + (0.3 * historical)
+    return round(final, 3)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 10.1 GRUP 3: VERİ TOPLAMA FONKSİYONLARI
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def log_synonym_usage(
+    keyword: str,
+    synonym: str,
+    method: str,
+    company_id: int = None
+) -> bool:
+    """
+    FAZ 10.1: Synonym kullanımını logla (eşleşme anında).
+
+    Args:
+        keyword: Aranan anahtar kelime
+        synonym: Eşleşen synonym
+        method: 'synonym', 'exact', 'fuzzy'
+        company_id: Firma ID
+
+    Returns: True başarılı, False hata
+    """
+    try:
+        keyword_lower = turkish_lower(keyword.strip())
+        synonym_lower = turkish_lower(synonym.strip())
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # UPSERT: Varsa güncelle, yoksa ekle
+            cursor.execute("""
+                INSERT INTO synonym_usage_stats
+                    (keyword, synonym, match_count, last_used_at, company_id)
+                VALUES (?, ?, 1, CURRENT_TIMESTAMP, ?)
+                ON CONFLICT(keyword, synonym, company_id) DO UPDATE SET
+                    match_count = match_count + 1,
+                    last_used_at = CURRENT_TIMESTAMP
+            """, (keyword_lower, synonym_lower, company_id))
+
+            conn.commit()
+            return True
+
+    except Exception as e:
+        logger.error(f"log_synonym_usage hatası: {e}")
+        return False
+
+
+def save_match_details(
+    candidate_id: int,
+    position_id: int,
+    keyword: str,
+    matched_term: str,
+    method: str,
+    weight: float,
+    company_id: int = None
+) -> bool:
+    """
+    FAZ 10.1: Eşleşme detayını kaydet (analiz için).
+
+    Args:
+        candidate_id: Aday ID
+        position_id: Pozisyon ID
+        keyword: Aranan anahtar kelime
+        matched_term: Eşleşen terim (CV'deki kelime)
+        method: 'exact', 'synonym', 'fuzzy'
+        weight: Uygulanan ağırlık (0.0 - 1.0)
+        company_id: Firma ID
+
+    Returns: True başarılı, False hata
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                INSERT INTO synonym_match_history
+                    (candidate_id, position_id, keyword, matched_term, match_method, weight, company_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                candidate_id,
+                position_id,
+                turkish_lower(keyword.strip()),
+                turkish_lower(matched_term.strip()),
+                method,
+                weight,
+                company_id
+            ))
+
+            conn.commit()
+            return True
+
+    except Exception as e:
+        logger.error(f"save_match_details hatası: {e}")
+        return False
+
+
+def update_hired_stats(candidate_id: int, position_id: int) -> int:
+    """
+    FAZ 10.1: Aday işe alındığında ilgili synonym istatistiklerini güncelle.
+
+    Bu fonksiyon, adayın pozisyona eşleşmesinde kullanılan tüm
+    synonym'ların hired_count değerini 1 artırır.
+
+    Args:
+        candidate_id: İşe alınan aday ID
+        position_id: Pozisyon ID
+
+    Returns: Güncellenen synonym sayısı
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # 1. Bu aday-pozisyon için match_history kayıtlarını bul
+            cursor.execute("""
+                SELECT DISTINCT keyword, matched_term, company_id
+                FROM synonym_match_history
+                WHERE candidate_id = ? AND position_id = ?
+            """, (candidate_id, position_id))
+
+            matches = cursor.fetchall()
+            updated = 0
+
+            # 2. Her eşleşme için usage_stats'daki hired_count'u artır
+            for keyword, matched_term, company_id in matches:
+                cursor.execute("""
+                    UPDATE synonym_usage_stats
+                    SET hired_count = hired_count + 1
+                    WHERE keyword = ? AND synonym = ? AND (company_id = ? OR (? IS NULL AND company_id IS NULL))
+                """, (keyword, matched_term, company_id, company_id))
+
+                if cursor.rowcount > 0:
+                    updated += 1
+
+            # 3. Match history'deki kayıtları hired=1 olarak işaretle
+            cursor.execute("""
+                UPDATE synonym_match_history
+                SET hired = 1
+                WHERE candidate_id = ? AND position_id = ?
+            """, (candidate_id, position_id))
+
+            conn.commit()
+
+            if updated > 0:
+                logger.info(f"update_hired_stats: Aday {candidate_id} pozisyon {position_id} için {updated} synonym güncellendi")
+
+            return updated
+
+    except Exception as e:
+        logger.error(f"update_hired_stats hatası: {e}")
+        return 0
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2220,7 +2500,7 @@ def get_keyword_synonyms(
             cursor = conn.cursor()
 
             query = """
-                SELECT id, synonym, synonym_type, source, status, created_at, approved_at, company_id, match_weight
+                SELECT id, synonym, synonym_type, source, status, created_at, approved_at, company_id, match_weight, confidence_score
                 FROM keyword_synonyms
                 WHERE keyword = ?
             """
