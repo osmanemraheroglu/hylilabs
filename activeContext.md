@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 01.03.2026
+Son guncelleme: 02.03.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -31,6 +31,45 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 02.03.2026 - FAZ 10.4 ML-Based Auto-Learning Sistemi
+- Bağımlılıklar: scikit-learn 1.8.0, joblib 1.5.3 (zaten kurulu)
+- database.py - ML fonksiyonları:
+  - FEATURE_NAMES: 15 özellik (keyword_length, synonym_length, semantic_similarity, etc.)
+  - AUTO_APPROVE_THRESHOLD = 0.95, AUTO_REJECT_THRESHOLD = 0.20
+  - extract_synonym_features(): 15 özellik çıkarımı
+  - prepare_training_data(): Eğitim verisi hazırlama
+  - train_synonym_model(): RandomForest eğitimi
+  - load_active_model(): Aktif model yükleme (cache)
+  - predict_approval_probability(): Onay olasılığı tahmini
+  - auto_process_synonym(): Otomatik onay/red işlemi
+  - start_ab_test(), get_ab_test_results(), end_ab_test(): A/B test
+  - check_retraining_needed(): Retraining gerekliliği kontrolü
+  - run_retraining_job(): Retraining job çalıştırma
+- Tablolar (3 yeni tablo):
+  - ml_models: Model versiyonlama, metrikler, A/B test grupları
+  - ml_predictions: Tahmin geçmişi, doğruluk takibi
+  - ml_retraining_jobs: Retraining job geçmişi
+- /var/www/hylilabs/api/models/ dizini oluşturuldu (.joblib dosyaları için)
+- routes/synonyms.py - 11 yeni endpoint:
+  - POST /ml/predict: ML tahmini
+  - POST /ml/train: Model eğitimi
+  - GET /ml/model-stats: Aktif model istatistikleri
+  - GET /ml/model-history: Model geçmişi
+  - GET /ml/training-data: Eğitim verisi istatistikleri
+  - GET /ml/retraining-status: Retraining gerekliliği
+  - POST /ml/retrain: Manuel retraining
+  - GET /ml/ab-test: A/B test durumu
+  - POST /ml/ab-test/start: A/B test başlat
+  - POST /ml/ab-test/end: A/B test bitir
+  - GET /ml/dashboard: Tüm ML metrikleri
+- create_synonym() endpoint güncellendi:
+  - ML otomatik onay entegrasyonu (prob >= 0.95 → auto_approve=True)
+  - ML düşük olasılık uyarısı (prob <= 0.20 → warning)
+  - Response'a ml_prediction alanı eklendi
+- Test sonuçları:
+  - Backend başarıyla başladı (import hataları yok)
+  - ML endpoint'ler çalışıyor
+
 ### 02.03.2026 - FAZ 10.3 Çoklu Dil Normalizasyonu Sistemi
 - Bağımlılıklar: langdetect 1.0.9, snowballstemmer 3.0.1
 - database.py - Sözlükler ve fonksiyonlar:
@@ -793,6 +832,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `e02992c` - feat(FAZ 10.4): ML-Based Auto-Learning sistemi
 - `4541477` - feat(FAZ 10.3): Çoklu dil normalizasyonu sistemi
 - `9dbb301` - feat(FAZ 10.2): Semantic Similarity sistemi
 - `b7d4c10` - feat(FAZ 10.1): Multiple Confidence Source sistemi
@@ -961,19 +1001,19 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 - ✅ 10.3.9 API endpoints (/normalize, /translate, /dictionary-stats, /add-translation, /language-stats)
 - ✅ 10.3.10 Dil istatistikleri raporu
 
-#### FAZ 10.4: ML-Based Auto-Learning (0/12) - SIRADA
-- [ ] 10.4.1 Training data hazırlama
-- [ ] 10.4.2 Feature engineering
-- [ ] 10.4.3 Model seçimi (Classification)
-- [ ] 10.4.4 Model eğitimi (Scikit-learn/XGBoost)
-- [ ] 10.4.5 Model evaluasyonu (Precision, Recall, F1)
-- [ ] 10.4.6 predict_approval_probability()
-- [ ] 10.4.7 Auto-approve threshold (prob > 0.95)
-- [ ] 10.4.8 Auto-reject threshold (prob < 0.20)
-- [ ] 10.4.9 Model versiyonlama
-- [ ] 10.4.10 A/B testing altyapısı
-- [ ] 10.4.11 Model retraining pipeline
-- [ ] 10.4.12 Model performance dashboard
+#### FAZ 10.4: ML-Based Auto-Learning (12/12) ✅ TAMAMLANDI
+- ✅ 10.4.1 Training data hazırlama (prepare_training_data)
+- ✅ 10.4.2 Feature engineering (15 özellik, extract_synonym_features)
+- ✅ 10.4.3 Model seçimi (RandomForestClassifier)
+- ✅ 10.4.4 Model eğitimi (train_synonym_model)
+- ✅ 10.4.5 Model evaluasyonu (accuracy, precision, recall, f1)
+- ✅ 10.4.6 predict_approval_probability()
+- ✅ 10.4.7 Auto-approve threshold (prob >= 0.95)
+- ✅ 10.4.8 Auto-reject threshold (prob <= 0.20)
+- ✅ 10.4.9 Model versiyonlama (ml_models tablosu, joblib)
+- ✅ 10.4.10 A/B testing altyapısı (start_ab_test, get_ab_test_results, end_ab_test)
+- ✅ 10.4.11 Model retraining pipeline (check_retraining_needed, run_retraining_job)
+- ✅ 10.4.12 Model performance dashboard (11 endpoint, /ml/dashboard)
 
 ---
 

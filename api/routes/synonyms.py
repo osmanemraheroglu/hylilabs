@@ -46,7 +46,21 @@ from database import (
     stem_word,
     TRANSLATION_DICTIONARY,
     ENGLISH_CANONICAL,
-    get_db_connection
+    # FAZ 10.4: ML-Based Auto-Learning
+    predict_approval_probability,
+    auto_process_synonym,
+    train_synonym_model,
+    extract_synonym_features,
+    prepare_training_data,
+    FEATURE_NAMES,
+    check_retraining_needed,
+    run_retraining_job,
+    start_ab_test,
+    get_ab_test_results,
+    end_ab_test,
+    AUTO_APPROVE_THRESHOLD,
+    AUTO_REJECT_THRESHOLD,
+    SKLEARN_AVAILABLE
 )
 from routes.auth import get_current_user
 from rate_limiter import (
@@ -778,7 +792,7 @@ def approve_blacklist_candidate(
         require_company_user(current_user)
         company_id = current_user["company_id"]
 
-        conn = get_db_connection()
+        conn = get_connection()
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
 
@@ -829,7 +843,7 @@ def dismiss_blacklist_candidate(
         require_company_user(current_user)
         company_id = current_user["company_id"]
 
-        conn = get_db_connection()
+        conn = get_connection()
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
 
@@ -884,7 +898,7 @@ def get_synonym_audit(
         require_company_user(current_user)
         company_id = current_user["company_id"]
 
-        conn = get_db_connection()
+        conn = get_connection()
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
 
@@ -966,7 +980,7 @@ def get_synonym_history(
         require_company_user(current_user)
         company_id = current_user["company_id"]
 
-        conn = get_db_connection()
+        conn = get_connection()
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
 
@@ -1027,6 +1041,7 @@ def create_synonym(
     Yeni synonym ekle.
     auto_approve=True ise direkt onaylanır, False ise pending olur.
     FAZ 10.2: Semantic similarity kontrolü eklendi.
+    FAZ 10.4: ML auto-approve/reject entegrasyonu eklendi.
     """
     try:
         require_company_user(current_user)
@@ -1045,13 +1060,32 @@ def create_synonym(
         if semantic_score < 0.70:
             semantic_warning = f"⚠️ Düşük semantik benzerlik ({semantic_score:.2f}). Bu synonym keyword ile zayıf ilişkili olabilir."
 
+        # FAZ 10.4: ML auto-approve/reject entegrasyonu
+        ml_result = None
+        ml_warning = None
+        auto_approve = request.auto_approve
+
+        if SKLEARN_AVAILABLE and not request.auto_approve:
+            try:
+                ml_result = auto_process_synonym(keyword, synonym)
+                if ml_result.get('action') == 'auto_approved':
+                    auto_approve = True  # ML otomatik onay
+                    logger.info(f"ML auto-approved: {keyword} -> {synonym} (prob={ml_result.get('probability', 0):.3f})")
+                elif ml_result.get('action') == 'auto_rejected':
+                    # Uyarı ver ama engelleme
+                    ml_warning = f"⚠️ ML düşük onay olasılığı ({ml_result.get('probability', 0):.2f}). Bu synonym reddedilebilir."
+                    logger.info(f"ML warning (low prob): {keyword} -> {synonym} (prob={ml_result.get('probability', 0):.3f})")
+            except Exception as ml_err:
+                logger.warning(f"ML prediction hatası: {ml_err}")
+                # ML hatası synonym eklemeyi engellemez
+
         result = add_manual_synonym(
             keyword=keyword,
             synonym=synonym,
             synonym_type=request.synonym_type,
             company_id=company_id,
             created_by=user_id,
-            auto_approve=request.auto_approve
+            auto_approve=auto_approve
         )
 
         if result.get("success"):
@@ -1062,15 +1096,30 @@ def create_synonym(
                 logger.warning(f"Synonym embedding kaydedilemedi: {emb_err}")
 
             # Loglama
-            logger.info(f"Synonym created: user={user_id}, company={company_id}, keyword={keyword}, synonym={synonym}, semantic_score={semantic_score:.2f}")
+            logger.info(f"Synonym created: user={user_id}, company={company_id}, keyword={keyword}, synonym={synonym}, semantic_score={semantic_score:.2f}, auto_approve={auto_approve}")
 
             response_data = {
                 "id": result.get("id"),
                 "message": "Synonym başarıyla eklendi",
-                "semantic_score": round(semantic_score, 3)
+                "semantic_score": round(semantic_score, 3),
+                "auto_approved": auto_approve
             }
+
+            # FAZ 10.4: ML sonuçlarını response'a ekle
+            if ml_result:
+                response_data["ml_prediction"] = {
+                    "probability": round(ml_result.get("probability", 0), 4),
+                    "action": ml_result.get("action", "pending")
+                }
+
+            # Uyarıları birleştir
+            warnings = []
             if semantic_warning:
-                response_data["warning"] = semantic_warning
+                warnings.append(semantic_warning)
+            if ml_warning:
+                warnings.append(ml_warning)
+            if warnings:
+                response_data["warning"] = " | ".join(warnings)
 
             return {
                 "success": True,
@@ -2334,7 +2383,7 @@ def dictionary_stats(
     try:
         require_company_user(current_user)
 
-        conn = get_db_connection()
+        conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM translation_dictionary')
         db_count = cursor.fetchone()[0]
@@ -2369,7 +2418,7 @@ def add_translation(
     try:
         require_company_user(current_user)
 
-        conn = get_db_connection()
+        conn = get_connection()
         cursor = conn.cursor()
 
         user_id = current_user.get('id', 0)
@@ -2411,7 +2460,7 @@ def language_stats(
     try:
         require_company_user(current_user)
 
-        conn = get_db_connection()
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute('SELECT keyword, synonym FROM keyword_synonyms LIMIT 500')
@@ -2448,4 +2497,659 @@ def language_stats(
 
     except Exception as e:
         logger.error(f"language_stats hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 10.4: ML-BASED AUTO-LEARNING ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class MLPredictRequest(BaseModel):
+    keyword: str = Field(..., min_length=1, max_length=200)
+    synonym: str = Field(..., min_length=1, max_length=200)
+
+
+class MLTrainRequest(BaseModel):
+    model_name: str = Field(default="synonym_classifier", max_length=100)
+
+
+class ABTestStartRequest(BaseModel):
+    model_a_version: str = Field(..., min_length=1, max_length=50)
+    model_b_version: str = Field(..., min_length=1, max_length=50)
+
+
+class ABTestEndRequest(BaseModel):
+    winner_version: str = Field(..., min_length=1, max_length=50)
+
+
+class RetrainRequest(BaseModel):
+    trigger_reason: str = Field(default="manual", max_length=100)
+
+
+@router.post("/ml/predict")
+def ml_predict(
+    request: MLPredictRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: ML modeli ile synonym onay olasılığı tahmini.
+
+    Returns:
+        {
+            "probability": 0.87,
+            "prediction": "approve",
+            "model_version": "v1.0.0",
+            "features": {...}
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        if not SKLEARN_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="ML özellikleri kullanılamıyor (scikit-learn yüklü değil)"
+            )
+
+        result = predict_approval_probability(
+            keyword=request.keyword.strip(),
+            synonym=request.synonym.strip(),
+            save_prediction=True
+        )
+
+        return {
+            "success": True,
+            "data": result
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ml_predict hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ml/train")
+def ml_train(
+    request: MLTrainRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: Yeni ML modeli eğit.
+
+    Returns:
+        {
+            "model_version": "v1.0.0",
+            "accuracy": 0.85,
+            "precision": 0.88,
+            "recall": 0.82,
+            "f1": 0.85,
+            "training_samples": 500,
+            "test_samples": 125
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        if not SKLEARN_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="ML özellikleri kullanılamıyor (scikit-learn yüklü değil)"
+            )
+
+        result = train_synonym_model(model_name=request.model_name)
+
+        if result.get("success"):
+            return {
+                "success": True,
+                "data": result
+            }
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error", "Model eğitimi başarısız")
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ml_train hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/ml/model-stats")
+def ml_model_stats(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: Aktif ML modeli istatistikleri.
+
+    Returns:
+        {
+            "model_name": "synonym_classifier",
+            "model_version": "v1.0.0",
+            "accuracy": 0.85,
+            "precision": 0.88,
+            "total_predictions": 150,
+            "correct_predictions": 128
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Aktif model
+        cursor.execute("""
+            SELECT id, model_name, model_version, model_type, accuracy,
+                   precision_score, recall_score, f1_score,
+                   training_samples, test_samples, created_at
+            FROM ml_models
+            WHERE is_active = 1
+            ORDER BY created_at DESC
+            LIMIT 1
+        """)
+        row = cursor.fetchone()
+
+        if not row:
+            conn.close()
+            return {
+                "success": True,
+                "data": {
+                    "has_model": False,
+                    "message": "Henüz aktif model yok"
+                }
+            }
+
+        model_id = row[0]
+
+        # Tahmin istatistikleri
+        cursor.execute("""
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct,
+                AVG(probability) as avg_probability
+            FROM ml_predictions
+            WHERE model_id = ?
+        """, (model_id,))
+        pred_row = cursor.fetchone()
+
+        conn.close()
+
+        return {
+            "success": True,
+            "data": {
+                "has_model": True,
+                "model_id": row[0],
+                "model_name": row[1],
+                "model_version": row[2],
+                "model_type": row[3],
+                "accuracy": round(row[4] or 0, 4),
+                "precision": round(row[5] or 0, 4),
+                "recall": round(row[6] or 0, 4),
+                "f1": round(row[7] or 0, 4),
+                "training_samples": row[8] or 0,
+                "test_samples": row[9] or 0,
+                "created_at": row[10],
+                "predictions": {
+                    "total": pred_row[0] or 0,
+                    "correct": pred_row[1] or 0,
+                    "avg_probability": round(pred_row[2] or 0, 4)
+                }
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"ml_model_stats hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/ml/model-history")
+def ml_model_history(
+    limit: int = Query(default=10, ge=1, le=50),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: Model eğitim geçmişi.
+
+    Returns:
+        [
+            {
+                "model_version": "v1.0.0",
+                "accuracy": 0.85,
+                "is_active": true,
+                "created_at": "2026-03-02"
+            }
+        ]
+    """
+    try:
+        require_company_user(current_user)
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT id, model_name, model_version, model_type,
+                   accuracy, precision_score, recall_score, f1_score,
+                   training_samples, test_samples,
+                   is_active, is_ab_test, ab_test_group,
+                   created_at
+            FROM ml_models
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (limit,))
+
+        models = []
+        for row in cursor.fetchall():
+            models.append({
+                "id": row[0],
+                "model_name": row[1],
+                "model_version": row[2],
+                "model_type": row[3],
+                "accuracy": round(row[4] or 0, 4),
+                "precision": round(row[5] or 0, 4),
+                "recall": round(row[6] or 0, 4),
+                "f1": round(row[7] or 0, 4),
+                "training_samples": row[8] or 0,
+                "test_samples": row[9] or 0,
+                "is_active": bool(row[10]),
+                "is_ab_test": bool(row[11]),
+                "ab_test_group": row[12],
+                "created_at": row[13]
+            })
+
+        conn.close()
+
+        return {
+            "success": True,
+            "data": models,
+            "count": len(models)
+        }
+
+    except Exception as e:
+        logger.error(f"ml_model_history hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/ml/training-data")
+def ml_training_data_stats(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: Eğitim verisi istatistikleri.
+
+    Returns:
+        {
+            "total_samples": 500,
+            "approved_samples": 387,
+            "rejected_samples": 113,
+            "feature_names": [...]
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Onaylı synonym sayısı
+        cursor.execute("""
+            SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'approved'
+        """)
+        approved = cursor.fetchone()[0]
+
+        # Reddedilmiş synonym sayısı
+        cursor.execute("""
+            SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'rejected'
+        """)
+        rejected = cursor.fetchone()[0]
+
+        conn.close()
+
+        return {
+            "success": True,
+            "data": {
+                "total_samples": approved + rejected,
+                "approved_samples": approved,
+                "rejected_samples": rejected,
+                "approval_ratio": round(approved / (approved + rejected), 3) if (approved + rejected) > 0 else 0,
+                "feature_names": FEATURE_NAMES,
+                "feature_count": len(FEATURE_NAMES),
+                "min_samples_for_training": 100,
+                "ready_for_training": (approved + rejected) >= 100
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"ml_training_data_stats hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/ml/retraining-status")
+def ml_retraining_status(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: Retraining gerekliliği kontrolü.
+
+    Returns:
+        {
+            "needs_retraining": true,
+            "reason": "new_samples",
+            "new_samples_count": 75,
+            "current_accuracy": 0.82
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        if not SKLEARN_AVAILABLE:
+            return {
+                "success": True,
+                "data": {
+                    "needs_retraining": False,
+                    "reason": "sklearn_not_available"
+                }
+            }
+
+        result = check_retraining_needed()
+
+        return {
+            "success": True,
+            "data": result
+        }
+
+    except Exception as e:
+        logger.error(f"ml_retraining_status hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ml/retrain")
+def ml_retrain(
+    request: RetrainRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: Manuel retraining tetikle.
+
+    Returns:
+        {
+            "job_id": 5,
+            "new_model_version": "v1.1.0",
+            "status": "completed"
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        if not SKLEARN_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="ML özellikleri kullanılamıyor (scikit-learn yüklü değil)"
+            )
+
+        result = run_retraining_job(trigger_reason=request.trigger_reason)
+
+        if result.get("success"):
+            return {
+                "success": True,
+                "data": result
+            }
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error", "Retraining başarısız")
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ml_retrain hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/ml/ab-test")
+def ml_ab_test_status(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: Aktif A/B test durumu.
+
+    Returns:
+        {
+            "has_active_test": true,
+            "model_a": {"version": "v1.0.0", "predictions": 50, "correct": 42},
+            "model_b": {"version": "v1.1.0", "predictions": 48, "correct": 45}
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        result = get_ab_test_results()
+
+        return {
+            "success": True,
+            "data": result
+        }
+
+    except Exception as e:
+        logger.error(f"ml_ab_test_status hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ml/ab-test/start")
+def ml_ab_test_start(
+    request: ABTestStartRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: A/B test başlat.
+
+    Returns:
+        {
+            "success": true,
+            "model_a": "v1.0.0",
+            "model_b": "v1.1.0"
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        if not SKLEARN_AVAILABLE:
+            raise HTTPException(
+                status_code=503,
+                detail="ML özellikleri kullanılamıyor (scikit-learn yüklü değil)"
+            )
+
+        result = start_ab_test(
+            model_a_version=request.model_a_version,
+            model_b_version=request.model_b_version
+        )
+
+        if result.get("success"):
+            return {
+                "success": True,
+                "data": result
+            }
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error", "A/B test başlatılamadı")
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ml_ab_test_start hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ml/ab-test/end")
+def ml_ab_test_end(
+    request: ABTestEndRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: A/B test bitir ve kazananı seç.
+
+    Returns:
+        {
+            "success": true,
+            "winner": "v1.1.0",
+            "new_active_model": "v1.1.0"
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        result = end_ab_test(winner_version=request.winner_version)
+
+        if result.get("success"):
+            return {
+                "success": True,
+                "data": result
+            }
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error", "A/B test bitirilemedi")
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ml_ab_test_end hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/ml/dashboard")
+def ml_dashboard(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.4: ML Dashboard - Tüm ML metrikleri tek endpointte.
+
+    Returns:
+        {
+            "sklearn_available": true,
+            "active_model": {...},
+            "training_data": {...},
+            "recent_predictions": [...],
+            "retraining_status": {...},
+            "ab_test": {...},
+            "thresholds": {...}
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        dashboard = {
+            "sklearn_available": SKLEARN_AVAILABLE,
+            "thresholds": {
+                "auto_approve": AUTO_APPROVE_THRESHOLD,
+                "auto_reject": AUTO_REJECT_THRESHOLD
+            }
+        }
+
+        # Aktif model
+        cursor.execute("""
+            SELECT id, model_name, model_version, accuracy, precision_score,
+                   recall_score, f1_score, training_samples, created_at
+            FROM ml_models
+            WHERE is_active = 1
+            ORDER BY created_at DESC
+            LIMIT 1
+        """)
+        model_row = cursor.fetchone()
+
+        if model_row:
+            dashboard["active_model"] = {
+                "id": model_row[0],
+                "name": model_row[1],
+                "version": model_row[2],
+                "accuracy": round(model_row[3] or 0, 4),
+                "precision": round(model_row[4] or 0, 4),
+                "recall": round(model_row[5] or 0, 4),
+                "f1": round(model_row[6] or 0, 4),
+                "training_samples": model_row[7] or 0,
+                "created_at": model_row[8]
+            }
+        else:
+            dashboard["active_model"] = None
+
+        # Eğitim verisi
+        cursor.execute("SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'approved'")
+        approved = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'rejected'")
+        rejected = cursor.fetchone()[0]
+
+        dashboard["training_data"] = {
+            "total": approved + rejected,
+            "approved": approved,
+            "rejected": rejected,
+            "ready": (approved + rejected) >= 100
+        }
+
+        # Son 10 tahmin
+        cursor.execute("""
+            SELECT keyword, synonym, probability, prediction, actual_result,
+                   is_correct, created_at
+            FROM ml_predictions
+            ORDER BY created_at DESC
+            LIMIT 10
+        """)
+        predictions = []
+        for row in cursor.fetchall():
+            predictions.append({
+                "keyword": row[0],
+                "synonym": row[1],
+                "probability": round(row[2] or 0, 4),
+                "prediction": row[3],
+                "actual_result": row[4],
+                "is_correct": bool(row[5]) if row[5] is not None else None,
+                "created_at": row[6]
+            })
+        dashboard["recent_predictions"] = predictions
+
+        # Retraining durumu
+        if SKLEARN_AVAILABLE:
+            dashboard["retraining_status"] = check_retraining_needed()
+        else:
+            dashboard["retraining_status"] = {"needs_retraining": False}
+
+        # A/B test durumu
+        dashboard["ab_test"] = get_ab_test_results()
+
+        # Retraining job history
+        cursor.execute("""
+            SELECT id, job_type, status, trigger_reason, started_at, completed_at
+            FROM ml_retraining_jobs
+            ORDER BY created_at DESC
+            LIMIT 5
+        """)
+        jobs = []
+        for row in cursor.fetchall():
+            jobs.append({
+                "id": row[0],
+                "type": row[1],
+                "status": row[2],
+                "trigger": row[3],
+                "started_at": row[4],
+                "completed_at": row[5]
+            })
+        dashboard["recent_jobs"] = jobs
+
+        conn.close()
+
+        return {
+            "success": True,
+            "data": dashboard
+        }
+
+    except Exception as e:
+        logger.error(f"ml_dashboard hatası: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -473,3 +473,56 @@ TR/EN teknik terim çevirisi ve normalizasyon sistemi. KORUNMALI:
 NOT: 10.3.7 (Google Translate) ve 10.3.8 (DeepL) opsiyonel, statik sözlük yeterli
 
 Commit: 4541477 — DEGISTIRME
+
+### FAZ 10.4 ML-Based Auto-Learning (02.03.2026) — DEGISMEZ
+
+RandomForest ile synonym onay tahmin sistemi. KORUNMALI:
+
+1. **database.py** - ML fonksiyonları:
+   - SKLEARN_AVAILABLE: Scikit-learn yüklü mü kontrolü
+   - FEATURE_NAMES: 15 özellik listesi
+   - AUTO_APPROVE_THRESHOLD = 0.95
+   - AUTO_REJECT_THRESHOLD = 0.20
+   - extract_synonym_features(): 15 özellik çıkarımı (keyword_length, semantic_similarity, etc.)
+   - prepare_training_data(): Eğitim verisi hazırlama (approved/rejected synonym'lar)
+   - train_synonym_model(): RandomForestClassifier eğitimi + joblib kayıt
+   - load_active_model(): Aktif model yükleme (cache)
+   - predict_approval_probability(): Onay olasılığı tahmini + DB kayıt
+   - auto_process_synonym(): Otomatik onay/red işlemi
+   - start_ab_test(): A/B test başlatma
+   - get_ab_test_results(): A/B test sonuçları
+   - end_ab_test(): A/B test bitirme + kazanan seçimi
+   - check_retraining_needed(): Retraining gerekliliği kontrolü (yeni sample, accuracy düşüşü)
+   - run_retraining_job(): Retraining job çalıştırma
+
+2. **routes/synonyms.py** - 11 yeni endpoint:
+   - POST /ml/predict - ML tahmini
+   - POST /ml/train - Model eğitimi
+   - GET /ml/model-stats - Aktif model istatistikleri
+   - GET /ml/model-history - Model geçmişi
+   - GET /ml/training-data - Eğitim verisi istatistikleri
+   - GET /ml/retraining-status - Retraining gerekliliği
+   - POST /ml/retrain - Manuel retraining
+   - GET /ml/ab-test - A/B test durumu
+   - POST /ml/ab-test/start - A/B test başlat
+   - POST /ml/ab-test/end - A/B test bitir
+   - GET /ml/dashboard - Tüm ML metrikleri
+
+3. **create_synonym() entegrasyonu**:
+   - ML otomatik onay (prob >= 0.95 → auto_approve=True)
+   - ML düşük olasılık uyarısı (prob <= 0.20 → warning)
+   - Response'a ml_prediction alanı eklendi
+
+4. **Tablolar** (DEGISTIRILEMEZ):
+   - ml_models: model_name, model_version, accuracy, precision_score, recall_score, f1_score, is_active, is_ab_test
+   - ml_predictions: keyword, synonym, probability, prediction, actual_result, is_correct
+   - ml_retraining_jobs: job_type, status, trigger_reason, old_model_id, new_model_id
+
+5. **Dosyalar** (DEGISTIRILEMEZ):
+   - /var/www/hylilabs/api/models/ dizini (.joblib model dosyaları)
+
+6. **Bağımlılıklar**:
+   - scikit-learn==1.8.0
+   - joblib==1.5.3
+
+Commit: e02992c — DEGISTIRME

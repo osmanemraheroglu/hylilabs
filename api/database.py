@@ -17,6 +17,17 @@ import numpy as np
 from openai import OpenAI
 from langdetect import detect, LangDetectException
 import snowballstemmer
+import joblib
+
+# Scikit-learn (optional - for ML features)
+try:
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
+    print('Warning: scikit-learn not installed, ML features disabled')
 
 from config import CACHE_TTL
 
@@ -454,6 +465,545 @@ def normalize_keyword(keyword: str, apply_stemming: bool = False, conn=None) -> 
         result['stem'] = ' '.join(stemmed)
 
     return result
+
+
+# ============ FAZ 10.4: ML-BASED AUTO-LEARNING ============
+
+FEATURE_NAMES = [
+    'keyword_length', 'synonym_length', 'length_ratio',
+    'word_count_keyword', 'word_count_synonym', 'word_count_diff',
+    'semantic_similarity',
+    'same_language', 'keyword_is_turkish', 'synonym_is_turkish',
+    'was_translated',
+    'has_numbers', 'has_special_chars', 'is_abbreviation',
+    'char_overlap_ratio'
+]
+
+AUTO_APPROVE_THRESHOLD = 0.95
+AUTO_REJECT_THRESHOLD = 0.20
+
+# Global model cache
+_active_model = None
+_active_model_id = None
+_active_model_version = None
+
+
+def extract_synonym_features(keyword: str, synonym: str, conn=None) -> dict:
+    """
+    FAZ 10.4.2: Synonym için ML özellikleri çıkar (15 feature)
+    """
+    features = {}
+    keyword = keyword.strip().lower() if keyword else ''
+    synonym = synonym.strip().lower() if synonym else ''
+
+    # 1. Uzunluk özellikleri
+    features['keyword_length'] = len(keyword)
+    features['synonym_length'] = len(synonym)
+    features['length_ratio'] = len(synonym) / max(len(keyword), 1)
+
+    # 2. Kelime sayısı özellikleri
+    kw_words = len(keyword.split())
+    syn_words = len(synonym.split())
+    features['word_count_keyword'] = kw_words
+    features['word_count_synonym'] = syn_words
+    features['word_count_diff'] = abs(kw_words - syn_words)
+
+    # 3. Semantic similarity (FAZ 10.2)
+    try:
+        kw_emb = get_embedding(keyword)
+        syn_emb = get_embedding(synonym)
+        if kw_emb and syn_emb:
+            features['semantic_similarity'] = semantic_similarity(kw_emb, syn_emb)
+        else:
+            features['semantic_similarity'] = 0.5
+    except:
+        features['semantic_similarity'] = 0.5
+
+    # 4. Dil özellikleri (FAZ 10.3)
+    try:
+        kw_lang = detect_language(keyword)
+        syn_lang = detect_language(synonym)
+        features['same_language'] = 1 if kw_lang == syn_lang else 0
+        features['keyword_is_turkish'] = 1 if kw_lang == 'tr' else 0
+        features['synonym_is_turkish'] = 1 if syn_lang == 'tr' else 0
+    except:
+        features['same_language'] = 1
+        features['keyword_is_turkish'] = 0
+        features['synonym_is_turkish'] = 0
+
+    # 5. Çeviri durumu
+    try:
+        trans = translate_to_canonical(synonym)
+        features['was_translated'] = 1 if trans.get('was_translated') else 0
+    except:
+        features['was_translated'] = 0
+
+    # 6. Karakter özellikleri
+    features['has_numbers'] = 1 if any(c.isdigit() for c in synonym) else 0
+    features['has_special_chars'] = 1 if any(not c.isalnum() and c != ' ' for c in synonym) else 0
+    features['is_abbreviation'] = 1 if synonym.isupper() and len(synonym) <= 5 else 0
+
+    # 7. Karakter overlap
+    kw_chars = set(keyword.replace(' ', ''))
+    syn_chars = set(synonym.replace(' ', ''))
+    if kw_chars:
+        features['char_overlap_ratio'] = len(kw_chars & syn_chars) / len(kw_chars)
+    else:
+        features['char_overlap_ratio'] = 0
+
+    return features
+
+
+def prepare_training_data(conn=None) -> tuple:
+    """
+    FAZ 10.4.1: Mevcut synonym verilerinden training data oluştur
+    Return: (X, y, feature_names)
+    """
+    if conn is None:
+        conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Onaylanmış ve reddedilmiş synonymleri al
+    cursor.execute('''
+        SELECT keyword, synonym, status FROM keyword_synonyms
+        WHERE status IN ('approved', 'rejected', 'active')
+    ''')
+    rows = cursor.fetchall()
+
+    X = []
+    y = []
+    skipped = 0
+
+    for keyword, synonym, status in rows:
+        try:
+            features = extract_synonym_features(keyword, synonym, conn)
+            feature_vector = [features.get(f, 0) for f in FEATURE_NAMES]
+            X.append(feature_vector)
+            # approved veya active = 1 (pozitif), rejected = 0 (negatif)
+            y.append(1 if status in ['approved', 'active'] else 0)
+        except Exception as e:
+            skipped += 1
+            logger.warning(f'Feature extraction error for {keyword}-{synonym}: {e}')
+
+    if skipped > 0:
+        logger.warning(f'{skipped} örnek atlandı')
+
+    return X, y, FEATURE_NAMES
+
+
+def train_synonym_model(conn=None, model_name: str = 'synonym_classifier') -> dict:
+    """
+    FAZ 10.4.3-5+9: RandomForest modeli eğit, evaluate et ve kaydet
+    """
+    if not SKLEARN_AVAILABLE:
+        return {'error': 'scikit-learn kurulu değil'}
+
+    X, y, feature_names = prepare_training_data(conn)
+
+    # Minimum veri kontrolü
+    if len(X) < 20:
+        return {'error': f'Yetersiz veri: {len(X)} örnek (min 20 gerekli)', 'samples': len(X)}
+
+    # Class balance kontrolü
+    positive_count = sum(y)
+    negative_count = len(y) - positive_count
+    if positive_count < 5 or negative_count < 5:
+        return {'error': f'Dengesiz veri: {positive_count} pozitif, {negative_count} negatif (min 5 her birinden)'}
+
+    # Train/test split
+    try:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42,
+            stratify=y if min(positive_count, negative_count) >= 2 else None
+        )
+    except Exception as e:
+        return {'error': f'Train/test split hatası: {e}'}
+
+    # Hyperparameters
+    hyperparams = {
+        'n_estimators': 100,
+        'max_depth': 10,
+        'min_samples_split': 5,
+        'min_samples_leaf': 2,
+        'random_state': 42,
+        'class_weight': 'balanced'
+    }
+
+    # Model eğit
+    model = RandomForestClassifier(**hyperparams)
+    model.fit(X_train, y_train)
+
+    # Evaluate
+    y_pred = model.predict(X_test)
+
+    metrics = {
+        'accuracy': round(accuracy_score(y_test, y_pred), 4),
+        'precision': round(precision_score(y_test, y_pred, zero_division=0), 4),
+        'recall': round(recall_score(y_test, y_pred, zero_division=0), 4),
+        'f1': round(f1_score(y_test, y_pred, zero_division=0), 4),
+        'training_samples': len(X_train),
+        'test_samples': len(X_test),
+        'positive_samples': positive_count,
+        'negative_samples': negative_count
+    }
+
+    # Confusion matrix
+    try:
+        cm = confusion_matrix(y_test, y_pred)
+        metrics['confusion_matrix'] = cm.tolist()
+    except:
+        pass
+
+    # Feature importance
+    try:
+        importance = model.feature_importances_
+        metrics['feature_importance'] = {name: round(float(imp), 4) for name, imp in zip(feature_names, importance)}
+    except:
+        pass
+
+    # Model kaydet (10.4.9)
+    version = datetime.now().strftime('%Y%m%d_%H%M%S')
+    model_path = f'/var/www/hylilabs/api/models/{model_name}_v{version}.joblib'
+    joblib.dump(model, model_path)
+
+    # DB'ye kaydet
+    if conn is None:
+        conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Önceki aktif modeli deaktive et
+    cursor.execute('UPDATE ml_models SET is_active=0 WHERE model_name=? AND is_active=1', (model_name,))
+
+    # Yeni modeli ekle
+    cursor.execute('''INSERT INTO ml_models
+        (model_name, model_version, model_type, model_path, accuracy, precision_score,
+         recall_score, f1_score, training_samples, test_samples, feature_names, hyperparameters, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)''',
+        (model_name, version, 'RandomForest', model_path,
+         metrics['accuracy'], metrics['precision'], metrics['recall'], metrics['f1'],
+         metrics['training_samples'], metrics['test_samples'],
+         json.dumps(feature_names), json.dumps(hyperparams)))
+    conn.commit()
+
+    metrics['model_path'] = model_path
+    metrics['version'] = version
+    metrics['model_name'] = model_name
+
+    return metrics
+
+
+def load_active_model(conn=None, model_name: str = 'synonym_classifier'):
+    """FAZ 10.4.6: Aktif modeli yükle (cached)"""
+    global _active_model, _active_model_id, _active_model_version
+
+    if conn is None:
+        conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('''SELECT id, model_path, model_version FROM ml_models
+                      WHERE model_name=? AND is_active=1''', (model_name,))
+    row = cursor.fetchone()
+
+    if not row:
+        return None, None, None
+
+    model_id, model_path, model_version = row[0], row[1], row[2]
+
+    # Cache kontrolü
+    if _active_model_id != model_id:
+        try:
+            _active_model = joblib.load(model_path)
+            _active_model_id = model_id
+            _active_model_version = model_version
+        except Exception as e:
+            logger.error(f'Model yükleme hatası: {e}')
+            return None, None, None
+
+    return _active_model, _active_model_id, _active_model_version
+
+
+def predict_approval_probability(keyword: str, synonym: str, conn=None, save_prediction: bool = True) -> dict:
+    """
+    FAZ 10.4.6: Synonym onay olasılığını tahmin et
+    """
+    model, model_id, model_version = load_active_model(conn)
+
+    if model is None:
+        return {
+            'probability': 0.5,
+            'recommendation': 'manual',
+            'reason': 'Aktif model bulunamadı'
+        }
+
+    # Feature çıkar
+    features = extract_synonym_features(keyword, synonym, conn)
+    feature_vector = [features.get(f, 0) for f in FEATURE_NAMES]
+
+    # Tahmin
+    try:
+        proba = model.predict_proba([feature_vector])[0]
+        # Binary classification: [prob_class_0, prob_class_1]
+        prob_approved = float(proba[1]) if len(proba) > 1 else float(proba[0])
+    except Exception as e:
+        logger.error(f'Prediction error: {e}')
+        return {'probability': 0.5, 'recommendation': 'manual', 'reason': str(e)}
+
+    # Recommendation (10.4.7 + 10.4.8)
+    if prob_approved >= AUTO_APPROVE_THRESHOLD:
+        recommendation = 'auto_approve'
+        reason = f'Yüksek güven ({prob_approved:.2%} >= {AUTO_APPROVE_THRESHOLD:.0%})'
+    elif prob_approved <= AUTO_REJECT_THRESHOLD:
+        recommendation = 'auto_reject'
+        reason = f'Düşük güven ({prob_approved:.2%} <= {AUTO_REJECT_THRESHOLD:.0%})'
+    else:
+        recommendation = 'manual'
+        reason = f'Belirsiz ({AUTO_REJECT_THRESHOLD:.0%} < {prob_approved:.2%} < {AUTO_APPROVE_THRESHOLD:.0%})'
+
+    result = {
+        'probability': round(prob_approved, 4),
+        'recommendation': recommendation,
+        'reason': reason,
+        'model_id': model_id,
+        'model_version': model_version,
+        'thresholds': {'auto_approve': AUTO_APPROVE_THRESHOLD, 'auto_reject': AUTO_REJECT_THRESHOLD}
+    }
+
+    # Prediction kaydet (A/B testing için)
+    if save_prediction and conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''INSERT INTO ml_predictions
+                (keyword, synonym, model_id, model_version, probability, prediction, features)
+                VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                (keyword, synonym, model_id, model_version, prob_approved,
+                 recommendation, json.dumps(features)))
+            conn.commit()
+        except:
+            pass
+
+    return result
+
+
+def auto_process_synonym(keyword: str, synonym: str, conn=None) -> dict:
+    """
+    FAZ 10.4.7+8: Synonym için otomatik işlem
+    Return: {action, probability, processed, message}
+    """
+    prediction = predict_approval_probability(keyword, synonym, conn)
+
+    result = {
+        'probability': prediction.get('probability', 0.5),
+        'recommendation': prediction.get('recommendation', 'manual'),
+        'model_version': prediction.get('model_version'),
+        'processed': False,
+        'action': 'manual_review',
+        'message': ''
+    }
+
+    if prediction.get('recommendation') == 'auto_approve':
+        result['action'] = 'auto_approved'
+        result['processed'] = True
+        result['message'] = f'Otomatik ONAYLANDI (güven: {prediction["probability"]:.2%})'
+        result['suggested_status'] = 'approved'
+
+    elif prediction.get('recommendation') == 'auto_reject':
+        result['action'] = 'auto_rejected'
+        result['processed'] = True
+        result['message'] = f'Otomatik REDDEDİLDİ (güven: {prediction["probability"]:.2%})'
+        result['suggested_status'] = 'rejected'
+
+    else:
+        result['action'] = 'manual_review'
+        result['processed'] = False
+        result['message'] = f'Manuel inceleme gerekli (güven: {prediction["probability"]:.2%})'
+        result['suggested_status'] = 'pending'
+
+    return result
+
+
+def start_ab_test(model_a_version: str, model_b_version: str, conn=None) -> dict:
+    """FAZ 10.4.10: A/B test başlat - iki modeli karşılaştır"""
+    if conn is None:
+        conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Model A ve B'yi bul
+    cursor.execute('SELECT id FROM ml_models WHERE model_version=?', (model_a_version,))
+    row_a = cursor.fetchone()
+    cursor.execute('SELECT id FROM ml_models WHERE model_version=?', (model_b_version,))
+    row_b = cursor.fetchone()
+
+    if not row_a or not row_b:
+        return {'error': 'Model bulunamadı'}
+
+    # A/B test flag'lerini ayarla
+    cursor.execute('UPDATE ml_models SET is_ab_test=1, ab_test_group="A" WHERE id=?', (row_a[0],))
+    cursor.execute('UPDATE ml_models SET is_ab_test=1, ab_test_group="B" WHERE id=?', (row_b[0],))
+    conn.commit()
+
+    return {'success': True, 'model_a': model_a_version, 'model_b': model_b_version}
+
+
+def get_ab_test_results(conn=None) -> dict:
+    """FAZ 10.4.10: A/B test sonuçlarını getir"""
+    if conn is None:
+        conn = get_db_connection()
+    cursor = conn.cursor()
+
+    results = {}
+
+    # Her model için istatistik
+    cursor.execute('''
+        SELECT m.model_version, m.ab_test_group,
+               COUNT(p.id) as total_predictions,
+               SUM(CASE WHEN p.is_correct=1 THEN 1 ELSE 0 END) as correct,
+               AVG(p.probability) as avg_confidence
+        FROM ml_models m
+        LEFT JOIN ml_predictions p ON m.id = p.model_id
+        WHERE m.is_ab_test = 1
+        GROUP BY m.id
+    ''')
+
+    for row in cursor.fetchall():
+        version, group, total, correct, avg_conf = row
+        results[group or version] = {
+            'version': version,
+            'total_predictions': total or 0,
+            'correct_predictions': correct or 0,
+            'accuracy': round(correct / total, 4) if total and correct else 0,
+            'avg_confidence': round(avg_conf, 4) if avg_conf else 0
+        }
+
+    return results
+
+
+def end_ab_test(winner_version: str, conn=None) -> dict:
+    """FAZ 10.4.10: A/B testi bitir, kazananı aktif yap"""
+    global _active_model, _active_model_id, _active_model_version
+
+    if conn is None:
+        conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Tüm modellerin A/B flag'ini kaldır
+    cursor.execute('UPDATE ml_models SET is_ab_test=0, ab_test_group=NULL')
+
+    # Kazananı aktif yap
+    cursor.execute('UPDATE ml_models SET is_active=0 WHERE model_name="synonym_classifier"')
+    cursor.execute('UPDATE ml_models SET is_active=1 WHERE model_version=?', (winner_version,))
+    conn.commit()
+
+    # Cache'i temizle
+    _active_model = None
+    _active_model_id = None
+    _active_model_version = None
+
+    return {'success': True, 'active_model': winner_version}
+
+
+def check_retraining_needed(conn=None, min_new_samples: int = 50) -> dict:
+    """FAZ 10.4.11: Yeniden eğitim gerekli mi kontrol et"""
+    if conn is None:
+        conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Aktif modelin eğitim tarihini al
+    cursor.execute('''SELECT id, created_at, training_samples FROM ml_models
+                      WHERE model_name="synonym_classifier" AND is_active=1''')
+    row = cursor.fetchone()
+
+    if not row:
+        return {'needs_retraining': True, 'reason': 'Aktif model yok'}
+
+    model_id, created_at, training_samples = row
+
+    # Son eğitimden sonra eklenen yeni veri sayısı
+    cursor.execute('''SELECT COUNT(*) FROM keyword_synonyms
+                      WHERE status IN ('approved', 'rejected')
+                      AND updated_at > ?''', (created_at,))
+    new_samples = cursor.fetchone()[0]
+
+    # Prediction accuracy kontrolü (son 100 tahmin)
+    cursor.execute('''SELECT
+                      COUNT(*) as total,
+                      SUM(CASE WHEN is_correct=1 THEN 1 ELSE 0 END) as correct
+                      FROM ml_predictions
+                      WHERE model_id=? AND is_correct IS NOT NULL
+                      ORDER BY created_at DESC LIMIT 100''', (model_id,))
+    pred_row = cursor.fetchone()
+    total_preds, correct_preds = pred_row if pred_row else (0, 0)
+
+    recent_accuracy = correct_preds / total_preds if total_preds and total_preds >= 20 else None
+
+    result = {
+        'needs_retraining': False,
+        'new_samples_since_training': new_samples,
+        'current_training_samples': training_samples,
+        'recent_accuracy': round(recent_accuracy, 4) if recent_accuracy else None,
+        'reasons': []
+    }
+
+    # Yeniden eğitim kriterleri
+    if new_samples >= min_new_samples:
+        result['needs_retraining'] = True
+        result['reasons'].append(f'{new_samples} yeni örnek eklendi (threshold: {min_new_samples})')
+
+    if recent_accuracy and recent_accuracy < 0.70:
+        result['needs_retraining'] = True
+        result['reasons'].append(f'Son accuracy düşük: {recent_accuracy:.2%}')
+
+    return result
+
+
+def run_retraining_job(conn=None, trigger_reason: str = 'manual') -> dict:
+    """FAZ 10.4.11: Yeniden eğitim job'ını çalıştır"""
+    if conn is None:
+        conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Eski aktif model
+    cursor.execute('SELECT id FROM ml_models WHERE model_name="synonym_classifier" AND is_active=1')
+    old_row = cursor.fetchone()
+    old_model_id = old_row[0] if old_row else None
+
+    # Job kaydını oluştur
+    cursor.execute('''INSERT INTO ml_retraining_jobs
+        (job_type, status, old_model_id, trigger_reason, started_at)
+        VALUES (?, ?, ?, ?, ?)''',
+        ('scheduled', 'running', old_model_id, trigger_reason, datetime.now()))
+    job_id = cursor.lastrowid
+    conn.commit()
+
+    # Yeni model eğit
+    try:
+        result = train_synonym_model(conn)
+
+        if 'error' in result:
+            cursor.execute('''UPDATE ml_retraining_jobs SET
+                status='failed', error_message=?, completed_at=? WHERE id=?''',
+                (result['error'], datetime.now(), job_id))
+            conn.commit()
+            return {'success': False, 'error': result['error'], 'job_id': job_id}
+
+        # Yeni model ID'sini bul
+        cursor.execute('SELECT id FROM ml_models WHERE model_version=?', (result['version'],))
+        new_model_id = cursor.fetchone()[0]
+
+        cursor.execute('''UPDATE ml_retraining_jobs SET
+            status='completed', new_model_id=?, completed_at=? WHERE id=?''',
+            (new_model_id, datetime.now(), job_id))
+        conn.commit()
+
+        result['job_id'] = job_id
+        result['success'] = True
+        return result
+
+    except Exception as e:
+        cursor.execute('''UPDATE ml_retraining_jobs SET
+            status='failed', error_message=?, completed_at=? WHERE id=?''',
+            (str(e), datetime.now(), job_id))
+        conn.commit()
+        return {'success': False, 'error': str(e), 'job_id': job_id}
 
 
 # ============ CACHE MEKANİZMASI ============
