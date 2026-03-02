@@ -442,4 +442,4 @@ OpenAI Embeddings ile semantic benzerlik sistemi. KORUNMALI:
    - openai==2.24.0
    - numpy==2.4.2
 
-Commit: (sonraki) — DEGISTIRME
+Commit: 9dbb301 — DEGISTIRME

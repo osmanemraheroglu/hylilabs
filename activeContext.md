@@ -766,6 +766,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `9dbb301` - feat(FAZ 10.2): Semantic Similarity sistemi
 - `b7d4c10` - feat(FAZ 10.1): Multiple Confidence Source sistemi
 - `3646dce` - feat(FAZ 9.5): Skorlama weight entegrasyonu
 9cd0997 - feat(FAZ 8.2.3+8.2.5): Firma bazlı keyword importance sistemi
