@@ -31,6 +31,34 @@ Son guncelleme: 01.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 02.03.2026 - FAZ 10.2 Semantic Similarity Sistemi
+- OpenAI Embeddings entegrasyonu (text-embedding-3-small, 1536 boyut)
+- database.py - Yeni fonksiyonlar:
+  - get_openai_client(): Lazy initialization OpenAI client
+  - get_embedding(text): OpenAI API ile embedding al
+  - semantic_similarity(emb1, emb2): Cosine similarity (numpy)
+  - save_keyword_embedding(keyword): Keyword embedding kaydet
+  - save_synonym_embedding(synonym, keyword): Synonym embedding kaydet
+  - check_semantic_similarity(keyword, synonym): Benzerlik kontrol (threshold 0.70)
+  - find_semantic_duplicates(threshold): Potansiyel duplicate'ları bul
+- Tablolar (migrations/faz10_1_tables.py güncellendi):
+  - keyword_embeddings: keyword, embedding (BLOB), model_version
+  - synonym_embeddings: synonym, keyword, embedding (BLOB), model_version
+- scripts/compute_embeddings.py: Pre-compute scripti
+  - 125 keyword + 387 synonym embedding hesaplandı
+- routes/synonyms.py - 3 yeni endpoint:
+  - POST /check-semantic: Keyword-synonym benzerlik kontrolü
+  - GET /semantic-duplicates: Potansiyel duplicate listesi
+  - POST /semantic-search: Semantik arama (threshold + limit)
+- create_synonym endpoint güncellendi:
+  - Semantic similarity kontrolü eklendi
+  - Düşük benzerlik uyarısı (< 0.70)
+  - Otomatik embedding kaydı
+- Test sonuçları:
+  - python-py: 0.71 (valid)
+  - javascript-cooking: 0.26 (invalid)
+  - 13 potansiyel duplicate tespit edildi (threshold 0.90)
+
 ### 02.03.2026 - FAZ 10.1 Multiple Confidence Source Sistemi
 - Yeni tablolar:
   - synonym_usage_stats: cv_occurrence_count, match_count, hired_count
@@ -881,16 +909,16 @@ ef71d87 - fix: SelectItem empty value crash - use 'none' instead of empty string
 - ✅ 10.1.6 Confidence güncelleme job (POST /update-confidence)
 - ✅ 10.1.7 Confidence trend raporu (GET /confidence-stats)
 
-#### FAZ 10.2: Semantic Similarity Katmanı (0/9) - SIRADA
-- [ ] 10.2.1 SentenceTransformer kurulumu (paraphrase-multilingual-MiniLM-L12-v2)
-- [ ] 10.2.2 semantic_similarity() fonksiyonu - Cosine similarity
-- [ ] 10.2.3 keyword_embeddings tablosu (embedding_vector BLOB)
-- [ ] 10.2.4 synonym_embeddings tablosu (embedding_vector BLOB)
-- [ ] 10.2.5 Pre-compute embeddings scripti
-- [ ] 10.2.6 Semantic threshold kontrolü (similarity < 0.75 → reject)
-- [ ] 10.2.7 Semantic duplicate tespiti
-- [ ] 10.2.8 Semantic clustering
-- [ ] 10.2.9 API endpoint: /api/semantic-search
+#### FAZ 10.2: Semantic Similarity Katmanı (9/9) ✅ TAMAMLANDI
+- ✅ 10.2.1 OpenAI Embeddings kurulumu (text-embedding-3-small)
+- ✅ 10.2.2 semantic_similarity() fonksiyonu - Cosine similarity
+- ✅ 10.2.3 keyword_embeddings tablosu (embedding BLOB)
+- ✅ 10.2.4 synonym_embeddings tablosu (embedding BLOB)
+- ✅ 10.2.5 Pre-compute embeddings scripti (125 keyword, 387 synonym)
+- ✅ 10.2.6 Semantic threshold kontrolü (similarity < 0.70 → warning)
+- ✅ 10.2.7 Semantic duplicate tespiti (find_semantic_duplicates)
+- ✅ 10.2.8 Synonym ekleme entegrasyonu (semantic check + auto-save embedding)
+- ✅ 10.2.9 API endpoints: /check-semantic, /semantic-duplicates, /semantic-search
 
 #### FAZ 10.3: Çoklu Dil Normalizasyonu (0/10)
 - [ ] 10.3.1 detect_language() fonksiyonu

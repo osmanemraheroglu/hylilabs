@@ -86,7 +86,7 @@ Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
 13. create_candidate() duplicate kontrolu (email + telefon) kaldirilmaz
 14. CV dosyalari firma bazli izole: /data/cvs/{company_id}/. save_cv_file() company_id zorunlu. validate_cv_access() okuma kontrolu zorunlu. Flat yapiya geri donulemez. 2x3 guvenlik kontrolu DEGISTIRILEMEZ
 15. DB CASCADE DELETE aktif: applications, matches, candidate_pool_assignments, position_pools, ai_evaluations -> candidates ON DELETE CASCADE. position_keywords_v2 -> department_pools ON DELETE CASCADE. interviews -> candidates, department_pools, companies ON DELETE CASCADE. ai_analyses, hr_evaluations -> candidates, positions. position_requirements, position_sector_preferences, position_title_mappings -> department_pools. candidate_merge_logs -> candidates. company_settings, email_accounts, email_templates -> companies. PRAGMA foreign_keys=ON her connectionda zorunlu. Tablo yapilari DEGISTIRILEMEZ. CASCADE kaldirilmaz.
-16. KEYWORD_SYNONYMS: candidate_matcher.py dict KORUNMALI (migration kaynağı). check_keyword_match() synonym'ları DB'den okuyor (get_synonyms_for_keyword, cache'li). check_keyword_match_weighted() FAZ 9.5 + FAZ 10.1 log_synonym_usage entegrasyonu. keyword_synonyms tablosu: 387 synonym, FAZ 1-10.1 tamamlandı. API: 10 endpoint /api/synonyms/* (list, pending, create, delete, approve, reject, generate, update-confidence, confidence-stats).
+16. KEYWORD_SYNONYMS: candidate_matcher.py dict KORUNMALI (migration kaynağı). check_keyword_match() synonym'ları DB'den okuyor (get_synonyms_for_keyword, cache'li). check_keyword_match_weighted() FAZ 9.5 + FAZ 10.1 log_synonym_usage entegrasyonu. keyword_synonyms tablosu: 387 synonym, FAZ 1-10.2 tamamlandı. API: 13 endpoint /api/synonyms/* (list, pending, create, delete, approve, reject, generate, update-confidence, confidence-stats, check-semantic, semantic-duplicates, semantic-search).
 17. matches v2_result: database.py sync INSERT kodu DEGISMEZ (commit 42cf5b0)
 18. rescore_candidate: pools.py:1253 DEGISMEZ (commit cc2a339)
 22. HTTP filename kuralı: Content-Disposition header'ında filename kullanırken RFC 5987 encoding (quote + filename*=UTF-8) kullanılmalı. Türkçe karakterler latin-1'de encode edilemez. DEĞİŞMEZ.
@@ -410,3 +410,36 @@ Aşağıdaki dosyalar FAZ 10.1 için güncellendi, KORUNMALI:
    - getConfidenceBadge() fonksiyonu
 
 Commit: b7d4c10 — DEGISTIRME
+
+### FAZ 10.2 Semantic Similarity (02.03.2026) — DEGISMEZ
+
+OpenAI Embeddings ile semantic benzerlik sistemi. KORUNMALI:
+
+1. **database.py** - Semantic fonksiyonlar:
+   - get_openai_client() - Lazy initialization OpenAI client
+   - get_embedding(text) - OpenAI text-embedding-3-small (1536 boyut)
+   - semantic_similarity(emb1, emb2) - Cosine similarity (numpy)
+   - save_keyword_embedding(keyword) - Keyword embedding kaydet
+   - save_synonym_embedding(synonym, keyword) - Synonym embedding kaydet
+   - check_semantic_similarity(keyword, synonym) - Benzerlik kontrol (threshold 0.70)
+   - find_semantic_duplicates(threshold) - Potansiyel duplicate'ları bul
+   - SEMANTIC_THRESHOLD = 0.70
+
+2. **routes/synonyms.py** - 3 yeni endpoint:
+   - POST /check-semantic - Keyword-synonym benzerlik kontrolü
+   - GET /semantic-duplicates - Potansiyel duplicate listesi
+   - POST /semantic-search - Semantik arama (threshold + limit)
+   - create_synonym() semantic validation + auto-save embedding
+
+3. **Tablolar** (DEGISTIRILEMEZ):
+   - keyword_embeddings: keyword, embedding (BLOB), model_version
+   - synonym_embeddings: synonym, keyword, embedding (BLOB), model_version
+
+4. **scripts/compute_embeddings.py** - Pre-compute scripti
+   - 125 keyword + 387 synonym embedding hesaplandı
+
+5. **Bağımlılıklar**:
+   - openai==2.24.0
+   - numpy==2.4.2
+
+Commit: (sonraki) — DEGISTIRME

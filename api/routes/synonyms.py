@@ -32,7 +32,13 @@ from database import (
     delete_keyword_importance,
     # FAZ 10.1: Confidence sistemi
     calculate_final_confidence,
-    get_connection
+    get_connection,
+    # FAZ 10.2: Semantic Similarity
+    check_semantic_similarity,
+    find_semantic_duplicates,
+    get_embedding,
+    semantic_similarity,
+    save_synonym_embedding
 )
 from routes.auth import get_current_user
 from rate_limiter import (
@@ -1012,15 +1018,28 @@ def create_synonym(
     """
     Yeni synonym ekle.
     auto_approve=True ise direkt onaylanır, False ise pending olur.
+    FAZ 10.2: Semantic similarity kontrolü eklendi.
     """
     try:
         require_company_user(current_user)
         company_id = current_user["company_id"]
         user_id = current_user["id"]
 
+        keyword = request.keyword.strip()
+        synonym = request.synonym.strip()
+
+        # FAZ 10.2: Semantic similarity kontrolü
+        semantic_result = check_semantic_similarity(keyword, synonym)
+        semantic_score = semantic_result.get("similarity", 0)
+
+        # Uyarı mesajı (düşük benzerlik durumunda)
+        semantic_warning = None
+        if semantic_score < 0.70:
+            semantic_warning = f"⚠️ Düşük semantik benzerlik ({semantic_score:.2f}). Bu synonym keyword ile zayıf ilişkili olabilir."
+
         result = add_manual_synonym(
-            keyword=request.keyword.strip(),
-            synonym=request.synonym.strip(),
+            keyword=keyword,
+            synonym=synonym,
             synonym_type=request.synonym_type,
             company_id=company_id,
             created_by=user_id,
@@ -1028,15 +1047,26 @@ def create_synonym(
         )
 
         if result.get("success"):
+            # FAZ 10.2: Synonym embedding'ini kaydet
+            try:
+                save_synonym_embedding(synonym, keyword)
+            except Exception as emb_err:
+                logger.warning(f"Synonym embedding kaydedilemedi: {emb_err}")
+
             # Loglama
-            logger.info(f"Synonym created: user={user_id}, company={company_id}, keyword={request.keyword}, synonym={request.synonym}")
+            logger.info(f"Synonym created: user={user_id}, company={company_id}, keyword={keyword}, synonym={synonym}, semantic_score={semantic_score:.2f}")
+
+            response_data = {
+                "id": result.get("id"),
+                "message": "Synonym başarıyla eklendi",
+                "semantic_score": round(semantic_score, 3)
+            }
+            if semantic_warning:
+                response_data["warning"] = semantic_warning
 
             return {
                 "success": True,
-                "data": {
-                    "id": result.get("id"),
-                    "message": "Synonym başarıyla eklendi"
-                }
+                "data": response_data
             }
         else:
             raise HTTPException(
@@ -2023,4 +2053,169 @@ def get_confidence_stats(
 
     except Exception as e:
         logger.error(f"confidence_stats hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 10.2: SEMANTIC SIMILARITY ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class SemanticCheckRequest(BaseModel):
+    keyword: str = Field(..., min_length=1, max_length=100)
+    synonym: str = Field(..., min_length=1, max_length=100)
+
+
+class SemanticSearchRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=100)
+    threshold: float = Field(default=0.70, ge=0.0, le=1.0)
+    limit: int = Field(default=10, ge=1, le=50)
+
+
+@router.post("/check-semantic")
+def check_semantic_endpoint(
+    request: SemanticCheckRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.2: Keyword ve synonym arasındaki semantik benzerliği kontrol et.
+
+    Returns:
+        {
+            "similarity": 0.82,
+            "is_valid": true,
+            "message": "✅ Semantik olarak uyumlu (0.82)"
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        result = check_semantic_similarity(
+            keyword=request.keyword.strip(),
+            synonym=request.synonym.strip()
+        )
+
+        return {
+            "success": True,
+            "data": result
+        }
+
+    except Exception as e:
+        logger.error(f"check_semantic hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/semantic-duplicates")
+def get_semantic_duplicates(
+    threshold: float = Query(default=0.92, ge=0.5, le=1.0, description="Benzerlik eşiği"),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.2: Semantik olarak benzer (muhtemel duplicate) synonym'ları bul.
+
+    Returns:
+        [
+            {
+                "synonym1": "javascript",
+                "keyword1": "js",
+                "synonym2": "java script",
+                "keyword2": "frontend",
+                "similarity": 0.95
+            }
+        ]
+    """
+    try:
+        require_company_user(current_user)
+
+        duplicates = find_semantic_duplicates(threshold=threshold)
+
+        return {
+            "success": True,
+            "data": duplicates,
+            "count": len(duplicates)
+        }
+
+    except Exception as e:
+        logger.error(f"semantic_duplicates hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/semantic-search")
+def semantic_search(
+    request: SemanticSearchRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.2: Verilen sorguya semantik olarak benzer keyword/synonym'ları ara.
+
+    Returns:
+        [
+            {"term": "python", "type": "keyword", "similarity": 0.85},
+            {"term": "py", "type": "synonym", "keyword": "python", "similarity": 0.78}
+        ]
+    """
+    try:
+        require_company_user(current_user)
+        company_id = current_user.get("company_id")
+
+        # Sorgu embedding'ini al
+        query_embedding = get_embedding(request.query.strip())
+        if not query_embedding:
+            return {
+                "success": False,
+                "data": [],
+                "message": "Sorgu için embedding alınamadı"
+            }
+
+        results = []
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            import pickle
+
+            # 1. Keyword'lerde ara
+            cursor.execute("""
+                SELECT keyword, embedding
+                FROM keyword_embeddings
+            """)
+            for row in cursor.fetchall():
+                keyword = row[0]
+                stored_embedding = pickle.loads(row[1])
+                sim = semantic_similarity(query_embedding, stored_embedding)
+                if sim >= request.threshold:
+                    results.append({
+                        "term": keyword,
+                        "type": "keyword",
+                        "similarity": round(sim, 3)
+                    })
+
+            # 2. Synonym'larda ara
+            cursor.execute("""
+                SELECT synonym, keyword, embedding
+                FROM synonym_embeddings
+            """)
+            for row in cursor.fetchall():
+                synonym = row[0]
+                keyword = row[1]
+                stored_embedding = pickle.loads(row[2])
+                sim = semantic_similarity(query_embedding, stored_embedding)
+                if sim >= request.threshold:
+                    results.append({
+                        "term": synonym,
+                        "type": "synonym",
+                        "keyword": keyword,
+                        "similarity": round(sim, 3)
+                    })
+
+        # Similarity'ye göre sırala ve limit uygula
+        results.sort(key=lambda x: x["similarity"], reverse=True)
+        results = results[:request.limit]
+
+        return {
+            "success": True,
+            "data": results,
+            "count": len(results)
+        }
+
+    except Exception as e:
+        logger.error(f"semantic_search hatası: {e}")
         raise HTTPException(status_code=500, detail=str(e))

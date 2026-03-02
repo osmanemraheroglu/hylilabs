@@ -12,10 +12,204 @@ import time
 from datetime import datetime, timedelta
 from typing import Optional
 from contextlib import contextmanager
+import pickle
+import numpy as np
+from openai import OpenAI
 
 from config import CACHE_TTL
 
 logger = logging.getLogger(__name__)
+
+# ============ OPENAI CLIENT (FAZ 10.2) ============
+
+_openai_client = None
+
+def get_openai_client():
+    """Lazy initialization for OpenAI client"""
+    global _openai_client
+    if _openai_client is None:
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            raise ValueError('OPENAI_API_KEY environment variable not set')
+        _openai_client = OpenAI(api_key=api_key)
+    return _openai_client
+
+
+def get_embedding(text: str, model: str = 'text-embedding-3-small') -> list:
+    """
+    FAZ 10.2: Metin için OpenAI embedding al
+
+    Args:
+        text: Embedding alınacak metin
+        model: OpenAI embedding modeli (default: text-embedding-3-small)
+
+    Returns:
+        1536 boyutlu float listesi veya None (hata durumunda)
+    """
+    if not text or not text.strip():
+        return None
+    try:
+        client = get_openai_client()
+        response = client.embeddings.create(
+            input=text.strip().lower(),
+            model=model
+        )
+        return response.data[0].embedding
+    except Exception as e:
+        logger.warning(f'Embedding error for "{text}": {e}')
+        return None
+
+
+def semantic_similarity(embedding1: list, embedding2: list) -> float:
+    """
+    FAZ 10.2: Cosine similarity hesapla
+
+    Args:
+        embedding1: İlk embedding vektörü
+        embedding2: İkinci embedding vektörü
+
+    Returns:
+        0.0 - 1.0 arası benzerlik skoru
+    """
+    if not embedding1 or not embedding2:
+        return 0.0
+    try:
+        vec1 = np.array(embedding1)
+        vec2 = np.array(embedding2)
+        dot_product = np.dot(vec1, vec2)
+        norm1 = np.linalg.norm(vec1)
+        norm2 = np.linalg.norm(vec2)
+        if norm1 == 0 or norm2 == 0:
+            return 0.0
+        cosine = dot_product / (norm1 * norm2)
+        return float(max(0.0, min(1.0, cosine)))  # 0-1 arasında tut
+    except Exception as e:
+        logger.warning(f'Similarity error: {e}')
+        return 0.0
+
+
+# FAZ 10.2: Semantic threshold
+SEMANTIC_THRESHOLD = 0.70
+
+
+def save_keyword_embedding(keyword: str) -> bool:
+    """
+    FAZ 10.2: Keyword için embedding hesapla ve kaydet
+    """
+    embedding = get_embedding(keyword)
+    if not embedding:
+        return False
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            embedding_blob = pickle.dumps(embedding)
+            cursor.execute('''INSERT INTO keyword_embeddings (keyword, embedding)
+                              VALUES (?, ?)
+                              ON CONFLICT(keyword) DO UPDATE SET
+                              embedding=excluded.embedding, updated_at=CURRENT_TIMESTAMP''',
+                           (keyword.lower().strip(), embedding_blob))
+        return True
+    except Exception as e:
+        logger.warning(f'save_keyword_embedding error: {e}')
+        return False
+
+
+def save_synonym_embedding(synonym: str, keyword: str) -> bool:
+    """
+    FAZ 10.2: Synonym için embedding hesapla ve kaydet
+    """
+    embedding = get_embedding(synonym)
+    if not embedding:
+        return False
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            embedding_blob = pickle.dumps(embedding)
+            cursor.execute('''INSERT INTO synonym_embeddings (synonym, keyword, embedding)
+                              VALUES (?, ?, ?)
+                              ON CONFLICT(synonym, keyword) DO UPDATE SET
+                              embedding=excluded.embedding''',
+                           (synonym.lower().strip(), keyword.lower().strip(), embedding_blob))
+        return True
+    except Exception as e:
+        logger.warning(f'save_synonym_embedding error: {e}')
+        return False
+
+
+def get_stored_embedding(table: str, key_column: str, key_value: str) -> list:
+    """
+    FAZ 10.2: DB'den embedding yükle
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(f'SELECT embedding FROM {table} WHERE {key_column}=?', (key_value.lower().strip(),))
+            row = cursor.fetchone()
+            if row and row[0]:
+                return pickle.loads(row[0])
+        return None
+    except Exception as e:
+        logger.warning(f'get_stored_embedding error: {e}')
+        return None
+
+
+def check_semantic_similarity(keyword: str, synonym: str) -> dict:
+    """
+    FAZ 10.2: Yeni synonym eklerken semantic kontrol
+
+    Returns:
+        {'similarity': float, 'is_valid': bool, 'message': str}
+    """
+    kw_emb = get_embedding(keyword)
+    syn_emb = get_embedding(synonym)
+    if not kw_emb or not syn_emb:
+        return {'similarity': 0, 'is_valid': False, 'message': 'Embedding alınamadı'}
+
+    sim = semantic_similarity(kw_emb, syn_emb)
+    is_valid = sim >= SEMANTIC_THRESHOLD
+    if is_valid:
+        message = f'Geçerli synonym (benzerlik: {sim:.2f})'
+    else:
+        message = f'Düşük benzerlik! ({sim:.2f} < {SEMANTIC_THRESHOLD}) - Bu synonym yanlış olabilir'
+    return {'similarity': round(sim, 3), 'is_valid': is_valid, 'message': message}
+
+
+def find_semantic_duplicates(threshold: float = 0.92) -> list:
+    """
+    FAZ 10.2: Çok benzer synonymleri bul (potansiyel duplicateler)
+
+    Returns:
+        [{'synonym1': str, 'keyword1': str, 'synonym2': str, 'keyword2': str, 'similarity': float}, ...]
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT synonym, keyword, embedding FROM synonym_embeddings')
+            rows = cursor.fetchall()
+
+        duplicates = []
+        for i, (syn1, kw1, emb1_blob) in enumerate(rows):
+            emb1 = pickle.loads(emb1_blob) if emb1_blob else None
+            if not emb1:
+                continue
+            for syn2, kw2, emb2_blob in rows[i+1:]:
+                if syn1 == syn2:
+                    continue
+                emb2 = pickle.loads(emb2_blob) if emb2_blob else None
+                if not emb2:
+                    continue
+                sim = semantic_similarity(emb1, emb2)
+                if sim >= threshold:
+                    duplicates.append({
+                        'synonym1': syn1, 'keyword1': kw1,
+                        'synonym2': syn2, 'keyword2': kw2,
+                        'similarity': round(sim, 3)
+                    })
+        return duplicates
+    except Exception as e:
+        logger.warning(f'find_semantic_duplicates error: {e}')
+        return []
+
 
 # ============ CACHE MEKANİZMASI ============
 
