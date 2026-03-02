@@ -15,6 +15,8 @@ from contextlib import contextmanager
 import pickle
 import numpy as np
 from openai import OpenAI
+from langdetect import detect, LangDetectException
+import snowballstemmer
 
 from config import CACHE_TTL
 
@@ -209,6 +211,249 @@ def find_semantic_duplicates(threshold: float = 0.92) -> list:
     except Exception as e:
         logger.warning(f'find_semantic_duplicates error: {e}')
         return []
+
+
+# ============ FAZ 10.3: ÇOKLU DİL NORMALİZASYONU ============
+
+# Türkçe -> İngilizce IT/HR terimleri
+TRANSLATION_DICTIONARY = {
+    # AI/ML
+    'yapay zeka': 'artificial intelligence',
+    'yapay öğrenme': 'machine learning',
+    'makine öğrenmesi': 'machine learning',
+    'makine ogrenmesi': 'machine learning',
+    'derin öğrenme': 'deep learning',
+    'derin ogrenme': 'deep learning',
+    'sinir ağları': 'neural networks',
+    'sinir aglari': 'neural networks',
+    'doğal dil işleme': 'natural language processing',
+    'dogal dil isleme': 'natural language processing',
+    # Data
+    'veri bilimi': 'data science',
+    'veri analizi': 'data analysis',
+    'veri madenciliği': 'data mining',
+    'büyük veri': 'big data',
+    'buyuk veri': 'big data',
+    'veri tabanı': 'database',
+    'veritabanı': 'database',
+    'veritabani': 'database',
+    # Web/Frontend
+    'ön yüz': 'frontend',
+    'on yuz': 'frontend',
+    'arka yüz': 'backend',
+    'arka yuz': 'backend',
+    'tam yığın': 'full stack',
+    'web geliştirme': 'web development',
+    'web gelistirme': 'web development',
+    # DevOps
+    'bulut bilişim': 'cloud computing',
+    'bulut bilisim': 'cloud computing',
+    'konteyner': 'container',
+    'sanallaştırma': 'virtualization',
+    # Software
+    'yazılım geliştirme': 'software development',
+    'yazilim gelistirme': 'software development',
+    'yazılım mühendisliği': 'software engineering',
+    'proje yönetimi': 'project management',
+    'proje yonetimi': 'project management',
+    'çevik': 'agile',
+    'cevik': 'agile',
+    'test otomasyonu': 'test automation',
+    'birim testi': 'unit testing',
+    # Security
+    'siber güvenlik': 'cyber security',
+    'siber guvenlik': 'cyber security',
+    'bilgi güvenliği': 'information security',
+    # Mobile
+    'mobil uygulama': 'mobile application',
+    'mobil geliştirme': 'mobile development',
+    # HR
+    'insan kaynakları': 'human resources',
+    'insan kaynaklari': 'human resources',
+    'işe alım': 'recruitment',
+    'ise alim': 'recruitment',
+    'yetenek yönetimi': 'talent management',
+    # Finance
+    'finansal analiz': 'financial analysis',
+    'muhasebe': 'accounting',
+    'bütçe yönetimi': 'budget management',
+    # Construction
+    'inşaat mühendisliği': 'civil engineering',
+    'mimarlık': 'architecture',
+}
+
+# İngilizce kısaltmalar -> Tam form
+ENGLISH_CANONICAL = {
+    'ml': 'machine learning',
+    'ai': 'artificial intelligence',
+    'dl': 'deep learning',
+    'nlp': 'natural language processing',
+    'cv': 'computer vision',
+    'ds': 'data science',
+    'js': 'javascript',
+    'ts': 'typescript',
+    'py': 'python',
+    'k8s': 'kubernetes',
+    'aws': 'amazon web services',
+    'gcp': 'google cloud platform',
+    'ci/cd': 'continuous integration continuous deployment',
+    'devops': 'development operations',
+    'qa': 'quality assurance',
+    'ui': 'user interface',
+    'ux': 'user experience',
+    'api': 'application programming interface',
+    'sql': 'structured query language',
+    'hr': 'human resources',
+    'pm': 'project management',
+}
+
+# Stemmer cache (lazy init)
+_stemmers = {}
+
+
+def detect_language(text: str) -> str:
+    """
+    FAZ 10.3.1: Metin dilini algıla
+
+    Args:
+        text: Dili algılanacak metin
+
+    Returns:
+        'tr', 'en', 'de', 'fr' veya 'unknown'
+    """
+    if not text or len(text.strip()) < 3:
+        return 'unknown'
+    try:
+        lang = detect(text.strip().lower())
+        return lang if lang in ['tr', 'en', 'de', 'fr', 'es', 'it'] else 'unknown'
+    except LangDetectException:
+        return 'unknown'
+    except Exception as e:
+        logger.warning(f'detect_language error: {e}')
+        return 'unknown'
+
+
+def get_stemmer(lang: str):
+    """
+    FAZ 10.3.3: Dile göre stemmer al (cached)
+    """
+    if lang not in _stemmers:
+        lang_map = {'tr': 'turkish', 'en': 'english', 'de': 'german', 'fr': 'french'}
+        stem_lang = lang_map.get(lang, 'english')
+        _stemmers[lang] = snowballstemmer.stemmer(stem_lang)
+    return _stemmers[lang]
+
+
+def stem_word(word: str, lang: str = None) -> str:
+    """
+    FAZ 10.3.3: Kelimenin kökünü bul
+
+    Args:
+        word: Kök bulunacak kelime
+        lang: Dil kodu (None ise otomatik algılanır)
+
+    Returns:
+        Kelimenin kökü
+    """
+    if not word:
+        return ''
+    word = word.strip().lower()
+    if lang is None:
+        lang = detect_language(word)
+    if lang == 'unknown':
+        lang = 'en'
+    try:
+        stemmer = get_stemmer(lang)
+        stems = stemmer.stemWords([word])
+        return stems[0] if stems else word
+    except Exception as e:
+        logger.warning(f'stem_word error: {e}')
+        return word
+
+
+def translate_to_canonical(text: str, conn=None) -> dict:
+    """
+    FAZ 10.3.2: Metni canonical (standart) forma çevir
+
+    Öncelik: 1) DB sözlük, 2) Statik TR->EN, 3) Statik kısaltmalar, 4) Orijinal
+
+    Args:
+        text: Çevrilecek metin
+        conn: Veritabanı bağlantısı (opsiyonel)
+
+    Returns:
+        {'original': str, 'canonical': str, 'source_lang': str, 'was_translated': bool}
+    """
+    if not text:
+        return {'original': '', 'canonical': '', 'source_lang': 'unknown', 'was_translated': False}
+
+    original = text.strip()
+    text_lower = original.lower()
+    source_lang = detect_language(original)
+
+    # 1. Veritabanından çeviri ara (dinamik sözlük)
+    try:
+        should_close = False
+        if conn is None:
+            conn = get_db_connection()
+            should_close = True
+        cursor = conn.cursor()
+        cursor.execute('SELECT canonical_term FROM translation_dictionary WHERE source_term=?', (text_lower,))
+        row = cursor.fetchone()
+        if should_close:
+            conn.close()
+        if row:
+            return {'original': original, 'canonical': row[0], 'source_lang': source_lang, 'was_translated': True}
+    except Exception:
+        pass  # DB hatası olursa statik sözlüğe devam
+
+    # 2. Türkçe -> İngilizce statik sözlük
+    if text_lower in TRANSLATION_DICTIONARY:
+        canonical = TRANSLATION_DICTIONARY[text_lower]
+        return {'original': original, 'canonical': canonical, 'source_lang': source_lang, 'was_translated': True}
+
+    # 3. İngilizce kısaltma -> Tam form
+    if text_lower in ENGLISH_CANONICAL:
+        canonical = ENGLISH_CANONICAL[text_lower]
+        return {'original': original, 'canonical': canonical, 'source_lang': source_lang, 'was_translated': True}
+
+    # 4. Çeviri bulunamadı
+    return {'original': original, 'canonical': text_lower, 'source_lang': source_lang, 'was_translated': False}
+
+
+def normalize_keyword(keyword: str, apply_stemming: bool = False, conn=None) -> dict:
+    """
+    FAZ 10.3.4: Keyword'ü normalize et (çeviri + opsiyonel stemming)
+
+    Args:
+        keyword: Normalize edilecek keyword
+        apply_stemming: Stemming uygulansın mı
+        conn: Veritabanı bağlantısı (opsiyonel)
+
+    Returns:
+        {'original': str, 'normalized': str, 'canonical': str, 'source_lang': str, 'was_translated': bool, 'stem': str (opsiyonel)}
+    """
+    if not keyword:
+        return {'original': '', 'normalized': '', 'canonical': '', 'source_lang': 'unknown', 'was_translated': False}
+
+    # 1. Çeviri yap
+    translation = translate_to_canonical(keyword, conn)
+
+    result = {
+        'original': translation['original'],
+        'normalized': translation['canonical'].lower().strip(),
+        'canonical': translation['canonical'],
+        'source_lang': translation['source_lang'],
+        'was_translated': translation['was_translated']
+    }
+
+    # 2. Opsiyonel stemming
+    if apply_stemming:
+        words = result['normalized'].split()
+        stemmed = [stem_word(w, 'en') for w in words]
+        result['stem'] = ' '.join(stemmed)
+
+    return result
 
 
 # ============ CACHE MEKANİZMASI ============

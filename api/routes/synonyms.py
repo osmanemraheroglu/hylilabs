@@ -38,7 +38,15 @@ from database import (
     find_semantic_duplicates,
     get_embedding,
     semantic_similarity,
-    save_synonym_embedding
+    save_synonym_embedding,
+    # FAZ 10.3: Multi-language Normalization
+    normalize_keyword,
+    translate_to_canonical,
+    detect_language,
+    stem_word,
+    TRANSLATION_DICTIONARY,
+    ENGLISH_CANONICAL,
+    get_db_connection
 )
 from routes.auth import get_current_user
 from rate_limiter import (
@@ -2218,4 +2226,226 @@ def semantic_search(
 
     except Exception as e:
         logger.error(f"semantic_search hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ 10.3: MULTI-LANGUAGE NORMALIZATION ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class NormalizeRequest(BaseModel):
+    keyword: str = Field(..., min_length=1, max_length=200)
+    apply_stemming: bool = Field(default=False)
+
+
+class TranslateRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=200)
+
+
+class AddTranslationRequest(BaseModel):
+    source_term: str = Field(..., min_length=1, max_length=200)
+    canonical_term: str = Field(..., min_length=1, max_length=200)
+    source_lang: str = Field(default="tr", max_length=10)
+    sector: str = Field(default="general", max_length=50)
+
+
+@router.post("/normalize")
+def normalize_keyword_endpoint(
+    request: NormalizeRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.3: Keyword'ü normalize et (çeviri + opsiyonel stemming)
+
+    Returns:
+        {
+            "original": "Makine Öğrenmesi",
+            "normalized": "machine learning",
+            "canonical": "machine learning",
+            "source_lang": "tr",
+            "was_translated": true,
+            "stem": "machin learn" (if apply_stemming=true)
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        result = normalize_keyword(
+            keyword=request.keyword,
+            apply_stemming=request.apply_stemming
+        )
+
+        return {
+            "success": True,
+            "data": result
+        }
+
+    except Exception as e:
+        logger.error(f"normalize_keyword hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/translate")
+def translate_endpoint(
+    request: TranslateRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.3: Metni canonical forma çevir
+
+    Returns:
+        {
+            "original": "yapay zeka",
+            "canonical": "artificial intelligence",
+            "source_lang": "tr",
+            "was_translated": true
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        result = translate_to_canonical(text=request.text)
+
+        return {
+            "success": True,
+            "data": result
+        }
+
+    except Exception as e:
+        logger.error(f"translate hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/dictionary-stats")
+def dictionary_stats(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.3: Sözlük istatistikleri
+
+    Returns:
+        {
+            "static_tr_en": 35,
+            "static_en_canonical": 21,
+            "database_translations": 0,
+            "total": 56
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM translation_dictionary')
+        db_count = cursor.fetchone()[0]
+        conn.close()
+
+        return {
+            "success": True,
+            "data": {
+                "static_tr_en": len(TRANSLATION_DICTIONARY),
+                "static_en_canonical": len(ENGLISH_CANONICAL),
+                "database_translations": db_count,
+                "total": len(TRANSLATION_DICTIONARY) + len(ENGLISH_CANONICAL) + db_count
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"dictionary_stats hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/add-translation")
+def add_translation(
+    request: AddTranslationRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.3: Yeni çeviri ekle (DB sözlüğüne)
+
+    Returns:
+        {"success": true, "message": "yapay zeka -> artificial intelligence eklendi"}
+    """
+    try:
+        require_company_user(current_user)
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        user_id = current_user.get('id', 0)
+        cursor.execute('''INSERT INTO translation_dictionary
+                          (source_term, source_lang, canonical_term, sector, verified, verified_by)
+                          VALUES (?, ?, ?, ?, 1, ?)
+                          ON CONFLICT(source_term, source_lang) DO UPDATE SET
+                          canonical_term=excluded.canonical_term''',
+                       (request.source_term.lower(), request.source_lang,
+                        request.canonical_term.lower(), request.sector, user_id))
+        conn.commit()
+        conn.close()
+
+        return {
+            "success": True,
+            "message": f"'{request.source_term}' -> '{request.canonical_term}' eklendi"
+        }
+
+    except Exception as e:
+        logger.error(f"add_translation hatası: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/language-stats")
+def language_stats(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 10.3.10: Dil dağılım istatistikleri
+
+    Returns:
+        {
+            "total_terms_analyzed": 1000,
+            "language_distribution": {"tr": 450, "en": 520, "unknown": 30},
+            "untranslated_turkish_count": 15,
+            "untranslated_turkish_sample": ["örnek1", "örnek2", ...]
+        }
+    """
+    try:
+        require_company_user(current_user)
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute('SELECT keyword, synonym FROM keyword_synonyms LIMIT 500')
+        rows = cursor.fetchall()
+        conn.close()
+
+        lang_stats = {'tr': 0, 'en': 0, 'unknown': 0, 'other': 0}
+        untranslated_tr = []
+
+        for kw, syn in rows:
+            for term in [kw, syn]:
+                if not term:
+                    continue
+                lang = detect_language(term)
+                if lang in lang_stats:
+                    lang_stats[lang] += 1
+                else:
+                    lang_stats['other'] += 1
+                # Çevrilmemiş Türkçe terimler
+                if lang == 'tr':
+                    trans = translate_to_canonical(term)
+                    if not trans['was_translated']:
+                        untranslated_tr.append(term)
+
+        return {
+            "success": True,
+            "data": {
+                "total_terms_analyzed": len(rows) * 2,
+                "language_distribution": lang_stats,
+                "untranslated_turkish_count": len(set(untranslated_tr)),
+                "untranslated_turkish_sample": list(set(untranslated_tr))[:20]
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"language_stats hatası: {e}")
         raise HTTPException(status_code=500, detail=str(e))
