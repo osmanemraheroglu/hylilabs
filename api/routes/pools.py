@@ -299,9 +299,9 @@ def get_pool_candidates(pool_id: int, current_user: dict = Depends(get_current_u
             candidates = get_position_candidates(pool_id)
             # Pozisyon adayları için location_status zenginleştirmesi
             if candidates:
-                print(f"LOCATION_ENRICH: Starting for {len(candidates)} candidates, pool_id={pool_id}")
                 from database import get_connection
                 import json as json_lib
+                import logging
                 with get_connection() as conn:
                     cursor = conn.cursor()
                     for c in candidates:
@@ -314,15 +314,9 @@ def get_pool_candidates(pool_id: int, current_user: dict = Depends(get_current_u
                             match_row = cursor.fetchone()
                             if match_row and match_row["detayli_analiz"]:
                                 detail = json_lib.loads(match_row["detayli_analiz"])
-                                loc_status = detail.get("location_status", {})
-                                c["location_status"] = loc_status
-                                print(f"LOCATION_ENRICH: candidate={cid}, status={loc_status.get('status', 'N/A')}")
-                            else:
-                                print(f"LOCATION_ENRICH: candidate={cid}, NO MATCH FOUND")
+                                c["location_status"] = detail.get("location_status", {})
                         except Exception as e:
-                            import traceback
-                            print(f"LOCATION_STATUS ERROR: candidate={c}, pool_id={pool_id}, error={e}")
-                            traceback.print_exc()
+                            logging.error(f"location_status enrichment error: candidate_id={c.get('id')}, pool_id={pool_id}, error={e}")
         else:
             candidates = get_department_pool_candidates(pool_id)
 
