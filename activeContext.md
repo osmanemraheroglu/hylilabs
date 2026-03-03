@@ -31,6 +31,11 @@ Son guncelleme: 02.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - Eş Anlamlılar Tab Grid Fix
+- TabsList grid-cols-5 → grid-cols-6 düzeltildi
+- 6 tab için doğru grid yapılandırması sağlandı
+- Commit: b49021c
+
 ### 03.03.2026 - UI Metin Değişikliği (Pozisyon Havuzunda)
 - "Pozisyona Atandı" display metni "Pozisyon Havuzunda" olarak güncellendi
 - Değiştirilen dosyalar:
@@ -845,6 +850,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `b49021c` - fix: Eş Anlamlılar tab grid düzeltmesi (grid-cols-5 → grid-cols-6)
 - `3d98481` - fix: Pozisyona Atandı → Pozisyon Havuzunda UI metin değişikliği
 - `7212605` - fix: Adaylar havuz filtresi kaldırıldı
 - `e02992c` - feat(FAZ 10.4): ML-Based Auto-Learning sistemi
