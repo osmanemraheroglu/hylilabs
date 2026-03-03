@@ -148,3 +148,10 @@ Dosya kilitlenmeden önce:
 - cv_parser.py LinkedIn bölümü lokasyon satırı (satır 881): DEĞİŞTİRİLEMEZ.
 - Kural: İş deneyimi şehri ve eğitim şehri lokasyon olarak KULLANILAMAZ.
 - Commit: aef59be
+
+### 25. CODE REVIEW KURALI (Kilitlenme: 04.03.2026)
+- Her dosya yaziminda 11 maddelik kontrol listesi uygulanir
+- company_id izolasyonu, SQL injection, Turkce karakter, CV guvenligi, Auth kontrolu
+- Error handling, Kilitli fonksiyonlar, BLACKLIST/keyword, KVKK audit, Rate limiting, Frontend
+- Sorun bulunursa DURDUR, raporla, onay bekle
+- Bu kural DEGISTIRILEMEZ
