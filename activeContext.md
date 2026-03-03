@@ -31,6 +31,15 @@ Son guncelleme: 02.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - LocationBadge Görsel Bug Fix
+- location-badge.tsx: shrink-0 ile badge küçülmesi engellendi
+- location-badge.tsx: truncate + max-w-[150px] ile metin taşması engellendi
+- location-badge.tsx: status type'a 'gray' eklendi (veri yoksa)
+- location-badge.tsx: getTooltipContent ile status'a göre özel tooltip mesajları
+- havuzlar/index.tsx: TableCell'e max-w-[200px] overflow-hidden eklendi
+- havuzlar/index.tsx: location_status yoksa 'gray' fallback kullanılıyor
+- Commit: 2b122c1
+
 ### 03.03.2026 - LocationBadge API Fix
 - pools.py: Pozisyon adayları için location_status zenginleştirmesi eklendi
 - matches.detayli_analiz'den location_status okunup API response'a ekleniyor
