@@ -535,3 +535,10 @@ Commit: e02992c — DEGISTIRME
 - "Aday Havuz Dağılımı" → "Aday Durum Dağılımı" (satır 235)
 - "Durumlara göre aday dağılımı" → "Süreç aşamalarına göre aday oranı" (satır 236)
 - Commit: b0924e7, 697ab0d, 9fcde9f — DEGISTIRME
+
+### Türkçe Karakter Duyarsız Arama (03.03.2026) — DEGISMEZ
+- api/database.py: turkish_lower() helper fonksiyonu (İ→i, I→ı dönüşümü)
+- api/database.py: get_connection() içinde TURKISH_LOWER SQLite custom function
+- get_all_candidates() ve get_candidates_count() arama sorguları TURKISH_LOWER() kullanıyor
+- Büyük/küçük harf + Türkçe karakter duyarsız arama (İ↔i, I↔ı, Ö↔ö, Ü↔ü, Ş↔ş, Ğ↔ğ, Ç↔ç)
+- Commit: ba28821 — DEGISTIRME
