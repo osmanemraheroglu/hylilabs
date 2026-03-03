@@ -8,8 +8,10 @@ import io
 import os
 import hashlib
 import logging
+import re
 from datetime import datetime
 from typing import Optional, Tuple
+from urllib.parse import quote
 
 import anthropic
 
@@ -44,6 +46,80 @@ OPTIONAL_FIELDS = ['email', 'telefon', 'lokasyon', 'egitim', 'universite',
                    'mevcut_sirket', 'teknik_beceriler', 'diller', 'sertifikalar']
 
 # MAX_CV_FILE_SIZE config.py'den import ediliyor
+
+# Türkçe karakter -> ASCII mapping (RFC 5987 uyumu için)
+TURKISH_CHAR_MAP = {
+    'ş': 's', 'Ş': 'S',
+    'ğ': 'g', 'Ğ': 'G',
+    'ü': 'u', 'Ü': 'U',
+    'ö': 'o', 'Ö': 'O',
+    'ı': 'i', 'İ': 'I',
+    'ç': 'c', 'Ç': 'C'
+}
+
+
+def sanitize_filename(filename: str) -> str:
+    """
+    Dosya adını ASCII-safe hale getir.
+    Türkçe karakterleri dönüştür, geçersiz karakterleri kaldır.
+
+    Args:
+        filename: Orijinal dosya adı
+
+    Returns:
+        ASCII-safe dosya adı
+    """
+    if not filename:
+        return "dosya"
+
+    # Türkçe karakterleri dönüştür
+    result = filename
+    for tr_char, ascii_char in TURKISH_CHAR_MAP.items():
+        result = result.replace(tr_char, ascii_char)
+
+    # Sadece güvenli karakterleri bırak (alfanumerik, nokta, tire, alt çizgi, boşluk)
+    result = re.sub(r'[^\w\s\.\-]', '', result, flags=re.ASCII)
+
+    # Çoklu boşlukları teke indir ve trim
+    result = re.sub(r'\s+', ' ', result).strip()
+
+    # Boşlukları alt çizgiye çevir
+    result = result.replace(' ', '_')
+
+    # Boşsa varsayılan ad ver
+    if not result:
+        return "dosya"
+
+    return result
+
+
+def get_safe_content_disposition(filename: str, disposition: str = "inline") -> str:
+    """
+    RFC 5987 uyumlu Content-Disposition header değeri oluştur.
+    Türkçe karakterler için hem fallback hem UTF-8 encoding sağlar.
+
+    Args:
+        filename: Orijinal dosya adı
+        disposition: "inline" veya "attachment"
+
+    Returns:
+        Content-Disposition header değeri
+
+    Example:
+        >>> get_safe_content_disposition("Özgeçmiş_Ali_Çelik.pdf")
+        'inline; filename="Ozgecmis_Ali_Celik.pdf"; filename*=UTF-8\'\'%C3%96zge%C3%A7mi%C5%9F_Ali_%C3%87elik.pdf'
+    """
+    if not filename:
+        filename = "dosya.pdf"
+
+    # ASCII-safe fallback
+    safe_filename = sanitize_filename(filename)
+
+    # UTF-8 encoded version (RFC 5987)
+    utf8_filename = quote(filename, safe='')
+
+    # Her iki versiyonu da sağla (eski ve yeni tarayıcılar için)
+    return f'{disposition}; filename="{safe_filename}"; filename*=UTF-8\'\'{utf8_filename}'
 
 
 def validate_parsed_cv(data: dict) -> dict:

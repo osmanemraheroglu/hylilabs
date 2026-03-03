@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from routes.auth import get_current_user
-from core.cv_parser import validate_cv_access
+from core.cv_parser import validate_cv_access, get_safe_content_disposition
 from database import (
     get_connection,
     get_department_pools, get_department_pool, get_department_pool_stats,
@@ -1417,7 +1417,7 @@ def get_candidate_cv(pool_id: int, candidate_id: int, current_user: dict = Depen
                 content=file_bytes,
                 media_type=media_type,
                 headers={
-                    "Content-Disposition": f'inline; filename="{cv_filename}"'
+                    "Content-Disposition": get_safe_content_disposition(cv_filename, "inline")
                 }
             )
     except HTTPException:

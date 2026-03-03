@@ -457,18 +457,20 @@ export default function Havuzlar() {
       .catch(e => toast.error('Hata: ' + e))
   }
 
-  const handleViewCV = (candidateId: number) => {
+  const handleViewCV = async (candidateId: number) => {
     if (!selectedPoolId) return
-    fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/cv`, { headers: H() })
-      .then(r => {
-        if (!r.ok) throw new Error('CV bulunamadı')
-        return r.blob()
-      })
-      .then(blob => {
-        const url = URL.createObjectURL(blob)
-        window.open(url, '_blank')
-      })
-      .catch(() => toast.error('CV dosyası bulunamadı'))
+    try {
+      const r = await fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/cv`, { headers: H() })
+      if (!r.ok) {
+        const errorData = await r.json().catch(() => ({ detail: 'Bilinmeyen hata' }))
+        throw new Error(errorData.detail || 'CV yüklenemedi')
+      }
+      const blob = await r.blob()
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'CV dosyası açılamadı')
+    }
   }
 
   // Filtering & Sorting

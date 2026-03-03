@@ -31,6 +31,17 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - CV Dosya Encoding Fix (RFC 5987)
+- Sorun: CV dosyaları Türkçe karakterli isimlerle (Ö, Ü, Ş, vb.) indirilemiyor
+- Root cause: Content-Disposition header'ında raw Türkçe karakterler latin-1'de encode edilemedi
+- Çözüm: RFC 5987 uyumlu encoding + ASCII fallback
+- cv_parser.py: sanitize_filename() fonksiyonu eklendi (Türkçe → ASCII dönüşümü)
+- cv_parser.py: get_safe_content_disposition() fonksiyonu eklendi (RFC 5987 encoding)
+- pools.py: CV endpoint Content-Disposition header'ı güncellendi
+- havuzlar/index.tsx: CV görüntüleme hata mesajları iyileştirildi
+- Test: 4 farklı Türkçe karakterli dosya adı ile test edildi (ÖZGÜR, Müzeyyen, Çelik, İstanbul)
+- CLAUDE.md Kural 22 zaten mevcut (HTTP filename kuralı)
+
 ### 03.03.2026 - Dashboard Toplam Aday Kart Başlık Güncelleme
 - "Toplam Aday" → "Toplam Başvuru" olarak değiştirildi
 - "Sistemdeki tüm adaylar" → "Sistemde kayıtlı tüm başvurular" olarak değiştirildi
