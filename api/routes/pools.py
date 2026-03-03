@@ -313,8 +313,10 @@ def get_pool_candidates(pool_id: int, current_user: dict = Depends(get_current_u
                             if match_row and match_row["detayli_analiz"]:
                                 detail = json_lib.loads(match_row["detayli_analiz"])
                                 c["location_status"] = detail.get("location_status", {})
-                        except:
-                            pass
+                        except Exception as e:
+                            import traceback
+                            print(f"LOCATION_STATUS ERROR: candidate={c}, pool_id={pool_id}, error={e}")
+                            traceback.print_exc()
         else:
             candidates = get_department_pool_candidates(pool_id)
 
