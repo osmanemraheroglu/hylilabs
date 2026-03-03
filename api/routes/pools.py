@@ -1317,6 +1317,7 @@ def get_candidate_report(pool_id: int, candidate_id: int, current_user: dict = D
                         "matched_title": detail.get("matched_title", ""),
                         "sector_detail": detail.get("sector_detail", ""),
                         "location_detail": detail.get("location_detail", ""),
+                        "location_status": detail.get("location_status", {}),
                         "critical_matched": detail.get("critical_matched", []),
                         "critical_missing": detail.get("critical_missing", []),
                         "knockout": detail.get("knockout", False),

@@ -18,6 +18,7 @@ import {
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { LocationBadge } from '@/components/ui/location-badge'
 import { Checkbox } from '@/components/ui/checkbox'
 
 const API = 'http://***REMOVED***:8000'
@@ -28,7 +29,7 @@ interface SysPool { id: number; name: string; icon: string; is_system: boolean; 
 interface Position { id: number; name: string; icon: string; keywords: string|null; description: string|null; candidate_count: number }
 interface Dept { id: number; name: string; icon: string; candidate_count: number; positions: Position[]; total_position_candidates: number }
 interface TreeData { system_pools: SysPool[]; departments: Dept[]; total_candidates?: number }
-interface Candidate { id: number; ad_soyad: string; email: string|null; telefon: string|null; mevcut_pozisyon: string|null; toplam_deneyim_yil: number|null; lokasyon: string|null; match_score?: number; match_reason?: string; remaining_days?: number; assignment_type?: string; status?: string }
+interface Candidate { id: number; ad_soyad: string; email: string|null; telefon: string|null; mevcut_pozisyon: string|null; toplam_deneyim_yil: number|null; lokasyon: string|null; location_status?: { status: "green" | "yellow" | "red"; candidate_location: string; position_location: string; match_type: string }; match_score?: number; match_reason?: string; remaining_days?: number; assignment_type?: string; status?: string }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   aktif: { label: 'Aktif', color: 'bg-blue-100 text-blue-800' },
@@ -516,7 +517,7 @@ export default function Havuzlar() {
         </div>
         <div className="space-y-1">
           <div className="font-medium">Eleme: <span className="text-orange-600">{String(v2.elimination_score || 0)}/10</span></div>
-          <div className="text-muted-foreground ml-2">Lokasyon: {String(v2.location_score || 0)}</div>
+          {/* Lokasyon score kaldırıldı - görsel badge kullanılıyor */}
         </div>
         {v2.knockout && <div className="col-span-2 bg-red-50 border border-red-200 rounded p-2 text-red-700 font-medium">KNOCKOUT: {String(v2.knockout_reason || '')}</div>}
         {Array.isArray(v2.critical_missing) && (v2.critical_missing as string[]).length > 0 && (
@@ -681,7 +682,7 @@ export default function Havuzlar() {
                               </TableCell>
                               <TableCell className="text-sm truncate">{c.mevcut_pozisyon || '-'}</TableCell>
                               <TableCell className="text-sm">{c.toplam_deneyim_yil ? `${c.toplam_deneyim_yil} yıl` : '-'}</TableCell>
-                              <TableCell className="text-sm truncate">{c.lokasyon || '-'}</TableCell>
+                              <TableCell className="text-sm">{c.location_status ? <LocationBadge status={c.location_status.status} candidateLocation={c.location_status.candidate_location} positionLocation={c.location_status.position_location} matchType={c.location_status.match_type} /> : <span className="truncate">{c.lokasyon || '-'}</span>}</TableCell>
                               <TableCell>
                                 {c.match_score ? <Badge variant="outline" className="text-xs">{si?.icon} {c.match_score}</Badge>
                                   : c.remaining_days !== undefined ? <Badge className={`text-xs ${dayColor(c.remaining_days)}`}>{c.remaining_days}g</Badge>

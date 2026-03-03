@@ -375,10 +375,10 @@ def calculate_technical_score(
     v2_keywords: Dict[str, List[str]]
 ) -> Dict:
     """
-    KATMAN 2: Teknik Yetkinlik (37 puan)
-    - Must-have keyword'ler: 17 puan (MOD A)
-    - Critical keyword'ler: 27 puan (MOD B) veya 10 puan (MOD A)
-    - Important keyword'ler: 10 puan
+    KATMAN 2: Teknik Yetkinlik (47 puan)
+    - Must-have keyword'ler: 20 puan (MOD A)
+    - Critical keyword'ler: 35 puan (MOD B) veya 12 puan (MOD A)
+    - Important keyword'ler: 12 puan
     """
     # Aday bilgilerini al
     # Lazy import to avoid circular dependency
@@ -411,9 +411,9 @@ def calculate_technical_score(
             else:
                 must_have_missing.append(keyword)
         
-        # Must-have: 17 puan (eksik başına -4 ekstra ceza)
+        # Must-have: 20 puan (eksik başına -4 ekstra ceza)
         matched_ratio = len(must_have_matched) / len(must_have_keywords) if must_have_keywords else 0
-        must_have_score = int(matched_ratio * 17)
+        must_have_score = int(matched_ratio * 20)
         # Eksik başına -4 ekstra ceza
         missing_count = len(must_have_missing)
         must_have_score = max(0, must_have_score - (missing_count * 4))
@@ -437,14 +437,14 @@ def calculate_technical_score(
     if must_have_keywords:
         # MOD A: Must-have varsa → Critical 10 puan (lineer)
         if critical_keywords:
-            critical_score = int((len(critical_matched) / len(critical_keywords)) * 10)
+            critical_score = int((len(critical_matched) / len(critical_keywords)) * 12)
         else:
             critical_score = 0
     else:
         # MOD B: Must-have yoksa → Critical 27 puan (exponential)
         if critical_keywords:
             matched_ratio = len(critical_matched) / len(critical_keywords)
-            critical_score = int((matched_ratio ** 1.5) * 27)
+            critical_score = int((matched_ratio ** 1.5) * 35)
         else:
             critical_score = 0
     
@@ -463,7 +463,7 @@ def calculate_technical_score(
             else:
                 important_missing.append(keyword)
         
-        important_score = int((len(important_matched) / len(important_keywords)) * 10)
+        important_score = int((len(important_matched) / len(important_keywords)) * 12)
     else:
         important_score = 0
     
@@ -578,87 +578,88 @@ def calculate_general_score(
     }
 
 
+def get_location_status(
+    cand_location: str,
+    pos_location: str
+) -> Dict:
+    """
+    Lokasyon uyum durumunu görsel indicator için hesapla.
+    PUAN VERMEZ - sadece görsel gösterim için status döndürür.
+    
+    Args:
+        cand_location: Aday lokasyonu
+        pos_location: Pozisyon lokasyonu
+        
+    Returns:
+        {
+            "status": "green" | "yellow" | "red",
+            "candidate_location": str,
+            "position_location": str,
+            "match_type": "Aynı şehir" | "Komşu şehir (X)" | "Eşleşme yok"
+        }
+    """
+    cand_loc = (cand_location or "").strip()
+    pos_loc = (pos_location or "").strip()
+    
+    # Default: kırmızı (eşleşme yok)
+    result = {
+        "status": "red",
+        "candidate_location": cand_loc or "-",
+        "position_location": pos_loc or "-",
+        "match_type": "Eşleşme yok"
+    }
+    
+    # Her iki lokasyon da boşsa → kırmızı
+    if not cand_loc or not pos_loc:
+        return result
+    
+    cand_loc_normalized = turkish_lower(cand_loc)
+    pos_loc_normalized = turkish_lower(pos_loc)
+    
+    # Aynı şehir → yeşil
+    if cand_loc_normalized == pos_loc_normalized:
+        result["status"] = "green"
+        result["match_type"] = "Aynı şehir"
+        return result
+    
+    # Komşu şehir kontrolü → sarı
+    for city, neighbors in NEIGHBOR_CITIES.items():
+        if city in pos_loc_normalized:
+            for neighbor in neighbors:
+                if neighbor in cand_loc_normalized:
+                    result["status"] = "yellow"
+                    result["match_type"] = f"Komşu şehir ({neighbor})"
+                    return result
+    
+    # Eşleşme yok → kırmızı (default)
+    return result
+
+
 def calculate_elimination_score(
     candidate: Union[Dict, object],
     position: Union[Dict, object]
 ) -> Dict:
     """
-    KATMAN 4: Eleme (10 puan)
-    - Lokasyon: 5 puan
-    - Diğer gereksinimler: 5 puan
+    KATMAN 4: Eleme - DEVRE DIŞI (0 puan)
+    Lokasyon artık PUAN VERMIYOR, sadece görsel indicator döndürüyor.
+    
+    NOT: Bu katman puanlamadan çıkarıldı. KATMAN 2 +10 puan aldı.
+    Geriye uyumluluk için elimination_score = 0 döndürülüyor.
     """
-    # Lokasyon puanı (5 puan)
-    cand_location = safe_get(candidate, 'lokasyon', '') or ''
-    pos_location = safe_get(position, 'lokasyon', '') or ''
+    # Lokasyon bilgilerini al
+    cand_location = safe_get(candidate, "lokasyon", "") or ""
+    pos_location = safe_get(position, "lokasyon", "") or ""
     
-    location_score = 0
-    location_detail = 'Eşleşme yok'
+    # Görsel indicator için location_status hesapla
+    location_status = get_location_status(cand_location, pos_location)
     
-    if cand_location and pos_location:
-        cand_loc_normalized = turkish_lower(cand_location)
-        pos_loc_normalized = turkish_lower(pos_location)
-        
-        # Aynı şehir
-        if cand_loc_normalized == pos_loc_normalized:
-            location_score = 5
-            location_detail = 'Aynı şehir'
-        else:
-            # Komşu şehir kontrolü
-            is_neighbor = False
-            for city, neighbors in NEIGHBOR_CITIES.items():
-                if city in pos_loc_normalized:
-                    for neighbor in neighbors:
-                        if neighbor in cand_loc_normalized:
-                            location_score = 3
-                            location_detail = f'Komşu şehir ({neighbor})'
-                            is_neighbor = True
-                            break
-                    if is_neighbor:
-                        break
-    
-    # Diğer gereksinimler (5 puan)
-    position_id = safe_get(position, 'id') or safe_get(position, 'position_id')
-    requirements_score = 5  # Default: veri yoksa cezalandırma yok
-    
-    if position_id:
-        try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT requirement_type, requirement_value, is_knockout
-                    FROM position_requirements
-                    WHERE position_id = ?
-                """, (position_id,))
-                
-                requirements = cursor.fetchall()
-                
-                if requirements:
-                    total_reqs = len(requirements)
-                    matched_reqs = 0
-                    
-                    # Aday bilgilerini al
-                    cand_text = f"{safe_get(candidate, 'cv_raw_text', '')} "
-                    cand_text += f"{safe_get(candidate, 'teknik_beceriler', '')} "
-                    cand_text += f"{safe_get(candidate, 'deneyim_detay', '')}"
-                    cand_text_lower = turkish_lower(cand_text)
-                    
-                    for req in requirements:
-                        req_value = turkish_lower(req['requirement_value'])
-                        if req_value in cand_text_lower:
-                            matched_reqs += 1
-                    
-                    requirements_score = int((matched_reqs / total_reqs) * 5)
-        
-        except Exception as e:
-            logger.error(f"calculate_elimination_score requirements hatası: {e}")
-    
-    elimination_score = location_score + requirements_score
-    
+    # PUAN YOK - hepsi 0 (geriye uyumluluk için alanlar korunuyor)
     return {
-        'elimination_score': int(elimination_score),
-        'location_score': int(location_score),
-        'location_detail': location_detail,
-        'requirements_score': int(requirements_score)
+        "elimination_score": 0,
+        "location_score": 0,
+        "location_detail": location_status["match_type"],
+        "requirements_score": 0,
+        "location_status": location_status
     }
 
 
