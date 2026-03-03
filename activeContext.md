@@ -1234,3 +1234,15 @@ FAZ 5 Frontend Synonym Yönetimi TAMAMLANDI:
 - **Çözüm:** systemd service'e geçiş
 - **Ne zaman:** Domain/alan adı bağlandıktan sonra
 - **Öncelik:** Orta
+
+### 03.03.2026 - CV Parser Lokasyon Kurali Iyilestirmesi
+- SORUN: CV parser is deneyimindeki sehri (or: Istanbul) aday lokasyonu olarak cikariyordu
+- COZUM: Prompt guncellendi - sadece acik ikamet adresi lokasyon olarak kabul edilir
+- cv_parser.py satir 794: lokasyon tanimi guncellendi (ikamet adresi vurgusu)
+- cv_parser.py satir 848: Kural 8 eklendi (LOKASYON KURALI - 6 madde)
+- cv_parser.py satir 881: LinkedIn lokasyon uyarisi guncellendi
+- TEST: SAMI DEVRIM (ID:457) - onceki lokasyon="Istanbul", yeni parse=null (BASARILI)
+- Mevcut 60 adayin lokasyonuna dokunulmadi (Secenek C onaylandi)
+- CLAUDE.md Kural 24 eklendi (CV parser lokasyon kurali)
+- LOCKED_FILES.md bolum 24 eklendi
+- Commit: aef59be (prompt), d4bef73 (docs)
