@@ -167,3 +167,9 @@ Dosya kilitlenmeden önce:
 - URL pattern, Auth, company_id, Response format, Hata mesajlari
 - SQL guvenlik, Public endpoint kontrolleri, Pagination pattern
 - Bu kural DEGISTIRILEMEZ
+
+### 28. KVKK KURALI (Kilitlenme: 04.03.2026)
+- 7 maddelik KVKK uyumluluk kontrol listesi
+- Aydinlatma metni, Acik riza, Audit log, Veri minimizasyonu
+- Saklama suresi, Yurt disi aktarim, Silme hakki
+- Bu kural DEGISTIRILEMEZ
