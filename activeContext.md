@@ -31,6 +31,11 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - Dashboard Toplam Aday Kart Başlık Güncelleme
+- "Toplam Aday" → "Toplam Başvuru" olarak değiştirildi
+- "Sistemdeki tüm adaylar" → "Sistemde kayıtlı tüm başvurular" olarak değiştirildi
+- Dosya: src/features/dashboard/index.tsx
+
 ### 03.03.2026 - Dashboard Pie Chart Başlık Güncelleme
 - "Aday Havuz Dağılımı" → "Aday Durum Dağılımı" olarak değiştirildi
 - "Durumlara göre aday dağılımı" → "Süreç aşamalarına göre aday oranı" olarak değiştirildi
@@ -885,7 +890,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-- `7367bac` - fix: Dashboard pie chart başlık güncelleme - Aday Durum Dağılımı
+- `e023154` - fix: Dashboard Toplam Aday kart başlığı güncelleme - Toplam Başvuru
+- `b0924e7` - fix: Dashboard pie chart başlık güncelleme - Aday Durum Dağılımı
 - `b2fa131` - feat: Puanlama sistemi güncelleme - Lokasyon görsel indicator
 - `b49021c` - fix: Eş Anlamlılar tab grid düzeltmesi (grid-cols-5 → grid-cols-6)
 - `3d98481` - fix: Pozisyona Atandı → Pozisyon Havuzunda UI metin değişikliği
