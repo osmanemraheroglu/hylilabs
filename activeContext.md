@@ -31,6 +31,10 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - Dashboard Aktif Pozisyon Kart Başlık Güncelleme
+- "Aktif Pozisyon" → "Açık Pozisyon" olarak değiştirildi
+- Dosya: src/features/dashboard/index.tsx
+
 ### 03.03.2026 - CV Dosya Encoding Fix (RFC 5987)
 - Sorun: CV dosyaları Türkçe karakterli isimlerle (Ö, Ü, Ş, vb.) indirilemiyor
 - Root cause: Content-Disposition header'ında raw Türkçe karakterler latin-1'de encode edilemedi
@@ -901,7 +905,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-- `e023154` - fix: Dashboard Toplam Aday kart başlığı güncelleme - Toplam Başvuru
+- `661fab8` - fix: Dashboard Aktif Pozisyon kart başlığı güncelleme - Açık Pozisyon
+- `697ab0d` - fix: Dashboard Toplam Aday kart başlığı güncelleme - Toplam Başvuru
 - `b0924e7` - fix: Dashboard pie chart başlık güncelleme - Aday Durum Dağılımı
 - `b2fa131` - feat: Puanlama sistemi güncelleme - Lokasyon görsel indicator
 - `b49021c` - fix: Eş Anlamlılar tab grid düzeltmesi (grid-cols-5 → grid-cols-6)
