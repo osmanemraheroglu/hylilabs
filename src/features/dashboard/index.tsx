@@ -232,8 +232,8 @@ export function Dashboard() {
           {/* Havuz Dağılımı */}
           <Card>
             <CardHeader>
-              <CardTitle>Aday Havuz Dağılımı</CardTitle>
-              <CardDescription>Durumlara göre aday dağılımı</CardDescription>
+              <CardTitle>Aday Durum Dağılımı</CardTitle>
+              <CardDescription>Süreç aşamalarına göre aday oranı</CardDescription>
             </CardHeader>
             <CardContent>
               {pieData.length > 0 ? (

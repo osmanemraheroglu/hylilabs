@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 02.03.2026
+Son guncelleme: 03.03.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -31,6 +31,11 @@ Son guncelleme: 02.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - Dashboard Pie Chart Başlık Güncelleme
+- "Aday Havuz Dağılımı" → "Aday Durum Dağılımı" olarak değiştirildi
+- "Durumlara göre aday dağılımı" → "Süreç aşamalarına göre aday oranı" olarak değiştirildi
+- Dosya: src/features/dashboard/index.tsx
+
 ### 03.03.2026 - LocationBadge Görsel Bug Fix
 - location-badge.tsx: shrink-0 ile badge küçülmesi engellendi
 - location-badge.tsx: truncate + max-w-[150px] ile metin taşması engellendi
@@ -880,6 +885,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `7367bac` - fix: Dashboard pie chart başlık güncelleme - Aday Durum Dağılımı
 - `b2fa131` - feat: Puanlama sistemi güncelleme - Lokasyon görsel indicator
 - `b49021c` - fix: Eş Anlamlılar tab grid düzeltmesi (grid-cols-5 → grid-cols-6)
 - `3d98481` - fix: Pozisyona Atandı → Pozisyon Havuzunda UI metin değişikliği
