@@ -31,6 +31,10 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - CLAUDE.md guncelleme_tarihi Kilitli Sistem Kaydı
+- guncelleme_tarihi senkronizasyonu kilitli sisteme eklendi
+- Commit: 48743f2 referansı ile
+
 ### 03.03.2026 - Dashboard "Bu Ay İşe Alınan" Kart Fix + guncelleme_tarihi Senkronizasyonu
 - Sorun: Dashboard "Bu Ay İşe Alınan" kartı 0 gösteriyordu, 3 işe alınmış aday olmasına rağmen
 - Kök neden: Tüm durum değiştiren UPDATE sorgularında guncelleme_tarihi güncellenmiyordu

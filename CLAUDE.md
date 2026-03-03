@@ -549,4 +549,15 @@ Commit: e02992c — DEGISTIRME
 - .toLowerCase() → .toLocaleLowerCase('tr-TR') (ad_soyad, email, mevcut_pozisyon)
 - Frontend tarafında Türkçe karakter duyarsız filtreleme
 - Commit: 20dcde4 — DEGISTIRME
+### guncelleme_tarihi Senkronizasyonu (03.03.2026) — DEGISMEZ
+- candidates.durum değiştiren TÜM UPDATE sorgularında guncelleme_tarihi = datetime('now') zorunlu
+- 13 UPDATE sorgusu 4 dosyada düzeltildi:
+  - candidates.py: elen, arsivle, ise_al (3 sorgu)
+  - pools.py: remove_candidate Arşiv ve Pozisyon/Departman (2 sorgu)
+  - interviews.py: create, cancel, delete mülakatlar (5 sorgu)
+  - database.py: pull_matching, add_to_position, on_position_delete (4 sorgu)
+- Dashboard "Bu Ay İşe Alınan" kartı bu alana bağlı (strftime('%Y-%m', guncelleme_tarihi))
+- Yeni durum değiştiren UPDATE sorgusu eklenirse guncelleme_tarihi DAHİL EDİLMELİ
+- Commit: 48743f2 — DEGISTIRME
+
 24. CV parser lokasyon kuralı: Sadece adayın İKAMET adresi/şehri çıkarılır. İş deneyimindeki şehir lokasyon DEĞİLDİR. Eğitim şehri lokasyon DEĞİLDİR. Açık adres yoksa null döner. Tahmin/çıkarım YASAK. DEĞİŞMEZ.
