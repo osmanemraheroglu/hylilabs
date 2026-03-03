@@ -54,7 +54,6 @@ export default function Candidates() {
   const [loading, setLoading] = useState(true)
   const [arama, setArama] = useState('')
   const [durum, setDurum] = useState('all')
-  const [havuz, setHavuz] = useState('all')
   const [offset, setOffset] = useState(0)
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateItem | null>(null)
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null)
@@ -63,7 +62,7 @@ export default function Candidates() {
   const limit = 20
 
   const { auth } = useAuthStore()
-  
+
   const userRole = auth.user?.role?.[0] || 'user'
   const canDownload = userRole === 'super_admin' || userRole === 'company_admin'
 
@@ -74,7 +73,6 @@ export default function Candidates() {
     params.append('offset', String(offset))
     if (arama) params.append('arama', arama)
     if (durum !== 'all') params.append('durum', durum)
-    if (havuz !== 'all') params.append('havuz', havuz)
 
     fetch(`${API_URL}/api/candidates?${params}`, { headers: getHeaders() })
       .then(r => r.json())
@@ -86,7 +84,7 @@ export default function Candidates() {
       })
       .catch(err => console.error('Candidates hatasi:', err))
       .finally(() => setLoading(false))
-  }, [offset, arama, durum, havuz])
+  }, [offset, arama, durum])
 
   useEffect(() => { loadCandidates() }, [loadCandidates])
 
@@ -96,7 +94,7 @@ export default function Candidates() {
     setDownloading(true)
     try {
       const token = localStorage.getItem('access_token')
-      const response = await fetch(`${API_URL}/api/candidates/export/download-cvs${havuz !== 'all' ? '?havuz=' + havuz : '?all=true'}`, {
+      const response = await fetch(`${API_URL}/api/candidates/export/download-cvs?all=true`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       if (!response.ok) {
@@ -187,10 +185,10 @@ export default function Candidates() {
         </div>
         <div className='flex items-center gap-3'>
           {canDownload && (
-            <Button 
-              variant='outline' 
-              size='sm' 
-              onClick={handleDownloadCVs} 
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handleDownloadCVs}
               disabled={downloading || total === 0}
             >
               {downloading ? (
@@ -229,18 +227,6 @@ export default function Candidates() {
                 <SelectItem value='pozisyona_atandi'>Pozisyona Atandı</SelectItem>
                 <SelectItem value='mulakat'>Mülakat</SelectItem>
                 <SelectItem value='ise_alindi'>İşe Alındı</SelectItem>
-                <SelectItem value='arsiv'>Arşiv</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={havuz} onValueChange={v => { setHavuz(v); setOffset(0) }}>
-              <SelectTrigger className='w-[160px]'>
-                <SelectValue placeholder='Havuz' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>Tüm Havuzlar</SelectItem>
-                <SelectItem value='genel_havuz'>Genel Havuz</SelectItem>
-                <SelectItem value='departman_havuzu'>Departman</SelectItem>
-                <SelectItem value='pozisyon_havuzu'>Pozisyon</SelectItem>
                 <SelectItem value='arsiv'>Arşiv</SelectItem>
               </SelectContent>
             </Select>
