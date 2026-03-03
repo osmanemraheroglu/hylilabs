@@ -31,6 +31,11 @@ Son guncelleme: 02.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - v2 Puan Gösterimi Fix
+- Teknik Yetkinlik: /37 → /47 düzeltildi (KATMAN 2 güncellendi)
+- Eleme bölümü UI'dan kaldırıldı (KATMAN 4 = 0 puan)
+- Commit: 39feb21
+
 ### 03.03.2026 - Puanlama Sistemi Güncelleme (Lokasyon Görsel Indicator)
 - KATMAN 2: 37 → 47 puan (teknik yetkinlik artırıldı)
 - KATMAN 4: 10 → 0 puan (lokasyon puanı kaldırıldı)
