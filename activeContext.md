@@ -31,6 +31,11 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - Dashboard Bekleyen Kart Başlık Güncelleme
+- "Bekleyen" → "Bekleyen Başvuru" olarak değiştirildi
+- "Değerlendirme bekleyen" → "Açık pozisyonlarla eşleşemeyen başvurular" olarak değiştirildi
+- Dosya: src/features/dashboard/index.tsx
+
 ### 03.03.2026 - CLAUDE.md guncelleme_tarihi Kilitli Sistem Kaydı
 - guncelleme_tarihi senkronizasyonu kilitli sisteme eklendi
 - Commit: 48743f2 referansı ile

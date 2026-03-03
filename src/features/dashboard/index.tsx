@@ -195,12 +195,12 @@ export function Dashboard() {
 
           <Card>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>Bekleyen</CardTitle>
+              <CardTitle className='text-sm font-medium'>Bekleyen Başvuru</CardTitle>
               <Clock className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
               <div className='text-2xl font-bold'>{stats?.bekleyen || 0}</div>
-              <p className='text-xs text-muted-foreground'>Değerlendirme bekleyen</p>
+              <p className='text-xs text-muted-foreground'>Açık pozisyonlarla eşleşemeyen başvurular</p>
             </CardContent>
           </Card>
 
