@@ -29,7 +29,7 @@ interface SysPool { id: number; name: string; icon: string; is_system: boolean; 
 interface Position { id: number; name: string; icon: string; keywords: string|null; description: string|null; candidate_count: number }
 interface Dept { id: number; name: string; icon: string; candidate_count: number; positions: Position[]; total_position_candidates: number }
 interface TreeData { system_pools: SysPool[]; departments: Dept[]; total_candidates?: number }
-interface Candidate { id: number; ad_soyad: string; email: string|null; telefon: string|null; mevcut_pozisyon: string|null; toplam_deneyim_yil: number|null; lokasyon: string|null; location_status?: { status: "green" | "yellow" | "red"; candidate_location: string; position_location: string; match_type: string }; match_score?: number; match_reason?: string; remaining_days?: number; assignment_type?: string; status?: string }
+interface Candidate { id: number; ad_soyad: string; email: string|null; telefon: string|null; mevcut_pozisyon: string|null; toplam_deneyim_yil: number|null; lokasyon: string|null; location_status?: { status: "green" | "yellow" | "red" | "gray"; candidate_location: string; position_location: string; match_type: string }; match_score?: number; match_reason?: string; remaining_days?: number; assignment_type?: string; status?: string }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   aktif: { label: 'Aktif', color: 'bg-blue-100 text-blue-800' },
@@ -678,7 +678,7 @@ export default function Havuzlar() {
                               </TableCell>
                               <TableCell className="text-sm truncate">{c.mevcut_pozisyon || '-'}</TableCell>
                               <TableCell className="text-sm">{c.toplam_deneyim_yil ? `${c.toplam_deneyim_yil} yıl` : '-'}</TableCell>
-                              <TableCell className="text-sm">{c.location_status ? <LocationBadge status={c.location_status.status} candidateLocation={c.location_status.candidate_location} positionLocation={c.location_status.position_location} matchType={c.location_status.match_type} /> : <span className="truncate">{c.lokasyon || '-'}</span>}</TableCell>
+                              <TableCell className="text-sm max-w-[200px] overflow-hidden"><LocationBadge status={c.location_status?.status || 'gray'} candidateLocation={c.location_status?.candidate_location || c.lokasyon || '-'} positionLocation={c.location_status?.position_location || '-'} matchType={c.location_status?.match_type || 'Veri yok'} /></TableCell>
                               <TableCell>
                                 {c.match_score ? <Badge variant="outline" className="text-xs">{si?.icon} {c.match_score}</Badge>
                                   : c.remaining_days !== undefined ? <Badge className={`text-xs ${dayColor(c.remaining_days)}`}>{c.remaining_days}g</Badge>
