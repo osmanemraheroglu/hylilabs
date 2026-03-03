@@ -535,7 +535,9 @@ Commit: e02992c — DEGISTIRME
 - "Aktif Pozisyon" → "Açık Pozisyon" (satır 176)
 - "Aday Havuz Dağılımı" → "Aday Durum Dağılımı" (satır 235)
 - "Durumlara göre aday dağılımı" → "Süreç aşamalarına göre aday oranı" (satır 236)
-- Commit: b0924e7, 697ab0d, 9fcde9f — DEGISTIRME
+- "Bekleyen" → "Bekleyen Başvuru" (satır 198)
+- "Değerlendirme bekleyen" → "Açık pozisyonlarla eşleşemeyen başvurular" (satır 203)
+- Commit: b0924e7, 697ab0d, 9fcde9f, a307d17 — DEGISTIRME
 
 ### Türkçe Karakter Duyarsız Arama (03.03.2026) — DEGISMEZ
 - api/database.py: turkish_lower() helper fonksiyonu (İ→i, I→ı dönüşümü)
