@@ -506,7 +506,7 @@ export default function Havuzlar() {
           <div className="text-muted-foreground ml-2">Sektor: {String(v2.sector_score || 0)} ({String(v2.detected_sector || '-')})</div>
         </div>
         <div className="space-y-1">
-          <div className="font-medium">Teknik Yetkinlik: <span className="text-purple-600">{String(v2.technical_score || 0)}/37</span></div>
+          <div className="font-medium">Teknik Yetkinlik: <span className="text-purple-600">{String(v2.technical_score || 0)}/47</span></div>
           <div className="text-muted-foreground ml-2">Kritik: {String(v2.critical_score || 0)}</div>
           <div className="text-muted-foreground ml-2">Önemli: {String(v2.important_score || 0)}</div>
         </div>
@@ -514,10 +514,6 @@ export default function Havuzlar() {
           <div className="font-medium">Genel: <span className="text-green-600">{String(v2.general_score || 0)}/20</span></div>
           <div className="text-muted-foreground ml-2">Deneyim: {String(v2.experience_score || 0)}</div>
           <div className="text-muted-foreground ml-2">Eğitim: {String(v2.education_score || 0)}</div>
-        </div>
-        <div className="space-y-1">
-          <div className="font-medium">Eleme: <span className="text-orange-600">{String(v2.elimination_score || 0)}/10</span></div>
-          {/* Lokasyon score kaldırıldı - görsel badge kullanılıyor */}
         </div>
         {v2.knockout && <div className="col-span-2 bg-red-50 border border-red-200 rounded p-2 text-red-700 font-medium">KNOCKOUT: {String(v2.knockout_reason || '')}</div>}
         {Array.isArray(v2.critical_missing) && (v2.critical_missing as string[]).length > 0 && (
