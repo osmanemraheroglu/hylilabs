@@ -31,6 +31,12 @@ Son guncelleme: 02.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - LocationBadge API Fix
+- pools.py: Pozisyon adayları için location_status zenginleştirmesi eklendi
+- matches.detayli_analiz'den location_status okunup API response'a ekleniyor
+- Frontend'de LocationBadge artık çalışıyor (yeşil/sarı/kırmızı daire)
+- Commit: 88b6e73
+
 ### 03.03.2026 - v2 Puan Gösterimi Fix
 - Teknik Yetkinlik: /37 → /47 düzeltildi (KATMAN 2 güncellendi)
 - Eleme bölümü UI'dan kaldırıldı (KATMAN 4 = 0 puan)
