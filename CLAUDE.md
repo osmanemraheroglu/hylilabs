@@ -542,3 +542,9 @@ Commit: e02992c — DEGISTIRME
 - get_all_candidates() ve get_candidates_count() arama sorguları TURKISH_LOWER() kullanıyor
 - Büyük/küçük harf + Türkçe karakter duyarsız arama (İ↔i, I↔ı, Ö↔ö, Ü↔ü, Ş↔ş, Ğ↔ğ, Ç↔ç)
 - Commit: ba28821 — DEGISTIRME
+
+### Havuzlar Türkçe Karakter Duyarsız Arama (03.03.2026) — DEGISMEZ
+- src/features/havuzlar/index.tsx satır 479-480
+- .toLowerCase() → .toLocaleLowerCase('tr-TR') (ad_soyad, email, mevcut_pozisyon)
+- Frontend tarafında Türkçe karakter duyarsız filtreleme
+- Commit: 20dcde4 — DEGISTIRME
