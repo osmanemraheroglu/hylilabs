@@ -31,6 +31,13 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - Pozisyon Havuzu Aday Sayısı Tutarsızlık Fix
+- Kök neden: 3 adayın pozisyonu silinince CASCADE ile candidate_positions kaydı gitmiş ama candidates.durum güncellenmemiş
+- Düzeltme: 3 adayın durum='yeni', havuz='genel_havuz' yapıldı ve Genel Havuz'a eklendi
+- Etkilenen adaylar: Serdar Demirci (447), Semih Aydın Demir (450), Ömer Faruk (459)
+- Tutarlılık: Dashboard=6, Adaylar=6, Havuzlar=6 (önceki: 9, 9, 6)
+- Değişen: Sadece veri düzeltmesi (SQL), kod değişikliği yok
+
 ### 03.03.2026 - CV PDF-Only Mimarisi
 - DOCX/DOC dosyaları yüklendiğinde otomatik PDF'e dönüştürülüyor
 - LibreOffice 24.2.7.2 headless kuruldu (--convert-to pdf)
@@ -939,7 +946,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-- `111009e` - lock: Havuzlar Türkçe arama kilitli sisteme eklendi
+- `5389ee8` - fix: Pozisyon havuzu aday sayısı tutarsızlığı düzeltildi
+- `f02413f` - lock: Havuzlar Türkçe arama kilitli sisteme eklendi
 - `20dcde4` - fix: Havuzlar arama Türkçe karakter duyarsız hale getirildi
 - `b1c8afe` - lock: Türkçe karakter duyarsız arama kilitli sisteme eklendi
 - `ba28821` - fix: Adaylar arama Türkçe karakter duyarsız hale getirildi
