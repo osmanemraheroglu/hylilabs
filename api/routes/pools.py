@@ -297,6 +297,24 @@ def get_pool_candidates(pool_id: int, current_user: dict = Depends(get_current_u
             candidates = get_pool_candidates_with_days(pool_id, pool_type='general')
         elif pool_type == "position":
             candidates = get_position_candidates(pool_id)
+            # Pozisyon adayları için location_status zenginleştirmesi
+            if candidates:
+                from database import get_connection
+                import json as json_lib
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    for c in candidates:
+                        try:
+                            cursor.execute("""
+                                SELECT detayli_analiz FROM matches 
+                                WHERE candidate_id = ? AND position_id = ?
+                            """, (c["id"], pool_id))
+                            match_row = cursor.fetchone()
+                            if match_row and match_row["detayli_analiz"]:
+                                detail = json_lib.loads(match_row["detayli_analiz"])
+                                c["location_status"] = detail.get("location_status", {})
+                        except:
+                            pass
         else:
             candidates = get_department_pool_candidates(pool_id)
 
