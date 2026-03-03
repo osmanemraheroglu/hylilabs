@@ -31,6 +31,16 @@ Son guncelleme: 02.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - Puanlama Sistemi Güncelleme (Lokasyon Görsel Indicator)
+- KATMAN 2: 37 → 47 puan (teknik yetkinlik artırıldı)
+- KATMAN 4: 10 → 0 puan (lokasyon puanı kaldırıldı)
+- get_location_status() fonksiyonu eklendi (yeşil/sarı/kırmızı)
+- LocationBadge komponenti oluşturuldu (src/components/ui/location-badge.tsx)
+- Havuzlar sayfasına lokasyon badge entegre edildi
+- pools.py response'a location_status eklendi
+- 12 aday rescore edildi (ortalama -4.7 puan)
+- Commit: b2fa131
+
 ### 03.03.2026 - Eş Anlamlılar Tab Grid Fix
 - TabsList grid-cols-5 → grid-cols-6 düzeltildi
 - 6 tab için doğru grid yapılandırması sağlandı
@@ -850,6 +860,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `b2fa131` - feat: Puanlama sistemi güncelleme - Lokasyon görsel indicator
 - `b49021c` - fix: Eş Anlamlılar tab grid düzeltmesi (grid-cols-5 → grid-cols-6)
 - `3d98481` - fix: Pozisyona Atandı → Pozisyon Havuzunda UI metin değişikliği
 - `7212605` - fix: Adaylar havuz filtresi kaldırıldı
