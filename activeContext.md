@@ -31,6 +31,12 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - Adaylar Arama Türkçe Karakter Fix
+- Arama artık büyük/küçük harf ve Türkçe karakter duyarsız çalışıyor
+- Türkçe locale-aware lowercase dönüşümü eklendi (İ↔i, I↔ı, Ö↔ö, Ü↔ü, Ş↔ş, Ğ↔ğ, Ç↔ç)
+- turkish_lower() helper + SQLite TURKISH_LOWER custom function
+- Değişen dosya: api/database.py (get_connection, get_all_candidates, get_candidates_count)
+
 ### 03.03.2026 - CLAUDE.md Kilitli Sistem Kaydı
 - Dashboard Kart Başlıkları kilitli sisteme eklendi
 - Commit: b0924e7, 697ab0d, 9fcde9f referansları ile
@@ -909,7 +915,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-- `d4b30cb` - lock: Dashboard kart başlıkları kilitli sisteme eklendi
+- `a4cbd1c` - fix: Adaylar arama Türkçe karakter duyarsız hale getirildi
+- `0425ec1` - lock: Dashboard kart başlıkları kilitli sisteme eklendi
 - `9fcde9f` - fix: Dashboard Aktif Pozisyon kart başlığı güncelleme - Açık Pozisyon
 - `697ab0d` - fix: Dashboard Toplam Aday kart başlığı güncelleme - Toplam Başvuru
 - `b0924e7` - fix: Dashboard pie chart başlık güncelleme - Aday Durum Dağılımı

@@ -1132,10 +1132,21 @@ def decrypt_email_password(encrypted: str) -> str:
         return encrypted
 
 
+def turkish_lower(text) -> str:
+    """Türkçe locale-aware lowercase dönüşümü.
+    İ→i, I→ı dönüşümü yaparak Türkçe karakter duyarsız arama sağlar.
+    SQLite custom function olarak da kullanılır."""
+    if not text:
+        return ""
+    text = str(text)
+    text = text.replace('İ', 'i').replace('I', 'ı')
+    return text.lower()
+
+
 @contextmanager
 def get_connection():
     """Veritabani baglantisi context manager
-    
+
     Performans iyileştirmeleri:
     - WAL mode: Concurrent read/write performansını artırır
     - Timeout: Database locked hatalarını önler
@@ -1146,6 +1157,8 @@ def get_connection():
     # WAL mode: Write-Ahead Logging - concurrent read/write performansı için
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    # Türkçe karakter duyarsız arama için custom SQL function
+    conn.create_function("TURKISH_LOWER", 1, turkish_lower)
     try:
         yield conn
         conn.commit()
@@ -5217,8 +5230,8 @@ def get_all_candidates(
             params.append(durum)
 
         if arama:
-            query += " AND (ad_soyad LIKE ? OR email LIKE ? OR teknik_beceriler LIKE ?)"
-            search_term = f"%{arama}%"
+            query += " AND (TURKISH_LOWER(ad_soyad) LIKE ? OR TURKISH_LOWER(email) LIKE ? OR TURKISH_LOWER(teknik_beceriler) LIKE ?)"
+            search_term = f"%{turkish_lower(arama)}%"
             params.extend([search_term, search_term, search_term])
 
         query += " ORDER BY olusturma_tarihi DESC LIMIT ? OFFSET ?"
@@ -5287,8 +5300,8 @@ def get_candidates_count(
             params.append(durum)
 
         if arama:
-            query += " AND (ad_soyad LIKE ? OR email LIKE ? OR teknik_beceriler LIKE ?)"
-            search_term = f"%{arama}%"
+            query += " AND (TURKISH_LOWER(ad_soyad) LIKE ? OR TURKISH_LOWER(email) LIKE ? OR TURKISH_LOWER(teknik_beceriler) LIKE ?)"
+            search_term = f"%{turkish_lower(arama)}%"
             params.extend([search_term, search_term, search_term])
 
         cursor.execute(query, params)
