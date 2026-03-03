@@ -425,7 +425,7 @@ def remove_candidate(
                 elif pool_name == 'Arşiv':
                     # Arşivden çıkarıldı → Genel Havuza taşı
                     cursor.execute("""
-                        UPDATE candidates SET durum='yeni', havuz='genel_havuz'
+                        UPDATE candidates SET durum='yeni', havuz='genel_havuz', guncelleme_tarihi=datetime('now')
                         WHERE id=? AND company_id=?
                     """, (candidate_id, company_id))
                     cursor.execute(
@@ -443,7 +443,7 @@ def remove_candidate(
                 else:
                     # Pozisyon/Departmandan çıkarıldı → yeni'ye döner
                     cursor.execute("""
-                        UPDATE candidates SET durum='yeni', havuz='genel_havuz'
+                        UPDATE candidates SET durum='yeni', havuz='genel_havuz', guncelleme_tarihi=datetime('now')
                         WHERE id=? AND company_id=?
                     """, (candidate_id, company_id))
 

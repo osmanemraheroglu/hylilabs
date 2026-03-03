@@ -6716,7 +6716,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                 # Havuz alanını güncelle (korumalı durumları değiştirme)
                 cursor.execute("""
                     UPDATE candidates
-                    SET havuz = 'pozisyona_aktarilan', durum = 'pozisyona_atandi'
+                    SET havuz = 'pozisyona_aktarilan', durum = 'pozisyona_atandi', guncelleme_tarihi = datetime('now')
                     WHERE id = ? AND durum NOT IN ('ise_alindi', 'arsiv')
                 """, (candidate_id,))
 
@@ -11333,7 +11333,7 @@ def add_candidate_to_position(candidate_id: int, position_id: int, match_score: 
             # 5. candidates.durum ve havuz güncelle
             cursor.execute("""
                 UPDATE candidates
-                SET havuz = 'pozisyona_aktarilan', durum = 'pozisyona_atandi'
+                SET havuz = 'pozisyona_aktarilan', durum = 'pozisyona_atandi', guncelleme_tarihi = datetime('now')
                 WHERE id = ? AND durum NOT IN ('ise_alindi')
             """, (candidate_id,))
 
@@ -11601,7 +11601,7 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
                     # Aday durumunu da güncelle
                     cursor.execute("""
                         UPDATE candidates
-                        SET durum = 'yeni', havuz = 'genel_havuz'
+                        SET durum = 'yeni', havuz = 'genel_havuz', guncelleme_tarihi = datetime('now')
                         WHERE id = ? AND company_id = ?
                     """, (candidate_id, company_id))
                     stats['to_general'] += 1
@@ -11613,7 +11613,7 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
                     # Aday durumunu da güncelle
                     cursor.execute("""
                         UPDATE candidates
-                        SET durum = 'arsiv', havuz = 'arsiv'
+                        SET durum = 'arsiv', havuz = 'arsiv', guncelleme_tarihi = datetime('now')
                         WHERE id = ? AND company_id = ?
                     """, (candidate_id, company_id))
                     stats['to_archive'] += 1

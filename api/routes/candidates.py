@@ -214,7 +214,7 @@ def elen_candidate(candidate_id: int, current_user: dict = Depends(get_current_u
             # Durumu güncelle
             cursor.execute("""
                 UPDATE candidates
-                SET durum = 'yeni', havuz = 'genel_havuz'
+                SET durum = 'yeni', havuz = 'genel_havuz', guncelleme_tarihi = datetime('now')
                 WHERE id = ? AND company_id = ?
             """, (candidate_id, company_id))
             conn.commit()
@@ -260,7 +260,7 @@ def arsivle_candidate(candidate_id: int, current_user: dict = Depends(get_curren
             # Durumu güncelle
             cursor.execute("""
                 UPDATE candidates
-                SET durum = 'arsiv', havuz = 'arsiv'
+                SET durum = 'arsiv', havuz = 'arsiv', guncelleme_tarihi = datetime('now')
                 WHERE id = ? AND company_id = ?
             """, (candidate_id, company_id))
             conn.commit()
@@ -309,7 +309,7 @@ def ise_al_candidate(candidate_id: int, current_user: dict = Depends(get_current
             # Durumu güncelle
             cursor.execute("""
                 UPDATE candidates
-                SET durum = 'ise_alindi', havuz = NULL
+                SET durum = 'ise_alindi', havuz = NULL, guncelleme_tarihi = datetime('now')
                 WHERE id = ? AND company_id = ?
             """, (candidate_id, company_id))
             conn.commit()

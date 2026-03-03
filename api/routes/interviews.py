@@ -155,7 +155,7 @@ def create_new_interview(
             # Aday durumunu 'mulakat' olarak guncelle
             cursor.execute(
                 """UPDATE candidates
-                   SET durum = 'mulakat'
+                   SET durum = 'mulakat', guncelleme_tarihi = datetime('now')
                    WHERE id = ? AND company_id = ?""",
                 (body["candidate_id"], company_id)
             )
@@ -239,13 +239,13 @@ def update_existing_interview(
                         
                         if pos_count > 0:
                             cursor.execute(
-                                """UPDATE candidates SET durum = 'pozisyona_atandi', havuz = 'pozisyona_aktarilan'
+                                """UPDATE candidates SET durum = 'pozisyona_atandi', havuz = 'pozisyona_aktarilan', guncelleme_tarihi = datetime('now')
                                    WHERE id = ? AND company_id = ?""",
                                 (candidate_id, company_id)
                             )
                         else:
                             cursor.execute(
-                                """UPDATE candidates SET durum = 'yeni', havuz = 'genel_havuz'
+                                """UPDATE candidates SET durum = 'yeni', havuz = 'genel_havuz', guncelleme_tarihi = datetime('now')
                                    WHERE id = ? AND company_id = ?""",
                                 (candidate_id, company_id)
                             )
@@ -320,13 +320,13 @@ def delete_existing_interview(
                         
                         if pos_count > 0:
                             cursor.execute(
-                                """UPDATE candidates SET durum = 'pozisyona_atandi', havuz = 'pozisyona_aktarilan'
+                                """UPDATE candidates SET durum = 'pozisyona_atandi', havuz = 'pozisyona_aktarilan', guncelleme_tarihi = datetime('now')
                                    WHERE id = ? AND company_id = ?""",
                                 (candidate_id, company_id)
                             )
                         else:
                             cursor.execute(
-                                """UPDATE candidates SET durum = 'yeni', havuz = 'genel_havuz'
+                                """UPDATE candidates SET durum = 'yeni', havuz = 'genel_havuz', guncelleme_tarihi = datetime('now')
                                    WHERE id = ? AND company_id = ?""",
                                 (candidate_id, company_id)
                             )

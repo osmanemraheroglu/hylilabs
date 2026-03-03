@@ -31,6 +31,14 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - Dashboard "Bu Ay İşe Alınan" Kart Fix + guncelleme_tarihi Senkronizasyonu
+- Sorun: Dashboard "Bu Ay İşe Alınan" kartı 0 gösteriyordu, 3 işe alınmış aday olmasına rağmen
+- Kök neden: Tüm durum değiştiren UPDATE sorgularında guncelleme_tarihi güncellenmiyordu
+- 13 UPDATE sorgusu 4 dosyada tespit edildi, tümüne guncelleme_tarihi = datetime('now') eklendi
+- Dosyalar: candidates.py (3 sorgu: elen, arsivle, ise_al), pools.py (2 sorgu: remove_candidate), interviews.py (5 sorgu: create, cancel, delete), database.py (4 sorgu: pull_matching, add_to_position, on_position_delete)
+- Migration: Mevcut 3 işe alınmış adayın guncelleme_tarihi güncellendi (id=428,431,437)
+- Sonuç: Dashboard kartı artık doğru 3 gösteriyor
+
 ### 03.03.2026 - Pozisyon Havuzu Aday Sayısı Tutarsızlık Fix
 - Kök neden: 3 adayın pozisyonu silinince CASCADE ile candidate_positions kaydı gitmiş ama candidates.durum güncellenmemiş
 - Düzeltme: 3 adayın durum='yeni', havuz='genel_havuz' yapıldı ve Genel Havuz'a eklendi
