@@ -476,8 +476,8 @@ export default function Havuzlar() {
   // Filtering & Sorting
   const filteredCandidates = candidates.filter(c => {
     if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      if (!(c.ad_soyad || '').toLowerCase().includes(q) && !(c.email || '').toLowerCase().includes(q) && !(c.mevcut_pozisyon || '').toLowerCase().includes(q)) return false
+      const q = searchQuery.toLocaleLowerCase('tr-TR')
+      if (!(c.ad_soyad || '').toLocaleLowerCase('tr-TR').includes(q) && !(c.email || '').toLocaleLowerCase('tr-TR').includes(q) && !(c.mevcut_pozisyon || '').toLocaleLowerCase('tr-TR').includes(q)) return false
     }
     if (filterScore !== 'all') {
       const s = c.match_score || 0

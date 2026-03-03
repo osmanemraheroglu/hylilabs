@@ -31,6 +31,11 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - Havuzlar Arama Türkçe Karakter Fix
+- Havuzlar sayfası aday araması Türkçe karakter duyarsız hale getirildi
+- .toLowerCase() → .toLocaleLowerCase('tr-TR') (3 yerde)
+- Dosya: src/features/havuzlar/index.tsx (satır 479-480)
+
 ### 03.03.2026 - CLAUDE.md Türkçe Arama Kilitli Sistem Kaydı
 - Türkçe Karakter Duyarsız Arama kilitli sisteme eklendi
 - Commit: ba28821 referansı ile
@@ -919,7 +924,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-- `f167d3a` - lock: Türkçe karakter duyarsız arama kilitli sisteme eklendi
+- `7b4f69c` - fix: Havuzlar arama Türkçe karakter duyarsız hale getirildi
+- `b1c8afe` - lock: Türkçe karakter duyarsız arama kilitli sisteme eklendi
 - `ba28821` - fix: Adaylar arama Türkçe karakter duyarsız hale getirildi
 - `0425ec1` - lock: Dashboard kart başlıkları kilitli sisteme eklendi
 - `9fcde9f` - fix: Dashboard Aktif Pozisyon kart başlığı güncelleme - Açık Pozisyon
