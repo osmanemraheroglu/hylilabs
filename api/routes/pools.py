@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from routes.auth import get_current_user
-from core.cv_parser import validate_cv_access, get_safe_content_disposition
+from core.cv_parser import validate_cv_access, get_safe_content_disposition, convert_to_pdf
 from database import (
     get_connection,
     get_department_pools, get_department_pool, get_department_pool_stats,
@@ -16,6 +16,7 @@ from database import (
 from typing import Optional
 import traceback
 import json
+import logging
 
 router = APIRouter(prefix="/api/pools", tags=["pools"])
 
@@ -1401,6 +1402,22 @@ def get_candidate_cv(pool_id: int, candidate_id: int, current_user: dict = Depen
 
             if not os.path.exists(cv_path):
                 raise HTTPException(status_code=404, detail="CV dosyası fiziksel olarak bulunamadı")
+
+            # ═══ DEFENSIVE DOCX→PDF DÖNÜŞÜM ═══
+            # DB'de hala DOCX kalmışsa runtime'da çevir
+            if cv_path.lower().endswith(('.docx', '.doc')):
+                pdf_path = convert_to_pdf(cv_path)
+                if pdf_path:
+                    # DB'yi de güncelle (bir daha runtime dönüşüm olmasın)
+                    try:
+                        cursor.execute("UPDATE candidates SET cv_dosya_yolu = ? WHERE id = ?", (pdf_path, candidate_id))
+                        conn.commit()
+                    except Exception as db_err:
+                        logging.error(f"CV path DB update failed: {db_err}")
+                    cv_path = pdf_path
+                    cv_filename = os.path.splitext(cv_filename)[0] + ".pdf"
+                # Dönüşüm başarısız olsa bile devam et — DOCX olarak döndür
+            # ═══ DEFENSIVE DÖNÜŞÜM SONU ═══
 
             with open(cv_path, "rb") as f:
                 file_bytes = f.read()

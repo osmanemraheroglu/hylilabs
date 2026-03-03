@@ -9,7 +9,12 @@ import os
 import hashlib
 import logging
 import re
+import subprocess
+import tempfile
+import shutil
+import fcntl
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, Tuple
 from urllib.parse import quote
 
@@ -120,6 +125,73 @@ def get_safe_content_disposition(filename: str, disposition: str = "inline") -> 
 
     # Her iki versiyonu da sağla (eski ve yeni tarayıcılar için)
     return f'{disposition}; filename="{safe_filename}"; filename*=UTF-8\'\'{utf8_filename}'
+
+
+# LibreOffice lock — aynı anda tek dönüşüm (thread-safe)
+_LO_LOCK_PATH = "/tmp/libreoffice_convert.lock"
+
+
+def convert_to_pdf(input_path: str) -> Optional[str]:
+    """
+    DOCX/DOC dosyasını PDF'e çevirir (LibreOffice headless).
+
+    Thread-safe: fcntl lock ile aynı anda tek LibreOffice instance çalışır.
+    Başarılıysa PDF yolunu döndürür, başarısızsa None.
+    Orijinal dosyayı SİLMEZ — çağıran taraf karar verir.
+
+    Args:
+        input_path: DOCX/DOC dosyasının tam yolu
+
+    Returns:
+        PDF dosyasının yolu veya None (başarısız ise)
+    """
+    if not input_path or not os.path.exists(input_path):
+        return None
+
+    ext = os.path.splitext(input_path)[1].lower()
+    if ext not in ('.docx', '.doc'):
+        return None  # Zaten PDF veya desteklenmeyen format
+
+    tmpdir = None
+    lock_file = None
+    try:
+        # LibreOffice lock al — concurrent access engelle
+        lock_file = open(_LO_LOCK_PATH, 'w')
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+
+        tmpdir = tempfile.mkdtemp(prefix="cv_convert_")
+        result = subprocess.run(
+            ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", tmpdir, input_path],
+            capture_output=True, timeout=60, text=True
+        )
+
+        pdf_name = os.path.splitext(os.path.basename(input_path))[0] + ".pdf"
+        pdf_path = os.path.join(tmpdir, pdf_name)
+
+        if os.path.exists(pdf_path):
+            final_pdf = os.path.splitext(input_path)[0] + ".pdf"
+            shutil.move(pdf_path, final_pdf)
+            logger.info(f"DOCX→PDF dönüşüm başarılı: {input_path} → {final_pdf}")
+            return final_pdf
+        else:
+            logger.error(f"PDF conversion failed: {result.stderr}")
+            return None
+    except subprocess.TimeoutExpired:
+        logger.error(f"PDF conversion timeout (60s): {input_path}")
+        return None
+    except Exception as e:
+        logger.error(f"PDF conversion error: {input_path} → {e}")
+        return None
+    finally:
+        # Temizlik — her durumda çalışır
+        if tmpdir and os.path.exists(tmpdir):
+            shutil.rmtree(tmpdir, ignore_errors=True)
+        if lock_file:
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+                lock_file.close()
+            except:
+                pass
 
 
 def validate_parsed_cv(data: dict) -> dict:
@@ -241,8 +313,26 @@ def save_cv_file(content: bytes, filename: str, company_id: int, candidate_email
         with open(file_path, "wb") as f:
             f.write(content)
 
-        logger.info(f"CV kaydedildi: company={company_id}, path={file_path}")
-        return str(file_path)
+        saved_path = str(file_path)
+
+        # ═══ DOCX→PDF OTOMATİK DÖNÜŞÜM ═══
+        # Dosya DOCX/DOC ise PDF'e çevir, orijinali _originals'e taşı
+        if saved_path.lower().endswith(('.docx', '.doc')):
+            pdf_path = convert_to_pdf(saved_path)
+            if pdf_path:
+                # Orijinal DOCX'i _originals klasörüne taşı (silme, sakla)
+                archive_dir = Path(saved_path).parent / "_originals"
+                archive_dir.mkdir(parents=True, exist_ok=True)
+                shutil.move(saved_path, str(archive_dir / Path(saved_path).name))
+                saved_path = pdf_path
+                logger.info(f"CV DOCX→PDF dönüşüm başarılı: {pdf_path}")
+            else:
+                # Dönüşüm başarısız — DOCX olarak bırak ama logla
+                logger.warning(f"CV DOCX→PDF dönüşüm BAŞARISIZ, DOCX olarak saklanıyor: {saved_path}")
+        # ═══ DÖNÜŞÜM SONU ═══
+
+        logger.info(f"CV kaydedildi: company={company_id}, path={saved_path}")
+        return saved_path
 
     except ValueError:
         raise

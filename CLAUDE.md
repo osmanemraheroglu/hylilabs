@@ -93,6 +93,7 @@ Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
 19. try-except değişken kuralı: try içinde tanımlanan değişkenler try bloğu dışında kullanılacaksa MUTLAKA except bloğunda veya try öncesi None/default değer tanımlanmalı. Aksi halde UnboundLocalError riski. DEGISMEZ.
 20. PM2 restart kuralı: ecosystem.config.cjs env değişikliğinde sadece pm2 restart YETERSİZ. pm2 delete + pm2 start kullanılmalı. DEGISMEZ.
 21. Import guard kuralı: core/ altındaki modüller import edilirken try-except ile fallback yazılmalı (from X except: from core.X). DEGISMEZ.
+23. CV PDF-Only Mimarisi: CV dosyaları SADECE PDF olarak saklanır. DOCX/DOC yüklendiğinde save_cv_file() otomatik PDF'e çevirir (LibreOffice headless). convert_to_pdf() fonksiyonu fcntl lock ile thread-safe. Orijinal DOCX'ler _originals/ klasöründe saklanır. Sistemde aktif DOCX CV OLMAMALI. DEĞİŞMEZ.
 
 ## Stil
 - Fonksiyon ve degisken: snake_case (Python), camelCase (TypeScript)

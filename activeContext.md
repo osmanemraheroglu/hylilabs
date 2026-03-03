@@ -31,6 +31,17 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - CV PDF-Only Mimarisi
+- DOCX/DOC dosyaları yüklendiğinde otomatik PDF'e dönüştürülüyor
+- LibreOffice 24.2.7.2 headless kuruldu (--convert-to pdf)
+- cv_parser.py: convert_to_pdf() fonksiyonu eklendi (fcntl lock ile thread-safe)
+- cv_parser.py: save_cv_file() içine otomatik dönüşüm bloğu eklendi
+- pools.py: CV endpoint'ine defensive dönüşüm eklendi (legacy DOCX'ler için)
+- Migration: 2 DOCX dosyası PDF'e dönüştürüldü (Mertcan KÖK, Boubekeur Bouakkaz)
+- Orijinal DOCX'ler /data/cvs/{company_id}/_originals/ klasöründe saklanıyor
+- CLAUDE.md Kural 23 eklendi (CV PDF-Only Mimarisi)
+- TEST: DB'de 0 DOCX, _originals'de 2 dosya (beklenen), backend çalışıyor
+
 ### 03.03.2026 - CLAUDE.md Havuzlar Türkçe Arama Kilitli Sistem Kaydı
 - Havuzlar Türkçe Karakter Duyarsız Arama kilitli sisteme eklendi
 - Commit: 20dcde4 referansı ile
