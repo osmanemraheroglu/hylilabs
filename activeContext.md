@@ -845,7 +845,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-- `pending` - fix: Pozisyona Atandı → Pozisyon Havuzunda UI metin değişikliği
+- `3d98481` - fix: Pozisyona Atandı → Pozisyon Havuzunda UI metin değişikliği
 - `7212605` - fix: Adaylar havuz filtresi kaldırıldı
 - `e02992c` - feat(FAZ 10.4): ML-Based Auto-Learning sistemi
 - `4541477` - feat(FAZ 10.3): Çoklu dil normalizasyonu sistemi
