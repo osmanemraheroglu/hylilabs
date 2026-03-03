@@ -161,3 +161,9 @@ Dosya kilitlenmeden önce:
 - company_id izolasyonu, Turkce karakter, durum korumasi, CV guvenligi, Auth
 - Mock stratejisi, regresyon testleri, AAA pattern, pytest fixture
 - Bu kural DEGISTIRILEMEZ
+
+### 27. API TASARIM KURALI (Kilitlenme: 04.03.2026)
+- 8 maddelik API tasarim kontrol listesi
+- URL pattern, Auth, company_id, Response format, Hata mesajlari
+- SQL guvenlik, Public endpoint kontrolleri, Pagination pattern
+- Bu kural DEGISTIRILEMEZ
