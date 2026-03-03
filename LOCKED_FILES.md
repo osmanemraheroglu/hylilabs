@@ -155,3 +155,9 @@ Dosya kilitlenmeden önce:
 - Error handling, Kilitli fonksiyonlar, BLACKLIST/keyword, KVKK audit, Rate limiting, Frontend
 - Sorun bulunursa DURDUR, raporla, onay bekle
 - Bu kural DEGISTIRILEMEZ
+
+### 26. TEST YAZARI KURALI (Kilitlenme: 04.03.2026)
+- 9 maddelik test kontrol listesi
+- company_id izolasyonu, Turkce karakter, durum korumasi, CV guvenligi, Auth
+- Mock stratejisi, regresyon testleri, AAA pattern, pytest fixture
+- Bu kural DEGISTIRILEMEZ
