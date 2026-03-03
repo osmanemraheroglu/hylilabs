@@ -713,7 +713,7 @@ export default function Synonyms() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
             Onay Bekleyenler
