@@ -549,3 +549,4 @@ Commit: e02992c — DEGISTIRME
 - .toLowerCase() → .toLocaleLowerCase('tr-TR') (ad_soyad, email, mevcut_pozisyon)
 - Frontend tarafında Türkçe karakter duyarsız filtreleme
 - Commit: 20dcde4 — DEGISTIRME
+24. CV parser lokasyon kuralı: Sadece adayın İKAMET adresi/şehri çıkarılır. İş deneyimindeki şehir lokasyon DEĞİLDİR. Eğitim şehri lokasyon DEĞİLDİR. Açık adres yoksa null döner. Tahmin/çıkarım YASAK. DEĞİŞMEZ.

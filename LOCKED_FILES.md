@@ -141,3 +141,10 @@ Dosya kilitlenmeden önce:
 - **PRAGMA foreign_keys=ON** her DB connection'da zorunlu (database.py get_connection())
 - CASCADE DELETE kaldırılamaz, tablo yapıları değiştirilemez
 - Indexler: 16 index oluşturuldu (candidate_id, position_id, company_id bazlı)
+
+### 24. CV Parser Lokasyon Kuralı (Kilitlenme: 03.03.2026)
+- cv_parser.py CV_PARSE_PROMPT satır 794: lokasyon tanımı DEĞİŞTİRİLEMEZ.
+- cv_parser.py ÖNEMLİ KURALLAR kural 8: LOKASYON KURALI DEĞİŞTİRİLEMEZ.
+- cv_parser.py LinkedIn bölümü lokasyon satırı (satır 881): DEĞİŞTİRİLEMEZ.
+- Kural: İş deneyimi şehri ve eğitim şehri lokasyon olarak KULLANILAMAZ.
+- Commit: aef59be
