@@ -159,7 +159,7 @@ export default function Candidates() {
     const map: Record<string, string> = {
       yeni: 'Yeni',
       degerlendirmede: 'Değerlendirmede',
-      pozisyona_atandi: 'Pozisyona Atandı',
+      pozisyona_atandi: 'Pozisyon Havuzunda',
       mulakat: 'Mülakat',
       kabul: 'Kabul',
       ise_alindi: 'İşe Alındı',
@@ -224,7 +224,7 @@ export default function Candidates() {
               <SelectContent>
                 <SelectItem value='all'>Tüm Durumlar</SelectItem>
                 <SelectItem value='yeni'>Yeni</SelectItem>
-                <SelectItem value='pozisyona_atandi'>Pozisyona Atandı</SelectItem>
+                <SelectItem value='pozisyona_atandi'>Pozisyon Havuzunda</SelectItem>
                 <SelectItem value='mulakat'>Mülakat</SelectItem>
                 <SelectItem value='ise_alindi'>İşe Alındı</SelectItem>
                 <SelectItem value='arsiv'>Arşiv</SelectItem>

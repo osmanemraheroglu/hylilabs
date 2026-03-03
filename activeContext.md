@@ -31,6 +31,19 @@ Son guncelleme: 02.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - UI Metin Değişikliği (Pozisyon Havuzunda)
+- "Pozisyona Atandı" display metni "Pozisyon Havuzunda" olarak güncellendi
+- Değiştirilen dosyalar:
+  - src/features/candidates/index.tsx: durumLabel mapping + SelectItem dropdown (2 yer)
+  - src/features/dashboard/index.tsx: DURUM_LABELS mapping (1 yer)
+- Backend value değişmedi: pozisyona_atandi (veritabanında aynı)
+- Sadece UI görüntüleme metni değişti
+
+### 03.03.2026 - Adaylar Havuz Filtresi Kaldırıldı
+- "Tüm Havuzlar" dropdown filtresi Adaylar sayfasından kaldırıldı
+- Kaldırılan: havuz state, API parametresi, bağımlılık array, CV indirme havuz logic
+- Korunan: arama, durum filtresi, pagination, CV indirme
+
 ### 02.03.2026 - FAZ 10.4 ML-Based Auto-Learning Sistemi
 - Bağımlılıklar: scikit-learn 1.8.0, joblib 1.5.3 (zaten kurulu)
 - database.py - ML fonksiyonları:
@@ -832,6 +845,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `pending` - fix: Pozisyona Atandı → Pozisyon Havuzunda UI metin değişikliği
+- `7212605` - fix: Adaylar havuz filtresi kaldırıldı
 - `e02992c` - feat(FAZ 10.4): ML-Based Auto-Learning sistemi
 - `4541477` - feat(FAZ 10.3): Çoklu dil normalizasyonu sistemi
 - `9dbb301` - feat(FAZ 10.2): Semantic Similarity sistemi
