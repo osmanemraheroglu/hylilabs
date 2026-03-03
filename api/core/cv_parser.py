@@ -791,7 +791,7 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
         "ad_soyad": "Tam ad soyad",
         "email": "Email adresi veya null",
         "telefon": "Telefon numarası (+90 5XX XXX XX XX) veya null",
-        "lokasyon": "Şehir veya null",
+        "lokasyon": "Adayın İKAMET ETTİĞİ/YAŞADIĞI şehir. SADECE CV'de açıkça belirtilen ikamet adresi kullanılır. İş deneyimindeki şehir lokasyon DEĞİLDİR. Açık ikamet bilgisi yoksa null",
         "dogum_yili": null,
         "linkedin": "LinkedIn URL veya null"
     }},
@@ -845,6 +845,12 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
 5. Dil seviyeleri: A1, A2, B1, B2, C1, C2 formatında
 6. Birden fazla eğitim/deneyim varsa hepsini listele
 7. Deneyim yılı = tüm iş sürelerinin toplamı
+8. LOKASYON KURALI: lokasyon = adayın YAŞADIĞI/İKAMET ETTİĞİ şehir.
+   - SADECE "Adres:", "İkamet:", "Yaşadığı Yer:", "Şehir:", "Konum:", "Location:", "Address:" etiketleri altındaki bilgiyi kullan
+   - CV'nin kişisel bilgiler bölümünde (üst kısım, deneyim bölümünden ÖNCE) açıkça yazan şehri kullan
+   - İş deneyimindeki şehir (örn: "EDGE Microwave - Istanbul") adayın lokasyonu DEĞİLDİR
+   - Eğitim kurumunun şehri de lokasyon DEĞİLDİR (öğrenci taşınmış olabilir)
+   - Açık ikamet bilgisi YOKSA null döndür. Tahmin yapma, çıkarım yapma
 
 EMAIL ÇIKARMA KURALLARI:
 - Email formatları: xxx@xxx.com, xxx@xxx.com.tr, xxx@xxx.org vs.
@@ -872,7 +878,7 @@ LINKEDIN CV ÖZELLİKLERİ (LinkedIn kaynaklı ise dikkat et):
 - "Experience" = İş Deneyimi, "Education" = Eğitim, "Skills" = Beceriler
 - LinkedIn'de tarihler "Jan 2020 - Present" veya "Oca 2020 - Halen" formatında olabilir
 - "Present", "Halen", "Günümüz" = devam_ediyor: true
-- Lokasyon genellikle "İstanbul, Türkiye" veya "Istanbul, Turkey" formatında
+- LinkedIn'deki lokasyon bilgisi genellikle iş/şirket konumudur, ikamet adresi DEĞİLDİR. Sadece profilde açıkça "Yaşadığı Yer" veya "Residence" belirtilmişse lokasyon olarak kullan, aksi halde null döndür
 - Kişinin adı genellikle CV'nin en üstünde büyük fontla yazılır
 - Mevcut pozisyon genellikle adın hemen altında yer alır
 """
