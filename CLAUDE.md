@@ -526,3 +526,12 @@ RandomForest ile synonym onay tahmin sistemi. KORUNMALI:
    - joblib==1.5.3
 
 Commit: e02992c — DEGISTIRME
+
+### Dashboard Kart Başlıkları (03.03.2026) — DEGISMEZ
+- src/features/dashboard/index.tsx
+- "Toplam Aday" → "Toplam Başvuru" (satır 165)
+- "Sistemdeki tüm adaylar" → "Sistemde kayıtlı tüm başvurular" (satır 170)
+- "Aktif Pozisyon" → "Açık Pozisyon" (satır 176)
+- "Aday Havuz Dağılımı" → "Aday Durum Dağılımı" (satır 235)
+- "Durumlara göre aday dağılımı" → "Süreç aşamalarına göre aday oranı" (satır 236)
+- Commit: b0924e7, 697ab0d, 9fcde9f — DEGISTIRME

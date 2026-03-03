@@ -31,6 +31,10 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 03.03.2026 - CLAUDE.md Kilitli Sistem Kaydı
+- Dashboard Kart Başlıkları kilitli sisteme eklendi
+- Commit: b0924e7, 697ab0d, 9fcde9f referansları ile
+
 ### 03.03.2026 - Dashboard Aktif Pozisyon Kart Başlık Güncelleme
 - "Aktif Pozisyon" → "Açık Pozisyon" olarak değiştirildi
 - Dosya: src/features/dashboard/index.tsx
@@ -905,7 +909,8 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
-- `661fab8` - fix: Dashboard Aktif Pozisyon kart başlığı güncelleme - Açık Pozisyon
+- `d4b30cb` - lock: Dashboard kart başlıkları kilitli sisteme eklendi
+- `9fcde9f` - fix: Dashboard Aktif Pozisyon kart başlığı güncelleme - Açık Pozisyon
 - `697ab0d` - fix: Dashboard Toplam Aday kart başlığı güncelleme - Toplam Başvuru
 - `b0924e7` - fix: Dashboard pie chart başlık güncelleme - Aday Durum Dağılımı
 - `b2fa131` - feat: Puanlama sistemi güncelleme - Lokasyon görsel indicator
