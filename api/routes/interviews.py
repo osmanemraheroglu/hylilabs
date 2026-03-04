@@ -123,6 +123,20 @@ def create_new_interview(
     try:
         company_id = current_user["company_id"]
 
+        # Duplicate mülakat kontrolü — aktif mülakatı olan adaya ikinci mülakat engeli
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """SELECT COUNT(*) as cnt FROM interviews
+                   WHERE candidate_id = ? AND durum = 'planlanmis' AND company_id = ?""",
+                (body["candidate_id"], company_id)
+            )
+            if cursor.fetchone()['cnt'] > 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Bu adayın zaten planlanmış bir mülakatı bulunmaktadır"
+                )
+
         interview_date = datetime.fromisoformat(body["tarih"])
         interview = Interview(
             candidate_id=body["candidate_id"],
@@ -219,7 +233,7 @@ def update_existing_interview(
                     (candidate_id, company_id)
                 )
                 active_count = cursor.fetchone()['cnt']
-                
+
                 if active_count == 0:
                     # Korumalı durum kontrolü — ise_alindi/arsiv adaylar downgrade edilemez
                     cursor.execute(
@@ -236,7 +250,7 @@ def update_existing_interview(
                             (candidate_id,)
                         )
                         pos_count = cursor.fetchone()['cnt']
-                        
+
                         if pos_count > 0:
                             cursor.execute(
                                 """UPDATE candidates SET durum = 'pozisyona_atandi', havuz = 'pozisyona_aktarilan', guncelleme_tarihi = datetime('now')
@@ -300,7 +314,7 @@ def delete_existing_interview(
                     (candidate_id, company_id)
                 )
                 active_count = cursor.fetchone()['cnt']
-                
+
                 if active_count == 0:
                     # Korumalı durum kontrolü — ise_alindi/arsiv adaylar downgrade edilemez
                     cursor.execute(
@@ -317,7 +331,7 @@ def delete_existing_interview(
                             (candidate_id,)
                         )
                         pos_count = cursor.fetchone()['cnt']
-                        
+
                         if pos_count > 0:
                             cursor.execute(
                                 """UPDATE candidates SET durum = 'pozisyona_atandi', havuz = 'pozisyona_aktarilan', guncelleme_tarihi = datetime('now')

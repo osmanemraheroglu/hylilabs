@@ -31,6 +31,15 @@ Son guncelleme: 04.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - Duplicate Mülakat Engeli
+- Aktif mülakatı olan adaya ikinci mülakat oluşturma engellendi
+- Backend'de candidate_id + durum='planlanmis' + company_id kontrolü eklendi (INSERT öncesi)
+- 400 HTTPException: "Bu adayın zaten planlanmış bir mülakatı bulunmaktadır"
+- Frontend handleSave'de !res.ok kontrolü + toast.error eklendi
+- İptal/tamamlanmış mülakatı olan adaya yeni mülakat oluşturulabiliyor
+- SQL parametrize, company_id izolasyonu mevcut
+- Değişen dosyalar: api/routes/interviews.py, src/features/mulakat-takvimi/index.tsx
+
 ### 04.03.2026 - Mülakat Manuel İptal Butonu
 - İK kullanıcısı takvimden mülakat iptal edebilir
 - Liste görünümünde XCircle ikonu (sadece planlanmis mülakatlar için)

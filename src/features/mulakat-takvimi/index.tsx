@@ -233,6 +233,11 @@ export default function MulakatTakvimi() {
       const res = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) })
       const data = await res.json()
 
+      if (!res.ok) {
+        toast.error(data.detail || 'Mülakat kaydedilemedi')
+        return
+      }
+
       if (data.success) {
         const interviewId = data.id
 
@@ -268,6 +273,7 @@ export default function MulakatTakvimi() {
       }
     } catch (err) {
       console.error('Save hatasi:', err)
+      toast.error('Mülakat kaydedilemedi')
     }
   }
 
@@ -642,7 +648,7 @@ export default function MulakatTakvimi() {
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <Label className="text-sm">Sure (dk)</Label>
+                <Label className="text-sm">Süre (dk)</Label>
                 <Select value={form.sure_dakika} onValueChange={v => setForm({...form, sure_dakika: v})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
