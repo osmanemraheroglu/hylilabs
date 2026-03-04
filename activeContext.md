@@ -31,6 +31,14 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - Mülakat Otomatik İptal Mekanizması
+- Onay süresi dolan + onaylanmamış mülakatlar scheduler tarafından otomatik iptal ediliyor
+- Aday durumu kilitli kurallara uygun güncelleniyor (korumalı durumlar, candidate_positions kontrolü)
+- KVKK audit log eklendi (log_action ile aday durum değişikliği kaydı)
+- scheduler.py: auto_cancel_expired_interviews() fonksiyonu eklendi (09:05 CronTrigger)
+- Audit log "database is locked" sorunu çözüldü (log_action çağrıları DB bağlantısı kapandıktan sonra yapılıyor)
+- Değişen dosyalar: api/scheduler.py
+
 ### 03.03.2026 - CLAUDE.md Dashboard Bekleyen Kart Kilitli Sistem Kaydı
 - Dashboard Kart Başlıkları kilitli sistemine Bekleyen Başvuru değişikliği eklendi
 - Commit: a307d17 referansı ile
