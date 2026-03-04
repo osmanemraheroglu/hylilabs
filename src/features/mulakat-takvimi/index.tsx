@@ -11,8 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   CalendarClock, Plus, Edit, Trash2, RefreshCw, ChevronLeft, ChevronRight,
-  Clock, MapPin, Star, List, CalendarDays, Info, Mail, Send, Loader2
+  Clock, MapPin, Star, List, CalendarDays, Info, Mail, Send, Loader2, XCircle
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 const API_URL = 'http://***REMOVED***:8000'
 
@@ -112,6 +113,7 @@ export default function MulakatTakvimi() {
   const [evalDialogOpen, setEvalDialogOpen] = useState(false)
   const [evalTarget, setEvalTarget] = useState<InterviewItem | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+  const [cancelConfirm, setCancelConfirm] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState('calendar')
   const [filterDurum, setFilterDurum] = useState('all')
   const [filterConfirmation, setFilterConfirmation] = useState('all')
@@ -288,11 +290,11 @@ export default function MulakatTakvimi() {
         setEmailToSend('')
       } else {
         console.error('Email gonderme hatasi:', data.detail)
-        alert(`Email gönderilemedi: ${data.detail}`)
+        toast.error(`Email gönderilemedi: ${data.detail}`)
       }
     } catch (err) {
       console.error('Email gonderme hatasi:', err)
-      alert('Email gönderilemedi')
+      toast.error('Email gönderilemedi')
     } finally {
       setEmailSending(false)
     }
@@ -305,6 +307,33 @@ export default function MulakatTakvimi() {
         if (res.success) { setDeleteConfirm(null); loadInterviews() }
       })
       .catch(err => console.error('Delete hatasi:', err))
+  }
+
+  const handleCancel = async (id: number) => {
+    try {
+      const res = await fetch(`${API_URL}/api/interviews/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ durum: 'iptal' })
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        setCancelConfirm(null)
+        // Düzenleme dialogu açıksa kapat
+        if (dialogOpen && editingId === id) {
+          setDialogOpen(false)
+          resetForm()
+        }
+        toast.success('Mülakat iptal edildi')
+        loadInterviews()
+      } else {
+        toast.error(`Mülakat iptal edilemedi: ${data.detail || 'Bilinmeyen hata'}`)
+      }
+    } catch (err) {
+      console.error('Cancel hatasi:', err)
+      toast.error('Mülakat iptal edilemedi')
+    }
   }
 
   const openEval = (item: InterviewItem) => {
@@ -352,6 +381,9 @@ export default function MulakatTakvimi() {
     if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1) }
     else setCalMonth(calMonth + 1)
   }
+
+  // Düzenleme dialogundaki mülakatın durumunu bul
+  const editingInterview = editingId ? interviews.find(i => i.id === editingId) : null
 
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(calYear, calMonth)
@@ -535,7 +567,10 @@ export default function MulakatTakvimi() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         {iv.durum === 'planlanmis' && (
-                          <Button variant="ghost" size="sm" onClick={() => openEval(iv)} title="Değerlendir"><Star className="h-3.5 w-3.5" /></Button>
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => openEval(iv)} title="Değerlendir"><Star className="h-3.5 w-3.5" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => setCancelConfirm(iv.id)} className="text-red-500 hover:text-red-700" title="İptal Et"><XCircle className="h-3.5 w-3.5" /></Button>
+                          </>
                         )}
                         <Button variant="ghost" size="sm" onClick={() => openEdit(iv)}><Edit className="h-3.5 w-3.5" /></Button>
                         <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(iv.id)} className="text-red-500 hover:text-red-700"><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -679,9 +714,18 @@ export default function MulakatTakvimi() {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>İptal</Button>
-            <Button onClick={handleSave} disabled={!form.candidate_id || !form.tarih || !form.saat}>Kaydet</Button>
+          <DialogFooter className="flex items-center justify-between sm:justify-between">
+            {editingId && editingInterview?.durum === 'planlanmis' ? (
+              <Button variant="destructive" size="sm" onClick={() => setCancelConfirm(editingId)}>
+                <XCircle className="h-4 w-4 mr-1" /> İptal Et
+              </Button>
+            ) : (
+              <div />
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>Vazgeç</Button>
+              <Button onClick={handleSave} disabled={!form.candidate_id || !form.tarih || !form.saat}>Kaydet</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -712,7 +756,7 @@ export default function MulakatTakvimi() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEvalDialogOpen(false)}>İptal</Button>
+            <Button variant="outline" onClick={() => setEvalDialogOpen(false)}>Vazgeç</Button>
             <Button onClick={handleEvalSave}>Tamamla</Button>
           </DialogFooter>
         </DialogContent>
@@ -726,8 +770,24 @@ export default function MulakatTakvimi() {
           </DialogHeader>
           <p className="text-sm text-muted-foreground">Bu mülakatı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>İptal</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Vazgeç</Button>
             <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>Sil</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Confirm Dialog */}
+      <Dialog open={cancelConfirm !== null} onOpenChange={o => { if (!o) setCancelConfirm(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Mülakatı İptal Et</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Bu mülakatı iptal etmek istediğinize emin misiniz? Aday durumu otomatik olarak güncellenecektir.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelConfirm(null)}>Vazgeç</Button>
+            <Button variant="destructive" onClick={() => cancelConfirm && handleCancel(cancelConfirm)}>
+              <XCircle className="h-4 w-4 mr-1" /> İptal Et
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -31,6 +31,16 @@ Son guncelleme: 04.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - Mülakat Manuel İptal Butonu
+- İK kullanıcısı takvimden mülakat iptal edebilir
+- Liste görünümünde XCircle ikonu (sadece planlanmis mülakatlar için)
+- Düzenleme dialogunda "İptal Et" destructive butonu (sol alt)
+- Onay dialogu: "Bu mülakatı iptal etmek istediğinize emin misiniz?"
+- PUT /api/interviews/{id} body: {durum: 'iptal'} endpoint kullanılıyor
+- toast.success/error bildirimleri (alert() yerine)
+- Dialog kapatma butonları "İptal" → "Vazgeç" olarak değiştirildi (karışıklık önleme)
+- Değişen dosyalar: src/features/mulakat-takvimi/index.tsx
+
 ### 04.03.2026 - Mülakat Takvimi Durum Filtreleri Fix
 - Kök neden: scheduler.py mülakatları 'iptal_edildi' olarak set ediyordu, sistem genelinde 'iptal' kullanılıyor
 - scheduler.py satır 263: durum='iptal_edildi' → durum='iptal' düzeltildi
