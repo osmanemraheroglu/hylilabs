@@ -1,6 +1,7 @@
 """
 Boubekeur Bouakkaz (ID:392) + Pozisyon (ID:7792) scoring baseline.
 FAZ 1B sonrası güncel değerler (05.03.2026).
+FAZ 2.1 sonrası: 102 synonym global yapıldı (05.03.2026).
 AAA Pattern zorunlu (Kural 26).
 """
 import pytest
@@ -175,15 +176,17 @@ class TestScoringBaseline:
     def test_three_layer_synonym_lookup_layer3_db_company(self):
         """
         Katman 3: DB firma synonym (company_id=1).
-        'yazılım geliştirme' sadece company_id=1'de var.
+        
+        FAZ 2.1 sonrası: 's4hana' kullanılıyor (yazılım geliştirme artık global).
+        s4hana → erp sadece company_id=1'de var.
         
         Test 3a: company_id=1 → bulmalı
-        Test 3b: company_id=None → BULAMAMALI (sadece company_id=1'de var)
+        Test 3b: company_id=None → BULAMAMALI (s4hana için NULL'da erp yok)
         Test 3c: company_id=999 → BULAMAMALI
         """
         # ARRANGE
-        keyword = 'yazılım geliştirme'
-        search_text = 'software development experience'  # synonym
+        keyword = 's4hana'
+        search_text = 'erp sistemleri deneyimi'  # synonym: erp
         skills_text = ''
         
         # ACT & ASSERT - Test 3a: company_id=1 ile bulmalı
