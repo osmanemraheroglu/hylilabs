@@ -19,11 +19,11 @@ import pytest
 def test_triggers_exist():
     """sync_match_score_update ve sync_match_score_insert trigger'ları mevcut olmalı"""
     # Production DB path
-    db_path = os.environ.get("DATABASE_PATH", "/var/www/hylilabs/api/hylilabs.db")
+    db_path = os.environ.get("DATABASE_PATH", "/var/www/hylilabs/api/data/talentflow.db")
 
     # Local test için fallback
     if not os.path.exists(db_path):
-        db_path = os.path.join(os.path.dirname(__file__), "..", "hylilabs.db")
+        db_path = os.path.join(os.path.dirname(__file__), "..", "data", "talentflow.db")
 
     if not os.path.exists(db_path):
         pytest.skip("Database not found, skipping trigger existence test")
