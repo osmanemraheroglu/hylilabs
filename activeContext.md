@@ -31,6 +31,16 @@ Son guncelleme: 04.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - Mülakat Sonuç Değerlendirme Alanı
+- Mülakat tamamlandıktan sonra İK değerlendirme notu, puan (1-10), sonuç kararı, değerlendiren girebiliyor
+- interviews tablosuna 2 yeni alan: sonuc_karari TEXT, degerlendiren TEXT (degerlendirme ve puan zaten vardı)
+- ALLOWED_FIELDS whitelist'ine degerlendirme, puan, sonuc_karari, degerlendiren, mulakatci eklendi
+- Eval dialog genişletildi: sonuç kararı dropdown (Olumlu/Olumsuz/Beklemede), puan 1-10 input, değerlendiren text
+- Liste görünümünde sonuç kararı badge (emerald/red/amber renkleri)
+- Tamamlanan mülakatlar için değerlendirme düzenleme butonu (ClipboardCheck ikonu)
+- Puan progress bar gösterimi (yeşil>=7, sarı>=4, kırmızı<4)
+- Değişen dosyalar: api/database.py, src/features/mulakat-takvimi/index.tsx + DB migration
+
 ### 04.03.2026 - Onaylanmamış Mülakat Adayı Otomatik Arşivleme
 - Mülakat onaylamayan adaylar otomatik iptal sonrası arşive taşınıyor (Genel Havuz yerine)
 - scheduler.py auto_cancel: pos_count==0 bloğu → durum='arsiv', Arşiv havuzuna INSERT

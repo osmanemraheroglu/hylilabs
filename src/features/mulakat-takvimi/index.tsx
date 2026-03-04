@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   CalendarClock, Plus, Edit, Trash2, RefreshCw, ChevronLeft, ChevronRight,
-  Clock, MapPin, Star, List, CalendarDays, Info, Mail, Send, Loader2, XCircle
+  Clock, MapPin, List, CalendarDays, Info, Mail, Send, Loader2, XCircle, ClipboardCheck
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -36,6 +36,8 @@ interface InterviewItem {
   notlar: string | null
   degerlendirme: string | null
   puan: number | null
+  sonuc_karari: string | null
+  degerlendiren: string | null
   ad_soyad: string
   email: string
   telefon: string | null
@@ -75,6 +77,18 @@ const TUR_LABEL: Record<string, string> = {
   hr: 'İK',
   yonetici: 'Yönetici',
   genel: 'Genel',
+}
+
+const SONUC_BADGE: Record<string, string> = {
+  olumlu: 'bg-emerald-100 text-emerald-800',
+  olumsuz: 'bg-red-100 text-red-800',
+  beklemede: 'bg-amber-100 text-amber-800',
+}
+
+const SONUC_LABEL: Record<string, string> = {
+  olumlu: 'Olumlu',
+  olumsuz: 'Olumsuz',
+  beklemede: 'Beklemede',
 }
 
 // Onay durumu badge'i
@@ -137,7 +151,12 @@ export default function MulakatTakvimi() {
   })
 
   // Eval form
-  const [evalForm, setEvalForm] = useState({ degerlendirme: '', puan: '0' })
+  const [evalForm, setEvalForm] = useState({
+    degerlendirme: '',
+    puan: '0',
+    sonuc_karari: '',
+    degerlendiren: '',
+  })
 
   // Email gönder checkbox (yeni mülakat için)
   const [sendEmail, setSendEmail] = useState(true)
@@ -344,25 +363,41 @@ export default function MulakatTakvimi() {
 
   const openEval = (item: InterviewItem) => {
     setEvalTarget(item)
-    setEvalForm({ degerlendirme: item.degerlendirme || '', puan: String(item.puan || 0) })
+    setEvalForm({
+      degerlendirme: item.degerlendirme || '',
+      puan: String(item.puan || 0),
+      sonuc_karari: item.sonuc_karari || '',
+      degerlendiren: item.degerlendiren || '',
+    })
     setEvalDialogOpen(true)
   }
 
-  const handleEvalSave = () => {
+  const handleEvalSave = async () => {
     if (!evalTarget) return
-    const payload = {
+    const payload: Record<string, unknown> = {
       durum: 'tamamlandi',
-      degerlendirme: evalForm.degerlendirme,
-      puan: Number(evalForm.puan),
+      degerlendirme: evalForm.degerlendirme || null,
+      puan: evalForm.puan && Number(evalForm.puan) > 0 ? Number(evalForm.puan) : null,
+      sonuc_karari: evalForm.sonuc_karari && evalForm.sonuc_karari !== 'none' ? evalForm.sonuc_karari : null,
+      degerlendiren: evalForm.degerlendiren || null,
     }
-    fetch(`${API_URL}/api/interviews/${evalTarget.id}`, {
-      method: 'PUT', headers: getHeaders(), body: JSON.stringify(payload)
-    })
-      .then(r => r.json())
-      .then(res => {
-        if (res.success) { setEvalDialogOpen(false); setEvalTarget(null); loadInterviews() }
+    try {
+      const res = await fetch(`${API_URL}/api/interviews/${evalTarget.id}`, {
+        method: 'PUT', headers: getHeaders(), body: JSON.stringify(payload)
       })
-      .catch(err => console.error('Eval hatasi:', err))
+      const data = await res.json()
+      if (data.success) {
+        setEvalDialogOpen(false)
+        setEvalTarget(null)
+        toast.success('Değerlendirme kaydedildi')
+        loadInterviews()
+      } else {
+        toast.error(data.detail || 'Değerlendirme kaydedilemedi')
+      }
+    } catch (err) {
+      console.error('Eval hatasi:', err)
+      toast.error('Değerlendirme kaydedilemedi')
+    }
   }
 
   // Calendar helpers
@@ -538,7 +573,7 @@ export default function MulakatTakvimi() {
                   <TableHead>Lokasyon</TableHead>
                   <TableHead>Mülakatçı</TableHead>
                   <TableHead>Durum</TableHead>
-                  <TableHead>Puan</TableHead>
+                  <TableHead>Sonuç</TableHead>
                   <TableHead className="text-right">İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
@@ -566,17 +601,24 @@ export default function MulakatTakvimi() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {iv.puan ? (
-                        <div className="flex items-center gap-0.5">{[1,2,3,4,5].map(s => <Star key={s} className={`h-3 w-3 ${s <= iv.puan! ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />)}</div>
+                      {iv.sonuc_karari ? (
+                        <Badge className={`text-xs ${SONUC_BADGE[iv.sonuc_karari] || ''}`}>
+                          {SONUC_LABEL[iv.sonuc_karari] || iv.sonuc_karari}
+                        </Badge>
+                      ) : iv.puan && iv.puan > 0 ? (
+                        <span className="text-xs text-muted-foreground">{iv.puan}/10</span>
                       ) : '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         {iv.durum === 'planlanmis' && (
                           <>
-                            <Button variant="ghost" size="sm" onClick={() => openEval(iv)} title="Değerlendir"><Star className="h-3.5 w-3.5" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => openEval(iv)} title="Değerlendir"><ClipboardCheck className="h-3.5 w-3.5" /></Button>
                             <Button variant="ghost" size="sm" onClick={() => setCancelConfirm(iv.id)} className="text-red-500 hover:text-red-700" title="İptal Et"><XCircle className="h-3.5 w-3.5" /></Button>
                           </>
+                        )}
+                        {iv.durum === 'tamamlandi' && (
+                          <Button variant="ghost" size="sm" onClick={() => openEval(iv)} title="Değerlendirmeyi Düzenle"><ClipboardCheck className="h-3.5 w-3.5 text-emerald-600" /></Button>
                         )}
                         <Button variant="ghost" size="sm" onClick={() => openEdit(iv)}><Edit className="h-3.5 w-3.5" /></Button>
                         <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(iv.id)} className="text-red-500 hover:text-red-700"><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -740,30 +782,84 @@ export default function MulakatTakvimi() {
       <Dialog open={evalDialogOpen} onOpenChange={o => { if (!o) setEvalDialogOpen(false) }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Mülakat Değerlendirmesi</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5" /> Mülakat Değerlendirmesi
+            </DialogTitle>
           </DialogHeader>
           {evalTarget && (
-            <div className="space-y-3">
-              <div className="text-sm"><span className="font-medium">{evalTarget.ad_soyad}</span> - {evalTarget.pozisyon_baslik || 'Pozisyon belirtilmemiş'}</div>
+            <div className="space-y-4">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="text-sm font-medium">{evalTarget.ad_soyad}</div>
+                <div className="text-xs text-muted-foreground">{evalTarget.pozisyon_baslik || 'Pozisyon belirtilmemiş'}</div>
+                <div className="text-xs text-muted-foreground mt-1">{formatDate(evalTarget.tarih)} - {formatTime(evalTarget.tarih)}</div>
+              </div>
               <div>
-                <Label className="text-sm">Puan (1-5)</Label>
-                <div className="flex gap-1 mt-1">
-                  {[1,2,3,4,5].map(s => (
-                    <button key={s} onClick={() => setEvalForm({...evalForm, puan: String(s)})} className="focus:outline-none">
-                      <Star className={`h-6 w-6 ${s <= Number(evalForm.puan) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-                    </button>
-                  ))}
+                <Label className="text-sm">Sonuç Kararı</Label>
+                <Select value={evalForm.sonuc_karari || 'none'} onValueChange={v => setEvalForm({...evalForm, sonuc_karari: v === 'none' ? '' : v})}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Karar seçin" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Seçilmedi</SelectItem>
+                    <SelectItem value="olumlu">Olumlu</SelectItem>
+                    <SelectItem value="olumsuz">Olumsuz</SelectItem>
+                    <SelectItem value="beklemede">Beklemede</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm">Puan (1-10)</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={evalForm.puan}
+                    onChange={e => {
+                      const val = Math.min(10, Math.max(0, Number(e.target.value)))
+                      setEvalForm({...evalForm, puan: String(val)})
+                    }}
+                    className="w-20"
+                  />
+                  <span className="text-sm text-muted-foreground">/ 10</span>
+                  {Number(evalForm.puan) > 0 && (
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          Number(evalForm.puan) >= 7 ? 'bg-emerald-500' :
+                          Number(evalForm.puan) >= 4 ? 'bg-amber-500' :
+                          'bg-red-500'
+                        }`}
+                        style={{ width: `${Number(evalForm.puan) * 10}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               <div>
-                <Label className="text-sm">Değerlendirme</Label>
-                <Textarea value={evalForm.degerlendirme} onChange={e => setEvalForm({...evalForm, degerlendirme: e.target.value})} placeholder="Mülakat değerlendirmesi..." rows={4} />
+                <Label className="text-sm">Değerlendiren</Label>
+                <Input
+                  value={evalForm.degerlendiren}
+                  onChange={e => setEvalForm({...evalForm, degerlendiren: e.target.value})}
+                  placeholder="Değerlendiren kişi adı"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm">Değerlendirme Notu</Label>
+                <Textarea
+                  value={evalForm.degerlendirme}
+                  onChange={e => setEvalForm({...evalForm, degerlendirme: e.target.value})}
+                  placeholder="Mülakat değerlendirmesi, notlar..."
+                  rows={4}
+                  className="mt-1"
+                />
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEvalDialogOpen(false)}>Vazgeç</Button>
-            <Button onClick={handleEvalSave}>Tamamla</Button>
+            <Button onClick={handleEvalSave}>
+              <ClipboardCheck className="h-4 w-4 mr-1" /> Tamamla ve Kaydet
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

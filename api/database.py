@@ -1351,6 +1351,8 @@ def init_database():
                 notlar TEXT,
                 degerlendirme TEXT,
                 puan INTEGER,
+                sonuc_karari TEXT,
+                degerlendiren TEXT,
                 confirm_token TEXT UNIQUE,
                 confirm_token_expires TIMESTAMP,
                 confirmed_at TIMESTAMP,
@@ -1376,6 +1378,14 @@ def init_database():
             pass
         try:
             cursor.execute("ALTER TABLE interviews ADD COLUMN confirmation_status TEXT DEFAULT 'pending'")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cursor.execute("ALTER TABLE interviews ADD COLUMN sonuc_karari TEXT DEFAULT NULL")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cursor.execute("ALTER TABLE interviews ADD COLUMN degerlendiren TEXT DEFAULT NULL")
         except sqlite3.OperationalError:
             pass
 
@@ -3158,18 +3168,22 @@ def get_pending_synonyms_count(company_id: int = None) -> int:
 def approve_synonyms(
     synonym_ids: list[int],
     approved_by: int,
-    company_id: int = None
+    company_id: int = None,
+    scope: str = "company"
 ) -> dict:
     """
-    Seçilen synonym'ları onayla.
+    FAZ 3: Seçilen synonym'ları onayla.
 
     Args:
         synonym_ids: Onaylanacak synonym ID'leri
         approved_by: Onaylayan kullanıcı ID
-        company_id: Firma ID (güvenlik için)
+        company_id: Firma ID (güvenlik için, super_admin için None)
+        scope: "global" veya "company"
+            - "global": company_id = NULL (tüm firmalar için)
+            - "company": mevcut company_id korunur
 
     Returns:
-        {"success": True, "updated": int, "conflicts": list}
+        {"success": True, "updated": int, "conflicts": list, "scope": str}
         {"success": False, "error": str}
     """
     if not synonym_ids:
@@ -3192,6 +3206,7 @@ def approve_synonyms(
                     AND (company_id IS NULL OR company_id = ?)
                 """, synonym_ids + [company_id])
             else:
+                # super_admin tüm pending synonym'ları görebilir
                 cursor.execute(f"""
                     SELECT id, keyword, synonym, company_id FROM keyword_synonyms
                     WHERE id IN ({placeholders})
@@ -3200,43 +3215,71 @@ def approve_synonyms(
 
             synonyms_to_approve = cursor.fetchall()
 
-            # Şimdi güncelle
-            if company_id is not None:
-                cursor.execute(f"""
-                    UPDATE keyword_synonyms
-                    SET status = 'approved',
-                        approved_by = ?,
-                        approved_at = CURRENT_TIMESTAMP
-                    WHERE id IN ({placeholders})
-                    AND status = 'pending'
-                    AND (company_id IS NULL OR company_id = ?)
-                """, [approved_by] + synonym_ids + [company_id])
+            # FAZ 3: Scope'a göre güncelleme
+            if scope == "global":
+                # Global scope: company_id = NULL yap
+                if company_id is not None:
+                    cursor.execute(f"""
+                        UPDATE keyword_synonyms
+                        SET status = 'approved',
+                            company_id = NULL,
+                            approved_by = ?,
+                            approved_at = CURRENT_TIMESTAMP
+                        WHERE id IN ({placeholders})
+                        AND status = 'pending'
+                        AND (company_id IS NULL OR company_id = ?)
+                    """, [approved_by] + synonym_ids + [company_id])
+                else:
+                    cursor.execute(f"""
+                        UPDATE keyword_synonyms
+                        SET status = 'approved',
+                            company_id = NULL,
+                            approved_by = ?,
+                            approved_at = CURRENT_TIMESTAMP
+                        WHERE id IN ({placeholders})
+                        AND status = 'pending'
+                    """, [approved_by] + synonym_ids)
             else:
-                cursor.execute(f"""
-                    UPDATE keyword_synonyms
-                    SET status = 'approved',
-                        approved_by = ?,
-                        approved_at = CURRENT_TIMESTAMP
-                    WHERE id IN ({placeholders})
-                    AND status = 'pending'
-                """, [approved_by] + synonym_ids)
+                # Company scope: mevcut company_id korunur (sadece status güncellenir)
+                if company_id is not None:
+                    cursor.execute(f"""
+                        UPDATE keyword_synonyms
+                        SET status = 'approved',
+                            approved_by = ?,
+                            approved_at = CURRENT_TIMESTAMP
+                        WHERE id IN ({placeholders})
+                        AND status = 'pending'
+                        AND (company_id IS NULL OR company_id = ?)
+                    """, [approved_by] + synonym_ids + [company_id])
+                else:
+                    cursor.execute(f"""
+                        UPDATE keyword_synonyms
+                        SET status = 'approved',
+                            approved_by = ?,
+                            approved_at = CURRENT_TIMESTAMP
+                        WHERE id IN ({placeholders})
+                        AND status = 'pending'
+                    """, [approved_by] + synonym_ids)
 
             updated = cursor.rowcount
 
         # FAZ 9.2: Her onaylanan synonym için mapping güncelle
         if updated > 0:
             for syn_id, keyword, synonym, syn_company_id in synonyms_to_approve:
-                # FAZ 9.4: Audit log
+                # FAZ 3: Global scope için final_company_id = NULL
+                final_company_id = None if scope == "global" else syn_company_id
+                
+                # FAZ 9.4: Audit log (scope bilgisi ile)
                 log_synonym_change(
                     synonym_id=syn_id,
                     action='approved',
-                    old_values={'status': 'pending'},
-                    new_values={'status': 'approved'},
+                    old_values={'status': 'pending', 'company_id': syn_company_id},
+                    new_values={'status': 'approved', 'company_id': final_company_id, 'scope': scope},
                     changed_by=approved_by
                 )
 
-                # Çakışma kontrolü
-                conflict = check_synonym_conflict(synonym, keyword, syn_company_id)
+                # Çakışma kontrolü (global için company_id=None)
+                conflict = check_synonym_conflict(synonym, keyword, final_company_id)
                 if conflict["has_conflict"]:
                     conflicts_found.append({
                         "synonym": synonym,
@@ -3245,13 +3288,14 @@ def approve_synonyms(
                         "ambiguity_score": conflict["ambiguity_score"]
                     })
 
-                # Mapping tablosunu güncelle
-                update_synonym_mapping(synonym, keyword, syn_company_id)
+                # Mapping tablosunu güncelle (global için company_id=None)
+                update_synonym_mapping(synonym, keyword, final_company_id)
 
             invalidate_synonym_cache()
-            logger.info(f"approve_synonyms: {updated} synonym onaylandı (user: {approved_by}), {len(conflicts_found)} çakışma")
+            scope_label = "global" if scope == "global" else "firma bazlı"
+            logger.info(f"approve_synonyms ({scope_label}): {updated} synonym onaylandı (user: {approved_by}), {len(conflicts_found)} çakışma")
 
-        return {"success": True, "updated": updated, "conflicts": conflicts_found}
+        return {"success": True, "updated": updated, "conflicts": conflicts_found, "scope": scope}
 
     except Exception as e:
         logger.error(f"approve_synonyms hatası: {e}")
@@ -4516,7 +4560,8 @@ ALLOWED_FIELDS = {
     },
     "interviews": {
         "tarih", "saat", "sure_dakika", "tur", "lokasyon", "notlar", "durum",
-        "interviewer_name", "interviewer_email"
+        "interviewer_name", "interviewer_email",
+        "degerlendirme", "puan", "sonuc_karari", "degerlendiren", "mulakatci"
     },
     "email_accounts": {
         "ad", "saglayici", "email", "sifre", "imap_server", "imap_port",
