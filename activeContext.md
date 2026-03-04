@@ -31,6 +31,16 @@ Son guncelleme: 04.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - Mülakat Otomatik İptal Ek Kural: Saati Geçmiş Mülakatlar
+- Mülakat saati geçmiş + onaylanmamış mülakatlar da otomatik iptal ediliyor
+- confirm_token_expires'a ek olarak datetime(tarih) < datetime('now', '+3 hours') kontrolü eklendi
+- Sunucu UTC'de, tarih alanı Istanbul saatinde → +3 hours offset ile doğru karşılaştırma
+- Log mesajında iptal sebebi ayrımı: "Onay suresi doldu" vs "Mulakat saati gecti"
+- Email bildiriminde "İptal Sebebi" kolonu eklendi
+- Audit log detaylarına iptal_sebep alanı eklendi
+- Test: SAMI DEVRIM'in 2 mülakatı (13:45, 13:54) başarıyla yakalandı ve iptal edildi
+- Değişen dosyalar: api/scheduler.py
+
 ### 04.03.2026 - Otomatik İptal İK Email Bildirimi
 - Otomatik iptal edilen mülakatlar için İK ekibine email bildirimi eklendi
 - Company bazlı gruplama: Her firma için tek email ile tüm iptal edilen mülakatlar bildiriliyor

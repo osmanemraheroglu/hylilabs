@@ -133,6 +133,7 @@ def _build_auto_cancel_email_body(iptal_listesi, sirket_adi):
         saat_str = item.get('saat', '-') or '-'
         tur_label = get_interview_type_label(item.get('tur', 'genel') or 'genel')
         pozisyon = item.get('position_title', '-') or 'Genel Basvuru'
+        sebep = item.get('iptal_sebep', '-')
 
         rows_html += f"""
         <tr>
@@ -141,13 +142,14 @@ def _build_auto_cancel_email_body(iptal_listesi, sirket_adi):
             <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">{tarih_str}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">{saat_str}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">{tur_label}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">{sebep}</td>
         </tr>"""
 
     adet = len(iptal_listesi)
     bugun = format_turkish_date(datetime.now())
 
     body = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto;">
         <div style="background-color: #dc2626; padding: 16px 24px; border-radius: 8px 8px 0 0;">
             <h2 style="color: #ffffff; margin: 0; font-size: 18px;">
                 Otomatik Mulakat Iptali Bildirimi
@@ -158,8 +160,7 @@ def _build_auto_cancel_email_body(iptal_listesi, sirket_adi):
                 Sayin {sirket_adi} IK Ekibi,
             </p>
             <p style="color: #374151; font-size: 14px; line-height: 1.6;">
-                Asagidaki <strong>{adet}</strong> mulakat, adaylarin onay suresi dolmus
-                ve onay vermemis olmalari nedeniyle <strong>otomatik olarak iptal</strong> edilmistir.
+                Asagidaki <strong>{adet}</strong> mulakat <strong>otomatik olarak iptal</strong> edilmistir.
             </p>
 
             <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px;">
@@ -170,6 +171,7 @@ def _build_auto_cancel_email_body(iptal_listesi, sirket_adi):
                         <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #d1d5db;">Tarih</th>
                         <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #d1d5db;">Saat</th>
                         <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #d1d5db;">Tur</th>
+                        <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #d1d5db;">Iptal Sebebi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -195,7 +197,7 @@ def _build_auto_cancel_email_body(iptal_listesi, sirket_adi):
 def auto_cancel_expired_interviews():
     """
     Her gun 09:05'te calisir.
-    Onay suresi dolmus + onaylanmamis + hala planlanmis olan
+    Onay suresi dolmus VEYA mulakat saati gecmis + onaylanmamis + hala planlanmis olan
     mulakatlari otomatik iptal eder ve aday durumunu gunceller.
     Iptal edilen mulakatlar icin IK'ya email bildirimi gonderir.
     """
@@ -213,10 +215,12 @@ def auto_cancel_expired_interviews():
         with get_connection() as conn:
             cursor = conn.cursor()
 
-            # Suresi dolmus, pending, planlanmis mulakatlari bul
-            # Email icin ek alanlar: tarih, saat, tur, position_title, sirket_adi
+            # Suresi dolmus VEYA mulakat saati gecmis, pending, planlanmis mulakatlari bul
+            # Kosul 1: confirm_token_expires < datetime('now') — onay suresi dolmus
+            # Kosul 2: datetime(tarih) < datetime('now') — mulakat saati gecmis
             cursor.execute("""
                 SELECT i.id, i.candidate_id, i.company_id, i.tarih, i.saat, i.tur,
+                       i.confirm_token_expires,
                        c.ad_soyad, c.durum as aday_durum,
                        co.ad as sirket_adi,
                        dp.name as position_title
@@ -224,14 +228,17 @@ def auto_cancel_expired_interviews():
                 JOIN candidates c ON c.id = i.candidate_id
                 JOIN companies co ON co.id = i.company_id
                 LEFT JOIN department_pools dp ON dp.id = i.position_id
-                WHERE i.confirm_token_expires < datetime('now')
+                WHERE (
+                    i.confirm_token_expires < datetime('now')
+                    OR datetime(i.tarih) < datetime('now', '+3 hours')
+                )
                   AND i.confirmation_status = 'pending'
                   AND i.durum = 'planlanmis'
             """)
 
             expired_interviews = [dict(row) for row in cursor.fetchall()]
 
-            logger.info(f"[auto-cancel] Suresi dolmus mulakat sayisi: {len(expired_interviews)}")
+            logger.info(f"[auto-cancel] Iptal edilecek mulakat sayisi: {len(expired_interviews)}")
 
             iptal_sayisi = 0
             for interview in expired_interviews:
@@ -242,6 +249,15 @@ def auto_cancel_expired_interviews():
                     ad_soyad = interview['ad_soyad']
                     aday_durum = interview['aday_durum']
 
+                    # Iptal sebebini belirle
+                    # confirm_token_expires UTC'de saklanir, tarih Istanbul saatinde saklanir
+                    now_utc = datetime.utcnow().isoformat()
+                    token_expires = interview.get('confirm_token_expires') or ''
+                    if token_expires and token_expires < now_utc:
+                        iptal_sebep = "Onay suresi doldu"
+                    else:
+                        iptal_sebep = "Mulakat saati gecti"
+
                     # 1. Mulakati iptal et
                     cursor.execute(
                         "UPDATE interviews SET durum = 'iptal_edildi' WHERE id = ?",
@@ -250,7 +266,7 @@ def auto_cancel_expired_interviews():
 
                     logger.info(
                         f"[auto-cancel] Mulakat ID={interview_id}, Aday={ad_soyad}, "
-                        f"sure doldu -- otomatik iptal edildi"
+                        f"sebep: {iptal_sebep} -- otomatik iptal edildi"
                     )
 
                     # Email verisi topla — tarih formatlama
@@ -303,6 +319,7 @@ def auto_cancel_expired_interviews():
                         "tarih_formatted": tarih_formatted,
                         "saat": interview.get('saat'),
                         "tur": interview.get('tur'),
+                        "iptal_sebep": iptal_sebep,
                     })
 
                     # 2. Aday durum guncellemesi (interviews.py cancel mantigi ile ayni)
@@ -328,6 +345,7 @@ def auto_cancel_expired_interviews():
                             "details": {
                                 "islem": "otomatik_iptal",
                                 "mulakat_id": interview_id,
+                                "iptal_sebep": iptal_sebep,
                                 "aday_durum_degisti": False,
                                 "sebep": f"{active_count} aktif mulakat mevcut"
                             }
@@ -349,6 +367,7 @@ def auto_cancel_expired_interviews():
                             "details": {
                                 "islem": "otomatik_iptal",
                                 "mulakat_id": interview_id,
+                                "iptal_sebep": iptal_sebep,
                                 "aday_durum_degisti": False,
                                 "sebep": f"korumali durum: {aday_durum}"
                             }
@@ -414,8 +433,9 @@ def auto_cancel_expired_interviews():
                         "details": {
                             "islem": "otomatik_iptal",
                             "mulakat_id": interview_id,
+                            "iptal_sebep": iptal_sebep,
                             "aday_durum_degisti": True,
-                            "sebep": "onay suresi doldu"
+                            "sebep": iptal_sebep
                         }
                     })
 
