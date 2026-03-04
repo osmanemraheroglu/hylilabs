@@ -69,6 +69,7 @@ from rate_limiter import (
     check_synonym_batch_generate_limit,
     record_synonym_batch_generate
 )
+from audit_logger import log_action, AuditAction, EntityType
 
 logger = logging.getLogger(__name__)
 
@@ -1245,6 +1246,20 @@ def approve_synonym_list(
             # Loglama
             scope_text = "global" if scope == "global" else f"company={company_id}"
             logger.info(f"Synonyms approved: user={user_id}, scope={scope_text}, count={result.get('updated', 0)}, ids={request.synonym_ids}")
+
+            # FAZ 3: KVKK Audit Log
+            log_action(
+                action=AuditAction.SYNONYM_APPROVE.value,
+                user_id=user_id,
+                company_id=company_id if scope == "company" else None,
+                entity_type=EntityType.SYNONYM.value,
+                entity_id=None,
+                details={
+                    "synonym_ids": request.synonym_ids,
+                    "scope": scope,
+                    "count": result.get("updated", 0)
+                }
+            )
 
             return {
                 "success": True,

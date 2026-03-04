@@ -77,6 +77,9 @@ class AuditAction(str, Enum):
     COMPANY_DELETE = "COMPANY_DELETE"
     COMPANY_STATUS_CHANGE = "COMPANY_STATUS_CHANGE"
 
+    # Synonym Operations (FAZ 3)
+    SYNONYM_APPROVE = "SYNONYM_APPROVE"
+
 
 class EntityType(str, Enum):
     """Entity tipleri"""
@@ -90,6 +93,7 @@ class EntityType(str, Enum):
     EMAIL_ACCOUNT = "email_account"
     POOL = "pool"
     SYSTEM = "system"
+    SYNONYM = "synonym"
 
 
 class KVKKCategory(str, Enum):
@@ -175,7 +179,10 @@ ACTION_KVKK_MAPPING = {
     # Company Operations (Super Admin)
     AuditAction.COMPANY_CREATE.value: KVKKCategory.KULLANICI_YONETIMI.value,
     AuditAction.COMPANY_DELETE.value: KVKKCategory.VERI_SILME.value,
-    AuditAction.COMPANY_STATUS_CHANGE.value: KVKKCategory.KULLANICI_YONETIMI.value
+    AuditAction.COMPANY_STATUS_CHANGE.value: KVKKCategory.KULLANICI_YONETIMI.value,
+
+    # Synonym Operations (FAZ 3)
+    AuditAction.SYNONYM_APPROVE.value: KVKKCategory.VERI_ISLEME.value
 }
 
 
