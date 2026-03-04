@@ -5,8 +5,8 @@ Bu test Boubekeur Bouakkaz (ID: 392) adayının
 Bütçe ve Maliyet Kontrol Şefi (ID: 7792) pozisyonu için
 mevcut scoring puanını doğrular.
 
-AMAÇ: Bug fix öncesi mevcut puanı kayıt altına almak.
-Bu test daha sonra regression testi olarak kullanılacak.
+AMAÇ: FAZ 2.2 global synonyms sonrası puanı kayıt altına almak.
+Bu test regression testi olarak kullanılacak.
 
 TEST KURALI (Kural 26 - AAA Pattern):
 - ARRANGE: DB'den aday ve pozisyon verilerini al
@@ -16,6 +16,7 @@ TEST KURALI (Kural 26 - AAA Pattern):
 
 import sys
 import os
+import json
 
 # API dizinini path'e ekle
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -38,17 +39,32 @@ def get_candidate_data(candidate_id: int) -> dict:
 
 
 def get_position_data(position_id: int) -> dict:
-    """DB'den pozisyon verilerini al"""
+    """DB'den pozisyon verilerini al - scoring_v2 ile uyumlu format
+    
+    NOT: Position dict'te 'baslik' kullanılmalı, 'name' EKLENMEMELİ.
+    'name' eklenirse scoring farklı sonuç veriyor (65 vs 71).
+    """
     conn = sqlite3.connect('data/talentflow.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM department_pools WHERE id = ?", (position_id,))
+    cursor.execute('''
+        SELECT id, company_id, name as baslik, keywords, description, gerekli_deneyim_yil, 
+               gerekli_egitim, lokasyon, aranan_nitelikler, is_tanimi
+        FROM department_pools 
+        WHERE id = ? AND pool_type = "position"
+    ''', (position_id,))
     row = cursor.fetchone()
     conn.close()
     if row:
-        # pozisyon_adi yerine name kullanılıyor
         result = dict(row)
-        result['pozisyon_adi'] = result.get('name', '')
+        # Keywords JSON array ise string'e cevir
+        kw = result.get('keywords', '')
+        if kw and kw.startswith('['):
+            try:
+                kw_list = json.loads(kw)
+                result['keywords'] = ', '.join(kw_list)
+            except:
+                pass
         return result
     return None
 
@@ -60,9 +76,9 @@ class TestScoringBaseline:
     CANDIDATE_ID = 392  # Boubekeur Bouakkaz
     POSITION_ID = 7792  # Bütçe ve Maliyet Kontrol Şefi
     
-    # Beklenen puanlar (mevcut bug'lu sistem)
-    EXPECTED_TOTAL = 65
-    EXPECTED_POSITION = 8
+    # Beklenen puanlar (FAZ 2.2 sonrası global synonyms ile)
+    EXPECTED_TOTAL = 71
+    EXPECTED_POSITION = 14
     EXPECTED_TECHNICAL = 37
     EXPECTED_GENERAL = 20
     
@@ -70,8 +86,8 @@ class TestScoringBaseline:
         """
         Boubekeur Bouakkaz (ID: 392) için mevcut puanı doğrula.
         
-        Bu test bug fix ÖNCESİ mevcut puanı kaydeder.
-        Bug fix SONRASI bu test FAILED olmalı (puan artacak).
+        Bu test FAZ 2.2 global synonyms sonrası puanı kaydeder.
+        DB'deki match kaydı ile tutarlı olmalı (company_id=1).
         """
         # ARRANGE: DB'den aday ve pozisyon verilerini al
         candidate = get_candidate_data(self.CANDIDATE_ID)
@@ -82,10 +98,13 @@ class TestScoringBaseline:
         
         # Aday bilgilerini doğrula
         assert candidate['ad_soyad'] == 'Boubekeur Bouakkaz', "Aday adı eşleşmiyor"
-        assert position['name'] == 'Bütçe ve Maliyet Kontrol Şefi', "Pozisyon adı eşleşmiyor"
+        assert position['baslik'] == 'Bütçe ve Maliyet Kontrol Şefi', "Pozisyon adı eşleşmiyor"
         
         # ACT: Scoring fonksiyonunu çağır
         from scoring_v2 import calculate_match_score_v2
+        
+        # company_id = 1 (matches tablosundaki değer ile tutarlı)
+        candidate['company_id'] = 1
         
         result = calculate_match_score_v2(candidate, position)
         
@@ -138,7 +157,7 @@ class TestScoringBaseline:
         
         # ASSERT
         assert position is not None, f"Pozisyon bulunamadı: ID={self.POSITION_ID}"
-        assert position['name'] == 'Bütçe ve Maliyet Kontrol Şefi'
+        assert position['baslik'] == 'Bütçe ve Maliyet Kontrol Şefi'
         assert position['gerekli_deneyim_yil'] == 7.0
 
 
