@@ -6,7 +6,7 @@ APScheduler ile zamanlanmis gorevler
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from database import get_connection
-from email_sender import send_interview_invite
+from email_sender import send_interview_invite, send_email, format_turkish_date, get_interview_type_label
 from audit_logger import log_action, AuditAction, EntityType
 import logging
 from datetime import datetime, date, timedelta
@@ -122,11 +122,82 @@ def send_reminder_emails():
         logger.error(f"send_reminder_emails hatasi: {e}")
 
 
+def _build_auto_cancel_email_body(iptal_listesi, sirket_adi):
+    """
+    Otomatik iptal bildirimi icin HTML email icerigi olusturur.
+    iptal_listesi: list of dict — her iptal edilen mulakat icin bilgiler
+    """
+    rows_html = ""
+    for item in iptal_listesi:
+        tarih_str = item.get('tarih_formatted', '-')
+        saat_str = item.get('saat', '-') or '-'
+        tur_label = get_interview_type_label(item.get('tur', 'genel') or 'genel')
+        pozisyon = item.get('position_title', '-') or 'Genel Basvuru'
+
+        rows_html += f"""
+        <tr>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">{item.get('ad_soyad', '-')}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">{pozisyon}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">{tarih_str}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">{saat_str}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb;">{tur_label}</td>
+        </tr>"""
+
+    adet = len(iptal_listesi)
+    bugun = format_turkish_date(datetime.now())
+
+    body = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #dc2626; padding: 16px 24px; border-radius: 8px 8px 0 0;">
+            <h2 style="color: #ffffff; margin: 0; font-size: 18px;">
+                Otomatik Mulakat Iptali Bildirimi
+            </h2>
+        </div>
+        <div style="background-color: #ffffff; padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+            <p style="color: #374151; font-size: 14px; line-height: 1.6;">
+                Sayin {sirket_adi} IK Ekibi,
+            </p>
+            <p style="color: #374151; font-size: 14px; line-height: 1.6;">
+                Asagidaki <strong>{adet}</strong> mulakat, adaylarin onay suresi dolmus
+                ve onay vermemis olmalari nedeniyle <strong>otomatik olarak iptal</strong> edilmistir.
+            </p>
+
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px;">
+                <thead>
+                    <tr style="background-color: #f3f4f6;">
+                        <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #d1d5db;">Aday</th>
+                        <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #d1d5db;">Pozisyon</th>
+                        <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #d1d5db;">Tarih</th>
+                        <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #d1d5db;">Saat</th>
+                        <th style="padding: 8px 12px; text-align: left; border-bottom: 2px solid #d1d5db;">Tur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+            </table>
+
+            <p style="color: #6b7280; font-size: 13px; line-height: 1.5;">
+                Iptal edilen mulakatlarin adaylari, mevcut pozisyon atamalarina gore
+                uygun havuzlara otomatik olarak yonlendirilmistir.
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;" />
+            <p style="color: #9ca3af; font-size: 12px;">
+                Bu email {bugun} tarihinde HyliLabs sistemi tarafindan otomatik olarak gonderilmistir.
+            </p>
+        </div>
+    </div>
+    """
+    return body
+
+
 def auto_cancel_expired_interviews():
     """
     Her gun 09:05'te calisir.
     Onay suresi dolmus + onaylanmamis + hala planlanmis olan
     mulakatlari otomatik iptal eder ve aday durumunu gunceller.
+    Iptal edilen mulakatlar icin IK'ya email bildirimi gonderir.
     """
     logger.info("[auto-cancel] Otomatik iptal gorevi basladi")
 
@@ -134,16 +205,25 @@ def auto_cancel_expired_interviews():
     # (audit_logger kendi baglantisi acar, ayni anda 2 baglanti SQLite'da "database is locked" verir)
     audit_entries = []
 
+    # Email bildirimi icin veri topla — company_id bazli gruplama
+    # {company_id: {"sirket_adi": str, "hr_email": str, "account": dict, "iptal_listesi": [...]}}
+    email_data = {}
+
     try:
         with get_connection() as conn:
             cursor = conn.cursor()
 
             # Suresi dolmus, pending, planlanmis mulakatlari bul
+            # Email icin ek alanlar: tarih, saat, tur, position_title, sirket_adi
             cursor.execute("""
-                SELECT i.id, i.candidate_id, i.company_id,
-                       c.ad_soyad, c.durum as aday_durum
+                SELECT i.id, i.candidate_id, i.company_id, i.tarih, i.saat, i.tur,
+                       c.ad_soyad, c.durum as aday_durum,
+                       co.ad as sirket_adi,
+                       dp.name as position_title
                 FROM interviews i
                 JOIN candidates c ON c.id = i.candidate_id
+                JOIN companies co ON co.id = i.company_id
+                LEFT JOIN department_pools dp ON dp.id = i.position_id
                 WHERE i.confirm_token_expires < datetime('now')
                   AND i.confirmation_status = 'pending'
                   AND i.durum = 'planlanmis'
@@ -172,6 +252,58 @@ def auto_cancel_expired_interviews():
                         f"[auto-cancel] Mulakat ID={interview_id}, Aday={ad_soyad}, "
                         f"sure doldu -- otomatik iptal edildi"
                     )
+
+                    # Email verisi topla — tarih formatlama
+                    tarih_formatted = '-'
+                    try:
+                        tarih_str = interview.get('tarih', '')
+                        if tarih_str:
+                            if isinstance(tarih_str, str):
+                                if 'T' in tarih_str:
+                                    tarih_dt = datetime.fromisoformat(tarih_str)
+                                else:
+                                    tarih_dt = datetime.strptime(tarih_str, '%Y-%m-%d')
+                            else:
+                                tarih_dt = tarih_str
+                            tarih_formatted = format_turkish_date(tarih_dt)
+                    except Exception:
+                        tarih_formatted = str(interview.get('tarih', '-'))
+
+                    # Company bazli email verisini hazirla
+                    if company_id not in email_data:
+                        # HR alici emailini bul
+                        cursor.execute("""
+                            SELECT email FROM users
+                            WHERE company_id = ? AND aktif = 1
+                            ORDER BY CASE WHEN rol = 'company_admin' THEN 0 ELSE 1 END
+                            LIMIT 1
+                        """, (company_id,))
+                        hr_row = cursor.fetchone()
+                        hr_email = hr_row['email'] if hr_row else None
+
+                        # Email hesabini al
+                        cursor.execute("""
+                            SELECT * FROM email_accounts
+                            WHERE company_id = ? AND varsayilan_gonderim = 1 AND aktif = 1
+                            LIMIT 1
+                        """, (company_id,))
+                        acc_row = cursor.fetchone()
+                        email_account = dict(acc_row) if acc_row else None
+
+                        email_data[company_id] = {
+                            "sirket_adi": interview.get('sirket_adi', ''),
+                            "hr_email": hr_email,
+                            "account": email_account,
+                            "iptal_listesi": []
+                        }
+
+                    email_data[company_id]["iptal_listesi"].append({
+                        "ad_soyad": ad_soyad,
+                        "position_title": interview.get('position_title'),
+                        "tarih_formatted": tarih_formatted,
+                        "saat": interview.get('saat'),
+                        "tur": interview.get('tur'),
+                    })
 
                     # 2. Aday durum guncellemesi (interviews.py cancel mantigi ile ayni)
                     # Baska aktif mulakat var mi kontrol et
@@ -317,6 +449,53 @@ def auto_cancel_expired_interviews():
             )
         except Exception as e:
             logger.error(f"[auto-cancel] Audit log yazma hatasi: {e}")
+
+    # IK email bildirimlerini gonder (DB baglantisi kapandiktan sonra — "database is locked" onlenir)
+    for company_id, data in email_data.items():
+        try:
+            hr_email = data.get("hr_email")
+            account = data.get("account")
+            sirket_adi = data.get("sirket_adi", "")
+            iptal_listesi = data.get("iptal_listesi", [])
+
+            if not hr_email:
+                logger.warning(
+                    f"[auto-cancel] Sirket ID={company_id} icin IK email adresi bulunamadi, bildirim gonderilemedi"
+                )
+                continue
+
+            if not account:
+                logger.warning(
+                    f"[auto-cancel] Sirket ID={company_id} icin email hesabi bulunamadi, bildirim gonderilemedi"
+                )
+                continue
+
+            if not iptal_listesi:
+                continue
+
+            adet = len(iptal_listesi)
+            subject = f"Otomatik Mulakat Iptali — {adet} mulakat iptal edildi"
+            body = _build_auto_cancel_email_body(iptal_listesi, sirket_adi)
+
+            success, msg = send_email(
+                to_email=hr_email,
+                subject=subject,
+                body=body,
+                account=account
+            )
+
+            if success:
+                logger.info(
+                    f"[auto-cancel] IK bildirim emaili gonderildi: {hr_email} "
+                    f"({adet} iptal, sirket_id={company_id})"
+                )
+            else:
+                logger.error(
+                    f"[auto-cancel] IK bildirim emaili gonderilemedi ({hr_email}): {msg}"
+                )
+
+        except Exception as e:
+            logger.error(f"[auto-cancel] IK email bildirimi hatasi (company_id={company_id}): {e}")
 
 
 def start_scheduler():

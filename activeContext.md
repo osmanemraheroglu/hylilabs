@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 03.03.2026
+Son guncelleme: 04.03.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -31,6 +31,19 @@ Son guncelleme: 03.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - Otomatik İptal İK Email Bildirimi
+- Otomatik iptal edilen mülakatlar için İK ekibine email bildirimi eklendi
+- Company bazlı gruplama: Her firma için tek email ile tüm iptal edilen mülakatlar bildiriliyor
+- HR alıcı: users tablosundan company_admin öncelikli aktif kullanıcı
+- Email hesabı: email_accounts tablosundan firma varsayılan gönderim hesabı
+- HTML tablo formatında: Aday, Pozisyon, Tarih, Saat, Tür bilgileri
+- "database is locked" koruması: email gönderimi DB bağlantısı kapandıktan sonra (audit log pattern)
+- Email hatası iptal sürecini engellemez (try-except)
+- Yeni fonksiyon: _build_auto_cancel_email_body()
+- Yeni import: send_email, format_turkish_date, get_interview_type_label
+- Test: demo@demo.com'a başarıyla gönderildi
+- Değişen dosyalar: api/scheduler.py
+
 ### 04.03.2026 - Mülakat Otomatik İptal Mekanizması
 - Onay süresi dolan + onaylanmamış mülakatlar scheduler tarafından otomatik iptal ediliyor
 - Aday durumu kilitli kurallara uygun güncelleniyor (korumalı durumlar, candidate_positions kontrolü)
