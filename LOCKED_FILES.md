@@ -9,7 +9,7 @@
 ### Backend — /var/www/hylilabs/api/
 | # | Dosya | Kilit Tarihi | Not |
 |---|-------|-------------|-----|
-| 1 | scoring_v2.py | 17.02.2026 | Eşleştirme motoru — KESİNLİKLE DOKUNMA |
+| 1 | scoring_v2.py | 17.02.2026 | ⚠️ DEĞİŞİKLİK DEVAM EDİYOR (FAZ 1B) — check_keyword_match company_id ekleniyor |
 | 2 | job_scraper.py | 17.02.2026 | Kariyer.net URL parse |
 | 3 | eval_report.py | 17.02.2026 | AI değerlendirme raporu |
 | 4 | email_worker.py | 17.02.2026 | Email CV toplama cron — 3x doğrulandı |

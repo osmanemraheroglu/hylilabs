@@ -192,7 +192,7 @@ except ImportError:
     FUZZY_MATCH_THRESHOLD = 80
 
 
-def check_keyword_match(keyword, search_text, skills_text, turkish_lower_func):
+def check_keyword_match(keyword, search_text, skills_text, turkish_lower_func, company_id=None):
     """3 katmanlı keyword eşleştirme
     
     Katman 1: Birebir substring eşleşme (word boundary ile)
@@ -204,6 +204,7 @@ def check_keyword_match(keyword, search_text, skills_text, turkish_lower_func):
         search_text: Tüm aday metni (cv + beceriler + deneyim) - turkish_lower uygulanmış
         skills_text: Sadece teknik beceriler listesi (virgülle ayrılmış) - orijinal
         turkish_lower_func: Türkçe normalize fonksiyonu
+        company_id: Firma ID (None=sadece global, değer=global+firma synonym)
     
     Returns:
         (bool, str, str): (eşleşti_mi, eşleşen_kelime, eşleşme_yöntemi)
@@ -219,7 +220,7 @@ def check_keyword_match(keyword, search_text, skills_text, turkish_lower_func):
         return True, kw_lower, 'exact'
     
     # ═══ KATMAN 2: Synonym eşleşme (word boundary ile) ═══
-    synonyms = get_synonyms_for_keyword(kw_lower)  # DB'den oku (cache'li)
+    synonyms = get_synonyms_for_keyword(kw_lower, company_id)  # DB'den oku (cache'li, company_id destekli)
     for syn in synonyms:
         syn_lower = turkish_lower_func(syn)
         if syn_lower == kw_lower:

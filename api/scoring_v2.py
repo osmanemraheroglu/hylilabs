@@ -372,7 +372,8 @@ def calculate_position_match_score(
 def calculate_technical_score(
     candidate: Union[Dict, object],
     position: Union[Dict, object],
-    v2_keywords: Dict[str, List[str]]
+    v2_keywords: Dict[str, List[str]],
+    company_id: int = None
 ) -> Dict:
     """
     KATMAN 2: Teknik Yetkinlik (47 puan)
@@ -404,7 +405,7 @@ def calculate_technical_score(
         # MOD A: Must-have varsa
         for keyword in must_have_keywords:
             found, matched_via, method = check_keyword_match(
-                keyword, search_text, skills_original, turkish_lower
+                keyword, search_text, skills_original, turkish_lower, company_id
             )
             if found:
                 must_have_matched.append(keyword)
@@ -426,7 +427,7 @@ def calculate_technical_score(
     if critical_keywords:
         for keyword in critical_keywords:
             found, matched_via, method = check_keyword_match(
-                keyword, search_text, skills_original, turkish_lower
+                keyword, search_text, skills_original, turkish_lower, company_id
             )
             if found:
                 critical_matched.append(keyword)
@@ -456,7 +457,7 @@ def calculate_technical_score(
     if important_keywords:
         for keyword in important_keywords:
             found, matched_via, method = check_keyword_match(
-                keyword, search_text, skills_original, turkish_lower
+                keyword, search_text, skills_original, turkish_lower, company_id
             )
             if found:
                 important_matched.append(keyword)
@@ -473,7 +474,7 @@ def calculate_technical_score(
     
     for keyword in bonus_keywords:
         found, matched_via, method = check_keyword_match(
-            keyword, search_text, skills_original, turkish_lower
+            keyword, search_text, skills_original, turkish_lower, company_id
         )
         if found:
             bonus_matched.append(keyword)
@@ -697,8 +698,11 @@ def calculate_match_score_v2(
         candidate, position, title_mappings, sector_preferences
     )
     
+    # Company ID'yi candidate'den al
+    candidate_company_id = safe_get(candidate, 'company_id')
+    
     technical_result = calculate_technical_score(
-        candidate, position, v2_keywords
+        candidate, position, v2_keywords, candidate_company_id
     )
     
     general_result = calculate_general_score(
