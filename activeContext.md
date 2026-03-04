@@ -31,6 +31,17 @@ Son guncelleme: 04.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - Onaylanmamış Mülakat Adayı Otomatik Arşivleme
+- Mülakat onaylamayan adaylar otomatik iptal sonrası arşive taşınıyor (Genel Havuz yerine)
+- scheduler.py auto_cancel: pos_count==0 bloğu → durum='arsiv', Arşiv havuzuna INSERT
+- Eski pool assignments siliniyor, sadece Arşiv ataması kalıyor
+- candidates.py arsivle endpoint ile aynı pattern kullanıldı
+- Manuel iptal (İK butonu) davranışı DEĞİŞMEDİ — hâlâ Genel Havuz'a gönderir
+- Korumalı durumlar (ise_alindi, arsiv, başka aktif mülakat) korundu
+- KVKK audit log: old_values={durum: mulakat} → new_values={durum: arsiv}
+- Email bildirimindeki açıklama güncellendi
+- Değişen dosyalar: api/scheduler.py
+
 ### 04.03.2026 - Duplicate Mülakat Engeli
 - Aktif mülakatı olan adaya ikinci mülakat oluşturma engellendi
 - Backend'de candidate_id + durum='planlanmis' + company_id kontrolü eklendi (INSERT öncesi)

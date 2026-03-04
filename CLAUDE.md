@@ -95,6 +95,7 @@ Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
 21. Import guard kuralı: core/ altındaki modüller import edilirken try-except ile fallback yazılmalı (from X except: from core.X). DEGISMEZ.
 23. CV PDF-Only Mimarisi: CV dosyaları SADECE PDF olarak saklanır. DOCX/DOC yüklendiğinde save_cv_file() otomatik PDF'e çevirir (LibreOffice headless). convert_to_pdf() fonksiyonu fcntl lock ile thread-safe. Orijinal DOCX'ler _originals/ klasöründe saklanır. Sistemde aktif DOCX CV OLMAMALI. DEĞİŞMEZ.
 25. Duplicate Mülakat Engeli (04.03.2026): Aktif mülakatı olan adaya ikinci mülakat oluşturulamaz. interviews CREATE endpoint'te candidate_id + durum='planlanmis' + company_id kontrolü. 400 HTTPException Türkçe hata mesajı. DEĞİŞMEZ.
+26. Onaylanmamış Mülakat Arşivleme (04.03.2026): auto_cancel sonrası onaylamayan adaylar arşive taşınır, Genel Havuz'a değil. Manuel iptal davranışı farklı (Genel Havuz). DEĞİŞMEZ.
 
 ## Stil
 - Fonksiyon ve degisken: snake_case (Python), camelCase (TypeScript)

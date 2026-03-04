@@ -180,8 +180,8 @@ def _build_auto_cancel_email_body(iptal_listesi, sirket_adi):
             </table>
 
             <p style="color: #6b7280; font-size: 13px; line-height: 1.5;">
-                Iptal edilen mulakatlarin adaylari, mevcut pozisyon atamalarina gore
-                uygun havuzlara otomatik olarak yonlendirilmistir.
+                Iptal edilen mulakatlarin adaylari, mulakat onaylamadiklari icin
+                otomatik olarak arsive tasinmistir.
             </p>
 
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;" />
@@ -199,6 +199,7 @@ def auto_cancel_expired_interviews():
     Her gun 09:05'te calisir.
     Onay suresi dolmus VEYA mulakat saati gecmis + onaylanmamis + hala planlanmis olan
     mulakatlari otomatik iptal eder ve aday durumunu gunceller.
+    Onaylamayan adaylar arsive tasinir (Genel Havuz'a degil).
     Iptal edilen mulakatlar icin IK'ya email bildirimi gonderir.
     """
     logger.info("[auto-cancel] Otomatik iptal gorevi basladi")
@@ -322,7 +323,7 @@ def auto_cancel_expired_interviews():
                         "iptal_sebep": iptal_sebep,
                     })
 
-                    # 2. Aday durum guncellemesi (interviews.py cancel mantigi ile ayni)
+                    # 2. Aday durum guncellemesi
                     # Baska aktif mulakat var mi kontrol et
                     cursor.execute("""
                         SELECT COUNT(*) as cnt FROM interviews i
@@ -396,30 +397,48 @@ def auto_cancel_expired_interviews():
                             f"durum={yeni_durum} (candidate_positions kaydi var)"
                         )
                     else:
+                        # Onaylamayan aday arsive tasinir (Genel Havuz'a degil)
+                        # candidates.py arsivle mantigi ile ayni pattern
+
+                        # Eski havuz atamalarini sil
+                        cursor.execute(
+                            "DELETE FROM candidate_pool_assignments WHERE candidate_id = ? AND company_id = ?",
+                            (candidate_id, company_id)
+                        )
+
+                        # Arsiv havuzunu bul
+                        cursor.execute("""
+                            SELECT id FROM department_pools
+                            WHERE company_id = ? AND name = 'Arşiv' AND is_system = 1
+                        """, (company_id,))
+                        arsiv_row = cursor.fetchone()
+
+                        if arsiv_row:
+                            arsiv_pool_id = arsiv_row['id']
+                            # Arsiv havuzuna ata
+                            cursor.execute("""
+                                INSERT INTO candidate_pool_assignments
+                                (candidate_id, department_pool_id, company_id)
+                                VALUES (?, ?, ?)
+                            """, (candidate_id, arsiv_pool_id, company_id))
+                        else:
+                            logger.error(
+                                f"[auto-cancel] Aday ID={candidate_id}: "
+                                f"Arsiv havuzu bulunamadi (company_id={company_id})"
+                            )
+
+                        # Durumu guncelle
                         cursor.execute("""
                             UPDATE candidates
-                            SET durum = 'yeni', havuz = 'genel_havuz',
+                            SET durum = 'arsiv', havuz = 'arsiv',
                                 guncelleme_tarihi = datetime('now')
                             WHERE id = ? AND company_id = ?
                         """, (candidate_id, company_id))
 
-                        # Genel Havuz'a ekle
-                        cursor.execute("""
-                            SELECT id FROM department_pools
-                            WHERE company_id = ? AND name = 'Genel Havuz' AND is_system = 1
-                        """, (company_id,))
-                        genel_pool = cursor.fetchone()
-                        if genel_pool:
-                            cursor.execute("""
-                                INSERT OR IGNORE INTO candidate_pool_assignments
-                                (candidate_id, department_pool_id, company_id)
-                                VALUES (?, ?, ?)
-                            """, (candidate_id, genel_pool['id'], company_id))
-
-                        yeni_durum = 'yeni'
+                        yeni_durum = 'arsiv'
                         logger.info(
                             f"[auto-cancel] Aday ID={candidate_id} ({ad_soyad}): "
-                            f"durum={yeni_durum}, Genel Havuz'a eklendi"
+                            f"aday arsive tasindi (mulakat onaylanmadi)"
                         )
 
                     # Audit log verisini topla (baglanti kapandiktan sonra yazilacak)
