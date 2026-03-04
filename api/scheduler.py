@@ -260,7 +260,7 @@ def auto_cancel_expired_interviews():
 
                     # 1. Mulakati iptal et
                     cursor.execute(
-                        "UPDATE interviews SET durum = 'iptal_edildi' WHERE id = ?",
+                        "UPDATE interviews SET durum = 'iptal' WHERE id = ?",
                         (interview_id,)
                     )
 

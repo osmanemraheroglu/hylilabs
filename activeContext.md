@@ -31,6 +31,13 @@ Son guncelleme: 04.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - Mülakat Takvimi Durum Filtreleri Fix
+- Kök neden: scheduler.py mülakatları 'iptal_edildi' olarak set ediyordu, sistem genelinde 'iptal' kullanılıyor
+- scheduler.py satır 263: durum='iptal_edildi' → durum='iptal' düzeltildi
+- DB migration: 2 mevcut iptal_edildi kaydı iptal olarak güncellendi
+- Frontend değişikliği YOK (zaten doğru değerleri kullanıyordu)
+- Değişen dosyalar: api/scheduler.py + DB migration
+
 ### 04.03.2026 - Mülakat Otomatik İptal Ek Kural: Saati Geçmiş Mülakatlar
 - Mülakat saati geçmiş + onaylanmamış mülakatlar da otomatik iptal ediliyor
 - confirm_token_expires'a ek olarak datetime(tarih) < datetime('now', '+3 hours') kontrolü eklendi
