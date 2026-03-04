@@ -79,6 +79,13 @@ class AuditAction(str, Enum):
 
     # Synonym Operations (FAZ 3)
     SYNONYM_APPROVE = "SYNONYM_APPROVE"
+    SYNONYM_CREATE = "SYNONYM_CREATE"
+    SYNONYM_UPDATE = "SYNONYM_UPDATE"
+    SYNONYM_DELETE = "SYNONYM_DELETE"
+
+    # Generic Data Operations (FAZ 3.2)
+    DATA_UPDATE = "DATA_UPDATE"
+    DATA_DELETE = "DATA_DELETE"
 
 
 class EntityType(str, Enum):
@@ -182,7 +189,14 @@ ACTION_KVKK_MAPPING = {
     AuditAction.COMPANY_STATUS_CHANGE.value: KVKKCategory.KULLANICI_YONETIMI.value,
 
     # Synonym Operations (FAZ 3)
-    AuditAction.SYNONYM_APPROVE.value: KVKKCategory.VERI_ISLEME.value
+    AuditAction.SYNONYM_APPROVE.value: KVKKCategory.VERI_ISLEME.value,
+    AuditAction.SYNONYM_CREATE.value: KVKKCategory.VERI_ISLEME.value,
+    AuditAction.SYNONYM_UPDATE.value: KVKKCategory.VERI_GUNCELLEME.value,
+    AuditAction.SYNONYM_DELETE.value: KVKKCategory.VERI_SILME.value,
+
+    # Generic Data Operations (FAZ 3.2)
+    AuditAction.DATA_UPDATE.value: KVKKCategory.VERI_GUNCELLEME.value,
+    AuditAction.DATA_DELETE.value: KVKKCategory.VERI_SILME.value
 }
 
 

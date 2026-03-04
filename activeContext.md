@@ -31,6 +31,17 @@ Son guncelleme: 04.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - FAZ 3.2 Synonym CRUD API Tamamlandı
+- LIST endpoint: keyword opsiyonel, pagination eklendi (page, per_page, total, total_pages)
+- CREATE endpoint: scope desteği (global/company), duplicate kontrolü (409), KVKK audit log
+- DELETE endpoint: super_admin global synonym silebilir, company_id yetki kontrolü, KVKK audit log
+- DETAIL endpoint (YENİ): GET /{id} - Tek synonym detayı, scope field, görüntüleme yetki kontrolü
+- UPDATE endpoint (YENİ): PUT /{id} - status/scope/match_weight/synonym_type güncelleme, versiyon artışı
+- audit_logger.py: SYNONYM_CREATE, SYNONYM_UPDATE, SYNONYM_DELETE, DATA_UPDATE, DATA_DELETE action'ları
+- 18/18 test başarılı (test_synonym_crud.py)
+- Değişen dosyalar: api/routes/synonyms.py, api/audit_logger.py
+- Yeni dosya: api/tests/test_synonym_crud.py
+
 ### 04.03.2026 - FAZ 3 Synonym Global/Company Scope Seçeneği
 - Synonym onay ekranına "Global / Firma Bazlı" scope seçici eklendi
 - Frontend: RadioGroup UI (sadece super_admin için görünür)

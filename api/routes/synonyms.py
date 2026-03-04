@@ -575,6 +575,15 @@ class SynonymCreateRequest(BaseModel):
     synonym: str = Field(..., min_length=1, max_length=100)
     synonym_type: Optional[str] = None  # turkish, english, abbreviation, variation
     auto_approve: bool = False
+    scope: Optional[str] = Field("company", description="FAZ 3.2: 'global' veya 'company'")
+
+
+class SynonymUpdateRequest(BaseModel):
+    """FAZ 3.2: Synonym güncelleme request model"""
+    status: Optional[str] = Field(None, description="pending, approved, rejected")
+    scope: Optional[str] = Field(None, description="global veya company")
+    match_weight: Optional[float] = Field(None, ge=0.0, le=1.0)
+    synonym_type: Optional[str] = Field(None, description="Synonym tipi")
 
 
 class SynonymBulkActionRequest(BaseModel):
@@ -593,36 +602,121 @@ class SynonymGenerateRequest(BaseModel):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINT 1: GET /api/synonyms - Keyword için synonym listesi
+# ENDPOINT 1: GET /api/synonyms - Synonym listesi (FAZ 3.2 güncellemesi)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("")
 def list_synonyms(
-    keyword: str = Query(..., min_length=1, description="Aranacak keyword (zorunlu)"),
+    keyword: Optional[str] = Query(None, description="Keyword filtresi (opsiyonel)"),
     status: Optional[str] = Query(None, description="Filtre: pending, approved, rejected"),
+    page: int = Query(1, ge=1, description="Sayfa numarası"),
+    per_page: int = Query(20, ge=1, le=100, description="Sayfa başına kayıt"),
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Belirli bir keyword için synonym listesi döndür.
-    Global ve firma-özel synonym'ları içerir.
+    FAZ 3.2: Synonym listesi döndür.
+    - keyword verilmezse tüm synonym'ları döndürür (pagination ile)
+    - keyword verilirse o keyword'e ait synonym'ları döndürür
+    - super_admin: tüm synonym'ler
+    - company_admin/user: kendi firma + global (NULL) synonym'ler
     """
     try:
-        require_company_user(current_user)
-        company_id = current_user["company_id"]
+        # FAZ 3.2: super_admin tüm synonym'leri görebilir
+        auth_info = require_company_or_super_admin(current_user)
+        company_id = auth_info["company_id"]
+        is_super_admin = auth_info["is_super_admin"]
 
-        synonyms = get_keyword_synonyms(
-            keyword=keyword,
-            company_id=company_id,
-            status=status,
-            include_global=True
-        )
+        # Keyword verilmişse mevcut davranış (geriye uyumluluk)
+        if keyword:
+            synonyms = get_keyword_synonyms(
+                keyword=keyword,
+                company_id=company_id,
+                status=status,
+                include_global=True
+            )
+            return {
+                "success": True,
+                "data": {
+                    "keyword": keyword,
+                    "synonyms": synonyms,
+                    "total": len(synonyms)
+                }
+            }
+
+        # FAZ 3.2: Keyword yoksa tüm synonym'ları getir (pagination ile)
+        conn = get_connection()
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+
+        # Count sorgusu
+        if is_super_admin:
+            count_sql = "SELECT COUNT(*) FROM keyword_synonyms WHERE 1=1"
+            count_params = []
+        else:
+            count_sql = "SELECT COUNT(*) FROM keyword_synonyms WHERE (company_id IS NULL OR company_id = ?)"
+            count_params = [company_id]
+
+        if status:
+            count_sql += " AND status = ?"
+            count_params.append(status)
+
+        cursor.execute(count_sql, count_params)
+        total = cursor.fetchone()[0]
+
+        # Data sorgusu
+        offset = (page - 1) * per_page
+        if is_super_admin:
+            data_sql = """
+                SELECT id, keyword, synonym, synonym_type, status, match_weight,
+                       company_id, created_by, created_at, confidence_score
+                FROM keyword_synonyms
+                WHERE 1=1
+            """
+            data_params = []
+        else:
+            data_sql = """
+                SELECT id, keyword, synonym, synonym_type, status, match_weight,
+                       company_id, created_by, created_at, confidence_score
+                FROM keyword_synonyms
+                WHERE (company_id IS NULL OR company_id = ?)
+            """
+            data_params = [company_id]
+
+        if status:
+            data_sql += " AND status = ?"
+            data_params.append(status)
+
+        data_sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        data_params.extend([per_page, offset])
+
+        cursor.execute(data_sql, data_params)
+
+        items = []
+        for row in cursor.fetchall():
+            items.append({
+                "id": row[0],
+                "keyword": row[1],
+                "synonym": row[2],
+                "synonym_type": row[3],
+                "status": row[4],
+                "match_weight": row[5],
+                "company_id": row[6],
+                "created_by": row[7],
+                "created_at": row[8],
+                "confidence_score": row[9],
+                "is_global": row[6] is None
+            })
+
+        conn.close()
 
         return {
             "success": True,
             "data": {
-                "keyword": keyword,
-                "synonyms": synonyms,
-                "total": len(synonyms)
+                "items": items,
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": (total + per_page - 1) // per_page
             }
         }
     except HTTPException:
@@ -1052,7 +1146,7 @@ def get_synonym_history(
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINT 4: POST /api/synonyms - Manuel synonym ekle
+# ENDPOINT 4: POST /api/synonyms - Manuel synonym ekle (FAZ 3.2 scope desteği)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.post("")
@@ -1061,18 +1155,64 @@ def create_synonym(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Yeni synonym ekle.
+    FAZ 3.2: Yeni synonym ekle.
+    - scope="company": company_id=user.company_id, status="pending" (mevcut davranış)
+    - scope="global": sadece super_admin, company_id=NULL, status="approved"
     auto_approve=True ise direkt onaylanır, False ise pending olur.
-    FAZ 10.2: Semantic similarity kontrolü eklendi.
-    FAZ 10.4: ML auto-approve/reject entegrasyonu eklendi.
+    FAZ 10.2: Semantic similarity kontrolü.
+    FAZ 10.4: ML auto-approve/reject entegrasyonu.
     """
     try:
-        require_company_user(current_user)
-        company_id = current_user["company_id"]
-        user_id = current_user["id"]
+        # FAZ 3.2: scope desteği için yeni auth
+        auth_info = require_company_or_super_admin(current_user)
+        is_super_admin = auth_info["is_super_admin"]
+        user_id = auth_info["user_id"]
 
         keyword = request.keyword.strip()
         synonym = request.synonym.strip()
+        scope = request.scope or "company"
+
+        # FAZ 3.2: Global scope kontrolü
+        if scope == "global":
+            if not is_super_admin:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Global synonym oluşturma sadece super_admin yetkisiyle yapılabilir."
+                )
+            company_id = None  # Global synonym
+            auto_approve = True  # Global synonym direkt onaylı
+        else:
+            # Company scope - mevcut davranış
+            if auth_info["company_id"] is None and not is_super_admin:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Firma bazlı synonym için firma kullanıcısı olmalısınız."
+                )
+            company_id = auth_info["company_id"]
+            auto_approve = request.auto_approve
+
+        # FAZ 3.2: Duplicate kontrolü
+        conn = get_connection()
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        if company_id is None:
+            cursor.execute(
+                "SELECT id FROM keyword_synonyms WHERE keyword = ? AND synonym = ? AND company_id IS NULL",
+                (keyword, synonym)
+            )
+        else:
+            cursor.execute(
+                "SELECT id FROM keyword_synonyms WHERE keyword = ? AND synonym = ? AND company_id = ?",
+                (keyword, synonym, company_id)
+            )
+        existing = cursor.fetchone()
+        conn.close()
+
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Bu synonym zaten mevcut (ID: {existing[0]})"
+            )
 
         # FAZ 10.2: Semantic similarity kontrolü
         semantic_result = check_semantic_similarity(keyword, synonym)
@@ -1083,12 +1223,11 @@ def create_synonym(
         if semantic_score < 0.70:
             semantic_warning = f"⚠️ Düşük semantik benzerlik ({semantic_score:.2f}). Bu synonym keyword ile zayıf ilişkili olabilir."
 
-        # FAZ 10.4: ML auto-approve/reject entegrasyonu
+        # FAZ 10.4: ML auto-approve/reject entegrasyonu (sadece company scope için)
         ml_result = None
         ml_warning = None
-        auto_approve = request.auto_approve
 
-        if SKLEARN_AVAILABLE and not request.auto_approve:
+        if scope == "company" and SKLEARN_AVAILABLE and not request.auto_approve:
             try:
                 ml_result = auto_process_synonym(keyword, synonym)
                 if ml_result.get('action') == 'auto_approved':
@@ -1119,13 +1258,30 @@ def create_synonym(
                 logger.warning(f"Synonym embedding kaydedilemedi: {emb_err}")
 
             # Loglama
-            logger.info(f"Synonym created: user={user_id}, company={company_id}, keyword={keyword}, synonym={synonym}, semantic_score={semantic_score:.2f}, auto_approve={auto_approve}")
+            scope_text = "global" if scope == "global" else f"company={company_id}"
+            logger.info(f"Synonym created: user={user_id}, scope={scope_text}, keyword={keyword}, synonym={synonym}, semantic_score={semantic_score:.2f}, auto_approve={auto_approve}")
+
+            # FAZ 3.2: KVKK Audit Log
+            log_action(
+                action=AuditAction.SYNONYM_APPROVE.value if auto_approve else "SYNONYM_CREATE",
+                user_id=user_id,
+                company_id=company_id,
+                entity_type=EntityType.SYNONYM.value,
+                entity_id=result.get("id"),
+                details={
+                    "keyword": keyword,
+                    "synonym": synonym,
+                    "scope": scope,
+                    "auto_approve": auto_approve
+                }
+            )
 
             response_data = {
                 "id": result.get("id"),
                 "message": "Synonym başarıyla eklendi",
                 "semantic_score": round(semantic_score, 3),
-                "auto_approved": auto_approve
+                "auto_approved": auto_approve,
+                "scope": scope
             }
 
             # FAZ 10.4: ML sonuçlarını response'a ekle
@@ -1169,33 +1325,376 @@ def remove_synonym(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Synonym sil.
-    Sadece firma'nın kendi synonym'larını silebilir (global olanları değil).
+    FAZ 3.2: Synonym sil (HARD DELETE).
+
+    Yetki kuralları:
+    - super_admin: Global synonym'leri silebilir (company_id IS NULL)
+    - company_admin/user: Sadece kendi firma synonym'lerini silebilir
     """
     try:
-        require_company_user(current_user)
-        company_id = current_user["company_id"]
+        # FAZ 3.2: Yeni auth helper kullan
+        auth_info = require_company_or_super_admin(current_user)
+        company_id = auth_info["company_id"]
+        user_id = auth_info["user_id"]
+        is_super_admin = auth_info["is_super_admin"]
 
+        # Synonym'ü bul ve yetki kontrolü yap
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, keyword, synonym, company_id FROM keyword_synonyms WHERE id = ?",
+            (synonym_id,)
+        )
+        synonym_row = cursor.fetchone()
+        conn.close()
+
+        if not synonym_row:
+            raise HTTPException(status_code=404, detail="Synonym bulunamadı.")
+
+        synonym_company_id = synonym_row["company_id"]
+
+        # Yetki kontrolü
+        if synonym_company_id is None:
+            # Global synonym - sadece super_admin silebilir
+            if not is_super_admin:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Global synonym'ler sadece super_admin tarafından silinebilir."
+                )
+        else:
+            # Firma synonym - sadece aynı firma silebilir
+            if company_id != synonym_company_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Bu synonym'ü silme yetkiniz yok."
+                )
+
+        # Silme işlemi
         deleted = delete_synonym(
             synonym_id=synonym_id,
-            company_id=company_id
+            company_id=synonym_company_id  # Orijinal company_id ile sil
         )
 
         if deleted:
             # Loglama
-            logger.info(f"Synonym deleted: user={current_user['id']}, company={company_id}, synonym_id={synonym_id}")
+            scope_text = "global" if synonym_company_id is None else f"company={synonym_company_id}"
+            logger.info(f"Synonym deleted: user={user_id}, {scope_text}, synonym_id={synonym_id}")
+
+            # KVKK Audit Log
+            log_action(
+                action=AuditAction.DATA_DELETE,
+                entity_type=EntityType.SYNONYM,
+                entity_id=synonym_id,
+                user_id=user_id,
+                company_id=company_id,
+                details={
+                    "keyword": synonym_row["keyword"],
+                    "synonym": synonym_row["synonym"],
+                    "scope": "global" if synonym_company_id is None else "company",
+                    "deleted_by": "super_admin" if is_super_admin else "company_user"
+                }
+            )
 
             return {
                 "success": True,
                 "data": {
-                    "message": "Synonym başarıyla silindi"
+                    "message": "Synonym başarıyla silindi",
+                    "deleted_id": synonym_id
                 }
             }
         else:
             raise HTTPException(
-                status_code=404,
-                detail="Synonym bulunamadı veya silme yetkisi yok"
+                status_code=500,
+                detail="Synonym silinemedi."
             )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINT 5.1: GET /api/synonyms/{synonym_id} - Tek synonym detayı (FAZ 3.2 YENİ)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/{synonym_id}")
+def get_synonym_detail(
+    synonym_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 3.2: Tek synonym detayını getir.
+
+    Yetki kuralları:
+    - super_admin: Tüm synonym'leri görebilir
+    - company_admin/user: Global + kendi firma synonym'lerini görebilir
+    """
+    try:
+        auth_info = require_company_or_super_admin(current_user)
+        company_id = auth_info["company_id"]
+        is_super_admin = auth_info["is_super_admin"]
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT
+                ks.id,
+                ks.keyword,
+                ks.synonym,
+                ks.status,
+                ks.company_id,
+                ks.match_weight,
+                ks.synonym_type,
+                ks.confidence_score,
+                ks.ambiguity_score,
+                ks.version,
+                ks.model_version,
+                ks.created_at,
+                ks.updated_at,
+                ks.approved_by,
+                ks.approved_at,
+                ks.reject_reason,
+                ks.reject_note,
+                u.ad_soyad as approved_by_name
+            FROM keyword_synonyms ks
+            LEFT JOIN users u ON ks.approved_by = u.id
+            WHERE ks.id = ?
+        """, (synonym_id,))
+        row = cursor.fetchone()
+        conn.close()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Synonym bulunamadı.")
+
+        synonym_company_id = row["company_id"]
+
+        # Yetki kontrolü: Global (NULL) veya kendi firmasına ait olanları görebilir
+        if not is_super_admin and synonym_company_id is not None and synonym_company_id != company_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Bu synonym'ü görüntüleme yetkiniz yok."
+            )
+
+        return {
+            "success": True,
+            "data": {
+                "id": row["id"],
+                "keyword": row["keyword"],
+                "synonym": row["synonym"],
+                "status": row["status"],
+                "company_id": row["company_id"],
+                "scope": "global" if row["company_id"] is None else "company",
+                "match_weight": row["match_weight"],
+                "synonym_type": row["synonym_type"],
+                "confidence_score": row["confidence_score"],
+                "ambiguity_score": row["ambiguity_score"],
+                "version": row["version"],
+                "model_version": row["model_version"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+                "approved_by": row["approved_by"],
+                "approved_by_name": row["approved_by_name"],
+                "approved_at": row["approved_at"],
+                "reject_reason": row["reject_reason"],
+                "reject_note": row["reject_note"]
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINT 5.2: PUT /api/synonyms/{synonym_id} - Synonym güncelle (FAZ 3.2 YENİ)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.put("/{synonym_id}")
+def update_synonym(
+    synonym_id: int,
+    request: SynonymUpdateRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    FAZ 3.2: Synonym güncelle.
+
+    Güncellenebilir alanlar:
+    - status: pending, approved, rejected
+    - scope: global (super_admin only), company
+    - match_weight: 0.0-1.0
+    - synonym_type: exact_synonym, abbreviation, english, turkish, broader_term, narrower_term
+
+    Yetki kuralları:
+    - super_admin: Tüm synonym'leri güncelleyebilir, global yapabilir
+    - company_admin/user: Sadece kendi firma synonym'lerini güncelleyebilir
+    """
+    try:
+        auth_info = require_company_or_super_admin(current_user)
+        company_id = auth_info["company_id"]
+        user_id = auth_info["user_id"]
+        is_super_admin = auth_info["is_super_admin"]
+
+        # Mevcut synonym'ü bul
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, keyword, synonym, status, company_id, match_weight, synonym_type, version FROM keyword_synonyms WHERE id = ?",
+            (synonym_id,)
+        )
+        row = cursor.fetchone()
+
+        if not row:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Synonym bulunamadı.")
+
+        synonym_company_id = row["company_id"]
+        old_version = row["version"] or 1
+
+        # Yetki kontrolü
+        if synonym_company_id is None:
+            # Global synonym - sadece super_admin güncelleyebilir
+            if not is_super_admin:
+                conn.close()
+                raise HTTPException(
+                    status_code=403,
+                    detail="Global synonym'ler sadece super_admin tarafından güncellenebilir."
+                )
+        else:
+            # Firma synonym - sadece aynı firma güncelleyebilir
+            if company_id != synonym_company_id:
+                conn.close()
+                raise HTTPException(
+                    status_code=403,
+                    detail="Bu synonym'ü güncelleme yetkiniz yok."
+                )
+
+        # Scope değişikliği kontrolü
+        new_company_id = synonym_company_id
+        if request.scope is not None:
+            if request.scope == "global":
+                if not is_super_admin:
+                    conn.close()
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Synonym'ü global yapma yetkisi sadece super_admin'de."
+                    )
+                new_company_id = None
+            elif request.scope == "company":
+                if synonym_company_id is None:
+                    # Global'den company'ye çevirme - sadece super_admin
+                    if not is_super_admin:
+                        conn.close()
+                        raise HTTPException(
+                            status_code=403,
+                            detail="Global synonym'ü firma synonym'üne çevirme yetkisi yok."
+                        )
+                    new_company_id = company_id  # super_admin'in firmasına ata (veya None kalabilir)
+
+        # Güncelleme sorgusu oluştur
+        updates = []
+        params = []
+
+        if request.status is not None:
+            if request.status not in ["pending", "approved", "rejected"]:
+                conn.close()
+                raise HTTPException(status_code=400, detail="Geçersiz status değeri.")
+            updates.append("status = ?")
+            params.append(request.status)
+
+            # Status değişikliğine göre ek alanlar
+            if request.status == "approved":
+                updates.append("approved_by = ?")
+                params.append(user_id)
+                updates.append("approved_at = datetime('now')")
+
+        if request.scope is not None:
+            updates.append("company_id = ?")
+            params.append(new_company_id)
+
+        if request.match_weight is not None:
+            updates.append("match_weight = ?")
+            params.append(request.match_weight)
+
+        if request.synonym_type is not None:
+            valid_types = ["exact_synonym", "abbreviation", "english", "turkish", "broader_term", "narrower_term"]
+            if request.synonym_type not in valid_types:
+                conn.close()
+                raise HTTPException(status_code=400, detail=f"Geçersiz synonym_type. Geçerli değerler: {valid_types}")
+            updates.append("synonym_type = ?")
+            params.append(request.synonym_type)
+
+        if not updates:
+            conn.close()
+            raise HTTPException(status_code=400, detail="Güncellenecek alan belirtilmedi.")
+
+        # Versiyon ve timestamp ekle
+        updates.append("version = ?")
+        params.append(old_version + 1)
+        updates.append("updated_at = datetime('now')")
+        updates.append("updated_by = ?")
+        params.append(user_id)
+
+        # Güncelleme yap
+        params.append(synonym_id)
+        sql = f"UPDATE keyword_synonyms SET {', '.join(updates)} WHERE id = ?"
+        cursor.execute(sql, params)
+        conn.commit()
+
+        # History tablosuna kaydet (FAZ 9.4)
+        try:
+            cursor.execute("""
+                INSERT INTO keyword_synonyms_history (
+                    synonym_id, keyword, synonym, old_status, new_status,
+                    changed_by, change_reason
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                synonym_id,
+                row["keyword"],
+                row["synonym"],
+                row["status"],
+                request.status or row["status"],
+                user_id,
+                "FAZ 3.2 UPDATE endpoint"
+            ))
+            conn.commit()
+        except Exception:
+            pass  # History tablosu yoksa sessizce geç
+
+        conn.close()
+
+        # Loglama
+        scope_text = "global" if new_company_id is None else f"company={new_company_id}"
+        logger.info(f"Synonym updated: user={user_id}, {scope_text}, synonym_id={synonym_id}, version={old_version + 1}")
+
+        # KVKK Audit Log
+        log_action(
+            action=AuditAction.DATA_UPDATE,
+            entity_type=EntityType.SYNONYM,
+            entity_id=synonym_id,
+            user_id=user_id,
+            company_id=company_id,
+            details={
+                "keyword": row["keyword"],
+                "synonym": row["synonym"],
+                "old_version": old_version,
+                "new_version": old_version + 1,
+                "updates": {
+                    "status": request.status,
+                    "scope": request.scope,
+                    "match_weight": request.match_weight,
+                    "synonym_type": request.synonym_type
+                }
+            }
+        )
+
+        return {
+            "success": True,
+            "data": {
+                "message": "Synonym başarıyla güncellendi",
+                "id": synonym_id,
+                "version": old_version + 1
+            }
+        }
     except HTTPException:
         raise
     except Exception as e:
