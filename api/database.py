@@ -1321,6 +1321,31 @@ def init_database():
             )
         """)
 
+        # Puan Senkronizasyon Trigger'ları (matches → candidate_positions)
+        # matches.uyum_puani değiştiğinde candidate_positions.match_score otomatik güncellenir
+        cursor.execute("DROP TRIGGER IF EXISTS sync_match_score_update")
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS sync_match_score_update
+            AFTER UPDATE OF uyum_puani ON matches
+            BEGIN
+                UPDATE candidate_positions
+                SET match_score = CAST(ROUND(NEW.uyum_puani) AS INTEGER)
+                WHERE candidate_id = NEW.candidate_id
+                AND position_id = NEW.position_id;
+            END
+        """)
+        cursor.execute("DROP TRIGGER IF EXISTS sync_match_score_insert")
+        cursor.execute("""
+            CREATE TRIGGER IF NOT EXISTS sync_match_score_insert
+            AFTER INSERT ON matches
+            BEGIN
+                UPDATE candidate_positions
+                SET match_score = CAST(ROUND(NEW.uyum_puani) AS INTEGER)
+                WHERE candidate_id = NEW.candidate_id
+                AND position_id = NEW.position_id;
+            END
+        """)
+
         # Email loglari tablosu
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS email_logs (
@@ -7548,14 +7573,19 @@ def get_candidates_with_application_stats(company_id: int = None, havuz: str = N
 # ============ ESLESTIRME ISLEMLERI ============
 
 def save_match(match: Match) -> int:
-    """Eslestirme sonucu kaydet"""
+    """Eslestirme sonucu kaydet
+
+    Puan senkronizasyonu: matches.uyum_puani değiştiğinde
+    candidate_positions.match_score da güncellenir (aynı transaction).
+    DB trigger'ı da güvenlik ağı olarak mevcuttur.
+    """
     with get_connection() as conn:
         cursor = conn.cursor()
         # Get company_id from candidate
         cursor.execute("SELECT company_id FROM candidates WHERE id = ?", (match.candidate_id,))
         row = cursor.fetchone()
         company_id = row[0] if row else None
-        
+
         cursor.execute("""
             INSERT OR REPLACE INTO matches (
                 candidate_id, position_id, uyum_puani, detayli_analiz,
@@ -7566,6 +7596,15 @@ def save_match(match: Match) -> int:
             match.detayli_analiz, match.deneyim_puani,
             match.egitim_puani, match.beceri_puani, company_id
         ))
+
+        # Puan senkronizasyonu: candidate_positions.match_score güncelle
+        # (eğer aday bu pozisyona atanmışsa)
+        cursor.execute("""
+            UPDATE candidate_positions
+            SET match_score = CAST(ROUND(?) AS INTEGER)
+            WHERE candidate_id = ? AND position_id = ?
+        """, (match.uyum_puani, match.candidate_id, match.position_id))
+
         return cursor.lastrowid
 
 

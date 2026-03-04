@@ -31,6 +31,18 @@ Son guncelleme: 04.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - Puan Senkronizasyon Kök Neden Düzeltmesi
+- KÖK NEDEN: save_match() fonksiyonu matches tablosuna yazarken candidate_positions.match_score güncellenmiyordu
+- ÇİFT KATMANLI ÇÖZÜM: Kod seviyesi (save_match güncellemesi) + DB seviyesi (trigger'lar)
+- save_match() fonksiyonuna candidate_positions UPDATE eklendi (database.py:7560)
+- sync_match_score_update trigger: matches.uyum_puani UPDATE olunca cp.match_score senkronize
+- sync_match_score_insert trigger: matches INSERT olunca cp.match_score senkronize (eğer cp kaydı varsa)
+- Trigger'lar production DB'ye eklendi + migration dosyasına yazıldı
+- CLAUDE.md'ye Kural 29 eklendi: PUAN SENKRONİZASYON KURALI
+- Test dosyası: api/tests/test_score_sync.py (6 test)
+- Değişen dosyalar: api/database.py, CLAUDE.md
+- Yeni dosya: api/tests/test_score_sync.py
+
 ### 04.03.2026 - FAZ 3.2 Synonym CRUD API Tamamlandı
 - LIST endpoint: keyword opsiyonel, pagination eklendi (page, per_page, total, total_pages)
 - CREATE endpoint: scope desteği (global/company), duplicate kontrolü (409), KVKK audit log
@@ -1068,6 +1080,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `ef87096` - fix: dual-layer score sync (save_match + DB trigger)
 - `6b8fab9` - feat: FAZ 3 synonym global/company scope seçeneği
 - `5389ee8` - fix: Pozisyon havuzu aday sayısı tutarsızlığı düzeltildi
 - `f02413f` - lock: Havuzlar Türkçe arama kilitli sisteme eklendi
