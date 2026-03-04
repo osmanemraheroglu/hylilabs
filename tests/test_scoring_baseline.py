@@ -98,6 +98,33 @@ class TestScoringBaseline:
         # ASSERT
         assert result['technical_score'] == 37, f'Teknik puan beklenen: 37, gelen: {result["technical_score"]}'
 
+    def test_boubekeur_total_score(self):
+        """
+        calculate_match_score_v2() ile toplam puan doğrulama.
+        Boubekeur (392) + Pozisyon (7792), company_id=None (global).
+        
+        Gerçek değerler (05.03.2026):
+        - total: 49
+        - position_score: 14
+        - technical_score: 35
+        - general_score: 0
+        """
+        # ARRANGE
+        candidate = get_candidate(392)
+        candidate['company_id'] = None  # Global synonym testi
+        position = {'id': 7792}
+        
+        # ACT
+        result = calculate_match_score_v2(candidate, position)
+        
+        # ASSERT
+        assert result is not None, 'calculate_match_score_v2 None döndü'
+        assert result['version'] == 'v2', f'Version beklenen: v2, gelen: {result["version"]}'
+        assert result['total'] == 49, f'Toplam beklenen: 49, gelen: {result["total"]}'
+        assert result['position_score'] == 14, f'Pozisyon beklenen: 14, gelen: {result["position_score"]}'
+        assert result['technical_score'] == 35, f'Teknik beklenen: 35, gelen: {result["technical_score"]}'
+        assert result['general_score'] == 0, f'Genel beklenen: 0, gelen: {result["general_score"]}'
+
     def test_company_id_parameter_exists(self):
         """check_keyword_match() company_id parametresi kabul ediyor"""
         # ARRANGE & ACT
