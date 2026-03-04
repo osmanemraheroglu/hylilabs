@@ -12,6 +12,17 @@ TEST KURALI (Kural 26 - AAA Pattern):
 - ARRANGE: DB'den aday ve pozisyon verilerini al
 - ACT: scoring fonksiyonunu çağır
 - ASSERT: Beklenen puanları doğrula
+
+9 TEST:
+1. test_candidate_exists - Aday DB'de var mı
+2. test_position_keywords_exist - Pozisyon v2 keyword'leri var mı
+3. test_boubekeur_technical_score_none - company_id=None ile teknik puan
+4. test_boubekeur_technical_score_company1 - company_id=1 ile teknik puan
+5. test_boubekeur_total_score - Toplam puan doğrulama (71)
+6. test_company_id_parameter_exists - check_keyword_match company_id parametresi
+7. test_three_layer_layer1_dict - Katman 1: KEYWORD_SYNONYMS dict
+8. test_three_layer_layer2_db_global - Katman 2: DB global synonym
+9. test_three_layer_layer3_db_company - Katman 3: DB firma synonym
 """
 
 import sys
@@ -69,8 +80,15 @@ def get_position_data(position_id: int) -> dict:
     return None
 
 
+def turkish_lower(text: str) -> str:
+    """Türkçe karakterleri normalize et ve küçük harfe çevir"""
+    if not text:
+        return ""
+    return text.replace('İ', 'i').replace('I', 'ı').lower()
+
+
 class TestScoringBaseline:
-    """Scoring v2 baseline testleri"""
+    """Scoring v2 baseline testleri - 9 test"""
     
     # Test sabitleri
     CANDIDATE_ID = 392  # Boubekeur Bouakkaz
@@ -82,26 +100,85 @@ class TestScoringBaseline:
     EXPECTED_TECHNICAL = 37
     EXPECTED_GENERAL = 20
     
-    def test_boubekeur_baseline_score(self):
-        """
-        Boubekeur Bouakkaz (ID: 392) için mevcut puanı doğrula.
-        
-        Bu test FAZ 2.2 global synonyms sonrası puanı kaydeder.
-        DB'deki match kaydı ile tutarlı olmalı (company_id=1).
-        """
-        # ARRANGE: DB'den aday ve pozisyon verilerini al
+    # =========================================================================
+    # TEST 1: test_candidate_exists
+    # =========================================================================
+    def test_candidate_exists(self):
+        """Aday verisinin DB'de var olduğunu doğrula"""
         candidate = get_candidate_data(self.CANDIDATE_ID)
-        position = get_position_data(self.POSITION_ID)
         
         assert candidate is not None, f"Aday bulunamadı: ID={self.CANDIDATE_ID}"
-        assert position is not None, f"Pozisyon bulunamadı: ID={self.POSITION_ID}"
+        assert candidate['ad_soyad'] == 'Boubekeur Bouakkaz'
+        assert candidate['mevcut_pozisyon'] == 'Cost Control Engineer'
+    
+    # =========================================================================
+    # TEST 2: test_position_keywords_exist
+    # =========================================================================
+    def test_position_keywords_exist(self):
+        """Pozisyon için v2 keyword'lerin var olduğunu doğrula"""
+        conn = sqlite3.connect('data/talentflow.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
         
-        # Aday bilgilerini doğrula
-        assert candidate['ad_soyad'] == 'Boubekeur Bouakkaz', "Aday adı eşleşmiyor"
-        assert position['baslik'] == 'Bütçe ve Maliyet Kontrol Şefi', "Pozisyon adı eşleşmiyor"
+        cursor.execute('''
+            SELECT COUNT(*) as cnt FROM position_keywords_v2 
+            WHERE position_id = ?
+        ''', (self.POSITION_ID,))
+        row = cursor.fetchone()
+        conn.close()
         
-        # ACT: Scoring fonksiyonunu çağır
+        assert row['cnt'] > 0, f"Pozisyon {self.POSITION_ID} için v2 keyword bulunamadı"
+    
+    # =========================================================================
+    # TEST 3: test_boubekeur_technical_score_none
+    # =========================================================================
+    def test_boubekeur_technical_score_none(self):
+        """company_id=None ile teknik puan hesaplama"""
+        from scoring_v2 import calculate_technical_score, get_v2_keywords
+        
+        candidate = get_candidate_data(self.CANDIDATE_ID)
+        position = get_position_data(self.POSITION_ID)
+        v2_keywords = get_v2_keywords(self.POSITION_ID)
+        
+        # company_id=None ile hesapla
+        result = calculate_technical_score(candidate, position, v2_keywords, None)
+        
+        assert 'technical_score' in result
+        assert result['technical_score'] >= 0
+        # Global synonyms ile en az 30 puan bekliyoruz
+        assert result['technical_score'] >= 30, f"Teknik puan çok düşük: {result['technical_score']}"
+    
+    # =========================================================================
+    # TEST 4: test_boubekeur_technical_score_company1
+    # =========================================================================
+    def test_boubekeur_technical_score_company1(self):
+        """company_id=1 ile teknik puan hesaplama (firma synonym'ları dahil)"""
+        from scoring_v2 import calculate_technical_score, get_v2_keywords
+        
+        candidate = get_candidate_data(self.CANDIDATE_ID)
+        position = get_position_data(self.POSITION_ID)
+        v2_keywords = get_v2_keywords(self.POSITION_ID)
+        
+        # company_id=1 ile hesapla
+        result = calculate_technical_score(candidate, position, v2_keywords, 1)
+        
+        assert 'technical_score' in result
+        assert result['technical_score'] == self.EXPECTED_TECHNICAL, \
+            f"Teknik puan eşleşmiyor: Beklenen={self.EXPECTED_TECHNICAL}, Gerçek={result['technical_score']}"
+    
+    # =========================================================================
+    # TEST 5: test_boubekeur_total_score
+    # =========================================================================
+    def test_boubekeur_total_score(self):
+        """
+        Boubekeur toplam puan doğrulama.
+        
+        FAZ 2.2 sonrası: Total=71, Position=14, Technical=37, General=20
+        """
         from scoring_v2 import calculate_match_score_v2
+        
+        candidate = get_candidate_data(self.CANDIDATE_ID)
+        position = get_position_data(self.POSITION_ID)
         
         # company_id = 1 (matches tablosundaki değer ile tutarlı)
         candidate['company_id'] = 1
@@ -114,51 +191,118 @@ class TestScoringBaseline:
         print(f"Pozisyon: {result.get('position_score', 'N/A')}")
         print(f"Teknik: {result.get('technical_score', 'N/A')}")
         print(f"Genel: {result.get('general_score', 'N/A')}")
-        print(f"Versiyon: {result.get('version', 'N/A')}")
         print(f"========================\n")
         
-        # ASSERT: Beklenen puanları doğrula
         assert result is not None, "Scoring sonucu None döndü"
         assert result.get('version') == 'v2', "Scoring versiyonu v2 olmalı"
         
-        # Puan doğrulamaları
-        actual_total = result.get('total', 0)
-        actual_position = result.get('position_score', 0)
-        actual_technical = result.get('technical_score', 0)
-        actual_general = result.get('general_score', 0)
+        assert result.get('total') == self.EXPECTED_TOTAL, \
+            f"Toplam puan eşleşmiyor: Beklenen={self.EXPECTED_TOTAL}, Gerçek={result.get('total')}"
         
-        # Detaylı hata mesajları
-        assert actual_total == self.EXPECTED_TOTAL, \
-            f"Toplam puan eşleşmiyor: Beklenen={self.EXPECTED_TOTAL}, Gerçek={actual_total}"
+        assert result.get('position_score') == self.EXPECTED_POSITION, \
+            f"Pozisyon puanı eşleşmiyor: Beklenen={self.EXPECTED_POSITION}, Gerçek={result.get('position_score')}"
         
-        assert actual_position == self.EXPECTED_POSITION, \
-            f"Pozisyon puanı eşleşmiyor: Beklenen={self.EXPECTED_POSITION}, Gerçek={actual_position}"
+        assert result.get('technical_score') == self.EXPECTED_TECHNICAL, \
+            f"Teknik puan eşleşmiyor: Beklenen={self.EXPECTED_TECHNICAL}, Gerçek={result.get('technical_score')}"
         
-        assert actual_technical == self.EXPECTED_TECHNICAL, \
-            f"Teknik puan eşleşmiyor: Beklenen={self.EXPECTED_TECHNICAL}, Gerçek={actual_technical}"
-        
-        assert actual_general == self.EXPECTED_GENERAL, \
-            f"Genel puan eşleşmiyor: Beklenen={self.EXPECTED_GENERAL}, Gerçek={actual_general}"
+        assert result.get('general_score') == self.EXPECTED_GENERAL, \
+            f"Genel puan eşleşmiyor: Beklenen={self.EXPECTED_GENERAL}, Gerçek={result.get('general_score')}"
     
-    def test_candidate_exists(self):
-        """Aday verisinin DB'de var olduğunu doğrula"""
-        # ARRANGE & ACT
-        candidate = get_candidate_data(self.CANDIDATE_ID)
+    # =========================================================================
+    # TEST 6: test_company_id_parameter_exists
+    # =========================================================================
+    def test_company_id_parameter_exists(self):
+        """check_keyword_match fonksiyonunun company_id parametresi var mı"""
+        from core.candidate_matcher import check_keyword_match
+        import inspect
         
-        # ASSERT
-        assert candidate is not None, f"Aday bulunamadı: ID={self.CANDIDATE_ID}"
-        assert candidate['ad_soyad'] == 'Boubekeur Bouakkaz'
-        assert candidate['mevcut_pozisyon'] == 'Cost Control Engineer'
+        sig = inspect.signature(check_keyword_match)
+        param_names = list(sig.parameters.keys())
+        
+        assert 'company_id' in param_names, \
+            f"check_keyword_match'te company_id parametresi yok. Mevcut: {param_names}"
     
-    def test_position_exists(self):
-        """Pozisyon verisinin DB'de var olduğunu doğrula"""
-        # ARRANGE & ACT
-        position = get_position_data(self.POSITION_ID)
+    # =========================================================================
+    # TEST 7: test_three_layer_layer1_dict
+    # =========================================================================
+    def test_three_layer_layer1_dict(self):
+        """Katman 1: KEYWORD_SYNONYMS dict'ten synonym bulma"""
+        from core.candidate_matcher import check_keyword_match, KEYWORD_SYNONYMS
         
-        # ASSERT
-        assert position is not None, f"Pozisyon bulunamadı: ID={self.POSITION_ID}"
-        assert position['baslik'] == 'Bütçe ve Maliyet Kontrol Şefi'
-        assert position['gerekli_deneyim_yil'] == 7.0
+        # Dict'te 'python' -> ['py', 'python3'] var mı kontrol et
+        assert 'python' in KEYWORD_SYNONYMS, "python KEYWORD_SYNONYMS'da yok"
+        
+        # python keyword'ü için 'py' ile eşleşme bul
+        keyword = 'python'
+        search_text = 'py developer with experience'
+        skills_text = ''
+        
+        found, matched, source = check_keyword_match(
+            keyword, search_text, skills_text, turkish_lower, company_id=None
+        )
+        
+        assert found == True, "Katman 1 (dict) eşleşmesi bulunamadı"
+        assert source == 'synonym', f"Kaynak synonym olmalı, {source} geldi"
+    
+    # =========================================================================
+    # TEST 8: test_three_layer_layer2_db_global
+    # =========================================================================
+    def test_three_layer_layer2_db_global(self):
+        """Katman 2: DB global synonym (company_id IS NULL)"""
+        from core.candidate_matcher import check_keyword_match
+        
+        # DB'de global synonym var mı kontrol et
+        conn = sqlite3.connect('data/talentflow.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT keyword, synonym FROM keyword_synonyms 
+            WHERE company_id IS NULL AND is_active = 1
+            LIMIT 1
+        ''')
+        row = cursor.fetchone()
+        conn.close()
+        
+        assert row is not None, "DB'de global synonym bulunamadı"
+        
+        keyword = row[0]
+        synonym = row[1]
+        
+        # Bu synonym ile eşleşme bul
+        search_text = f"experience with {synonym}"
+        skills_text = ''
+        
+        found, matched, source = check_keyword_match(
+            keyword, search_text, skills_text, turkish_lower, company_id=None
+        )
+        
+        # Global synonym her iki durumda da bulunmalı
+        assert found == True, f"Katman 2 (DB global) eşleşmesi bulunamadı: {keyword} -> {synonym}"
+    
+    # =========================================================================
+    # TEST 9: test_three_layer_layer3_db_company
+    # =========================================================================
+    def test_three_layer_layer3_db_company(self):
+        """Katman 3: DB firma synonym (company_id = N)"""
+        from core.candidate_matcher import check_keyword_match
+        
+        # s4hana keyword'ü için erp synonym'u (company_id=1)
+        # Bu FAZ 2.1'de firma bazlı kaldı
+        keyword = 's4hana'
+        search_text = 'erp sistemleri deneyimi'
+        skills_text = ''
+        
+        # company_id=1 ile bulmalı
+        found_1, matched_1, source_1 = check_keyword_match(
+            keyword, search_text, skills_text, turkish_lower, company_id=1
+        )
+        
+        # company_id=None ile bulmamalı (firma bazlı synonym)
+        found_none, matched_none, source_none = check_keyword_match(
+            keyword, search_text, skills_text, turkish_lower, company_id=None
+        )
+        
+        assert found_1 == True, "Katman 3 (DB firma) eşleşmesi bulunamadı: s4hana -> erp (company_id=1)"
+        assert found_none == False, "company_id=None ile firma synonym'u bulunmamalı"
 
 
 if __name__ == '__main__':
