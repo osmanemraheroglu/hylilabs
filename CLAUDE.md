@@ -57,7 +57,7 @@ HyliLabs: AI destekli HR recruitment platformu. React + FastAPI + SQLite. Turkiy
 
 ## KILITLI DOSYALAR — DOKUNMA
 Bu dosyalar 3+ kez dogrulanmis, DEGISTIRILEMEZ:
-1. scoring_v2.py — FAZ 9.5 weight + FAZ 10.1 save_match_details entegrasyonu. FAZ 1B: check_keyword_match() company_id parametresi ekleniyor. Kapsam: SADECE company_id + 3 katmanlı DB synonym sorgusu. DEĞİŞMEYEN: Puanlama mantığı, fuzzy eşikler (85/92), ağırlıklar (33/47/20), BLACKLIST. KİLİTLENECEK.
+1. scoring_v2.py — FAZ 9.5 weight + FAZ 10.1 save_match_details entegrasyonu. FAZ 1B TAMAMLANDI (05.03.2026): check_keyword_match() company_id parametresi eklendi. Commit: 0538f36. DEĞİŞMEYEN: Puanlama mantığı, fuzzy eşikler (85/92), ağırlıklar (33/47/20), BLACKLIST. KİLİTLİ.
 2. job_scraper.py — Kariyer.net parser
 3. eval_report.py — AI degerlendirme
 4. email_worker.py — Email CV worker
