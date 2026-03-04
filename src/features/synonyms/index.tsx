@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Loader2, Languages, Plus, Sparkles, CheckCircle, XCircle, Search, Trash2, History } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,7 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 // API config
 const API = 'http://***REMOVED***:8000'
@@ -70,6 +72,10 @@ interface RejectReason {
 }
 
 export default function Synonyms() {
+  // FAZ 3: Auth - scope seçimi için
+  const { auth } = useAuthStore()
+  const isSuperAdmin = auth.user?.role?.includes("super_admin") || false
+
   // Tab state
   const [activeTab, setActiveTab] = useState('pending')
 
@@ -78,6 +84,9 @@ export default function Synonyms() {
   const [pendingLoading, setPendingLoading] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [selectedIds, setSelectedIds] = useState<number[]>([])
+
+  // FAZ 3: Onay kapsamı (global/company)
+  const [approveScope, setApproveScope] = useState<"company" | "global">("company")
 
   // All synonyms tab state
   const [searchKeyword, setSearchKeyword] = useState('')
@@ -301,7 +310,7 @@ export default function Synonyms() {
       const res = await fetch(`${API}/api/synonyms/approve`, {
         method: 'POST',
         headers: H(),
-        body: JSON.stringify({ synonym_ids: selectedIds })
+        body: JSON.stringify({ synonym_ids: selectedIds, scope: approveScope })
       })
       const data = await res.json()
 
@@ -759,6 +768,33 @@ export default function Synonyms() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* FAZ 3: Scope seçici - sadece super_admin için */}
+              {isSuperAdmin && (
+                <div className="flex items-center gap-4 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <Label className="font-medium text-amber-800">Onay Kapsamı:</Label>
+                  <RadioGroup
+                    value={approveScope}
+                    onValueChange={(v) => setApproveScope(v as "company" | "global")}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="company" id="scope-company" />
+                      <Label htmlFor="scope-company" className="cursor-pointer">
+                        Firma Bazlı
+                        <span className="text-xs text-muted-foreground ml-1">(Sadece bu firma)</span>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="global" id="scope-global" />
+                      <Label htmlFor="scope-global" className="cursor-pointer">
+                        Global
+                        <span className="text-xs text-muted-foreground ml-1">(Tüm firmalar)</span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+
               {/* Toplu işlem butonları */}
               <div className="flex gap-2 mb-4">
                 <Button

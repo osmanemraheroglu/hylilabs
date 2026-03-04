@@ -31,6 +31,18 @@ Son guncelleme: 04.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 04.03.2026 - FAZ 3 Synonym Global/Company Scope Seçeneği
+- Synonym onay ekranına "Global / Firma Bazlı" scope seçici eklendi
+- Frontend: RadioGroup UI (sadece super_admin için görünür)
+- Backend: require_company_or_super_admin() helper fonksiyonu
+- Global scope (company_id=NULL): Tüm firmalar için geçerli synonym
+- Company scope: Mevcut company_id korunur (firma bazlı)
+- Rol kontrolü: Sadece super_admin global scope kullanabilir
+- Geriye uyumluluk: scope parametresi opsiyonel, default="company"
+- 10/10 test başarılı
+- Değişen dosyalar: api/routes/synonyms.py, src/features/synonyms/index.tsx
+- Yeni dosya: api/tests/test_synonym_scope.py
+
 ### 04.03.2026 - Mülakat Sonuç Değerlendirme Alanı
 - Mülakat tamamlandıktan sonra İK değerlendirme notu, puan (1-10), sonuç kararı, değerlendiren girebiliyor
 - interviews tablosuna 2 yeni alan: sonuc_karari TEXT, degerlendiren TEXT (degerlendirme ve puan zaten vardı)
@@ -1045,6 +1057,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `6b8fab9` - feat: FAZ 3 synonym global/company scope seçeneği
 - `5389ee8` - fix: Pozisyon havuzu aday sayısı tutarsızlığı düzeltildi
 - `f02413f` - lock: Havuzlar Türkçe arama kilitli sisteme eklendi
 - `20dcde4` - fix: Havuzlar arama Türkçe karakter duyarsız hale getirildi

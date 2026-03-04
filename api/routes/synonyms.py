@@ -544,6 +544,27 @@ def require_company_user(current_user: dict):
         )
 
 
+def require_company_or_super_admin(current_user: dict) -> dict:
+    """
+    FAZ 3: Synonym approve için özel auth helper.
+    - super_admin: erişebilir, company_id=None döner
+    - company_admin/user: erişebilir, company_id döner
+
+    Returns:
+        {"is_super_admin": bool, "company_id": int|None, "user_id": int}
+    """
+    rol = current_user.get("rol")
+    company_id = current_user.get("company_id")
+    user_id = current_user.get("id")
+
+    if rol == "super_admin":
+        return {"is_super_admin": True, "company_id": None, "user_id": user_id}
+    elif company_id is not None:
+        return {"is_super_admin": False, "company_id": company_id, "user_id": user_id}
+    else:
+        raise HTTPException(status_code=403, detail="Bu işlem için yetkiniz yok.")
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # REQUEST MODELLERİ
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -557,6 +578,7 @@ class SynonymCreateRequest(BaseModel):
 
 class SynonymBulkActionRequest(BaseModel):
     synonym_ids: List[int] = Field(..., min_length=1)
+    scope: Optional[str] = Field("company", description="Onay kapsamı: 'global' veya 'company'")
 
 
 class SynonymRejectRequest(BaseModel):
@@ -1189,29 +1211,47 @@ def approve_synonym_list(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Seçili synonym'ları onayla.
+    FAZ 3: Seçili synonym'ları onayla.
     Toplu onay için kullanılır.
+
+    scope parametresi:
+    - "company": Firma bazlı onay (mevcut company_id korunur)
+    - "global": Global onay (company_id = NULL, tüm firmalar için)
+      Sadece super_admin global scope kullanabilir.
     """
     try:
-        require_company_user(current_user)
-        company_id = current_user["company_id"]
-        user_id = current_user["id"]
+        # FAZ 3: Yeni auth helper kullan
+        auth_info = require_company_or_super_admin(current_user)
+        company_id = auth_info["company_id"]
+        user_id = auth_info["user_id"]
+        is_super_admin = auth_info["is_super_admin"]
+
+        # Scope kontrolü: global scope sadece super_admin için
+        scope = request.scope or "company"
+        if scope == "global" and not is_super_admin:
+            raise HTTPException(
+                status_code=403,
+                detail="Global onay sadece super_admin yetkisiyle yapılabilir."
+            )
 
         result = approve_synonyms(
             synonym_ids=request.synonym_ids,
             approved_by=user_id,
-            company_id=company_id
+            company_id=company_id,
+            scope=scope
         )
 
         if result.get("success"):
             # Loglama
-            logger.info(f"Synonyms approved: user={user_id}, company={company_id}, count={result.get('updated', 0)}, ids={request.synonym_ids}")
+            scope_text = "global" if scope == "global" else f"company={company_id}"
+            logger.info(f"Synonyms approved: user={user_id}, scope={scope_text}, count={result.get('updated', 0)}, ids={request.synonym_ids}")
 
             return {
                 "success": True,
                 "data": {
                     "updated": result.get("updated", 0),
-                    "message": f"{result.get('updated', 0)} synonym onaylandı"
+                    "scope": scope,
+                    "message": f"{result.get('updated', 0)} synonym onaylandı ({scope})"
                 }
             }
         else:
