@@ -372,21 +372,18 @@ def calculate_position_match_score(
 def calculate_technical_score(
     candidate: Union[Dict, object],
     position: Union[Dict, object],
-    v2_keywords: Dict[str, List[str]],
-    company_id: int = None
+    v2_keywords: Dict[str, List[str]]
 ) -> Dict:
     """
-    KATMAN 2: Teknik Yetkinlik (47 puan)
-    - Must-have keyword'ler: 20 puan (MOD A)
-    - Critical keyword'ler: 35 puan (MOD B) veya 12 puan (MOD A)
-    - Important keyword'ler: 12 puan
+    KATMAN 2: Teknik Yetkinlik (37 puan)
+    - Must-have keyword'ler: 17 puan (MOD A)
+    - Critical keyword'ler: 27 puan (MOD B) veya 10 puan (MOD A)
+    - Important keyword'ler: 10 puan
     """
     # Aday bilgilerini al
     # Lazy import to avoid circular dependency
-    try:
-        from candidate_matcher import check_keyword_match
-    except ImportError:
-        from core.candidate_matcher import check_keyword_match
+    from candidate_matcher import check_keyword_match, check_keyword_match_weighted
+    company_id = safe_get(position, 'company_id')  # FAZ 9.5: Weight entegrasyonu için
     skills = safe_get(candidate, 'teknik_beceriler', '') or ''
     cv_text = safe_get(candidate, 'cv_raw_text', '') or ''
     experience_detail = safe_get(candidate, 'deneyim_detay', '') or ''
@@ -404,20 +401,20 @@ def calculate_technical_score(
     if must_have_keywords:
         # MOD A: Must-have varsa
         for keyword in must_have_keywords:
-            found, matched_via, method = check_keyword_match(
+            found, matched_via, method, weight = check_keyword_match_weighted(
                 keyword, search_text, skills_original, turkish_lower, company_id
             )
             if found:
-                must_have_matched.append(keyword)
+                must_have_matched.append({'keyword': keyword, 'weight': weight, 'method': method})
             else:
                 must_have_missing.append(keyword)
         
-        # Must-have: 20 puan (eksik başına -4 ekstra ceza)
-        matched_ratio = len(must_have_matched) / len(must_have_keywords) if must_have_keywords else 0
-        must_have_score = int(matched_ratio * 20)
-        # Eksik başına -4 ekstra ceza
-        missing_count = len(must_have_missing)
-        must_have_score = max(0, must_have_score - (missing_count * 4))
+        # Must-have: 17 puan (FAZ 9.5: weight bazlı)
+        # Weight toplami / keyword sayisi = weighted ratio
+        # G5 (06.03.2026): Ceza kaldırıldı - sadece ödül bazlı
+        total_weight = sum(m['weight'] for m in must_have_matched)
+        weighted_ratio = total_weight / len(must_have_keywords) if must_have_keywords else 0
+        must_have_score = int(weighted_ratio * 17)
     
     # Critical keyword'ler
     critical_keywords = v2_keywords.get('critical', [])
@@ -426,26 +423,29 @@ def calculate_technical_score(
     
     if critical_keywords:
         for keyword in critical_keywords:
-            found, matched_via, method = check_keyword_match(
+            found, matched_via, method, weight = check_keyword_match_weighted(
                 keyword, search_text, skills_original, turkish_lower, company_id
             )
             if found:
-                critical_matched.append(keyword)
+                critical_matched.append({'keyword': keyword, 'weight': weight, 'method': method})
             else:
                 critical_missing.append(keyword)
     
-    # Critical score hesaplama
+    # Critical score hesaplama (FAZ 9.5: weight bazlı)
     if must_have_keywords:
-        # MOD A: Must-have varsa → Critical 10 puan (lineer)
+        # MOD A: Must-have varsa → Critical 10 puan (lineer, weight bazlı)
         if critical_keywords:
-            critical_score = int((len(critical_matched) / len(critical_keywords)) * 12)
+            total_weight = sum(m['weight'] for m in critical_matched)
+            weighted_ratio = total_weight / len(critical_keywords)
+            critical_score = int(weighted_ratio * 10)
         else:
             critical_score = 0
     else:
-        # MOD B: Must-have yoksa → Critical 27 puan (exponential)
+        # MOD B: Must-have yoksa → Critical 27 puan (exponential, weight bazlı)
         if critical_keywords:
-            matched_ratio = len(critical_matched) / len(critical_keywords)
-            critical_score = int((matched_ratio ** 1.5) * 35)
+            total_weight = sum(m['weight'] for m in critical_matched)
+            weighted_ratio = total_weight / len(critical_keywords)
+            critical_score = int((weighted_ratio ** 1.5) * 27)
         else:
             critical_score = 0
     
@@ -456,15 +456,18 @@ def calculate_technical_score(
     
     if important_keywords:
         for keyword in important_keywords:
-            found, matched_via, method = check_keyword_match(
+            found, matched_via, method, weight = check_keyword_match_weighted(
                 keyword, search_text, skills_original, turkish_lower, company_id
             )
             if found:
-                important_matched.append(keyword)
+                important_matched.append({'keyword': keyword, 'weight': weight, 'method': method})
             else:
                 important_missing.append(keyword)
         
-        important_score = int((len(important_matched) / len(important_keywords)) * 12)
+        # FAZ 9.5: weight bazlı
+        total_weight = sum(m['weight'] for m in important_matched)
+        weighted_ratio = total_weight / len(important_keywords)
+        important_score = int(weighted_ratio * 10)
     else:
         important_score = 0
     
@@ -473,11 +476,11 @@ def calculate_technical_score(
     bonus_matched = []
     
     for keyword in bonus_keywords:
-        found, matched_via, method = check_keyword_match(
+        found, matched_via, method, weight = check_keyword_match_weighted(
             keyword, search_text, skills_original, turkish_lower, company_id
         )
         if found:
-            bonus_matched.append(keyword)
+            bonus_matched.append({'keyword': keyword, 'weight': weight, 'method': method})
     
     technical_score = must_have_score + critical_score + important_score
     
@@ -579,88 +582,87 @@ def calculate_general_score(
     }
 
 
-def get_location_status(
-    cand_location: str,
-    pos_location: str
-) -> Dict:
-    """
-    Lokasyon uyum durumunu görsel indicator için hesapla.
-    PUAN VERMEZ - sadece görsel gösterim için status döndürür.
-    
-    Args:
-        cand_location: Aday lokasyonu
-        pos_location: Pozisyon lokasyonu
-        
-    Returns:
-        {
-            "status": "green" | "yellow" | "red",
-            "candidate_location": str,
-            "position_location": str,
-            "match_type": "Aynı şehir" | "Komşu şehir (X)" | "Eşleşme yok"
-        }
-    """
-    cand_loc = (cand_location or "").strip()
-    pos_loc = (pos_location or "").strip()
-    
-    # Default: kırmızı (eşleşme yok)
-    result = {
-        "status": "red",
-        "candidate_location": cand_loc or "-",
-        "position_location": pos_loc or "-",
-        "match_type": "Eşleşme yok"
-    }
-    
-    # Her iki lokasyon da boşsa → kırmızı
-    if not cand_loc or not pos_loc:
-        return result
-    
-    cand_loc_normalized = turkish_lower(cand_loc)
-    pos_loc_normalized = turkish_lower(pos_loc)
-    
-    # Aynı şehir → yeşil
-    if cand_loc_normalized == pos_loc_normalized:
-        result["status"] = "green"
-        result["match_type"] = "Aynı şehir"
-        return result
-    
-    # Komşu şehir kontrolü → sarı
-    for city, neighbors in NEIGHBOR_CITIES.items():
-        if city in pos_loc_normalized:
-            for neighbor in neighbors:
-                if neighbor in cand_loc_normalized:
-                    result["status"] = "yellow"
-                    result["match_type"] = f"Komşu şehir ({neighbor})"
-                    return result
-    
-    # Eşleşme yok → kırmızı (default)
-    return result
-
-
 def calculate_elimination_score(
     candidate: Union[Dict, object],
     position: Union[Dict, object]
 ) -> Dict:
     """
-    KATMAN 4: Eleme - DEVRE DIŞI (0 puan)
-    Lokasyon artık PUAN VERMIYOR, sadece görsel indicator döndürüyor.
-    
-    NOT: Bu katman puanlamadan çıkarıldı. KATMAN 2 +10 puan aldı.
-    Geriye uyumluluk için elimination_score = 0 döndürülüyor.
+    KATMAN 4: Eleme (10 puan)
+    - Lokasyon: 5 puan
+    - Diğer gereksinimler: 5 puan
     """
-    # Lokasyon bilgilerini al
-    cand_location = safe_get(candidate, "lokasyon", "") or ""
-    pos_location = safe_get(position, "lokasyon", "") or ""
+    # Lokasyon puanı (5 puan)
+    cand_location = safe_get(candidate, 'lokasyon', '') or ''
+    pos_location = safe_get(position, 'lokasyon', '') or ''
     
-    # Görsel indicator için location_status hesapla
-    location_status = get_location_status(cand_location, pos_location)
+    location_score = 0
+    location_detail = 'Eşleşme yok'
     
-    # PUAN YOK - hepsi 0 (geriye uyumluluk için alanlar korunuyor)
+    if cand_location and pos_location:
+        cand_loc_normalized = turkish_lower(cand_location)
+        pos_loc_normalized = turkish_lower(pos_location)
+        
+        # Aynı şehir
+        if cand_loc_normalized == pos_loc_normalized:
+            location_score = 5
+            location_detail = 'Aynı şehir'
+        else:
+            # Komşu şehir kontrolü
+            is_neighbor = False
+            for city, neighbors in NEIGHBOR_CITIES.items():
+                if city in pos_loc_normalized:
+                    for neighbor in neighbors:
+                        if neighbor in cand_loc_normalized:
+                            location_score = 3
+                            location_detail = f'Komşu şehir ({neighbor})'
+                            is_neighbor = True
+                            break
+                    if is_neighbor:
+                        break
+    
+    # Diğer gereksinimler (5 puan)
+    position_id = safe_get(position, 'id') or safe_get(position, 'position_id')
+    requirements_score = 5  # Default: veri yoksa cezalandırma yok
+    
+    if position_id:
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT requirement_type, requirement_value, is_knockout
+                    FROM position_requirements
+                    WHERE position_id = ?
+                """, (position_id,))
+                
+                requirements = cursor.fetchall()
+                
+                if requirements:
+                    total_reqs = len(requirements)
+                    matched_reqs = 0
+                    
+                    # Aday bilgilerini al
+                    cand_text = f"{safe_get(candidate, 'cv_raw_text', '')} "
+                    cand_text += f"{safe_get(candidate, 'teknik_beceriler', '')} "
+                    cand_text += f"{safe_get(candidate, 'deneyim_detay', '')}"
+                    cand_text_lower = turkish_lower(cand_text)
+                    
+                    for req in requirements:
+                        req_value = turkish_lower(req['requirement_value'])
+                        if req_value in cand_text_lower:
+                            matched_reqs += 1
+                    
+                    requirements_score = int((matched_reqs / total_reqs) * 5)
+        
+        except Exception as e:
+            logger.error(f"calculate_elimination_score requirements hatası: {e}")
+    
+    elimination_score = location_score + requirements_score
+    
     return {
-        "elimination_score": 0,
-        "location_score": 0,
-        "location_detail": location_status["match_type"],
-        "requirements_score": 0,
-        "location_status": location_status
+        'elimination_score': int(elimination_score),
+        'location_score': int(location_score),
+        'location_detail': location_detail,
+        'requirements_score': int(requirements_score)
     }
 
 
@@ -692,19 +694,41 @@ def calculate_match_score_v2(
     # Title mappings ve sector preferences
     title_mappings = get_title_mappings(position_id)
     sector_preferences = get_sector_preferences(position_id)
-    
+
+    # FAZ 10.1: company_id ve candidate_id al
+    company_id = safe_get(position, 'company_id')
+    candidate_id = safe_get(candidate, 'id') or safe_get(candidate, 'candidate_id')
+
     # 4 katmanı hesapla
     position_result = calculate_position_match_score(
         candidate, position, title_mappings, sector_preferences
     )
-    
-    # Company ID'yi candidate'den al
-    candidate_company_id = safe_get(candidate, 'company_id')
-    
+
     technical_result = calculate_technical_score(
-        candidate, position, v2_keywords, candidate_company_id
+        candidate, position, v2_keywords
     )
-    
+
+    # FAZ 10.1: Log match details
+    if candidate_id and position_id:
+        from database import save_match_details
+        all_matches = (
+            technical_result.get('must_have_matched', []) +
+            technical_result.get('critical_matched', []) +
+            technical_result.get('important_matched', []) +
+            technical_result.get('bonus_matched', [])
+        )
+        for match in all_matches:
+            if isinstance(match, dict):  # New format with details
+                save_match_details(
+                    candidate_id=candidate_id,
+                    position_id=position_id,
+                    keyword=match.get('keyword', ''),
+                    matched_term=match.get('keyword', ''),  # matched keyword
+                    method=match.get('method', 'unknown'),
+                    weight=match.get('weight', 1.0),
+                    company_id=company_id
+                )
+
     general_result = calculate_general_score(
         candidate, position
     )
@@ -791,21 +815,23 @@ Sistemdeki Mevcut Aday Pozisyonları: {candidate_titles_str}
 1. position_title_matches SADECE aynı işi farklı isimle yapan pozisyonları içermeli
 2. "İnşaat Mühendisi", "Proje Mühendisi", "Saha Mühendisi" gibi genel başlıklar SADECE doğrudan ilgili pozisyonlara eklenebilir
 3. Farklı uzmanlık alanlarını karıştırma. Örnek: Makine Şefi ≠ İnşaat Mühendisi, Maliyet Kontrol ≠ İnşaat Mühendisi
-4. exact: SADECE birebir aynı iş (farklı dilde veya kısaltma)
-5. close: SADECE aynı departmanda aynı seviyede çalışan, günlük işleri %80+ örtüşen pozisyonlar
-6. partial: KULLANMA. Boş liste döndür. Kısmi eşleşmeler çok fazla yanlış pozitif üretiyor.
-7. Her kategoride max 5 başlık
-8. Yukarıda verilen "Mevcut Aday Pozisyonları" listesini mutlaka değerlendir. Bu başlıklardan pozisyonla ilgili olanları exact veya close kategorisine ekle.
+4. exact: Birebir aynı iş (farklı dilde veya kısaltma). Türkçe + İngilizce çiftleri ZORUNLU (ör: "Yazılım Mühendisi" + "Software Engineer"). Kısaltmalar dahil (ör: "DevOps Engineer" + "DevOps Mühendisi"). Min 4, Max 8 başlık.
+5. close: Aynı departmanda aynı seviyede çalışan, günlük işleri %80+ örtüşen pozisyonlar. Sektör varyasyonları dahil (ör: "E-Ticaret Uzmanı", "Dijital Pazarlama Uzmanı"). Min 6, Max 10 başlık.
+6. partial: Aynı departmanda ilgili ama farklı görev alanı. Örnek: "Yazılım Geliştirici" pozisyonu için "QA Engineer", "DevOps Engineer" partial olabilir. Dikkatli kullan, sadece gerçekten ilgili pozisyonları ekle. Min 2, Max 5 başlık.
+7. TOPLAM EN AZ 12 BAŞLIK döndür (exact + close + partial >= 12)
+8. Yukarıda verilen "Mevcut Aday Pozisyonları" listesini mutlaka değerlendir. Bu başlıklardan pozisyonla ilgili olanları uygun kategoriye ekle.
+9. TR+EN Çiftleri: Her önemli başlık için hem Türkçe hem İngilizce versiyonu ekle.
+10. Kısaltmalar: Yaygın kısaltmaları dahil et (PM, BA, QA, DevOps, SRE, vb.)
 
 Aşağıdaki JSON formatında yanıt ver:
 {{
   "position_title_matches": {{
-    "exact": ["Bu pozisyonla birebir aynı iş başlıkları, Türkçe ve İngilizce dahil. Max 5"],
-    "close": ["Aynı departmanda aynı işi yapan, günlük görevleri %80+ örtüşen pozisyonlar. Max 5"],
-    "partial": []
+    "exact": ["Birebir aynı iş başlıkları. TR+EN çiftleri, kısaltmalar dahil. Min 4, Max 8"],
+    "close": ["Aynı departmanda %80+ örtüşen pozisyonlar, sektör varyasyonları dahil. Min 6, Max 10"],
+    "partial": ["İlgili departmanda farklı görev alanı. Dikkatli seç. Min 2, Max 5"]
   }},
   "keywords": {{
-    "must_have": ["OLMAZSA OLMAZ yazılım/araç/sertifika. Max 3. Teknik değilse boş liste."],
+    "must_have": ["İlan metninde ZORUNLU/ŞART/GEREKLİ olarak belirtilen beceriler. İlandaki 'şart', 'zorunlu', 'mutlaka', 'required', 'must' ifadelerini ara. SADECE geniş kitlede bulunan teknik araçlar koy (SCADA, AutoCAD, Excel, SAP gibi). Çok niş/spesifik araçlar KOYMA (DigSilent, PSS-E gibi). Min 1, Max 3."],
     "critical": ["OLMAZSA OLMAZ yetkinlikler (must_have'dekiler HARİÇ). CV'lerde sıkça geçen genel teknik terimler kullan, çok spesifik/niş terimler KULLANMA. Örnek: 'SAP' iyi, 'SAP MM modülü' çok spesifik. 'bakım' iyi, 'önleyici bakım planlaması' çok spesifik. Max 5-7 adet"],
     "important": ["Önemli ama zorunlu olmayan yetkinlikler"],
     "bonus": ["Olsa güzel olan ekstra yetkinlikler"],

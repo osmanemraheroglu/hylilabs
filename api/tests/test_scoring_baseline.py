@@ -94,10 +94,10 @@ class TestScoringBaseline:
     CANDIDATE_ID = 392  # Boubekeur Bouakkaz
     POSITION_ID = 7792  # Bütçe ve Maliyet Kontrol Şefi
     
-    # Beklenen puanlar (G5 sonrası: G4 synonym ekleme + ceza kaldırma)
-    EXPECTED_TOTAL = 67
+    # Beklenen puanlar (G5 sonrası: scoring_v2.py senkronize edildi)
+    EXPECTED_TOTAL = 71
     EXPECTED_POSITION = 14
-    EXPECTED_TECHNICAL = 28
+    EXPECTED_TECHNICAL = 37
     EXPECTED_GENERAL = 20
     
     # =========================================================================
@@ -173,7 +173,7 @@ class TestScoringBaseline:
         """
         Boubekeur toplam puan doğrulama.
 
-        G5 sonrası: Total=67, Position=14, Technical=28, General=20
+        G5 sonrası: Total=71, Position=14, Technical=37, General=20
         """
         from scoring_v2 import calculate_match_score_v2
         
