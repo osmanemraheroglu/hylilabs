@@ -11,7 +11,7 @@ import re
 import time
 from typing import Optional, Dict, List, Union
 from database import get_connection
-# from candidate_matcher import check_keyword_match  # lazy import - circular dependency
+# from core.candidate_matcher import check_keyword_match  # lazy import - circular dependency
 
 # Anthropic Claude API
 try:
@@ -382,7 +382,7 @@ def calculate_technical_score(
     """
     # Aday bilgilerini al
     # Lazy import to avoid circular dependency
-    from candidate_matcher import check_keyword_match, check_keyword_match_weighted
+    from core.candidate_matcher import check_keyword_match, check_keyword_match_weighted
     company_id = safe_get(position, 'company_id')  # FAZ 9.5: Weight entegrasyonu için
     skills = safe_get(candidate, 'teknik_beceriler', '') or ''
     cv_text = safe_get(candidate, 'cv_raw_text', '') or ''
