@@ -850,27 +850,42 @@ def save_parsed_position(data: dict, current_user: dict = Depends(get_current_us
 
         print(f"[save-parsed] SUCCESS - pool_id={pool_id}, transferred={transferred}")
 
-        # FAZ 6.3: Keyword'ler için batch synonym üret
-        synonym_result = None
+        # FAZ 6.3: Keyword'ler için batch synonym üret (ARKA PLAN)
+        # AI API çağrısı 30-90sn sürer — senkron çalışırsa DB kilitlenir
+        # Thread ile arka plana taşıyoruz, HTTP response hemen döner
         if keywords:
             try:
-                user_id = current_user["id"]
-                from routes.synonyms import _generate_synonyms_batch_internal
-                synonym_result = _generate_synonyms_batch_internal(
-                    keywords=keywords,
-                    company_id=company_id,
-                    user_id=user_id
-                )
-                print(f"[save-parsed] Synonym üretimi: {synonym_result.get('message', '')}")
+                import threading
+                # Thread-safe kopyalar (closure için)
+                _kw = list(keywords)
+                _cid = company_id
+                _uid = current_user["id"]
+
+                def _background_synonym_generation():
+                    try:
+                        # Import thread içinde — circular import önlemi
+                        from routes.synonyms import _generate_synonyms_batch_internal
+                        result = _generate_synonyms_batch_internal(
+                            keywords=_kw,
+                            company_id=_cid,
+                            user_id=_uid
+                        )
+                        print(f"[save-parsed] Arka plan synonym üretimi tamamlandı: {result.get('message', '')}")
+                    except Exception as e:
+                        print(f"[save-parsed] Arka plan synonym üretimi HATASI: {e}")
+
+                thread = threading.Thread(target=_background_synonym_generation, daemon=True)
+                thread.start()
+                print(f"[save-parsed] Synonym üretimi arka planda başlatıldı ({len(keywords)} keyword)")
             except Exception as syn_err:
-                print(f"[save-parsed] Synonym üretimi hatası (devam ediliyor): {syn_err}")
+                print(f"[save-parsed] Synonym thread başlatma hatası: {syn_err}")
 
         return {
             "success": True,
             "pool_id": pool_id,
             "transferred": transferred,
             "message": f"Pozisyon oluşturuldu, {transferred} aday eşleştirildi",
-            "synonym_result": synonym_result
+            "synonym_generation": "started_in_background"
         }
     except HTTPException:
         raise

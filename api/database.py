@@ -2990,7 +2990,8 @@ def log_synonym_change(
     action: str,
     old_values: dict = None,
     new_values: dict = None,
-    changed_by: int = None
+    changed_by: int = None,
+    conn=None
 ) -> bool:
     """
     FAZ 9.4: Synonym değişikliğini history tablosuna logla.
@@ -3001,6 +3002,7 @@ def log_synonym_change(
         old_values: Eski değerler dict (JSON olarak kaydedilir)
         new_values: Yeni değerler dict (JSON olarak kaydedilir)
         changed_by: İşlemi yapan kullanıcı ID
+        conn: Mevcut DB connection (nested call için). None ise kendi açar.
 
     Returns:
         True: Başarılı, False: Hata
@@ -3008,7 +3010,8 @@ def log_synonym_change(
     import json
 
     try:
-        with get_connection() as conn:
+        if conn:
+            # Mevcut connection kullan (nested call - commit çağıran yapacak)
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO keyword_synonyms_history
@@ -3022,6 +3025,22 @@ def log_synonym_change(
                 changed_by
             ))
             return True
+        else:
+            # Kendi connection'ını aç (geriye uyumluluk)
+            with get_connection() as own_conn:
+                cursor = own_conn.cursor()
+                cursor.execute("""
+                    INSERT INTO keyword_synonyms_history
+                    (synonym_id, action, old_values, new_values, changed_by)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (
+                    synonym_id,
+                    action,
+                    json.dumps(old_values, ensure_ascii=False) if old_values else None,
+                    json.dumps(new_values, ensure_ascii=False) if new_values else None,
+                    changed_by
+                ))
+                return True
     except Exception as e:
         logger.error(f"log_synonym_change hatası: {e}")
         return False
@@ -3083,14 +3102,15 @@ def save_generated_synonyms(
 
                     if cursor.rowcount > 0:
                         inserted += 1
-                        # FAZ 9.4: Audit log
+                        # FAZ 9.4: Audit log (conn geçirilerek nested connection önlendi)
                         new_id = cursor.lastrowid
                         if new_id:
                             log_synonym_change(
                                 synonym_id=new_id,
                                 action='created',
                                 new_values={'keyword': keyword_lower, 'synonym': synonym_lower, 'type': synonym_type},
-                                changed_by=created_by
+                                changed_by=created_by,
+                                conn=conn
                             )
                     else:
                         skipped += 1
