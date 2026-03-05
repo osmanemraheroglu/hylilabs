@@ -817,18 +817,20 @@ Sistemdeki Mevcut Aday Pozisyonları: {candidate_titles_str}
 1. position_title_matches SADECE aynı işi farklı isimle yapan pozisyonları içermeli
 2. "İnşaat Mühendisi", "Proje Mühendisi", "Saha Mühendisi" gibi genel başlıklar SADECE doğrudan ilgili pozisyonlara eklenebilir
 3. Farklı uzmanlık alanlarını karıştırma. Örnek: Makine Şefi ≠ İnşaat Mühendisi, Maliyet Kontrol ≠ İnşaat Mühendisi
-4. exact: SADECE birebir aynı iş (farklı dilde veya kısaltma)
-5. close: SADECE aynı departmanda aynı seviyede çalışan, günlük işleri %80+ örtüşen pozisyonlar
-6. partial: KULLANMA. Boş liste döndür. Kısmi eşleşmeler çok fazla yanlış pozitif üretiyor.
-7. Her kategoride max 5 başlık
-8. Yukarıda verilen "Mevcut Aday Pozisyonları" listesini mutlaka değerlendir. Bu başlıklardan pozisyonla ilgili olanları exact veya close kategorisine ekle.
+4. exact: Birebir aynı iş (farklı dilde veya kısaltma). Türkçe + İngilizce çiftleri ZORUNLU (ör: "Yazılım Mühendisi" + "Software Engineer"). Kısaltmalar dahil (ör: "DevOps Engineer" + "DevOps Mühendisi"). Min 4, Max 8 başlık.
+5. close: Aynı departmanda aynı seviyede çalışan, günlük işleri %80+ örtüşen pozisyonlar. Sektör varyasyonları dahil (ör: "E-Ticaret Uzmanı", "Dijital Pazarlama Uzmanı"). Min 6, Max 10 başlık.
+6. partial: Aynı departmanda ilgili ama farklı görev alanı. Örnek: "Yazılım Geliştirici" pozisyonu için "QA Engineer", "DevOps Engineer" partial olabilir. Dikkatli kullan, sadece gerçekten ilgili pozisyonları ekle. Min 2, Max 5 başlık.
+7. TOPLAM EN AZ 12 BAŞLIK döndür (exact + close + partial >= 12)
+8. Yukarıda verilen "Mevcut Aday Pozisyonları" listesini mutlaka değerlendir. Bu başlıklardan pozisyonla ilgili olanları uygun kategoriye ekle.
+9. TR+EN Çiftleri: Her önemli başlık için hem Türkçe hem İngilizce versiyonu ekle.
+10. Kısaltmalar: Yaygın kısaltmaları dahil et (PM, BA, QA, DevOps, SRE, vb.)
 
 Aşağıdaki JSON formatında yanıt ver:
 {{
   "position_title_matches": {{
-    "exact": ["Bu pozisyonla birebir aynı iş başlıkları, Türkçe ve İngilizce dahil. Max 5"],
-    "close": ["Aynı departmanda aynı işi yapan, günlük görevleri %80+ örtüşen pozisyonlar. Max 5"],
-    "partial": []
+    "exact": ["Birebir aynı iş başlıkları. TR+EN çiftleri, kısaltmalar dahil. Min 4, Max 8"],
+    "close": ["Aynı departmanda %80+ örtüşen pozisyonlar, sektör varyasyonları dahil. Min 6, Max 10"],
+    "partial": ["İlgili departmanda farklı görev alanı. Dikkatli seç. Min 2, Max 5"]
   }},
   "keywords": {{
     "must_have": ["OLMAZSA OLMAZ yazılım/araç/sertifika. Max 3. Teknik değilse boş liste."],
