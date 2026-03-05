@@ -33,6 +33,10 @@ from config import CACHE_TTL
 
 logger = logging.getLogger(__name__)
 
+# ============ PULL MATCH THRESHOLDS (G1) ============
+PULL_MATCH_CLOSE_THRESHOLD = 75    # Close title match (was 85)
+PULL_MATCH_PARTIAL_THRESHOLD = 60  # Partial title match (was 70)
+
 # ============ OPENAI CLIENT (FAZ 10.2) ============
 
 _openai_client = None
@@ -6622,11 +6626,11 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                     if title_match_found:
                         break
 
-                    # Close match (fuzzy >= 85)
+                    # Close match (fuzzy >= PULL_MATCH_CLOSE_THRESHOLD)
                     if fuzz:
                         for close_title in title_mappings.get('close', []):
                             ratio = fuzz.ratio(title_normalized, turkish_lower(close_title))
-                            if ratio >= 85:
+                            if ratio >= PULL_MATCH_CLOSE_THRESHOLD:
                                 if title_match_score < 14:
                                     title_match_score = 14
                                     title_match_found = True
@@ -6635,11 +6639,22 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                     if title_match_found and title_match_score >= 14:
                         break
 
-                    # Partial match (fuzzy >= 70)
+                    # Partial match (fuzzy >= PULL_MATCH_PARTIAL_THRESHOLD)
                     if fuzz:
                         for partial_title in title_mappings.get('partial', []):
                             ratio = fuzz.ratio(title_normalized, turkish_lower(partial_title))
-                            if ratio >= 70:
+                            if ratio >= PULL_MATCH_PARTIAL_THRESHOLD:
+                                if title_match_score < 7:
+                                    title_match_score = 7
+                                    title_match_found = True
+                                    break
+
+                    # G1 Fallback: partial listesi boşsa veya eşleşme yoksa,
+                    # close title'ları partial threshold ile kontrol et
+                    if not title_match_found and fuzz:
+                        for close_title in title_mappings.get('close', []):
+                            ratio = fuzz.ratio(title_normalized, turkish_lower(close_title))
+                            if ratio >= PULL_MATCH_PARTIAL_THRESHOLD:
                                 if title_match_score < 7:
                                     title_match_score = 7
                                     title_match_found = True

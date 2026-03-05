@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 04.03.2026
+Son guncelleme: 05.03.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -31,6 +31,14 @@ Son guncelleme: 04.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 05.03.2026 - G1 Title Matching Threshold Güncelleme
+- PULL_MATCH_CLOSE_THRESHOLD = 75 (eskiden 85)
+- PULL_MATCH_PARTIAL_THRESHOLD = 60 (eskiden 70)
+- Fallback mekanizması: partial liste boşsa close title'ları 60 eşiğiyle kontrol et
+- Beklenen sonuçlar: Serkan (78) close'da eşleşir, Alican (62) partial fallback'te eşleşir
+- scoring_v2.py'deki eşikler DEĞİŞMEDİ (kilitli sistem)
+- Değişen dosyalar: api/database.py (satır 37-38, 6633, 6646, 6652-6661)
+
 ### 04.03.2026 - Puan Senkronizasyon Kök Neden Düzeltmesi
 - KÖK NEDEN: save_match() fonksiyonu matches tablosuna yazarken candidate_positions.match_score güncellenmiyordu
 - ÇİFT KATMANLI ÇÖZÜM: Kod seviyesi (save_match güncellemesi) + DB seviyesi (trigger'lar)
@@ -1080,6 +1088,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `ad72177` - feat(G1): title matching threshold güncelleme (75/60) + fallback
 - `ef87096` - fix: dual-layer score sync (save_match + DB trigger)
 - `6b8fab9` - feat: FAZ 3 synonym global/company scope seçeneği
 - `5389ee8` - fix: Pozisyon havuzu aday sayısı tutarsızlığı düzeltildi
