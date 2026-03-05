@@ -411,12 +411,10 @@ def calculate_technical_score(
         
         # Must-have: 17 puan (FAZ 9.5: weight bazlı)
         # Weight toplami / keyword sayisi = weighted ratio
+        # G5 (06.03.2026): Ceza kaldırıldı - sadece ödül bazlı
         total_weight = sum(m['weight'] for m in must_have_matched)
         weighted_ratio = total_weight / len(must_have_keywords) if must_have_keywords else 0
         must_have_score = int(weighted_ratio * 17)
-        # Eksik başına -4 ekstra ceza
-        missing_count = len(must_have_missing)
-        must_have_score = max(0, must_have_score - (missing_count * 4))
     
     # Critical keyword'ler
     critical_keywords = v2_keywords.get('critical', [])
@@ -833,7 +831,7 @@ Aşağıdaki JSON formatında yanıt ver:
     "partial": ["İlgili departmanda farklı görev alanı. Dikkatli seç. Min 2, Max 5"]
   }},
   "keywords": {{
-    "must_have": ["OLMAZSA OLMAZ yazılım/araç/sertifika. Max 3. Teknik değilse boş liste."],
+    "must_have": ["İlan metninde ZORUNLU/ŞART/GEREKLİ olarak belirtilen beceriler. İlandaki 'şart', 'zorunlu', 'mutlaka', 'required', 'must' ifadelerini ara. SADECE geniş kitlede bulunan teknik araçlar koy (SCADA, AutoCAD, Excel, SAP gibi). Çok niş/spesifik araçlar KOYMA (DigSilent, PSS-E gibi). Min 1, Max 3."],
     "critical": ["OLMAZSA OLMAZ yetkinlikler (must_have'dekiler HARİÇ). CV'lerde sıkça geçen genel teknik terimler kullan, çok spesifik/niş terimler KULLANMA. Örnek: 'SAP' iyi, 'SAP MM modülü' çok spesifik. 'bakım' iyi, 'önleyici bakım planlaması' çok spesifik. Max 5-7 adet"],
     "important": ["Önemli ama zorunlu olmayan yetkinlikler"],
     "bonus": ["Olsa güzel olan ekstra yetkinlikler"],
