@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 05.03.2026
+Son guncelleme: 06.03.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -31,6 +31,15 @@ Son guncelleme: 05.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - G2 AI Title Prompt Genişletme
+- categorize_position_with_ai() prompt güncellemesi
+- exact: max 5→8, min 4 (TR+EN çiftleri + kısaltmalar zorunlu)
+- close: max 5→10, min 6 (sektör varyasyonları dahil)
+- partial: devre dışı→max 5, min 2 (ilgili departman farklı görev)
+- Toplam minimum 12 başlık kuralı eklendi
+- TR+EN çift ve kısaltma talimatları eklendi
+- Değişen dosyalar: api/core/scoring_v2.py
+
 ### 05.03.2026 - G1 Title Matching Threshold Güncelleme
 - PULL_MATCH_CLOSE_THRESHOLD = 75 (eskiden 85)
 - PULL_MATCH_PARTIAL_THRESHOLD = 60 (eskiden 70)
@@ -1088,6 +1097,7 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `63cfcc0` - feat(G2): AI title prompt genişletme - exact/close/partial limitler güncellendi
 - `ad72177` - feat(G1): title matching threshold güncelleme (75/60) + fallback
 - `ef87096` - fix: dual-layer score sync (save_match + DB trigger)
 - `6b8fab9` - feat: FAZ 3 synonym global/company scope seçeneği
