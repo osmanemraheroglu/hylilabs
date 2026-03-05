@@ -31,6 +31,15 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - G5 Must-Have Ceza Kaldırma + Prompt İyileştirme
+- must_have ceza formülü kaldırıldı: `must_have_score = max(0, score - missing*4)` → `must_have_score = int(weighted_ratio * 17)`
+- AI keyword prompt güncellendi: must_have artık ilandaki "zorunlu/şart/gerekli" ifadelerden alınıyor
+- must_have: Min 1, Max 3, sadece yaygın araçlar (SCADA, AutoCAD, Excel, SAP)
+- scoring_v2.py senkronize edildi: api/scoring_v2.py = api/core/scoring_v2.py (eski versiyon güncellendi)
+- Baseline test güncellendi: Boubekeur 71→67 (G2+G5 değişiklikleri dahil)
+- calculate_technical_score() artık company_id'yi position dict'ten alıyor
+- Değişen dosyalar: api/core/scoring_v2.py, api/scoring_v2.py, api/tests/test_scoring_baseline.py, CLAUDE.md
+
 ### 06.03.2026 - G2 AI Title Prompt Genişletme
 - categorize_position_with_ai() prompt güncellemesi
 - exact: max 5→8, min 4 (TR+EN çiftleri + kısaltmalar zorunlu)
@@ -1097,6 +1106,10 @@ Sonuc: Serkan 14→41, matches 0→13, TR↔EN calisiyor
 - email_templates INSERT OR IGNORE company_id=1 olarak duzeltildi
 
 ## Son Commitler
+- `9344622` - fix(G5): update test to match synced function signature
+- `9380d56` - fix(G5): baseline test 67 (scoring_v2.py sync confirmed)
+- `914ab06` - fix(G5): sync root scoring_v2.py with core/ version + revert baseline
+- `b977352` - feat(G5): remove must_have penalty + improve keyword categorization prompt
 - `63cfcc0` - feat(G2): AI title prompt genişletme - exact/close/partial limitler güncellendi
 - `ad72177` - feat(G1): title matching threshold güncelleme (75/60) + fallback
 - `ef87096` - fix: dual-layer score sync (save_match + DB trigger)
