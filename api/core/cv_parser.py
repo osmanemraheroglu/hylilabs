@@ -1091,13 +1091,22 @@ def parse_cv(content: bytes, filename: str, user_id: str = "system") -> CVParseR
         son_is = deneyim_list[0] if deneyim_list else {}
 
         # Deneyim detayi olustur (tum isler)
+        # deneyim_detay: "pozisyon @ şirket" formatı (mevcut davranış korunur)
         deneyim_detay_parts = []
-        for deneyim in deneyim_list[:3]:  # Max 3 is
+        # A2: aciklama'ları birleştir (görev tanımları)
+        deneyim_aciklama_parts = []
+        # A3: max 3 → max 5 iş
+        for deneyim in deneyim_list[:5]:
             sirket = deneyim.get("sirket", "")
             pozisyon = deneyim.get("pozisyon", "")
+            aciklama = deneyim.get("aciklama", "")
             if sirket or pozisyon:
                 deneyim_detay_parts.append(f"{pozisyon} @ {sirket}")
+            if aciklama:
+                deneyim_aciklama_parts.append(aciklama)
         deneyim_detay = " | ".join(deneyim_detay_parts) if deneyim_detay_parts else None
+        # A2: görev açıklamalarını birleştir
+        deneyim_aciklama = " | ".join(deneyim_aciklama_parts) if deneyim_aciklama_parts else None
 
         # Becerileri birlestir
         tum_beceriler = []
@@ -1137,6 +1146,7 @@ def parse_cv(content: bytes, filename: str, user_id: str = "system") -> CVParseR
             mevcut_pozisyon=son_is.get("pozisyon"),
             mevcut_sirket=son_is.get("sirket"),
             deneyim_detay=deneyim_detay,
+            deneyim_aciklama=deneyim_aciklama,
             teknik_beceriler=teknik_beceriler,
             diller=diller,
             sertifikalar=sertifikalar,

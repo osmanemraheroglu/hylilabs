@@ -5186,18 +5186,18 @@ def create_candidate(candidate: Candidate, company_id: int) -> int:
             INSERT INTO candidates (
                 company_id, ad_soyad, email, telefon, lokasyon, linkedin,
                 egitim, universite, bolum,
-                toplam_deneyim_yil, mevcut_pozisyon, mevcut_sirket, deneyim_detay,
+                toplam_deneyim_yil, mevcut_pozisyon, mevcut_sirket, deneyim_detay, deneyim_aciklama,
                 teknik_beceriler, diller, sertifikalar,
                 cv_raw_text, cv_dosya_adi, cv_dosya_yolu,
                 havuz, durum, notlar
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             company_id,
             candidate.ad_soyad, candidate.email, candidate.telefon, candidate.lokasyon,
             getattr(candidate, 'linkedin', None),
             candidate.egitim, candidate.universite, candidate.bolum,
             candidate.toplam_deneyim_yil, candidate.mevcut_pozisyon,
-            candidate.mevcut_sirket, candidate.deneyim_detay,
+            candidate.mevcut_sirket, candidate.deneyim_detay, getattr(candidate, 'deneyim_aciklama', None),
             candidate.teknik_beceriler, candidate.diller, candidate.sertifikalar,
             candidate.cv_raw_text, candidate.cv_dosya_adi, candidate.cv_dosya_yolu,
             candidate.havuz, candidate.durum, candidate.notlar

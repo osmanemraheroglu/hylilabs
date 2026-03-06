@@ -25,6 +25,7 @@ class Candidate(BaseModel):
     mevcut_pozisyon: Optional[str] = None
     mevcut_sirket: Optional[str] = None
     deneyim_detay: Optional[str] = None
+    deneyim_aciklama: Optional[str] = None  # Görev tanımları (pipe-separated)
 
     # Beceriler
     teknik_beceriler: Optional[str] = None
