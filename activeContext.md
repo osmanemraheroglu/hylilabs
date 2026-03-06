@@ -41,6 +41,16 @@ Son guncelleme: 06.03.2026
 - Aday bilgileri onay anında candidates tablosundan çekilip kaydediliyor
 - Değişen dosyalar: api/routes/interviews.py, api/database.py
 
+### 06.03.2026 - G8 Başlık Onayı Sonrası Rescore
+- approve_titles endpoint'ine mevcut aday rescore mantığı eklendi
+- Yeni başlık onaylandığında TÜM mevcut eşleşmiş adaylar yeniden puanlanır
+- position_score değişimi yakalanır (örn: Serkan 0→14 olabilir)
+- Ayrı DB connection kullanılır (transaction çakışması önleme)
+- try/except ile sarılı (rescore hatası approve akışını bozmaz)
+- Response'a 'rescored' sayısı eklendi
+- 45/45 test başarılı
+- Değişen dosyalar: api/routes/pools.py (satır 1106-1192)
+
 ### 06.03.2026 - G7 AI Synonym Prompt İyileştirme
 - SYNONYM_PROMPT_BATCH_V2 ve SYNONYM_PROMPT_SINGLE_V2 güncellendi
 - MAX 3 → MIN 2, MAX 5 synonym (daha zengin öneri)
