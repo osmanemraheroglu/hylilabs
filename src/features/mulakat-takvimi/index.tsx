@@ -102,7 +102,7 @@ function ConfirmationBadge({ status }: { status: string | null }) {
   return null
 }
 
-const DAYS = ['Pzt', 'Sal', 'Car', 'Per', 'Cum', 'Cmt', 'Paz']
+const DAYS = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']
 const MONTHS = [
   'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
@@ -122,6 +122,7 @@ export default function MulakatTakvimi() {
   const [interviews, setInterviews] = useState<InterviewItem[]>([])
   const [dropdown, setDropdown] = useState<DropdownData>({ positions: [], candidates: [] })
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [evalDialogOpen, setEvalDialogOpen] = useState(false)
@@ -227,28 +228,29 @@ export default function MulakatTakvimi() {
   const handleSave = async () => {
     if (!form.candidate_id || !form.tarih || !form.saat) return
 
-    const tarihStr = `${form.tarih}T${form.saat}:00`
-    const payload: Record<string, unknown> = {
-      candidate_id: Number(form.candidate_id),
-      position_id: form.position_id && form.position_id !== 'none' ? Number(form.position_id) : null,
-      tarih: tarihStr,
-      sure_dakika: Number(form.sure_dakika),
-      tur: form.tur,
-      lokasyon: form.lokasyon,
-      mulakatci: form.mulakatci || null,
-      notlar: form.notlar || null,
-      onay_suresi: parseInt(form.onay_suresi) || 3,
-    }
-
-    // Kaydetmeden önce email preview gösterilecek mi kontrol et
-    const shouldShowEmailPreview = !editingId && sendEmail
-
-    const url = editingId
-      ? `${API_URL}/api/interviews/${editingId}`
-      : `${API_URL}/api/interviews`
-    const method = editingId ? 'PUT' : 'POST'
-
+    setSaving(true)
     try {
+      const tarihStr = `${form.tarih}T${form.saat}:00`
+      const payload: Record<string, unknown> = {
+        candidate_id: Number(form.candidate_id),
+        position_id: form.position_id && form.position_id !== 'none' ? Number(form.position_id) : null,
+        tarih: tarihStr,
+        sure_dakika: Number(form.sure_dakika),
+        tur: form.tur,
+        lokasyon: form.lokasyon,
+        mulakatci: form.mulakatci || null,
+        notlar: form.notlar || null,
+        onay_suresi: parseInt(form.onay_suresi) || 3,
+      }
+
+      // Kaydetmeden önce email preview gösterilecek mi kontrol et
+      const shouldShowEmailPreview = !editingId && sendEmail
+
+      const url = editingId
+        ? `${API_URL}/api/interviews/${editingId}`
+        : `${API_URL}/api/interviews`
+      const method = editingId ? 'PUT' : 'POST'
+
       const res = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) })
       const data = await res.json()
 
@@ -259,6 +261,9 @@ export default function MulakatTakvimi() {
 
       if (data.success) {
         const interviewId = data.id
+
+        // Başarı bildirimi
+        toast.success(editingId ? 'Mülakat güncellendi' : 'Mülakat oluşturuldu')
 
         // Önce form dialog'u kapat
         setDialogOpen(false)
@@ -289,10 +294,14 @@ export default function MulakatTakvimi() {
 
         // En son interview listesini yenile
         loadInterviews()
+      } else {
+        toast.error('Beklenmeyen sunucu yanıtı')
       }
     } catch (err) {
       console.error('Save hatasi:', err)
       toast.error('Mülakat kaydedilemedi')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -772,7 +781,13 @@ export default function MulakatTakvimi() {
             )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>Vazgeç</Button>
-              <Button onClick={handleSave} disabled={!form.candidate_id || !form.tarih || !form.saat}>Kaydet</Button>
+              <Button onClick={handleSave} disabled={!form.candidate_id || !form.tarih || !form.saat || saving}>
+                {saving ? (
+                  <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Kaydediliyor...</>
+                ) : (
+                  'Kaydet'
+                )}
+              </Button>
             </div>
           </DialogFooter>
         </DialogContent>

@@ -31,6 +31,13 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - Mülakat Kaydet Butonu Fix
+- handleSave'e toast.success eklendi (oluşturma: "Mülakat oluşturuldu", güncelleme: "Mülakat güncellendi")
+- saving state + Loader2 spinner eklendi (çift tıklama önleme, UX feedback)
+- Edge case: res.ok && !data.success durumu için toast.error("Beklenmeyen sunucu yanıtı") eklendi
+- DAYS array Türkçe karakter düzeltmesi: 'Car' → 'Çar'
+- Değişen dosyalar: src/features/mulakat-takvimi/index.tsx
+
 ### 06.03.2026 - Mülakat KVKK Onay Sistemi
 - GET /api/interviews/confirm/{token} artık KVKK aydınlatma sayfası gösteriyor (doğrudan onay YOK)
 - POST /api/interviews/confirm/{token}/kvkk — KVKK onay + mülakat onaylama (public endpoint)
