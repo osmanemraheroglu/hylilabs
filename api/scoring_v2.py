@@ -920,6 +920,15 @@ def save_categorized_data(position_id: int, categorized_data: Dict) -> bool:
             
             # a) position_keywords_v2 tablosuna keyword'leri kaydet
             keywords = categorized_data.get('keywords', {})
+
+            # G6 Guard (06.03.2026): must_have boşsa critical'den transfer et
+            if not keywords.get('must_have') and keywords.get('critical'):
+                critical_list = keywords['critical']
+                transfer_count = min(3, len(critical_list))
+                keywords['must_have'] = critical_list[:transfer_count]
+                keywords['critical'] = critical_list[transfer_count:]  # Transfer edilenleri çıkar
+                logger.info(f"G6 Guard: must_have boş, {transfer_count} keyword transfer edildi")
+
             for category, keyword_list in keywords.items():
                 if category not in ['critical', 'important', 'bonus', 'generic_ignore', 'must_have']:
                     continue
