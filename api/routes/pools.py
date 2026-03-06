@@ -1103,11 +1103,92 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
         except Exception as pull_err:
             print(f"pull_matching hatasi (devam ediliyor): {pull_err}")
 
+        # G8: Mevcut adayları rescore et (yeni başlıklar position_score'u değiştirir)
+        rescore_count = 0
+        try:
+            from database import get_connection as get_rescore_conn
+            from scoring_v2 import calculate_match_score_v2
+            import json as json_rescore
+
+            with get_rescore_conn() as rescore_conn:
+                rc = rescore_conn.cursor()
+
+                # Pozisyon bilgilerini al
+                rc.execute("""
+                    SELECT name, gerekli_deneyim_yil, gerekli_egitim, lokasyon
+                    FROM department_pools WHERE id = ? AND company_id = ?
+                """, (pool_id, company_id))
+                pos = rc.fetchone()
+
+                if pos:
+                    # Pozisyon dict oluştur
+                    position_dict = {
+                        'id': pool_id,
+                        'baslik': pos[0] or '',
+                        'name': pos[0] or '',  # Uyumluluk için her ikisi de
+                        'gerekli_deneyim_yil': pos[1] or 0,
+                        'gerekli_egitim': pos[2] or '',
+                        'lokasyon': pos[3] or '',
+                        'company_id': company_id
+                    }
+
+                    # Mevcut eşleşmiş adayları al
+                    rc.execute("""
+                        SELECT candidate_id FROM candidate_positions
+                        WHERE position_id = ?
+                    """, (pool_id,))
+                    existing_candidates = [r[0] for r in rc.fetchall()]
+
+                    for cid in existing_candidates:
+                        rc.execute("""
+                            SELECT id, ad_soyad, teknik_beceriler, mevcut_pozisyon,
+                                   deneyim_detay, toplam_deneyim_yil, egitim, lokasyon,
+                                   mevcut_sirket, cv_raw_text
+                            FROM candidates WHERE id = ? AND company_id = ?
+                        """, (cid, company_id))
+                        r = rc.fetchone()
+                        if not r:
+                            continue
+
+                        candidate_dict = {
+                            'id': r[0],
+                            'ad_soyad': r[1] or '',
+                            'teknik_beceriler': r[2] or '',
+                            'mevcut_pozisyon': r[3] or '',
+                            'deneyim_detay': r[4] or '',
+                            'toplam_deneyim_yil': r[5] or 0,
+                            'egitim': r[6] or '',
+                            'lokasyon': r[7] or '',
+                            'mevcut_sirket': r[8] or '',
+                            'cv_raw_text': r[9] or '',
+                            'company_id': company_id
+                        }
+
+                        v2_result = calculate_match_score_v2(candidate_dict, position_dict)
+                        if v2_result:
+                            new_score = v2_result.get('total', 0)
+                            rc.execute("""
+                                UPDATE matches SET uyum_puani = ?, detayli_analiz = ?
+                                WHERE candidate_id = ? AND position_id = ?
+                            """, (new_score, json_rescore.dumps(v2_result, ensure_ascii=False), cid, pool_id))
+                            rc.execute("""
+                                UPDATE candidate_positions SET match_score = ?
+                                WHERE candidate_id = ? AND position_id = ?
+                            """, (new_score, cid, pool_id))
+                            rescore_count += 1
+
+                    rescore_conn.commit()
+
+            print(f"[approve-titles] G8 rescore: {rescore_count} aday güncellendi")
+        except Exception as rescore_err:
+            print(f"[approve-titles] G8 rescore hatası (devam ediliyor): {rescore_err}")
+
         return {
             "success": True,
             "approved": approved_count,
             "rejected": rejected_count,
-            "transferred": transferred
+            "transferred": transferred,
+            "rescored": rescore_count
         }
     except HTTPException:
         raise
