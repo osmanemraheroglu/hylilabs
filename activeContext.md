@@ -31,6 +31,19 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - 3 Kritik Düzeltme
+1. **scoring_v2.py symlink**: Root kopya silindi, core/'a symlink oluşturuldu
+   - `api/scoring_v2.py -> core/scoring_v2.py`
+   - İki dosya senkronizasyon riski ortadan kalktı
+2. **aranan_nitelikler/is_tanimi bug fix** (pools.py:822-824):
+   - pool_data'ya eklendi, artık DB'ye kaydedilecek
+   - Tüm pozisyonlar NULL'dı — yeni pozisyonlarda dolacak
+3. **Duplicate teknik_beceriler fix** (cv_parser.py:1116-1123):
+   - Case-insensitive, order-preserving dedup
+   - "SAP, SAP, Procurement, procurement" → "SAP, Procurement"
+- Commit: fb45faf
+- Deploy: ✅ pm2 restart all
+
 ### 06.03.2026 - A5 Mevcut Adayları Re-Parse (deneyim_aciklama)
 - 79 adayın cv_raw_text'inden görev açıklamaları çıkarıldı
 - Sonuç: **69 başarılı**, 2 JSON parse hatası, 8 görev bulunamadı
