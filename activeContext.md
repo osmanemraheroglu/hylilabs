@@ -31,6 +31,15 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - A5 Mevcut Adayları Re-Parse (deneyim_aciklama)
+- 79 adayın cv_raw_text'inden görev açıklamaları çıkarıldı
+- Sonuç: **69 başarılı**, 2 JSON parse hatası, 8 görev bulunamadı
+- Claude API ile hedefli çıkarma (YAKLAŞIM B - güvenli, ucuz)
+- SADECE deneyim_aciklama güncellendi, diğer alanlar KORUNDU
+- Script: a5_reparse_aciklama.py (çalıştırıldı ve silindi)
+- Spot check: Serkan, Alican, Mertcan, Emir Kaan — teknik terimler korundu (SCADA, PLC, Siemens)
+- PM2 restart: ✅
+
 ### 06.03.2026 - A4 Search Text Genişletme
 - search_text artık 6 alan içeriyor (eskiden 3-4):
   - scoring_v2.py:396: skills + cv_text + experience_detail + **languages + certificates + task_descriptions**
