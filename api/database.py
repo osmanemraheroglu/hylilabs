@@ -1418,6 +1418,28 @@ def init_database():
         except sqlite3.OperationalError:
             pass
 
+        # KVKK Onay tablosu (immutable audit trail — sadece INSERT, UPDATE/DELETE yok)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS kvkk_consents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                interview_id INTEGER NOT NULL,
+                candidate_id INTEGER NOT NULL,
+                company_id INTEGER NOT NULL,
+                ad_soyad TEXT NOT NULL,
+                email TEXT,
+                telefon TEXT,
+                consent_given INTEGER NOT NULL DEFAULT 0,
+                consent_text TEXT NOT NULL,
+                kvkk_metin_versiyonu TEXT NOT NULL DEFAULT 'v1.0',
+                confirm_token TEXT NOT NULL,
+                ip_address TEXT,
+                user_agent TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (interview_id) REFERENCES interviews(id) ON DELETE CASCADE,
+                FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+            )
+        """)
+
         # AI Analiz tablosu
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS ai_analyses (

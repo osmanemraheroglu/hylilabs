@@ -31,6 +31,16 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - Mülakat KVKK Onay Sistemi
+- GET /api/interviews/confirm/{token} artık KVKK aydınlatma sayfası gösteriyor (doğrudan onay YOK)
+- POST /api/interviews/confirm/{token}/kvkk — KVKK onay + mülakat onaylama (public endpoint)
+- kvkk_consents tablosu (14 kolon, immutable audit trail): ad_soyad, email, telefon damgalama
+- KVKK aydınlatma metni v1.0: veri sorumlusu, işlenen veriler, amaç, aktarım, saklama süresi, haklar
+- Rate limiting: 10 istek/saat/IP (interview_confirm action)
+- Checkbox onaylanmadan "Mülakatı Onayla" butonu disabled
+- Aday bilgileri onay anında candidates tablosundan çekilip kaydediliyor
+- Değişen dosyalar: api/routes/interviews.py, api/database.py
+
 ### 06.03.2026 - G5 Must-Have Ceza Kaldırma + Prompt İyileştirme
 - must_have ceza formülü kaldırıldı: `must_have_score = max(0, score - missing*4)` → `must_have_score = int(weighted_ratio * 17)`
 - AI keyword prompt güncellendi: must_have artık ilandaki "zorunlu/şart/gerekli" ifadelerden alınıyor

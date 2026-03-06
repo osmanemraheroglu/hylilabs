@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Form
 from fastapi.responses import HTMLResponse
 from routes.auth import get_current_user
 from database import (
@@ -13,6 +13,7 @@ import logging
 import secrets
 
 from email_sender import send_interview_invite, generate_interview_invite_content
+from rate_limiter import check_rate_limit, record_action
 
 logger = logging.getLogger(__name__)
 
@@ -531,81 +532,178 @@ def send_interview_email(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+KVKK_CONSENT_TEXT = """
+6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında, mülakat sürecinde
+kişisel verilerinizin işlenmesine ilişkin aşağıdaki hususlarda bilgilendirilmektesiniz:
+
+1. VERİ SORUMLUSU
+Mülakat davetini gönderen firma, kişisel verilerinizin veri sorumlusudur.
+
+2. İŞLENEN KİŞİSEL VERİLER
+Mülakat sürecinde aşağıdaki kişisel verileriniz işlenmektedir:
+- Kimlik bilgileri (ad, soyad)
+- İletişim bilgileri (e-posta, telefon)
+- Mülakat katılım ve onay bilgileri
+- Mülakat değerlendirme sonuçları
+
+3. İŞLEME AMACI
+Kişisel verileriniz, işe alım sürecinin yürütülmesi, mülakat organizasyonu ve
+değerlendirme süreçlerinin gerçekleştirilmesi amacıyla işlenmektedir.
+
+4. VERİ AKTARIMI
+Kişisel verileriniz, işe alım sürecinde görev alan yetkili kişilerle paylaşılabilir.
+Verileriniz yurt dışına aktarılmamaktadır.
+
+5. SAKLAMA SÜRESİ
+Kişisel verileriniz, işe alım sürecinin tamamlanmasından itibaren en fazla 2 yıl
+süreyle saklanacaktır.
+
+6. HAKLARINIZ
+KVKK'nın 11. maddesi uyarınca aşağıdaki haklara sahipsiniz:
+- Kişisel verilerinizin işlenip işlenmediğini öğrenme
+- İşlenmişse buna ilişkin bilgi talep etme
+- İşlenme amacını ve bunların amacına uygun kullanılıp kullanılmadığını öğrenme
+- Yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme
+- Eksik veya yanlış işlenmiş olması halinde düzeltilmesini isteme
+- Silinmesini veya yok edilmesini isteme
+- Düzeltme, silme veya yok etme işlemlerinin aktarıldığı üçüncü kişilere bildirilmesini isteme
+- Münhasıran otomatik sistemler vasıtasıyla analiz edilmesi suretiyle aleyhinize bir sonucun ortaya çıkmasına itiraz etme
+- Kanuna aykırı olarak işlenmesi sebebiyle zarara uğramanız halinde zararın giderilmesini talep etme
+
+Bu haklarınızı kullanmak için mülakat davetini gönderen firma ile iletişime geçebilirsiniz.
+""".strip()
+
+KVKK_METIN_VERSIYONU = "v1.0"
+
+
+def _validate_confirm_token(token: str):
+    """Token doğrulama — ortak mantık (GET ve POST için)"""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """SELECT i.id, i.company_id, i.candidate_id, i.confirmation_status, i.confirm_token_expires,
+                      c.ad_soyad, c.email, c.telefon
+               FROM interviews i
+               JOIN candidates c ON c.id = i.candidate_id
+               WHERE i.confirm_token = ?""",
+            (token,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None, "not_found"
+        interview = dict(row)
+        if interview.get('confirmation_status') == 'confirmed':
+            return interview, "already_confirmed"
+        if interview.get('confirm_token_expires'):
+            expires = datetime.fromisoformat(interview['confirm_token_expires'])
+            if datetime.now() > expires:
+                return interview, "expired"
+        return interview, "valid"
+
+
 @router.get("/confirm/{token}")
 def confirm_interview(token: str):
-    """Mulakat onay linki - public endpoint (auth gerektirmez)"""
+    """Mulakat onay linki - KVKK onay sayfasi gosterir (public endpoint)"""
     try:
-        with get_connection() as conn:
-            cursor = conn.cursor()
+        interview, status = _validate_confirm_token(token)
 
-            # Token'i bul
-            cursor.execute(
-                """SELECT id, company_id, candidate_id, confirmation_status, confirm_token_expires
-                   FROM interviews WHERE confirm_token = ?""",
-                (token,)
-            )
-            interview = cursor.fetchone()
-
-            if not interview:
-                return HTMLResponse("""
-                <html>
-                <head><meta charset="UTF-8"><title>Hata</title></head>
-                <body style="font-family:Arial;text-align:center;padding:50px">
-                <h1 style="color:#dc2626">Gecersiz Onay Linki</h1>
-                <p>Bu link geçersiz veya bulunamadı.</p>
-                </body>
-                </html>
-                """, status_code=404)
-
-            interview = dict(interview)
-
-            # Zaten onaylanmis mi?
-            if interview.get('confirmation_status') == 'confirmed':
-                return HTMLResponse("""
-                <html>
-                <head><meta charset="UTF-8"><title>Zaten Onaylandi</title></head>
-                <body style="font-family:Arial;text-align:center;padding:50px">
-                <h1 style="color:#16a34a">✅ Bu Mulakat Zaten Onaylandi</h1>
-                <p>Mulakatiniz daha once onaylanmistir.</p>
-                <p>Gorusmek uzere!</p>
-                </body>
-                </html>
-                """)
-
-            # Sure dolmus mu?
-            if interview.get('confirm_token_expires'):
-                expires = datetime.fromisoformat(interview['confirm_token_expires'])
-                if datetime.now() > expires:
-                    return HTMLResponse("""
-                    <html>
-                    <head><meta charset="UTF-8"><title>Sure Doldu</title></head>
-                    <body style="font-family:Arial;text-align:center;padding:50px">
-                    <h1 style="color:#dc2626">Onay Linki Suresi Dolmus</h1>
-                    <p>Bu onay linkinin suresi dolmustur.</p>
-                    <p>Lutfen firma ile iletisime gecin.</p>
-                    </body>
-                    </html>
-                    """, status_code=410)
-
-            # Onayla
-            cursor.execute(
-                """UPDATE interviews
-                   SET confirmation_status = 'confirmed', confirmed_at = datetime('now')
-                   WHERE confirm_token = ?""",
-                (token,)
-            )
-            conn.commit()
-
+        if status == "not_found":
             return HTMLResponse("""
             <html>
-            <head><meta charset="UTF-8"><title>Onaylandi</title></head>
-            <body style="font-family:Arial;text-align:center;padding:50px;background:#f0fdf4">
-            <h1 style="color:#16a34a">✅ Mulakatiniz Onaylandi!</h1>
-            <p style="font-size:18px">Mulakat davetinizi onayladiginiz icin tesekkur ederiz.</p>
-            <p style="margin-top:30px">Gorusmek uzere!</p>
+            <head><meta charset="UTF-8"><title>Hata</title></head>
+            <body style="font-family:Arial;text-align:center;padding:50px">
+            <h1 style="color:#dc2626">Geçersiz Onay Linki</h1>
+            <p>Bu link geçersiz veya bulunamadı.</p>
+            </body>
+            </html>
+            """, status_code=404)
+
+        if status == "already_confirmed":
+            return HTMLResponse("""
+            <html>
+            <head><meta charset="UTF-8"><title>Zaten Onaylandı</title></head>
+            <body style="font-family:Arial;text-align:center;padding:50px">
+            <h1 style="color:#16a34a">&#10003; Bu Mülakat Zaten Onaylandı</h1>
+            <p>Mülakatınız daha önce onaylanmıştır.</p>
+            <p>Görüşmek üzere!</p>
             </body>
             </html>
             """)
+
+        if status == "expired":
+            return HTMLResponse("""
+            <html>
+            <head><meta charset="UTF-8"><title>Süre Doldu</title></head>
+            <body style="font-family:Arial;text-align:center;padding:50px">
+            <h1 style="color:#dc2626">Onay Linki Süresi Dolmuş</h1>
+            <p>Bu onay linkinin süresi dolmuştur.</p>
+            <p>Lütfen firma ile iletişime geçin.</p>
+            </body>
+            </html>
+            """, status_code=410)
+
+        # KVKK onay sayfasi goster
+        kvkk_html = KVKK_CONSENT_TEXT.replace('\n', '<br>')
+        ad_soyad = interview.get('ad_soyad', '')
+
+        return HTMLResponse(f"""
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Mülakat Onayı — KVKK Aydınlatma</title>
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }}
+                .container {{ max-width: 700px; margin: 30px auto; padding: 0 20px; }}
+                .card {{ background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }}
+                .header {{ background: #1e40af; color: white; padding: 24px; text-align: center; }}
+                .header h1 {{ font-size: 20px; margin-bottom: 4px; }}
+                .header p {{ font-size: 14px; opacity: 0.9; }}
+                .content {{ padding: 24px; }}
+                .greeting {{ font-size: 16px; margin-bottom: 16px; }}
+                .kvkk-box {{ background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; max-height: 300px; overflow-y: auto; font-size: 13px; line-height: 1.7; margin-bottom: 20px; }}
+                .consent-form {{ border-top: 1px solid #e2e8f0; padding-top: 20px; }}
+                .checkbox-row {{ display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; }}
+                .checkbox-row input {{ margin-top: 4px; width: 18px; height: 18px; cursor: pointer; }}
+                .checkbox-row label {{ font-size: 14px; cursor: pointer; }}
+                .btn {{ display: block; width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }}
+                .btn-primary {{ background: #16a34a; color: white; }}
+                .btn-primary:hover {{ background: #15803d; }}
+                .btn-primary:disabled {{ background: #94a3b8; cursor: not-allowed; }}
+                .version {{ text-align: center; margin-top: 16px; font-size: 11px; color: #94a3b8; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="card">
+                    <div class="header">
+                        <h1>Mülakat Onayı</h1>
+                        <p>Kişisel Verilerin Korunması Aydınlatma Metni</p>
+                    </div>
+                    <div class="content">
+                        <p class="greeting">Sayın <strong>{ad_soyad}</strong>,</p>
+                        <p style="margin-bottom:16px;font-size:14px;">Mülakat davetinizi onaylamadan önce, kişisel verilerinizin işlenmesine ilişkin aşağıdaki aydınlatma metnini okuyunuz:</p>
+
+                        <div class="kvkk-box">
+                            {kvkk_html}
+                        </div>
+
+                        <form class="consent-form" method="POST" action="/api/interviews/confirm/{token}/kvkk">
+                            <div class="checkbox-row">
+                                <input type="checkbox" id="kvkk_onay" name="kvkk_onay" value="1" onchange="document.getElementById('submitBtn').disabled = !this.checked">
+                                <label for="kvkk_onay">Yukarıdaki KVKK aydınlatma metnini okudum, anladım ve kişisel verilerimin belirtilen amaçlarla işlenmesine açık rıza veriyorum.</label>
+                            </div>
+                            <button type="submit" id="submitBtn" class="btn btn-primary" disabled>Mülakatı Onayla</button>
+                        </form>
+
+                        <p class="version">KVKK Aydınlatma Metni Versiyon: {KVKK_METIN_VERSIYONU}</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """)
 
     except Exception as e:
         logger.error(f"Mulakat onay hatasi: {e}")
@@ -614,8 +712,162 @@ def confirm_interview(token: str):
         <html>
         <head><meta charset="UTF-8"><title>Hata</title></head>
         <body style="font-family:Arial;text-align:center;padding:50px">
-        <h1 style="color:#dc2626">Bir Hata Olustu</h1>
-        <p>Lutfen daha sonra tekrar deneyin.</p>
+        <h1 style="color:#dc2626">Bir Hata Oluştu</h1>
+        <p>Lütfen daha sonra tekrar deneyin.</p>
+        </body>
+        </html>
+        """, status_code=500)
+
+
+@router.post("/confirm/{token}/kvkk")
+async def confirm_interview_kvkk(token: str, request: Request, kvkk_onay: str = Form(default="")):
+    """Mulakat KVKK onay + mulakat onaylama — public endpoint (auth gerektirmez)"""
+    try:
+        # Rate limiting — 10 istek/saat/IP
+        client_ip = request.client.host if request.client else "unknown"
+        allowed, count, remaining = check_rate_limit(client_ip, "interview_confirm", 10, 60)
+        if not allowed:
+            return HTMLResponse("""
+            <html>
+            <head><meta charset="UTF-8"><title>Çok Fazla İstek</title></head>
+            <body style="font-family:Arial;text-align:center;padding:50px">
+            <h1 style="color:#dc2626">Çok Fazla İstek</h1>
+            <p>Lütfen bir süre bekleyip tekrar deneyin.</p>
+            </body>
+            </html>
+            """, status_code=429)
+
+        # Rate limit kaydi
+        record_action(client_ip, "interview_confirm")
+
+        # KVKK onay kontrolu
+        if kvkk_onay != "1":
+            return HTMLResponse("""
+            <html>
+            <head><meta charset="UTF-8"><title>KVKK Onayı Gerekli</title></head>
+            <body style="font-family:Arial;text-align:center;padding:50px">
+            <h1 style="color:#dc2626">KVKK Onayı Gerekli</h1>
+            <p>Mülakatınızı onaylamak için KVKK aydınlatma metnini onaylamanız gerekmektedir.</p>
+            <p style="margin-top:20px"><a href="/api/interviews/confirm/{token}" style="color:#1e40af">Geri Dön</a></p>
+            </body>
+            </html>
+            """, status_code=400)
+
+        # Token dogrulama
+        interview, status = _validate_confirm_token(token)
+
+        if status == "not_found":
+            return HTMLResponse("""
+            <html>
+            <head><meta charset="UTF-8"><title>Hata</title></head>
+            <body style="font-family:Arial;text-align:center;padding:50px">
+            <h1 style="color:#dc2626">Geçersiz Onay Linki</h1>
+            <p>Bu link geçersiz veya bulunamadı.</p>
+            </body>
+            </html>
+            """, status_code=404)
+
+        if status == "already_confirmed":
+            return HTMLResponse("""
+            <html>
+            <head><meta charset="UTF-8"><title>Zaten Onaylandı</title></head>
+            <body style="font-family:Arial;text-align:center;padding:50px">
+            <h1 style="color:#16a34a">&#10003; Bu Mülakat Zaten Onaylandı</h1>
+            <p>Mülakatınız daha önce onaylanmıştır.</p>
+            <p>Görüşmek üzere!</p>
+            </body>
+            </html>
+            """)
+
+        if status == "expired":
+            return HTMLResponse("""
+            <html>
+            <head><meta charset="UTF-8"><title>Süre Doldu</title></head>
+            <body style="font-family:Arial;text-align:center;padding:50px">
+            <h1 style="color:#dc2626">Onay Linki Süresi Dolmuş</h1>
+            <p>Bu onay linkinin süresi dolmuştur.</p>
+            <p>Lütfen firma ile iletişime geçin.</p>
+            </body>
+            </html>
+            """, status_code=410)
+
+        # User-Agent al
+        user_agent = request.headers.get("user-agent", "")
+
+        # KVKK onay kaydi + mulakat onaylama — tek transaction
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # KVKK consent kaydi (immutable — sadece INSERT)
+            cursor.execute(
+                """INSERT INTO kvkk_consents
+                   (interview_id, candidate_id, company_id, ad_soyad, email, telefon,
+                    consent_given, consent_text, kvkk_metin_versiyonu, confirm_token,
+                    ip_address, user_agent)
+                   VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)""",
+                (
+                    interview['id'],
+                    interview['candidate_id'],
+                    interview['company_id'],
+                    interview.get('ad_soyad', ''),
+                    interview.get('email', ''),
+                    interview.get('telefon', ''),
+                    KVKK_CONSENT_TEXT,
+                    KVKK_METIN_VERSIYONU,
+                    token,
+                    client_ip,
+                    user_agent
+                )
+            )
+
+            # Mulakat onaylama
+            cursor.execute(
+                """UPDATE interviews
+                   SET confirmation_status = 'confirmed', confirmed_at = datetime('now')
+                   WHERE confirm_token = ?""",
+                (token,)
+            )
+            conn.commit()
+
+        logger.info(f"Mulakat onaylandi (KVKK dahil): interview_id={interview['id']}, candidate_id={interview['candidate_id']}, IP={client_ip}")
+
+        return HTMLResponse("""
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Onaylandı</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0fdf4; color: #1e293b; }
+                .container { max-width: 500px; margin: 60px auto; text-align: center; padding: 0 20px; }
+                .icon { font-size: 64px; margin-bottom: 16px; }
+                h1 { color: #16a34a; margin-bottom: 12px; }
+                p { font-size: 16px; margin-bottom: 8px; }
+                .note { margin-top: 24px; font-size: 13px; color: #64748b; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="icon">&#10003;</div>
+                <h1>Mülakatınız Onaylandı!</h1>
+                <p>Mülakat davetinizi onayladığınız için teşekkür ederiz.</p>
+                <p>KVKK aydınlatma metni onayınız kaydedilmiştir.</p>
+                <p style="margin-top:30px;font-weight:600;">Görüşmek üzere!</p>
+                <p class="note">Bu sayfayı kapatabilirsiniz.</p>
+            </div>
+        </body>
+        </html>
+        """)
+
+    except Exception as e:
+        logger.error(f"Mulakat KVKK onay hatasi: {e}")
+        traceback.print_exc()
+        return HTMLResponse("""
+        <html>
+        <head><meta charset="UTF-8"><title>Hata</title></head>
+        <body style="font-family:Arial;text-align:center;padding:50px">
+        <h1 style="color:#dc2626">Bir Hata Oluştu</h1>
+        <p>Lütfen daha sonra tekrar deneyin.</p>
         </body>
         </html>
         """, status_code=500)
