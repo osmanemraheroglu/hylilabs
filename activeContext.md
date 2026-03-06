@@ -31,6 +31,15 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - KVKK Onayları Panel (Mülakat Takvimi)
+- Mülakat takvimi sayfasına "KVKK Onayları" butonu ve modal eklendi (ShieldCheck ikonu)
+- Yeni endpoint: GET /api/interviews/kvkk-consents (Auth + company_id izolasyonu)
+- Modal: 4 istatistik kartı (Toplam Onay, Bu Ay, Aktif Mülakat, Metin Versiyonu)
+- Tablo: Aday, Pozisyon, Onay Tarihi, KVKK Durumu, Mülakat Durumu badge, IP Adresi, Versiyon
+- Arama: Aday adı, email, pozisyon filtreleme (Türkçe karakter duyarsız)
+- Detay modal: Damgalama bilgileri (ad_soyad, email, telefon, IP, user_agent, tarih) + KVKK metin tam kopyası + immutable uyarı
+- Değişen dosyalar: api/routes/interviews.py, src/features/mulakat-takvimi/index.tsx
+
 ### 06.03.2026 - Mülakat Kaydet Butonu Fix
 - handleSave'e toast.success eklendi (oluşturma: "Mülakat oluşturuldu", güncelleme: "Mülakat güncellendi")
 - saving state + Loader2 spinner eklendi (çift tıklama önleme, UX feedback)

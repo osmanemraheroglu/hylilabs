@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   CalendarClock, Plus, Edit, Trash2, RefreshCw, ChevronLeft, ChevronRight,
-  Clock, MapPin, List, CalendarDays, Info, Mail, Send, Loader2, XCircle, ClipboardCheck
+  Clock, MapPin, List, CalendarDays, Info, Mail, Send, Loader2, XCircle, ClipboardCheck,
+  ShieldCheck, Eye, Search
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -56,6 +57,30 @@ interface DropdownData {
   positions: Array<{ id: number; baslik: string }>
   candidates: CandidateItem[]
   positionCandidates?: Record<string, CandidateItem[]>
+}
+
+interface KvkkConsentItem {
+  id: number
+  ad_soyad: string
+  email: string | null
+  telefon: string | null
+  pozisyon: string | null
+  consent_given: number
+  consent_text: string
+  kvkk_metin_versiyonu: string
+  confirm_token: string
+  ip_address: string | null
+  user_agent: string | null
+  created_at: string
+  mulakat_tarih: string
+  mulakat_durum: string
+}
+
+interface KvkkStats {
+  toplam: number
+  bu_ay: number
+  aktif_mulakat: number
+  metin_versiyonu: string
 }
 
 const DURUM_BADGE: Record<string, string> = {
@@ -168,6 +193,15 @@ export default function MulakatTakvimi() {
   const [emailToSend, setEmailToSend] = useState('')
   const [emailSending, setEmailSending] = useState(false)
   const [newInterviewId, setNewInterviewId] = useState<number | null>(null)
+
+  // KVKK Onayları state
+  const [kvkkModalOpen, setKvkkModalOpen] = useState(false)
+  const [kvkkConsents, setKvkkConsents] = useState<KvkkConsentItem[]>([])
+  const [kvkkStats, setKvkkStats] = useState<KvkkStats | null>(null)
+  const [kvkkLoading, setKvkkLoading] = useState(false)
+  const [kvkkSearch, setKvkkSearch] = useState('')
+  const [kvkkDetailOpen, setKvkkDetailOpen] = useState(false)
+  const [kvkkDetailItem, setKvkkDetailItem] = useState<KvkkConsentItem | null>(null)
 
   const loadInterviews = useCallback(() => {
     setLoading(true)
@@ -409,6 +443,35 @@ export default function MulakatTakvimi() {
     }
   }
 
+  // KVKK Onayları yükleme
+  const loadKvkkConsents = () => {
+    setKvkkLoading(true)
+    fetch(`${API_URL}/api/interviews/kvkk-consents`, { headers: getHeaders() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          setKvkkConsents(res.data)
+          setKvkkStats(res.stats)
+        }
+      })
+      .catch(err => {
+        console.error('KVKK consents hatası:', err)
+        toast.error('KVKK onay kayıtları yüklenemedi')
+      })
+      .finally(() => setKvkkLoading(false))
+  }
+
+  // KVKK arama filtresi
+  const filteredKvkkConsents = kvkkConsents.filter(item => {
+    if (!kvkkSearch) return true
+    const search = kvkkSearch.toLocaleLowerCase('tr-TR')
+    return (
+      item.ad_soyad.toLocaleLowerCase('tr-TR').includes(search) ||
+      (item.email && item.email.toLocaleLowerCase('tr-TR').includes(search)) ||
+      (item.pozisyon && item.pozisyon.toLocaleLowerCase('tr-TR').includes(search))
+    )
+  })
+
   // Calendar helpers
   const getDaysInMonth = (y: number, m: number) => new Date(y, m + 1, 0).getDate()
   const getFirstDayOfMonth = (y: number, m: number) => {
@@ -549,6 +612,9 @@ export default function MulakatTakvimi() {
               <SelectItem value="pending">⏳ Bekliyor</SelectItem>
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={() => { setKvkkModalOpen(true); loadKvkkConsents() }}>
+            <ShieldCheck className="h-4 w-4 mr-1" /> KVKK Onayları
+          </Button>
         </div>
       </div>
 
@@ -968,6 +1034,178 @@ export default function MulakatTakvimi() {
                 <><Send className="h-4 w-4 mr-2" /> Gönder</>
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* KVKK Onayları Modal */}
+      <Dialog open={kvkkModalOpen} onOpenChange={(o) => { if (!o) { setKvkkModalOpen(false); setKvkkSearch('') } }}>
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" /> KVKK Onayları
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* İstatistik Kartları */}
+          <div className="grid grid-cols-4 gap-3">
+            <Card>
+              <CardContent className="p-3 text-center">
+                <div className="text-2xl font-bold">{kvkkStats?.toplam || 0}</div>
+                <div className="text-xs text-muted-foreground">Toplam Onay</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 text-center">
+                <div className="text-2xl font-bold text-blue-600">{kvkkStats?.bu_ay || 0}</div>
+                <div className="text-xs text-muted-foreground">Bu Ay</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 text-center">
+                <div className="text-2xl font-bold text-green-600">{kvkkStats?.aktif_mulakat || 0}</div>
+                <div className="text-xs text-muted-foreground">Aktif Mülakat</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 text-center">
+                <div className="text-sm font-bold text-purple-600">{kvkkStats?.metin_versiyonu || '-'}</div>
+                <div className="text-xs text-muted-foreground">Metin Versiyonu</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Arama */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Aday adı, email veya pozisyon ara..."
+              value={kvkkSearch}
+              onChange={e => setKvkkSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Tablo */}
+          <div className="flex-1 overflow-auto">
+            {kvkkLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Aday</TableHead>
+                    <TableHead>Pozisyon</TableHead>
+                    <TableHead>Onay Tarihi</TableHead>
+                    <TableHead>KVKK Durumu</TableHead>
+                    <TableHead>Mülakat Durumu</TableHead>
+                    <TableHead>IP Adresi</TableHead>
+                    <TableHead>Versiyon</TableHead>
+                    <TableHead className="text-right">İşlemler</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredKvkkConsents.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        {kvkkSearch ? 'Aramayla eşleşen kayıt bulunamadı' : 'KVKK onay kaydı bulunamadı'}
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredKvkkConsents.map(item => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <div className="font-medium text-sm">{item.ad_soyad}</div>
+                        <div className="text-xs text-muted-foreground">{item.email || '-'}</div>
+                      </TableCell>
+                      <TableCell className="text-sm">{item.pozisyon || '-'}</TableCell>
+                      <TableCell className="text-sm">
+                        {new Date(item.created_at).toLocaleString('tr-TR')}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-green-100 text-green-800 text-xs">Onaylandı</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`text-xs ${DURUM_BADGE[item.mulakat_durum] || ''}`}>
+                          {DURUM_LABEL[item.mulakat_durum] || item.mulakat_durum}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{item.ip_address || '-'}</TableCell>
+                      <TableCell className="text-xs">{item.kvkk_metin_versiyonu}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => { setKvkkDetailItem(item); setKvkkDetailOpen(true) }}>
+                          <Eye className="h-3.5 w-3.5 mr-1" /> Görüntüle
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* KVKK Detay Modal */}
+      <Dialog open={kvkkDetailOpen} onOpenChange={(o) => { if (!o) { setKvkkDetailOpen(false); setKvkkDetailItem(null) } }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" /> KVKK Onay Detayı
+            </DialogTitle>
+          </DialogHeader>
+          {kvkkDetailItem && (
+            <div className="space-y-4 flex-1 overflow-auto">
+              {/* Immutable Uyarı */}
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <span className="text-lg">🔒</span>
+                <p className="text-sm text-amber-800">Bu kayıt değiştirilemez (immutable KVKK audit trail). Onay anındaki bilgiler korunmaktadır.</p>
+              </div>
+
+              {/* Damgalama Bilgileri */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">Ad Soyad</div>
+                  <div className="text-sm font-medium">{kvkkDetailItem.ad_soyad}</div>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">Email</div>
+                  <div className="text-sm font-medium">{kvkkDetailItem.email || '-'}</div>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">Telefon</div>
+                  <div className="text-sm font-medium">{kvkkDetailItem.telefon || '-'}</div>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">IP Adresi</div>
+                  <div className="text-sm font-medium">{kvkkDetailItem.ip_address || '-'}</div>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">Onay Tarihi</div>
+                  <div className="text-sm font-medium">{new Date(kvkkDetailItem.created_at).toLocaleString('tr-TR')}</div>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">KVKK Metin Versiyonu</div>
+                  <div className="text-sm font-medium">{kvkkDetailItem.kvkk_metin_versiyonu}</div>
+                </div>
+                <div className="col-span-2 p-3 bg-gray-50 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">Tarayıcı Bilgisi</div>
+                  <div className="text-xs font-mono break-all">{kvkkDetailItem.user_agent || '-'}</div>
+                </div>
+              </div>
+
+              {/* KVKK Metni */}
+              <div>
+                <div className="text-sm font-medium mb-2">Onaylanan KVKK Aydınlatma Metni</div>
+                <div className="p-4 bg-gray-50 rounded-lg border max-h-48 overflow-y-auto">
+                  <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{kvkkDetailItem.consent_text}</pre>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setKvkkDetailOpen(false); setKvkkDetailItem(null) }}>Kapat</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

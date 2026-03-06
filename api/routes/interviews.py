@@ -871,3 +871,71 @@ async def confirm_interview_kvkk(token: str, request: Request, kvkk_onay: str = 
         </body>
         </html>
         """, status_code=500)
+
+
+@router.get("/kvkk-consents")
+def list_kvkk_consents(
+    current_user: dict = Depends(get_current_user)
+):
+    """KVKK onay kayıtlarını listele — firma bazlı"""
+    require_company_user(current_user)
+    try:
+        company_id = current_user["company_id"]
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Tüm KVKK onay kayıtlarını getir
+            cursor.execute(
+                """SELECT kc.id, kc.ad_soyad, kc.email, kc.telefon,
+                          kc.consent_given, kc.consent_text, kc.kvkk_metin_versiyonu,
+                          kc.confirm_token, kc.ip_address, kc.user_agent, kc.created_at,
+                          i.tarih as mulakat_tarih, i.durum as mulakat_durum,
+                          dp.name as pozisyon
+                   FROM kvkk_consents kc
+                   JOIN interviews i ON i.id = kc.interview_id
+                   LEFT JOIN department_pools dp ON dp.id = i.position_id
+                   WHERE kc.company_id = ?
+                   ORDER BY kc.created_at DESC""",
+                (company_id,)
+            )
+            rows = [dict(row) for row in cursor.fetchall()]
+
+            # İstatistikler
+            toplam = len(rows)
+
+            # Bu ay
+            cursor.execute(
+                """SELECT COUNT(*) as cnt FROM kvkk_consents
+                   WHERE company_id = ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')""",
+                (company_id,)
+            )
+            bu_ay = cursor.fetchone()['cnt']
+
+            # Aktif mülakat (KVKK onaylı + planlanmış)
+            cursor.execute(
+                """SELECT COUNT(*) as cnt FROM kvkk_consents kc
+                   JOIN interviews i ON i.id = kc.interview_id
+                   WHERE kc.company_id = ? AND i.durum = 'planlanmis'""",
+                (company_id,)
+            )
+            aktif_mulakat = cursor.fetchone()['cnt']
+
+            metin_versiyonu = KVKK_METIN_VERSIYONU
+
+        return {
+            "success": True,
+            "data": rows,
+            "stats": {
+                "toplam": toplam,
+                "bu_ay": bu_ay,
+                "aktif_mulakat": aktif_mulakat,
+                "metin_versiyonu": metin_versiyonu
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"KVKK consents listeleme hatasi: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="KVKK onay kayıtları yüklenemedi")
