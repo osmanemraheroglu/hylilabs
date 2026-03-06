@@ -41,6 +41,16 @@ Son guncelleme: 06.03.2026
 - Aday bilgileri onay anında candidates tablosundan çekilip kaydediliyor
 - Değişen dosyalar: api/routes/interviews.py, api/database.py
 
+### 06.03.2026 - G7 AI Synonym Prompt İyileştirme
+- SYNONYM_PROMPT_BATCH_V2 ve SYNONYM_PROMPT_SINGLE_V2 güncellendi
+- MAX 3 → MIN 2, MAX 5 synonym (daha zengin öneri)
+- TR↔EN çeviri artık ZORUNLU (her keyword için en az bir english/turkish)
+- Kısaltma örnekleri zenginleştirildi: PLC, MS Project, SCADA
+- Rejected synonym filtresi eklendi: get_rejected_synonyms() DB'den çeker, prompt'a inject eder
+- Her iki dosya senkronize: api/synonyms.py + api/routes/synonyms.py
+- 45/45 test başarılı
+- Değişen dosyalar: api/database.py, api/routes/synonyms.py, api/synonyms.py
+
 ### 06.03.2026 - G6 Must-Have=0 Otomatik Düzeltme Guard Mekanizması
 - save_categorized_data() fonksiyonuna G6 Guard eklendi
 - AI must_have boş döndürürse: critical'den ilk 3 keyword must_have'e transfer
