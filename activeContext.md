@@ -31,6 +31,15 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - A2+A3 CV Parser Deneyim İyileştirme
+- A2: is_deneyimi[].aciklama artık deneyim_aciklama kolonuna kaydediliyor (pipe-separated)
+- A3: Deneyim limiti 3'ten 5'e yükseltildi ([:3] → [:5])
+- cv_parser.py: deneyim bloğu güncellendi, Candidate'e deneyim_aciklama eklendi
+- models.py: deneyim_aciklama alanı eklendi
+- database.py: INSERT statement güncellendi (23 parametre)
+- Commit: 14b0f5d
+- Deploy: ✅ pm2 restart hylilabs-backend
+
 ### 06.03.2026 - A1 DB Alan Ekleme: deneyim_aciklama
 - candidates tablosuna deneyim_aciklama TEXT kolonu eklendi
 - CV parser is_deneyimi[].aciklama alanını kaydedecek (A2'de implement edilecek)
