@@ -31,6 +31,18 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - A4 Search Text Genişletme
+- search_text artık 6 alan içeriyor (eskiden 3-4):
+  - scoring_v2.py:396: skills + cv_text + experience_detail + **languages + certificates + task_descriptions**
+  - candidate_matcher.py:1640: cv_text + skills + experience + current_pos + **languages + certificates + task_descriptions**
+- "İngilizce" keyword artık diller alanından bulunacak
+- Sertifika keyword'leri (Festo, SAP vb.) sertifikalar alanından bulunacak
+- Görev tanımları (deneyim_aciklama) da aranacak
+- Her iki scoring_v2.py senkron (api/ + api/core/)
+- Puanlar SADECE artabilir (additive change)
+- Commit: cefdbf7
+- Deploy: ✅ pm2 restart hylilabs-backend
+
 ### 06.03.2026 - A2+A3 CV Parser Deneyim İyileştirme
 - A2: is_deneyimi[].aciklama artık deneyim_aciklama kolonuna kaydediliyor (pipe-separated)
 - A3: Deneyim limiti 3'ten 5'e yükseltildi ([:3] → [:5])
