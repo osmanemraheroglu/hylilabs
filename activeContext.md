@@ -31,6 +31,23 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - FAZ B: Görev Tanımı Upload Endpoint
+1. **POST /{pool_id}/job-description**: Mevcut pozisyona görev tanımı PDF/DOCX yükle
+   - gorev_tanimi_raw_text kolonu department_pools'a eklendi
+   - update_department_pool allowed listesi genişletildi (+3 alan)
+   - AI parse prompt: format-agnostic, mevcut keyword injection
+   - position_keywords_v2'ye MERGE (additive, duplicate-safe)
+   - Yeni title'lar pending olarak eklenir (source='job_description')
+   - Auto-rescore keyword enrichment sonrası
+   - Dosyalar: data/job_descriptions/{company_id}/ altına kaydedilir
+2. **Yeni fonksiyonlar** (pools.py:1668-2049):
+   - save_job_description_file(): Dosya kaydetme
+   - parse_job_description_with_ai(): Claude AI parse
+   - save_job_description_results(): DB'ye kaydet (MERGE)
+   - rescore_position_candidates(): Otomatik rescore
+- Commit: c0dc58a
+- Deploy: ✅ pm2 restart hylilabs-backend
+
 ### 06.03.2026 - 3 Kritik Düzeltme
 1. **scoring_v2.py symlink**: Root kopya silindi, core/'a symlink oluşturuldu
    - `api/scoring_v2.py -> core/scoring_v2.py`
