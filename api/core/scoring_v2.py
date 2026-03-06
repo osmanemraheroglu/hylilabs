@@ -1,6 +1,12 @@
 """
 TalentFlow Scoring V2 Modülü
 Puanlama v2 için hesaplama fonksiyonları
+
+FAZ C Güncellemesi (03.2026):
+- 5 Katman: Position(25) + Technical(40) + General(20) + Task(15) + Elimination(10) = 110 (min 100)
+- Title match: 15/10/5 (exact/close/partial)
+- Technical: must_have max 15, critical MOD A max 15, critical MOD B max 30
+- Task: CV deneyim_aciklama ↔ pozisyon is_tanimi keyword overlap (max 15)
 """
 
 import json
@@ -250,8 +256,8 @@ def calculate_position_match_score(
     sector_preferences: Dict[str, List[str]]
 ) -> Dict:
     """
-    KATMAN 1: Pozisyon Uyumu (33 puan)
-    - Pozisyon başlığı: 23 puan
+    KATMAN 1: Pozisyon Uyumu (25 puan) — FAZ C güncelleme
+    - Pozisyon başlığı: 15 puan (exact=15, close=10, partial=5)
     - Sektör deneyimi: 10 puan
     """
     # Aday bilgilerini al
@@ -259,7 +265,7 @@ def calculate_position_match_score(
     experience_detail = safe_get(candidate, 'deneyim_detay', '') or ''
     current_company = safe_get(candidate, 'mevcut_sirket', '') or ''
     
-    # Pozisyon başlığı eşleşmesi (23 puan)
+    # Pozisyon başlığı eşleşmesi (15 puan) — FAZ C
     title_match_score = 0
     title_match_level = None
     matched_title = None
@@ -286,29 +292,29 @@ def calculate_position_match_score(
         if not title_normalized:
             continue
         
-        # Exact match
+        # Exact match (FAZ C: 23 → 15 puan)
         for exact_title in title_mappings.get('exact', []):
             if turkish_lower(exact_title) == title_normalized:
-                if 23 > best_match_score:
-                    best_match_score = 23
+                if 15 > best_match_score:
+                    best_match_score = 15
                     best_match_level = 'exact'
                     best_matched_title = exact_title
-        
-        # Close match (fuzzy >= 85)
+
+        # Close match (fuzzy >= 90) (FAZ C: 14 → 10 puan)
         for close_title in title_mappings.get('close', []):
             ratio = fuzz.ratio(title_normalized, turkish_lower(close_title))
             if ratio >= 90:
-                if 14 > best_match_score:
-                    best_match_score = 14
+                if 10 > best_match_score:
+                    best_match_score = 10
                     best_match_level = 'close'
                     best_matched_title = close_title
-        
-        # Partial match (fuzzy >= 70)
+
+        # Partial match (fuzzy >= 90) (FAZ C: 7 → 5 puan)
         for partial_title in title_mappings.get('partial', []):
             ratio = fuzz.ratio(title_normalized, turkish_lower(partial_title))
             if ratio >= 90:
-                if 7 > best_match_score:
-                    best_match_score = 7
+                if 5 > best_match_score:
+                    best_match_score = 5
                     best_match_level = 'partial'
                     best_matched_title = partial_title
     
@@ -375,9 +381,9 @@ def calculate_technical_score(
     v2_keywords: Dict[str, List[str]]
 ) -> Dict:
     """
-    KATMAN 2: Teknik Yetkinlik (37 puan)
-    - Must-have keyword'ler: 17 puan (MOD A)
-    - Critical keyword'ler: 27 puan (MOD B) veya 10 puan (MOD A)
+    KATMAN 2: Teknik Yetkinlik (40 puan) — FAZ C güncelleme
+    - Must-have keyword'ler: 15 puan (MOD A)
+    - Critical keyword'ler: 30 puan (MOD B) veya 15 puan (MOD A)
     - Important keyword'ler: 10 puan
     """
     # Aday bilgilerini al
@@ -418,7 +424,7 @@ def calculate_technical_score(
         # G5 (06.03.2026): Ceza kaldırıldı - sadece ödül bazlı
         total_weight = sum(m['weight'] for m in must_have_matched)
         weighted_ratio = total_weight / len(must_have_keywords) if must_have_keywords else 0
-        must_have_score = int(weighted_ratio * 17)
+        must_have_score = int(weighted_ratio * 15)  # FAZ C: 17 → 15
     
     # Critical keyword'ler
     critical_keywords = v2_keywords.get('critical', [])
@@ -435,21 +441,21 @@ def calculate_technical_score(
             else:
                 critical_missing.append(keyword)
     
-    # Critical score hesaplama (FAZ 9.5: weight bazlı)
+    # Critical score hesaplama (FAZ 9.5: weight bazlı, FAZ C: puan revizyonu)
     if must_have_keywords:
-        # MOD A: Must-have varsa → Critical 10 puan (lineer, weight bazlı)
+        # MOD A: Must-have varsa → Critical 15 puan (FAZ C: 10 → 15)
         if critical_keywords:
             total_weight = sum(m['weight'] for m in critical_matched)
             weighted_ratio = total_weight / len(critical_keywords)
-            critical_score = int(weighted_ratio * 10)
+            critical_score = int(weighted_ratio * 15)
         else:
             critical_score = 0
     else:
-        # MOD B: Must-have yoksa → Critical 27 puan (exponential, weight bazlı)
+        # MOD B: Must-have yoksa → Critical 30 puan (FAZ C: 27 → 30)
         if critical_keywords:
             total_weight = sum(m['weight'] for m in critical_matched)
             weighted_ratio = total_weight / len(critical_keywords)
-            critical_score = int((weighted_ratio ** 1.5) * 27)
+            critical_score = int((weighted_ratio ** 1.5) * 30)
         else:
             critical_score = 0
     
@@ -583,6 +589,116 @@ def calculate_general_score(
         'education_score': int(education_score),
         'knockout': knockout,
         'knockout_reason': knockout_reason
+    }
+
+
+def calculate_task_match_score(
+    candidate: Union[Dict, object],
+    position: Union[Dict, object]
+) -> Dict:
+    """
+    KATMAN 4 (YENİ - FAZ C): Görev Eşleşmesi (15 puan)
+    CV deneyim_aciklama ↔ pozisyon is_tanimi keyword overlap
+
+    is_tanimi veya deneyim_aciklama boşsa → 0 puan (atla)
+    """
+    # Aday tarafı: deneyim_aciklama
+    task_desc = safe_get(candidate, 'deneyim_aciklama', '') or ''
+    cv_raw = safe_get(candidate, 'cv_raw_text', '') or ''
+
+    # Pozisyon tarafı: is_tanimi (dict'te yoksa DB'den al)
+    is_tanimi = safe_get(position, 'is_tanimi', '') or ''
+
+    # FAZ C: is_tanimi yoksa DB'den fetch et
+    if not is_tanimi:
+        position_id = safe_get(position, 'id') or safe_get(position, 'position_id')
+        if position_id:
+            try:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT is_tanimi FROM department_pools WHERE id = ?", (position_id,))
+                    row = cursor.fetchone()
+                    if row and row['is_tanimi']:
+                        is_tanimi = row['is_tanimi']
+            except Exception as e:
+                logger.debug(f"calculate_task_match_score is_tanimi fetch hatası: {e}")
+
+    # Her iki taraf da boşsa → 0 puan
+    if not is_tanimi.strip() or (not task_desc.strip() and not cv_raw.strip()):
+        return {
+            'task_score': 0,
+            'task_matched': [],
+            'task_missing': [],
+            'task_detail': 'is_tanimi veya deneyim_aciklama boş'
+        }
+
+    # is_tanimi'den görev keyword'lerini çıkar
+    # is_tanimi formatı: "Görev1 | Görev2 | Görev3" (pipe-separated)
+    gorev_maddeleri = [g.strip() for g in is_tanimi.split('|') if g.strip()]
+
+    if not gorev_maddeleri:
+        return {
+            'task_score': 0,
+            'task_matched': [],
+            'task_missing': [],
+            'task_detail': 'Görev maddesi bulunamadı'
+        }
+
+    # Aday text'i birleştir (deneyim_aciklama + cv_raw fallback)
+    candidate_text = turkish_lower(f"{task_desc} {cv_raw}")
+
+    # Her görev maddesi için eşleşme kontrolü
+    matched_tasks = []
+    missing_tasks = []
+
+    # Stop words (Türkçe) - genel terimler
+    stop_words = {'bir', 'ile', 'için', 'olan', 'veya', 'gibi',
+                  'daha', 'çok', 'her', 'kadar', 'sonra', 'önce',
+                  'üzere', 'ilgili', 'yönelik', 'uygun', 'gerekli',
+                  'sağlamak', 'yapmak', 'etmek', 'olmak', 'vermek',
+                  'almak', 'bulunmak', 'çalışmak', 'yönetmek',
+                  'koordine', 'takip', 'kontrol'}
+
+    for gorev in gorev_maddeleri:
+        gorev_lower = turkish_lower(gorev)
+        # Görev maddesindeki anlamlı kelimeleri çıkar (3+ karakter)
+        words = [w for w in gorev_lower.split() if len(w) >= 3]
+        meaningful_words = [w for w in words if w not in stop_words]
+
+        if not meaningful_words:
+            continue
+
+        # Kaç anlamlı kelime aday text'inde var?
+        found = sum(1 for w in meaningful_words if w in candidate_text)
+        ratio = found / len(meaningful_words) if meaningful_words else 0
+
+        if ratio >= 0.4:  # %40+ kelime eşleşmesi
+            matched_tasks.append({
+                'gorev': gorev[:80],
+                'ratio': round(ratio, 2)
+            })
+        else:
+            missing_tasks.append(gorev[:80])
+
+    # Puan hesapla
+    total_tasks = len(matched_tasks) + len(missing_tasks)
+    if total_tasks == 0:
+        task_score = 0
+    else:
+        match_ratio = len(matched_tasks) / total_tasks
+        # Ağırlıklı ortalama (eşleşme kalitesi dahil)
+        if matched_tasks:
+            avg_quality = sum(m['ratio'] for m in matched_tasks) / len(matched_tasks)
+        else:
+            avg_quality = 0
+
+        task_score = int(match_ratio * avg_quality * 15)  # max 15 puan
+
+    return {
+        'task_score': min(15, task_score),
+        'task_matched': matched_tasks,
+        'task_missing': missing_tasks,
+        'task_detail': f'{len(matched_tasks)}/{total_tasks} görev eşleşti'
     }
 
 
@@ -740,14 +856,18 @@ def calculate_match_score_v2(
     elimination_result = calculate_elimination_score(
         candidate, position
     )
-    
-    # Toplam puan
+
+    # FAZ C: Task (Görev) eşleşmesi
+    task_result = calculate_task_match_score(candidate, position)
+
+    # Toplam puan (FAZ C: +task_score)
     total = (
-        position_result['position_score'] +
-        technical_result['technical_score'] +
-        general_result['general_score'] +
-        elimination_result['elimination_score']
-    )
+        position_result['position_score'] +      # max 25
+        technical_result['technical_score'] +    # max 40
+        general_result['general_score'] +        # max 20
+        task_result['task_score'] +              # max 15 (YENİ)
+        elimination_result['elimination_score']  # max 10
+    )  # Teorik max: 110, min(100) ile sınırlanacak
     
     # KNOCKOUT kontrolü
     knockout = general_result.get('knockout', False)
@@ -757,7 +877,7 @@ def calculate_match_score_v2(
     # Max 100 ile sınırla
     total = min(total, 100)
     
-    # Sonuç dict'i oluştur
+    # Sonuç dict'i oluştur (FAZ C: +task_result)
     result = {
         'total': int(total),
         'version': 'v2',
@@ -766,6 +886,7 @@ def calculate_match_score_v2(
         **position_result,
         **technical_result,
         **general_result,
+        **task_result,
         **elimination_result
     }
     

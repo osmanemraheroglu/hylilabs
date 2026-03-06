@@ -31,6 +31,27 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - FAZ C: Görev Eşleşmesi Scoring Layer
+1. **5 Katmanlı Puanlama**: Position(25) + Technical(40) + General(20) + Task(15) + Elimination(10)
+2. **calculate_task_match_score()** fonksiyonu (scoring_v2.py:589-698):
+   - CV deneyim_aciklama ↔ pozisyon is_tanimi keyword overlap
+   - Türkçe stop words filtresi
+   - %40+ kelime eşleşmesi threshold
+   - is_tanimi DB'den fetch edilir (position dict'te yoksa)
+   - Max 15 puan, graceful 0 (veri yoksa)
+3. **Puan güncellemeleri**:
+   - Title match: 23/14/7 → 15/10/5 (exact/close/partial)
+   - Technical must_have: 17 → 15
+   - Technical critical MOD A: 10 → 15
+   - Technical critical MOD B: 27 → 30
+   - Simetri: MOD A (15+15+10=40) = MOD B (30+10=40)
+4. **Baseline test güncellemesi** (test_scoring_baseline.py):
+   - 10 test (eski 9 + yeni task_score testi)
+   - EXPECTED_TOTAL: 67 → 63
+   - EXPECTED_POSITION: 14 → 10
+   - EXPECTED_TASK: 0 (is_tanimi boş)
+- Dosyalar: scoring_v2.py, test_scoring_baseline.py
+
 ### 06.03.2026 - FAZ B: Görev Tanımı Upload Endpoint
 1. **POST /{pool_id}/job-description**: Mevcut pozisyona görev tanımı PDF/DOCX yükle
    - gorev_tanimi_raw_text kolonu department_pools'a eklendi

@@ -13,16 +13,23 @@ TEST KURALI (Kural 26 - AAA Pattern):
 - ACT: scoring fonksiyonunu çağır
 - ASSERT: Beklenen puanları doğrula
 
-9 TEST:
+FAZ C GÜNCELLEME (03.2026):
+- Yeni 5 katmanlı sistem: Position(25) + Technical(40) + General(20) + Task(15) + Elimination(10)
+- Title match puanları: 15/10/5 (exact/close/partial)
+- Technical puanları: must_have=15, critical MOD A=15, critical MOD B=30
+- Task puanları: is_tanimi ↔ deneyim_aciklama eşleşmesi (max 15)
+
+10 TEST:
 1. test_candidate_exists - Aday DB'de var mı
 2. test_position_keywords_exist - Pozisyon v2 keyword'leri var mı
 3. test_boubekeur_technical_score_none - company_id=None ile teknik puan
 4. test_boubekeur_technical_score_company1 - company_id=1 ile teknik puan
-5. test_boubekeur_total_score - Toplam puan doğrulama (71)
+5. test_boubekeur_total_score - Toplam puan doğrulama
 6. test_company_id_parameter_exists - check_keyword_match company_id parametresi
 7. test_three_layer_layer1_dict - Katman 1: KEYWORD_SYNONYMS dict
 8. test_three_layer_layer2_db_global - Katman 2: DB global synonym
 9. test_three_layer_layer3_db_company - Katman 3: DB firma synonym
+10. test_task_score_exists - FAZ C: task_score alanı var mı
 """
 
 import sys
@@ -88,17 +95,21 @@ def turkish_lower(text: str) -> str:
 
 
 class TestScoringBaseline:
-    """Scoring v2 baseline testleri - 9 test"""
-    
+    """Scoring v2 baseline testleri - 10 test (FAZ C güncellemesi)"""
+
     # Test sabitleri
     CANDIDATE_ID = 392  # Boubekeur Bouakkaz
     POSITION_ID = 7792  # Bütçe ve Maliyet Kontrol Şefi
-    
-    # Beklenen puanlar (G5 sonrası: scoring_v2.py senkronize edildi)
-    EXPECTED_TOTAL = 67
-    EXPECTED_POSITION = 14
-    EXPECTED_TECHNICAL = 28
-    EXPECTED_GENERAL = 20
+
+    # Beklenen puanlar (FAZ C: 5 katmanlı sistem)
+    # FAZ C değişiklikleri: title 14→10, technical 17→15/10→15/27→30
+    # Task=0 (is_tanimi boş olduğu için)
+    EXPECTED_TOTAL = 63  # 10+28+20+0+5 (FAZ C sonrası)
+    EXPECTED_POSITION = 10  # FAZ C: close match 14→10
+    EXPECTED_TECHNICAL = 28  # Değişmez (MOD A/B değişiklikleri dengeli)
+    EXPECTED_GENERAL = 20  # Değişmez
+    EXPECTED_TASK = 0  # FAZ C: is_tanimi boş → 0
+    EXPECTED_ELIMINATION = 5  # Default
     
     # =========================================================================
     # TEST 1: test_candidate_exists
@@ -177,40 +188,50 @@ class TestScoringBaseline:
         """
         Boubekeur toplam puan doğrulama.
 
-        G5 sonrası: Total=67, Position=14, Technical=28, General=20
+        FAZ C sonrası: Total=63, Position=10, Technical=28, General=20, Task=0, Elimination=5
+        5 Katmanlı sistem: Position(25) + Technical(40) + General(20) + Task(15) + Elimination(10)
         """
         from scoring_v2 import calculate_match_score_v2
-        
+
         candidate = get_candidate_data(self.CANDIDATE_ID)
         position = get_position_data(self.POSITION_ID)
-        
+
         # company_id = 1 (matches tablosundaki değer ile tutarlı)
         candidate['company_id'] = 1
-        
+
         result = calculate_match_score_v2(candidate, position)
-        
+
         # Sonuçları yazdır (debug için)
-        print(f"\n=== SCORING SONUÇLARI ===")
+        print(f"\n=== SCORING SONUÇLARI (FAZ C) ===")
         print(f"Toplam: {result.get('total', 'N/A')}")
         print(f"Pozisyon: {result.get('position_score', 'N/A')}")
         print(f"Teknik: {result.get('technical_score', 'N/A')}")
         print(f"Genel: {result.get('general_score', 'N/A')}")
-        print(f"========================\n")
-        
+        print(f"Task: {result.get('task_score', 'N/A')}")
+        print(f"Elimination: {result.get('elimination_score', 'N/A')}")
+        print(f"Task Detail: {result.get('task_detail', 'N/A')}")
+        print(f"=================================\n")
+
         assert result is not None, "Scoring sonucu None döndü"
         assert result.get('version') == 'v2', "Scoring versiyonu v2 olmalı"
-        
+
+        # FAZ C: task_score alanı mevcut olmalı
+        assert 'task_score' in result, "FAZ C: task_score alanı eksik"
+
         assert result.get('total') == self.EXPECTED_TOTAL, \
             f"Toplam puan eşleşmiyor: Beklenen={self.EXPECTED_TOTAL}, Gerçek={result.get('total')}"
-        
+
         assert result.get('position_score') == self.EXPECTED_POSITION, \
             f"Pozisyon puanı eşleşmiyor: Beklenen={self.EXPECTED_POSITION}, Gerçek={result.get('position_score')}"
-        
+
         assert result.get('technical_score') == self.EXPECTED_TECHNICAL, \
             f"Teknik puan eşleşmiyor: Beklenen={self.EXPECTED_TECHNICAL}, Gerçek={result.get('technical_score')}"
-        
+
         assert result.get('general_score') == self.EXPECTED_GENERAL, \
             f"Genel puan eşleşmiyor: Beklenen={self.EXPECTED_GENERAL}, Gerçek={result.get('general_score')}"
+
+        assert result.get('task_score') == self.EXPECTED_TASK, \
+            f"Task puanı eşleşmiyor: Beklenen={self.EXPECTED_TASK}, Gerçek={result.get('task_score')}"
     
     # =========================================================================
     # TEST 6: test_company_id_parameter_exists
@@ -307,6 +328,31 @@ class TestScoringBaseline:
         
         assert found_1 == True, "Katman 3 (DB firma) eşleşmesi bulunamadı: s4hana -> erp (company_id=1)"
         assert found_none == False, "company_id=None ile firma synonym'u bulunmamalı"
+
+    # =========================================================================
+    # TEST 10: test_task_score_exists (FAZ C)
+    # =========================================================================
+    def test_task_score_exists(self):
+        """FAZ C: task_score alanının varlığı ve yapısı"""
+        from scoring_v2 import calculate_task_match_score
+
+        candidate = get_candidate_data(self.CANDIDATE_ID)
+        position = get_position_data(self.POSITION_ID)
+
+        result = calculate_task_match_score(candidate, position)
+
+        # Zorunlu alanlar
+        assert 'task_score' in result, "task_score alanı eksik"
+        assert 'task_matched' in result, "task_matched alanı eksik"
+        assert 'task_missing' in result, "task_missing alanı eksik"
+        assert 'task_detail' in result, "task_detail alanı eksik"
+
+        # Puan sınırları (max 15)
+        assert 0 <= result['task_score'] <= 15, f"task_score 0-15 aralığında olmalı: {result['task_score']}"
+
+        # Liste tipleri
+        assert isinstance(result['task_matched'], list), "task_matched liste olmalı"
+        assert isinstance(result['task_missing'], list), "task_missing liste olmalı"
 
 
 if __name__ == '__main__':
