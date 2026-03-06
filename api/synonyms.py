@@ -22,6 +22,7 @@ from database import (
     reject_synonyms,
     save_generated_synonyms,
     get_approved_synonym_count,
+    get_rejected_synonyms,  # G7: Rejected synonym filtresi
     log_api_usage,
     get_reject_stats,
     get_blacklist_candidates,
@@ -272,28 +273,34 @@ SYNONYM_PROMPT_BATCH_V2 = """Sen İK alanında TEKNIK BECERİ uzmanisin.
 Verilen keyword'ler için SADECE teknik/mesleki synonym öner.
 
 Keywords: {keywords}
-
+{rejected_section}
 YASAK ÖNERILER (ASLA ÜRETMEYECEKSİN):
 - Soft skills: iletişim, liderlik, takım çalışması, problem çözme
 - Kişilik özellikleri: dinamik, titiz, proaktif, özgüvenli
 - Genel terimler: deneyim, bilgi, beceri, yetenek, proje, görev
 
 KULLANILABILIR SYNONYM TIPLERI (6 tip):
-1. "abbreviation" - Kısaltma: cad → autocad, js → javascript
-2. "english" - İngilizce çeviri: bakım → maintenance
-3. "turkish" - Türkçe çeviri: maintenance → bakım
-4. "exact_synonym" - Birebir eş anlamlı: hızlı = çabuk, yazılım = software
-5. "broader_term" - Üst kavram: python → programlama dili, react → frontend
+1. "abbreviation" - Kısaltma/tam yazılış: PLC → programmable logic controller, MS Project → Microsoft Project, SCADA → supervisory control and data acquisition
+2. "english" - İngilizce çeviri: bakım → maintenance, otomasyon → automation
+3. "turkish" - Türkçe çeviri: maintenance → bakım, automation → otomasyon
+4. "exact_synonym" - Birebir eş anlamlı: yazılım = software, bilgisayar = computer
+5. "broader_term" - Üst kavram: python → programlama dili, react → frontend framework
 6. "narrower_term" - Alt kavram: programlama → python, veritabanı → mysql
 
-Kurallar:
-1. Her keyword için MAX 3 synonym
-2. Her öneriye 0.0-1.0 arası confidence puanı ver
-3. Sadece 0.7+ confidence olanları dahil et
-4. Keyword'ün kendisini EKLEME
-5. exact_synonym için %100 eş anlamlı olmalı (en yüksek güvenilirlik)
-6. broader_term: keyword'ün dahil olduğu daha geniş kategori
-7. narrower_term: keyword'ün altında kalan daha spesifik terim
+ZORUNLU KURALLAR:
+1. Her keyword için MİNİMUM 2, MAKSİMUM 5 synonym üret
+2. Her keyword için EN AZ BİR "english" VEYA "turkish" çeviri ZORUNLU
+3. Kısaltmalar için hem kısa hem uzun form üret (PLC ↔ programmable logic controller)
+4. Her öneriye 0.0-1.0 arası confidence puanı ver
+5. Sadece 0.7+ confidence olanları dahil et
+6. Keyword'ün kendisini EKLEME
+7. exact_synonym için %100 eş anlamlı olmalı (en yüksek güvenilirlik)
+
+ÖRNEKLER:
+- "otomasyon" → ["automation", "endüstriyel otomasyon", "industrial automation", "otomasyon sistemi"]
+- "SCADA" → ["supervisory control", "izleme kontrol sistemi", "scada sistemi", "kontrol ve veri toplama"]
+- "MS Project" → ["Microsoft Project", "project management software", "proje yönetim yazılımı"]
+- "PLC" → ["programmable logic controller", "plc programlama", "endüstriyel kontrol"]
 
 JSON formatı:
 {{
@@ -302,7 +309,8 @@ JSON formatı:
       "keyword": "python",
       "synonyms": [
         {{"synonym": "py", "synonym_type": "abbreviation", "confidence": 0.95}},
-        {{"synonym": "programlama dili", "synonym_type": "broader_term", "confidence": 0.80}}
+        {{"synonym": "programlama dili", "synonym_type": "broader_term", "confidence": 0.80}},
+        {{"synonym": "python programlama", "synonym_type": "exact_synonym", "confidence": 0.85}}
       ]
     }}
   ]
@@ -312,28 +320,33 @@ SYNONYM_PROMPT_SINGLE_V2 = """Sen İK alanında TEKNIK BECERİ uzmanisin.
 Verilen keyword için SADECE teknik/mesleki synonym öner.
 
 Keyword: {keyword}
-
+{rejected_section}
 YASAK ÖNERILER (ASLA ÜRETMEYECEKSİN):
 - Soft skills: iletişim, liderlik, takım çalışması, problem çözme
 - Kişilik özellikleri: dinamik, titiz, proaktif, özgüvenli
 - Genel terimler: deneyim, bilgi, beceri, yetenek, proje, görev
 
 KULLANILABILIR SYNONYM TIPLERI (6 tip):
-1. "abbreviation" - Kısaltma: cad → autocad, js → javascript
-2. "english" - İngilizce çeviri: bakım → maintenance
-3. "turkish" - Türkçe çeviri: maintenance → bakım
-4. "exact_synonym" - Birebir eş anlamlı: hızlı = çabuk, yazılım = software
-5. "broader_term" - Üst kavram: python → programlama dili, react → frontend
+1. "abbreviation" - Kısaltma/tam yazılış: PLC → programmable logic controller, MS Project → Microsoft Project, SCADA → supervisory control and data acquisition
+2. "english" - İngilizce çeviri: bakım → maintenance, otomasyon → automation
+3. "turkish" - Türkçe çeviri: maintenance → bakım, automation → otomasyon
+4. "exact_synonym" - Birebir eş anlamlı: yazılım = software, bilgisayar = computer
+5. "broader_term" - Üst kavram: python → programlama dili, react → frontend framework
 6. "narrower_term" - Alt kavram: programlama → python, veritabanı → mysql
 
-Kurallar:
-1. MAX 3 synonym öner
-2. Her öneriye 0.0-1.0 arası confidence puanı ver
-3. Sadece 0.7+ confidence olanları dahil et
-4. Keyword'ün kendisini EKLEME
-5. exact_synonym için %100 eş anlamlı olmalı (en yüksek güvenilirlik)
-6. broader_term: keyword'ün dahil olduğu daha geniş kategori
-7. narrower_term: keyword'ün altında kalan daha spesifik terim
+ZORUNLU KURALLAR:
+1. MİNİMUM 2, MAKSİMUM 5 synonym üret
+2. EN AZ BİR "english" VEYA "turkish" çeviri ZORUNLU
+3. Kısaltmalar için hem kısa hem uzun form üret (PLC ↔ programmable logic controller)
+4. Her öneriye 0.0-1.0 arası confidence puanı ver
+5. Sadece 0.7+ confidence olanları dahil et
+6. Keyword'ün kendisini EKLEME
+7. exact_synonym için %100 eş anlamlı olmalı (en yüksek güvenilirlik)
+
+ÖRNEKLER:
+- "otomasyon" → ["automation", "endüstriyel otomasyon", "industrial automation", "otomasyon sistemi"]
+- "SCADA" → ["supervisory control", "izleme kontrol sistemi", "scada sistemi"]
+- "MS Project" → ["Microsoft Project", "project management software", "proje yönetim yazılımı"]
 
 JSON formatı:
 {{
@@ -960,8 +973,18 @@ def _generate_synonyms_batch_internal(
             "message": "ANTHROPIC_API_KEY ayarlanmamış"
         }
 
-    # Batch prompt v2 - Kalite sistemi ile
-    prompt = SYNONYM_PROMPT_BATCH_V2.format(keywords=json.dumps(keywords, ensure_ascii=False))
+    # G7: Rejected synonym'leri DB'den çek ve prompt'a inject et
+    rejected_list = get_rejected_synonyms(keywords, company_id)
+    if rejected_list:
+        rejected_section = f"\nREJECTED (BU SYNONYMLERİ TEKRAR ÖNERME): {json.dumps(rejected_list, ensure_ascii=False)}\n"
+    else:
+        rejected_section = ""
+
+    # Batch prompt v2 - Kalite sistemi ile + G7 rejected filter
+    prompt = SYNONYM_PROMPT_BATCH_V2.format(
+        keywords=json.dumps(keywords, ensure_ascii=False),
+        rejected_section=rejected_section
+    )
 
     start_time = time.time()
     total_generated = 0
@@ -1174,8 +1197,15 @@ def generate_synonyms(
                 detail="ANTHROPIC_API_KEY ayarlanmamış"
             )
 
-        # Claude prompt v2 - Kalite sistemi ile
-        prompt = SYNONYM_PROMPT_SINGLE_V2.format(keyword=keyword)
+        # G7: Rejected synonym'leri DB'den çek ve prompt'a inject et
+        rejected_list = get_rejected_synonyms([keyword], company_id)
+        if rejected_list:
+            rejected_section = f"\nREJECTED (BU SYNONYMLERİ TEKRAR ÖNERME): {json.dumps(rejected_list, ensure_ascii=False)}\n"
+        else:
+            rejected_section = ""
+
+        # Claude prompt v2 - Kalite sistemi ile + G7 rejected filter
+        prompt = SYNONYM_PROMPT_SINGLE_V2.format(keyword=keyword, rejected_section=rejected_section)
 
         # Claude API çağrısı
         client = anthropic.Anthropic(api_key=api_key, timeout=60.0)

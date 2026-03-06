@@ -2304,6 +2304,53 @@ def get_approved_synonym_count(keyword: str, company_id: int = None) -> int:
         return 0
 
 
+def get_rejected_synonyms(keywords: list, company_id: int = None) -> list:
+    """
+    G7: Verilen keyword'ler için reddedilmiş synonym'leri döndür.
+
+    AI synonym generation'da tekrar önermemesi için rejected listesi çekilir.
+
+    Args:
+        keywords: Keyword listesi
+        company_id: Firma ID (None = sadece global)
+
+    Returns:
+        Reddedilmiş synonym listesi (unique)
+    """
+    if not keywords:
+        return []
+
+    rejected = set()
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            placeholders = ','.join(['?' for _ in keywords])
+            keywords_lower = [turkish_lower(k.strip()) for k in keywords]
+
+            if company_id:
+                cursor.execute(f"""
+                    SELECT DISTINCT synonym FROM keyword_synonyms
+                    WHERE keyword IN ({placeholders})
+                      AND status = 'rejected'
+                      AND (company_id IS NULL OR company_id = ?)
+                """, (*keywords_lower, company_id))
+            else:
+                cursor.execute(f"""
+                    SELECT DISTINCT synonym FROM keyword_synonyms
+                    WHERE keyword IN ({placeholders})
+                      AND status = 'rejected'
+                      AND company_id IS NULL
+                """, keywords_lower)
+
+            for row in cursor.fetchall():
+                rejected.add(row[0])
+
+    except Exception as e:
+        logger.warning(f"get_rejected_synonyms hatası: {e}")
+
+    return list(rejected)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # FAZ 7.3: KEYWORD USAGE COUNT SİSTEMİ
 # Pozisyon oluşturulunca +1, silinince -1
