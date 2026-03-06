@@ -104,9 +104,9 @@ class TestScoringBaseline:
     # Beklenen puanlar (FAZ C: 5 katmanlı sistem)
     # FAZ C değişiklikleri: title 14→10, technical 17→15/10→15/27→30
     # Task=0 (is_tanimi boş olduğu için)
-    EXPECTED_TOTAL = 63  # 10+28+20+0+5 (FAZ C sonrası)
+    EXPECTED_TOTAL = 65  # 10+30+20+0+5 (FAZ C sonrası)
     EXPECTED_POSITION = 10  # FAZ C: close match 14→10
-    EXPECTED_TECHNICAL = 28  # Değişmez (MOD A/B değişiklikleri dengeli)
+    EXPECTED_TECHNICAL = 30  # FAZ C: MOD A/B değişiklikleri (+2)
     EXPECTED_GENERAL = 20  # Değişmez
     EXPECTED_TASK = 0  # FAZ C: is_tanimi boş → 0
     EXPECTED_ELIMINATION = 5  # Default
@@ -188,7 +188,7 @@ class TestScoringBaseline:
         """
         Boubekeur toplam puan doğrulama.
 
-        FAZ C sonrası: Total=63, Position=10, Technical=28, General=20, Task=0, Elimination=5
+        FAZ C sonrası: Total=65, Position=10, Technical=30, General=20, Task=0, Elimination=5
         5 Katmanlı sistem: Position(25) + Technical(40) + General(20) + Task(15) + Elimination(10)
         """
         from scoring_v2 import calculate_match_score_v2

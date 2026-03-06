@@ -47,8 +47,9 @@ Son guncelleme: 06.03.2026
    - Simetri: MOD A (15+15+10=40) = MOD B (30+10=40)
 4. **Baseline test güncellemesi** (test_scoring_baseline.py):
    - 10 test (eski 9 + yeni task_score testi)
-   - EXPECTED_TOTAL: 67 → 63
+   - EXPECTED_TOTAL: 67 → 65
    - EXPECTED_POSITION: 14 → 10
+   - EXPECTED_TECHNICAL: 28 → 30
    - EXPECTED_TASK: 0 (is_tanimi boş)
 - Dosyalar: scoring_v2.py, test_scoring_baseline.py
 
