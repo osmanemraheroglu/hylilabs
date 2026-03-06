@@ -1596,6 +1596,12 @@ def init_database():
                 description TEXT,
                 is_system INTEGER DEFAULT 0,
                 is_active INTEGER DEFAULT 1,
+                gerekli_deneyim_yil REAL DEFAULT 0,
+                gerekli_egitim TEXT DEFAULT '',
+                lokasyon TEXT DEFAULT '',
+                aranan_nitelikler TEXT,
+                is_tanimi TEXT,
+                gorev_tanimi_raw_text TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (company_id) REFERENCES companies(id),
@@ -1740,6 +1746,12 @@ def init_database():
 
         try:
             cursor.execute("ALTER TABLE department_pools ADD COLUMN is_tanimi TEXT")
+        except sqlite3.OperationalError:
+            pass  # Kolon zaten var
+
+        # Department pools migration: gorev_tanimi_raw_text kolonu ekle (FAZ B - 06.03.2026)
+        try:
+            cursor.execute("ALTER TABLE department_pools ADD COLUMN gorev_tanimi_raw_text TEXT")
         except sqlite3.OperationalError:
             pass  # Kolon zaten var
 
@@ -7037,7 +7049,8 @@ def update_department_pool(pool_id: int, company_id: int = None, **fields) -> bo
         fields['keywords'] = json.dumps(fields['keywords'], ensure_ascii=False)
 
     allowed = ['name', 'icon', 'keywords', 'description', 'is_active', 'parent_id', 'pool_type',
-               'gerekli_deneyim_yil', 'gerekli_egitim', 'lokasyon']
+               'gerekli_deneyim_yil', 'gerekli_egitim', 'lokasyon',
+               'aranan_nitelikler', 'is_tanimi', 'gorev_tanimi_raw_text']
     updates = {k: v for k, v in fields.items() if k in allowed}
 
     if not updates:

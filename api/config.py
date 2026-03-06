@@ -37,6 +37,9 @@ DATABASE_PATH = DATA_DIR / "talentflow.db"
 CV_STORAGE_PATH = DATA_DIR / "cvs"
 SAVE_CV_FILES = True  # Orijinal CV dosyalarini sakla
 
+# Görev tanımı dosyaları (FAZ B - 06.03.2026)
+JD_STORAGE_PATH = DATA_DIR / "job_descriptions"
+
 # Claude API
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL = "claude-sonnet-4-20250514"

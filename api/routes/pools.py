@@ -1663,3 +1663,387 @@ def rescore_candidate(pool_id: int, candidate_id: int, current_user: dict = Depe
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FAZ B: GÖREV TANIMI UPLOAD (06.03.2026)
+# Mevcut pozisyona görev tanımı PDF/DOCX yükleyerek keyword zenginleştirme
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def save_job_description_file(content: bytes, filename: str,
+                               company_id: int, pool_id: int) -> str:
+    """Görev tanımı dosyasını kaydet"""
+    from config import JD_STORAGE_PATH
+    import os
+
+    jd_dir = JD_STORAGE_PATH / str(company_id)
+    jd_dir.mkdir(parents=True, exist_ok=True)
+
+    # Güvenlik: path traversal koruması
+    safe_filename = os.path.basename(filename)
+    file_path = jd_dir / f"{pool_id}_{safe_filename}"
+
+    with open(file_path, 'wb') as f:
+        f.write(content)
+
+    return str(file_path)
+
+
+def parse_job_description_with_ai(raw_text: str, pozisyon_adi: str,
+                                   mevcut_keywords: list) -> dict:
+    """Görev tanımı dökümanını AI ile parse et"""
+    import anthropic
+    import os
+    import re
+
+    client = anthropic.Anthropic(
+        api_key=os.environ.get('ANTHROPIC_API_KEY'),
+        timeout=60.0
+    )
+
+    mevcut_kw_str = ", ".join(mevcut_keywords) if mevcut_keywords else "Yok"
+
+    prompt = f"""Bu doküman bir şirket içi görev tanımı belgesidir.
+Formatı ne olursa olsun aşağıdaki bilgileri çıkar.
+SADECE JSON döndür, başka hiçbir şey yazma.
+
+Pozisyon Adı (referans): {pozisyon_adi}
+Mevcut Keyword'ler (TEKRAR ÖNERME): {mevcut_kw_str}
+
+Doküman:
+{raw_text[:4000]}
+
+JSON formatı:
+{{
+  "pozisyon_basligi": "Dokümandaki pozisyon başlığı",
+  "genel_amac": "Görevin genel amacı/özeti (1-3 cümle)",
+  "gorevler": [
+    "Görev/sorumluluk maddesi 1",
+    "Görev/sorumluluk maddesi 2"
+  ],
+  "gerekli_nitelikler": {{
+    "egitim": "Gerekli eğitim seviyesi ve alan",
+    "deneyim_yil": 0,
+    "yoneticilik_yil": 0,
+    "yabanci_dil": "Dil ve seviye",
+    "araclar": ["Araç1", "Araç2", "Sertifika1"]
+  }},
+  "organizasyon": {{
+    "ust_yonetici": "Bağlı olduğu pozisyon",
+    "astlar": ["Ast pozisyon1"],
+    "seviye": "Direktör/Müdür/Şef/Uzman/Mühendis/Tekniker"
+  }},
+  "ek_keywordler": {{
+    "must_have": ["ZORUNLU araçlar/beceriler - yukarıdaki mevcut listede OLMAYAN"],
+    "critical": ["Görevlerden çıkarılan teknik terimler - mevcut listede OLMAYAN"],
+    "important": ["Önemli ama zorunlu olmayan - mevcut listede OLMAYAN"]
+  }},
+  "ek_titlelar": {{
+    "exact": ["Pozisyon başlığının TR ve EN karşılıkları"],
+    "close": ["Benzer pozisyon başlıkları (TR+EN, max 6)"]
+  }}
+}}
+
+KURALLAR:
+1. gorevler: "Kalite/Çevre/İSG uyum" ve "Yöneticisinin vereceği görevler" maddelerini ATLA
+2. ek_keywordler: SADECE mevcut keyword listesinde OLMAYAN yeni keyword'ler
+   Genel terimler KOYMA (yönetim, takip, kontrol, proje, iletişim gibi)
+   Teknik araç, yazılım, sertifika, sektör terimleri KOY
+3. gerekli_nitelikler.araclar: Yazılım ve araç adlarını çıkar (ERP, SAP, AutoCAD gibi)
+4. deneyim_yil: Sayısal değer ("minimum 8 yıl" → 8, belirtilmemişse 0)
+5. seviye: Ast varsa yönetici seviyesi, yoksa uzman/mühendis
+6. Türkçe keyword varsa İngilizce karşılığını da ek_keywordler'e ekle
+7. ek_titlelar.exact: Hem Türkçe hem İngilizce ZORUNLU
+"""
+
+    try:
+        message = client.messages.create(
+            model=os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-20250514"),
+            max_tokens=1500,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        response_text = message.content[0].text
+        response_text = re.sub(r'```json\s*', '', response_text)
+        response_text = re.sub(r'```\s*', '', response_text)
+        result = json.loads(response_text.strip())
+        return result
+
+    except Exception as e:
+        print(f"[job-description] AI parse hatası: {e}")
+        return None
+
+
+def save_job_description_results(pool_id: int, company_id: int,
+                                  parsed: dict, raw_text: str) -> int:
+    """Görev tanımı parse sonuçlarını DB'ye kaydet (MERGE)"""
+
+    ek_keyword_sayisi = 0
+
+    # 1. department_pools güncelle
+    gorevler = parsed.get("gorevler", [])
+    is_tanimi_text = " | ".join(gorevler) if gorevler else ""
+
+    nitelikler = parsed.get("gerekli_nitelikler", {})
+    aranan_text = json.dumps(nitelikler, ensure_ascii=False) if nitelikler else ""
+
+    update_department_pool(pool_id, company_id,
+        aranan_nitelikler=aranan_text,
+        is_tanimi=is_tanimi_text,
+        gorev_tanimi_raw_text=raw_text
+    )
+
+    # 2. position_keywords_v2'ye MERGE (additive)
+    ek_keywords = parsed.get("ek_keywordler", {})
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+
+        for category, keyword_list in ek_keywords.items():
+            if category not in ('must_have', 'critical', 'important'):
+                continue
+
+            # must_have → DB'de category='critical', priority='must_have'
+            db_category = category
+            db_priority = None
+            if category == 'must_have':
+                db_category = 'critical'
+                db_priority = 'must_have'
+
+            for keyword in (keyword_list or []):
+                keyword = keyword.strip()
+                if not keyword:
+                    continue
+
+                # Blacklist kontrolü
+                if keyword.lower() in KEYWORD_BLACKLIST:
+                    continue
+
+                # Duplicate kontrolü (case-insensitive)
+                cursor.execute("""
+                    SELECT id FROM position_keywords_v2
+                    WHERE position_id = ? AND LOWER(keyword) = LOWER(?)
+                """, (pool_id, keyword))
+
+                if cursor.fetchone():
+                    continue  # Zaten var — atla
+
+                # Yeni keyword ekle
+                cursor.execute("""
+                    INSERT INTO position_keywords_v2
+                    (position_id, keyword, category, priority, source)
+                    VALUES (?, ?, ?, ?, 'job_description')
+                """, (pool_id, keyword, db_category, db_priority))
+                ek_keyword_sayisi += 1
+
+        conn.commit()
+
+    # 3. Yeni title'lar PENDING olarak ekle
+    ek_titlelar = parsed.get("ek_titlelar", {})
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+
+        for match_level, title_list in ek_titlelar.items():
+            if match_level not in ('exact', 'close'):
+                continue
+
+            for title in (title_list or []):
+                title = title.strip()
+                if not title:
+                    continue
+
+                # Duplicate kontrolü
+                cursor.execute("""
+                    SELECT id FROM position_title_mappings
+                    WHERE position_id = ? AND LOWER(related_title) = LOWER(?)
+                """, (pool_id, title))
+
+                if cursor.fetchone():
+                    continue
+
+                # Pending olarak ekle
+                cursor.execute("""
+                    INSERT INTO position_title_mappings
+                    (position_id, related_title, match_level, source, approved, created_at)
+                    VALUES (?, ?, ?, 'job_description', 0, datetime('now'))
+                """, (pool_id, title, match_level))
+
+        conn.commit()
+
+    return ek_keyword_sayisi
+
+
+def rescore_position_candidates(pool_id: int, company_id: int) -> int:
+    """Pozisyondaki mevcut adayları yeniden puanla (G8 benzeri)"""
+    from scoring_v2 import calculate_match_score_v2
+    import json as json_lib
+
+    rescore_count = 0
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+
+        # Pozisyon dict
+        cursor.execute("""
+            SELECT name, gerekli_deneyim_yil, gerekli_egitim, lokasyon
+            FROM department_pools WHERE id = ?
+        """, (pool_id,))
+        pos = cursor.fetchone()
+        if not pos:
+            return 0
+
+        cursor.execute("""
+            SELECT keyword, category FROM position_keywords_v2
+            WHERE position_id = ?
+        """, (pool_id,))
+        kws = cursor.fetchall()
+
+        position_dict = {
+            'id': pool_id,
+            'baslik': pos[0],
+            'name': pos[0],
+            'gerekli_deneyim_yil': pos[1] or 0,
+            'gerekli_egitim': pos[2] or '',
+            'lokasyon': pos[3] or '',
+            'keywords': {},
+            'company_id': company_id
+        }
+        for kw, cat in kws:
+            position_dict['keywords'].setdefault(cat, []).append(kw)
+
+        # Mevcut adaylar
+        cursor.execute("""
+            SELECT candidate_id FROM candidate_positions
+            WHERE position_id = ?
+        """, (pool_id,))
+        cids = [r[0] for r in cursor.fetchall()]
+
+        for cid in cids:
+            cursor.execute("""
+                SELECT id, ad_soyad, teknik_beceriler, mevcut_pozisyon,
+                       deneyim_detay, toplam_deneyim_yil, egitim, lokasyon,
+                       mevcut_sirket, cv_raw_text, diller, sertifikalar,
+                       deneyim_aciklama
+                FROM candidates WHERE id = ?
+            """, (cid,))
+            r = cursor.fetchone()
+            if not r:
+                continue
+
+            candidate_dict = {
+                'id': r[0], 'ad_soyad': r[1],
+                'teknik_beceriler': r[2] or '',
+                'mevcut_pozisyon': r[3] or '',
+                'deneyim_detay': r[4] or '',
+                'toplam_deneyim_yil': r[5] or 0,
+                'egitim': r[6] or '',
+                'lokasyon': r[7] or '',
+                'mevcut_sirket': r[8] or '',
+                'cv_raw_text': r[9] or '',
+                'diller': r[10] or '',
+                'sertifikalar': r[11] or '',
+                'deneyim_aciklama': r[12] or '',
+                'company_id': company_id
+            }
+
+            v2_result = calculate_match_score_v2(candidate_dict, position_dict)
+            if v2_result:
+                new_score = v2_result.get('total', 0)
+                cursor.execute("""
+                    UPDATE matches SET uyum_puani = ?, detayli_analiz = ?
+                    WHERE candidate_id = ? AND position_id = ?
+                """, (new_score, json_lib.dumps(v2_result, ensure_ascii=False),
+                      cid, pool_id))
+                cursor.execute("""
+                    UPDATE candidate_positions SET match_score = ?
+                    WHERE candidate_id = ? AND position_id = ?
+                """, (new_score, cid, pool_id))
+                rescore_count += 1
+
+        conn.commit()
+
+    return rescore_count
+
+
+@router.post("/{pool_id}/job-description")
+async def upload_job_description(
+    pool_id: int,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Mevcut pozisyona görev tanımı PDF/DOCX yükle.
+    Görev tanımından ek keyword'ler çıkarır ve pozisyonu zenginleştirir."""
+
+    company_id = current_user.get("company_id")
+    if not company_id:
+        raise HTTPException(status_code=403, detail="Firma bilgisi bulunamadı")
+
+    # 1. Sahiplik kontrolü
+    if not verify_department_pool_ownership(pool_id, company_id):
+        raise HTTPException(status_code=403, detail="Bu pozisyona erişim yetkiniz yok")
+
+    # 2. Dosya uzantı kontrolü
+    from config import SUPPORTED_EXTENSIONS
+    import os
+    ext = os.path.splitext(file.filename)[1].lower() if file.filename else ""
+    if ext not in SUPPORTED_EXTENSIONS:
+        raise HTTPException(status_code=400,
+            detail=f"Desteklenmeyen dosya formatı. Desteklenen: {', '.join(SUPPORTED_EXTENSIONS)}")
+
+    # 3. Dosyayı oku
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Dosya boş")
+
+    # 4. Text çıkar (mevcut fonksiyon)
+    from core.cv_parser import extract_text_from_file
+    raw_text = extract_text_from_file(content, file.filename)
+
+    if not raw_text or len(raw_text.strip()) < 50:
+        raise HTTPException(status_code=400,
+            detail="Görev tanımı metni çıkarılamadı veya çok kısa")
+
+    # 5. Dosyayı kaydet
+    file_path = save_job_description_file(content, file.filename,
+                                           company_id, pool_id)
+
+    # 6. Mevcut keyword'leri al (AI'a duplicate önleme için)
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT keyword FROM position_keywords_v2
+            WHERE position_id = ?
+        """, (pool_id,))
+        mevcut_keywords = [r[0] for r in cursor.fetchall()]
+
+        cursor.execute("SELECT name FROM department_pools WHERE id = ?", (pool_id,))
+        pos_row = cursor.fetchone()
+        pozisyon_adi = pos_row[0] if pos_row else ""
+
+    # 7. AI ile görev tanımı parse
+    parsed = parse_job_description_with_ai(raw_text, pozisyon_adi, mevcut_keywords)
+
+    if not parsed:
+        raise HTTPException(status_code=500,
+            detail="Görev tanımı parse edilemedi")
+
+    # 8. Sonuçları DB'ye kaydet
+    ek_keyword_sayisi = save_job_description_results(
+        pool_id, company_id, parsed, raw_text)
+
+    # 9. Mevcut adayları rescore (arka planda)
+    rescore_count = 0
+    try:
+        rescore_count = rescore_position_candidates(pool_id, company_id)
+    except Exception as e:
+        print(f"[job-description] Rescore hatası (devam ediliyor): {e}")
+
+    return {
+        "success": True,
+        "pozisyon_basligi": parsed.get("pozisyon_basligi", ""),
+        "gorev_sayisi": len(parsed.get("gorevler", [])),
+        "ek_keyword_sayisi": ek_keyword_sayisi,
+        "rescore_sayisi": rescore_count,
+        "dosya_yolu": file_path
+    }
