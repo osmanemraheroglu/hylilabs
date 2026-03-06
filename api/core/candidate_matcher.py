@@ -1603,6 +1603,10 @@ def calculate_match_score_keyword(candidate: dict, position: dict) -> dict:
     cand_exp_years = candidate.get('toplam_deneyim_yil', 0) or getattr(candidate, 'toplam_deneyim_yil', 0) or 0
     cand_location = candidate.get('lokasyon', '') or getattr(candidate, 'lokasyon', '') or ''
     cand_education = candidate.get('egitim', '') or getattr(candidate, 'egitim', '') or ''
+    # A4: Diller, sertifikalar ve görev açıklamaları
+    languages = candidate.get('diller', '') or getattr(candidate, 'diller', '') or ''
+    certificates = candidate.get('sertifikalar', '') or getattr(candidate, 'sertifikalar', '') or ''
+    task_descriptions = candidate.get('deneyim_aciklama', '') or getattr(candidate, 'deneyim_aciklama', '') or ''
 
     # Pozisyon bilgilerini al
     pos_title = (
@@ -1632,7 +1636,8 @@ def calculate_match_score_keyword(candidate: dict, position: dict) -> dict:
     # Aranacak metin (Türkçe normalize)
     # skills'i de ekle - keyword eşleştirme için kritik
     # skills en önemli alan, mutlaka eklenmeli
-    search_text = turkish_lower(' '.join(filter(None, [cv_text, skills, experience, current_pos])))
+    # A4: diller, sertifikalar, deneyim_aciklama da dahil (6 alan)
+    search_text = turkish_lower(' '.join(filter(None, [cv_text, skills, experience, current_pos, languages, certificates, task_descriptions])))
     
 
     # 1. Anahtar kelime eşleşmesi (40 puan)

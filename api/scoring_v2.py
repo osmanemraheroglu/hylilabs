@@ -387,9 +387,13 @@ def calculate_technical_score(
     skills = safe_get(candidate, 'teknik_beceriler', '') or ''
     cv_text = safe_get(candidate, 'cv_raw_text', '') or ''
     experience_detail = safe_get(candidate, 'deneyim_detay', '') or ''
-    
-    # Search text oluştur
-    search_text = turkish_lower(f"{skills} {cv_text} {experience_detail}")
+    # A4: Diller, sertifikalar ve görev açıklamaları da dahil et
+    languages = safe_get(candidate, 'diller', '') or ''
+    certificates = safe_get(candidate, 'sertifikalar', '') or ''
+    task_descriptions = safe_get(candidate, 'deneyim_aciklama', '') or ''
+
+    # Search text oluştur (A4: 3 alan → 6 alan)
+    search_text = turkish_lower(f"{skills} {cv_text} {experience_detail} {languages} {certificates} {task_descriptions}")
     skills_original = skills
     
     # Must-have keyword'ler (MOD A: varsa)
