@@ -41,6 +41,14 @@ Son guncelleme: 06.03.2026
 - Aday bilgileri onay anında candidates tablosundan çekilip kaydediliyor
 - Değişen dosyalar: api/routes/interviews.py, api/database.py
 
+### 06.03.2026 - G6 Must-Have=0 Otomatik Düzeltme Guard Mekanizması
+- save_categorized_data() fonksiyonuna G6 Guard eklendi
+- AI must_have boş döndürürse: critical'den ilk 3 keyword must_have'e transfer
+- Transfer edilen keyword'ler critical listesinden çıkarılıyor (duplicate önleme)
+- Her iki scoring_v2.py dosyası senkronize edildi (api/ ve api/core/)
+- 45/45 test başarılı
+- Değişen dosyalar: api/core/scoring_v2.py, api/scoring_v2.py
+
 ### 06.03.2026 - G5 Must-Have Ceza Kaldırma + Prompt İyileştirme
 - must_have ceza formülü kaldırıldı: `must_have_score = max(0, score - missing*4)` → `must_have_score = int(weighted_ratio * 17)`
 - AI keyword prompt güncellendi: must_have artık ilandaki "zorunlu/şart/gerekli" ifadelerden alınıyor
