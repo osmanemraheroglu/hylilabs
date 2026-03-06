@@ -818,7 +818,10 @@ def save_parsed_position(data: dict, current_user: dict = Depends(get_current_us
             "gerekli_deneyim_yil": float(data.get("deneyim_yil", 0) or 0),
             "gerekli_egitim": data.get("egitim_seviyesi", ""),
             "lokasyon": data.get("lokasyon", ""),
-            "company_id": company_id
+            "company_id": company_id,
+            # Sorun 2 Fix: aranan_nitelikler ve is_tanimi eklendi
+            "aranan_nitelikler": data.get("aranan_nitelikler"),
+            "is_tanimi": data.get("is_tanimi"),
         }
         print(f"[save-parsed] Creating pool with data: {pool_data}")
 

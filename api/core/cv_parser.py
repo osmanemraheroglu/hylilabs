@@ -1113,7 +1113,15 @@ def parse_cv(content: bytes, filename: str, user_id: str = "system") -> CVParseR
         tum_beceriler.extend(beceriler.get("teknik", []))
         tum_beceriler.extend(beceriler.get("yazilim", []))
         tum_beceriler.extend(beceriler.get("diger", []))
-        teknik_beceriler = ", ".join(tum_beceriler) if tum_beceriler else None
+        # Sorun 3 Fix: Duplicate becerileri kaldır (sırayı koru, case-insensitive)
+        seen = set()
+        unique_beceriler = []
+        for b in tum_beceriler:
+            b_lower = b.strip().lower()
+            if b_lower and b_lower not in seen:
+                seen.add(b_lower)
+                unique_beceriler.append(b.strip())
+        teknik_beceriler = ", ".join(unique_beceriler) if unique_beceriler else None
 
         # Dilleri formatla
         dil_parts = []
