@@ -1227,6 +1227,7 @@ def init_database():
                 mevcut_pozisyon TEXT,
                 mevcut_sirket TEXT,
                 deneyim_detay TEXT,
+                deneyim_aciklama TEXT,
                 teknik_beceriler TEXT,
                 diller TEXT,
                 sertifikalar TEXT,
@@ -2017,6 +2018,12 @@ def init_database():
         # Candidates Migration: linkedin kolonu ekle
         try:
             cursor.execute("ALTER TABLE candidates ADD COLUMN linkedin TEXT")
+        except sqlite3.OperationalError:
+            pass  # Kolon zaten var
+
+        # Candidates Migration: deneyim_aciklama kolonu ekle (A1 - 06.03.2026)
+        try:
+            cursor.execute("ALTER TABLE candidates ADD COLUMN deneyim_aciklama TEXT")
         except sqlite3.OperationalError:
             pass  # Kolon zaten var
 

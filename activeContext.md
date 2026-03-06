@@ -31,6 +31,14 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 06.03.2026 - A1 DB Alan Ekleme: deneyim_aciklama
+- candidates tablosuna deneyim_aciklama TEXT kolonu eklendi
+- CV parser is_deneyimi[].aciklama alanını kaydedecek (A2'de implement edilecek)
+- Mevcut veriler etkilenmedi (NULL default)
+- init_database CREATE TABLE güncellendi (yeni kurulumlar için)
+- Migration kodu eklendi (mevcut DB'ler için ALTER TABLE)
+- Değişen dosyalar: api/database.py (satır 1230, 2024-2028)
+
 ### 06.03.2026 - KVKK Onayları Panel (Mülakat Takvimi)
 - Mülakat takvimi sayfasına "KVKK Onayları" butonu ve modal eklendi (ShieldCheck ikonu)
 - Yeni endpoint: GET /api/interviews/kvkk-consents (Auth + company_id izolasyonu)
