@@ -31,6 +31,11 @@ Son guncelleme: 07.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 07.03.2026 - Duplicate Teknik Beceri DB Temizligi
+- ID 404, 465: SAP duplicate temizlendi (4 fazla beceri)
+- Duplicate kalan: 0
+- Kod degisikligi YOK (sadece DB fix)
+
 ### 07.03.2026 - Dil Seviyesi 2. Katman Savunma
 - cv_parser.py satir 1138-1148: CV raw text dogrulama eklendi
 - AI seviyesi varsa ama CV de level indicator yoksa seviye siliniyor
