@@ -517,6 +517,7 @@ export default function Havuzlar() {
           <div className="font-medium">Pozisyon Uyumu: <span className="text-blue-600">{String(v2.position_score || 0)}/20</span></div>
           <div className="text-muted-foreground ml-2">Baslik: {String(v2.title_match_score || 0)} ({String(v2.title_match_level || '-')})</div>
           <div className="text-muted-foreground ml-2">Sektor: {String(v2.sector_score || 0)} ({String(v2.detected_sector || '-')})</div>
+          <div className="text-muted-foreground ml-2">Kıdem: {String(v2.seniority_score || 0)}</div>
         </div>
         <div className="space-y-1">
           <div className="font-medium">Teknik Yetkinlik: <span className="text-purple-600">{String(v2.technical_score || 0)}/40</span></div>

@@ -31,6 +31,11 @@ Son guncelleme: 07.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 07.03.2026 - Frontend Seniority Score Gösterimi
+- havuzlar/index.tsx renderV2Detail: Kıdem satırı eklendi
+- Pozisyon Uyumu altında: Başlık, Sektör, Kıdem
+- seniority_score backend'den alınıp gösteriliyor
+
 ### 07.03.2026 - AI Evaluation Prompt Fix
 - pools.py satir 1322-1327: Terim koruma kurallari eklendi
 - ONEMLI KURALLAR: teknik terimleri AYNEN kullan, KISALTMA
