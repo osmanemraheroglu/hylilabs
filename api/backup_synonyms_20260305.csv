@@ -1,0 +1,408 @@
+id,company_id,keyword,synonym,synonym_type,source,status,created_by,approved_by,created_at,approved_at,reject_reason,reject_note,match_weight,version,model_version,updated_by,is_active,updated_at,confidence_score
+1,,ms office,microsoft office,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+2,,ms office,office,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+3,,microsoft office,ms office,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+4,,microsoft office,office,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+5,,excel,microsoft excel,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+6,,excel,ms excel,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+7,,excel,microsoft office excel,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+8,,word,microsoft word,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+9,,word,ms word,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+10,,powerpoint,ppt,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+11,,powerpoint,microsoft powerpoint,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+12,,js,javascript,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+13,,javascript,js,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+14,,ts,typescript,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+15,,typescript,ts,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+16,,react,reactjs,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+17,,react,react.js,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+18,,node,nodejs,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+19,,node,node.js,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+20,,python,py,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+21,,c#,csharp,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+22,,c#,c sharp,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+23,,.net,dotnet,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+24,,.net,dot net,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+25,,sql,mysql,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+26,,sql,postgresql,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+27,,sql,mssql,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+28,,sql,sqlite,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+29,,sql,tsql,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+30,,nosql,mongodb,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+31,,nosql,redis,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+32,,nosql,cassandra,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+33,,aws,amazon web services,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+34,,gcp,google cloud,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+35,,gcp,google cloud platform,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+36,,azure,microsoft azure,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+37,,ci/cd,cicd,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+38,,ci/cd,jenkins,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+39,,ci/cd,github actions,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+40,,ci/cd,gitlab ci,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+41,,docker,container,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+42,,docker,konteyner,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+43,,kubernetes,k8s,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+44,,ik,insan kaynakları,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+45,,ik,human resources,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+46,,ik,hr,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+48,,erp,sap,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+49,,erp,sap erp,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+50,,erp,oracle erp,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+51,,erp,microsoft dynamics,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+52,,erp,kurumsal kaynak planlama,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+53,,erp,enterprise resource planning,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+54,,sap,sap erp,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+55,,sap,sap r/3,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+56,,sap,sap hana,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+57,,crm,müşteri ilişkileri,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+58,,crm,customer relationship,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+59,,muhasebe,accounting,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+60,,muhasebe,mali müşavir,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+61,,muhasebe,muhasebecilik,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+62,,ufrs,ifrs,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+63,,ufrs,uluslararası finansal raporlama,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+64,,bütçe,budget,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+65,,bütçe,bütçeleme,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+66,,denetim,audit,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+67,,denetim,iç denetim,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+68,,denetim,dış denetim,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+69,,finans,finance,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+70,,finans,finansal,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+72,,autocad,cad,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+74,,revit,autodesk revit,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+75,,ai,yapay zeka,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+76,,ai,artificial intelligence,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+77,,ml,machine learning,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+78,,ml,makine öğrenmesi,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+79,,ml,makine öğrenimi,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+80,,veri analizi,data analysis,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+81,,veri analizi,veri analitiği,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+82,,ms project,microsoft project,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+83,,ms project,project,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+84,,scrum,agile,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+85,,scrum,çevik,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+86,,proje yönetimi,project management,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+87,,proje yönetimi,pm,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+88,,bakım-onarım,bakım,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+89,,bakım-onarım,onarım,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+90,,bakım-onarım,maintenance,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+91,,bakım-onarım,repair,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+92,,bakım-onarım,maintenance & repair,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+93,,bakım,maintenance,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+94,,bakım,bakım-onarım,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+95,,önleyici bakım,preventive maintenance,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+96,,önleyici bakım,predictive maintenance,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+97,,önleyici bakım,pm,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+98,,periyodik bakım,periodic maintenance,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+99,,periyodik bakım,scheduled maintenance,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+100,,arıza takibi,troubleshooting,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+101,,arıza takibi,fault tracking,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+102,,arıza takibi,arıza tespit,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+103,,iş makineleri,iş makinası,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+104,,iş makineleri,heavy equipment,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+105,,iş makineleri,construction equipment,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+106,,iş makineleri,construction machinery,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+107,,ekipman yönetimi,equipment management,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+108,,ekipman yönetimi,equipment supervision,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+109,,makine mühendisliği,mechanical engineering,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+110,,makine mühendisliği,makine müh.,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+111,,koordinasyon,coordination,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+112,,koordinasyon,koordine,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+113,,planlama,planning,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+114,,planlama,scheduling,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+115,,planlama,plan,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+116,,takım çalışması,teamwork,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+117,,takım çalışması,team working,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+118,,takım çalışması,team work,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+119,,takım çalışması,ekip çalışması,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+120,,yönetim,management,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+121,,yönetim,yöneticilik,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+122,,takım liderliği,team leadership,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+123,,takım liderliği,team lead,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+124,,takım liderliği,ekip liderliği,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+125,,takip,tracking,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+126,,takip,follow-up,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+127,,takip,izleme,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+128,,raporlama,reporting,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+129,,raporlama,rapor,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+130,,raporlama,report,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+131,,kalite kontrol,quality control,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+132,,kalite kontrol,qc,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+133,,kalite kontrol,kalite kontrolü,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+134,,kalite güvence,quality assurance,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+135,,kalite güvence,qa,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+136,,güvenlik,safety,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+137,,güvenlik,security,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+138,,güvenlik,hse,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+139,,iş güvenliği,occupational safety,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+140,,iş güvenliği,work safety,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+141,,iş güvenliği,isg,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+142,,iş güvenliği,ohs,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+143,,maliyet analizi,cost analysis,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+144,,maliyet analizi,maliyet,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+145,,maliyet analizi,cost control,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+146,,maliyet kontrol,cost control,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+147,,maliyet kontrol,cost management,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+148,,bütçe yönetimi,budget management,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+149,,bütçe yönetimi,budgeting,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+150,,satın alma,procurement,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+151,,satın alma,purchasing,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+152,,satın alma,satınalma,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+153,,stok yönetimi,inventory management,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+154,,stok yönetimi,stock management,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+155,,problem çözme,problem solving,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+156,,problem çözme,sorun çözme,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+157,,analitik düşünme,analytical thinking,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+158,,analitik düşünme,analytical skills,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+159,,iletişim,communication,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+160,,iletişim,iletişim becerileri,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+161,,karar verme,decision making,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+162,,karar verme,karar alma,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+163,,liderlik,leadership,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+164,,liderlik,leader,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+165,,yapı mühendisliği,structural engineering,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+166,,yapı mühendisliği,civil engineering,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+167,,inşaat mühendisliği,civil engineering,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+168,,inşaat mühendisliği,construction engineering,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+169,,elektrik mühendisliği,electrical engineering,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+170,,mekatronik,mechatronics,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+171,,mekatronik,mekatronik mühendisliği,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+172,,maintenance,bakım,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+173,,maintenance,bakım-onarım,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+174,,maintenance,onarım,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+175,,heavy equipment,iş makineleri,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+176,,heavy equipment,iş makinası,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+177,,heavy equipment,ağır ekipman,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+178,,troubleshooting,arıza takibi,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+179,,troubleshooting,arıza tespit,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+180,,troubleshooting,sorun giderme,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+181,,teamwork,takım çalışması,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+182,,teamwork,ekip çalışması,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+183,,quality control,kalite kontrol,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+184,,quality control,qc,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+185,,procurement,satın alma,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+186,,procurement,satınalma,turkish,migrated,approved,,,2026-02-27 22:31:10,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+187,,procurement,tedarik,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+188,,scheduling,planlama,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+189,,scheduling,programlama,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+190,,coordination,koordinasyon,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+191,,coordination,koordine,english,migrated,approved,,,2026-02-27 22:31:10,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+193,1,yazılım geliştirme,software development,english,ai,approved,2,2,2026-02-28 12:18:46,2026-02-28 14:28:04,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+194,1,yazılım geliştirme,yazılım mühendisliği,turkish,ai,approved,2,2,2026-02-28 12:18:46,2026-02-28 14:28:04,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+195,1,yazılım geliştirme,software engineering,english,ai,approved,2,2,2026-02-28 12:18:46,2026-02-28 14:28:04,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+196,1,yazılım geliştirme,uygulama geliştirme,turkish,ai,approved,2,2,2026-02-28 12:18:46,2026-02-28 14:28:04,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+197,1,yazılım geliştirme,application development,english,ai,approved,2,2,2026-02-28 12:18:46,2026-02-28 14:28:04,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+198,1,yazılım geliştirme,kodlama,turkish,ai,approved,2,2,2026-02-28 12:18:46,2026-02-28 14:28:04,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+199,1,yazılım geliştirme,programming,english,ai,approved,2,2,2026-02-28 12:18:46,2026-02-28 14:28:04,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+200,1,yazılım geliştirme,sistem geliştirme,turkish,ai,approved,2,2,2026-02-28 12:18:46,2026-02-28 14:28:04,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+203,1,veri analizi,veri madenciliği,turkish,ai,approved,2,2,2026-02-28 14:29:21,2026-02-28 15:29:42,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+204,1,veri analizi,data analytics,english,ai,approved,2,2,2026-02-28 14:29:21,2026-02-28 15:29:42,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+205,1,veri analizi,data mining,english,ai,approved,2,2,2026-02-28 14:29:21,2026-02-28 15:29:42,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+206,1,veri analizi,iş zekası,turkish,ai,approved,2,2,2026-02-28 14:29:21,2026-02-28 15:29:42,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+207,1,veri analizi,business intelligence,english,ai,approved,2,2,2026-02-28 14:29:21,2026-02-28 15:29:42,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+208,1,veri analizi,bı,abbreviation,ai,approved,2,2,2026-02-28 14:29:21,2026-02-28 15:29:42,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+209,1,veri analizi,people analytics,english,ai,approved,2,2,2026-02-28 14:29:21,2026-02-28 15:29:42,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+239,1,çizim,teknik resim,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+240,1,çizim,drawing,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+241,1,çizim,sketching,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+243,1,çizim,drafting,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+244,1,dokümantasyon,belgelendirme,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+245,1,dokümantasyon,documentation,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+248,1,dokümantasyon,belgeleme,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+250,1,autocad,computer aided design,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+251,1,autocad,bilgisayar destekli tasarım,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+253,1,eğitim,training,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+254,1,eğitim,education,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+255,1,eğitim,öğretim,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+256,1,eğitim,kurs,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+258,1,ekipman,equipment,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+259,1,ekipman,donanım,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+260,1,ekipman,techizat,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+263,1,mep,mechanical electrical plumbing,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+264,1,mep,makine elektrik tesisat,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+265,1,mep,building services,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+266,1,mep,bina sistemleri,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+267,1,modelleme,modeling,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+268,1,modelleme,modelling,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+270,1,modelleme,tasarım,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+272,1,3d,three dimensional,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+273,1,3d,üç boyutlu,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+275,1,3d,spatial design,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+276,1,revit,bım,abbreviation,ai,rejected,2,,2026-02-28 18:48:33,,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+277,1,revit,building information modeling,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+278,1,revit,yapı bilgi modellemesi,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+280,1,projeler,projects,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+282,1,projeler,project management,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+283,1,projeler,çalışmalar,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+284,1,projeler,işler,turkish,ai,rejected,2,,2026-02-28 18:48:33,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+285,1,tesisat,installation,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+286,1,tesisat,plumbing,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+287,1,tesisat,mechanical systems,english,ai,rejected,2,,2026-02-28 18:48:33,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+290,1,proje,project,english,ai,rejected,2,,2026-02-28 18:48:34,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+291,1,proje,çalışma,turkish,ai,rejected,2,,2026-02-28 18:48:34,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+295,1,koordinasyon,eşgüdüm,turkish,ai,rejected,2,,2026-02-28 18:48:34,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+299,1,p&id,piping and instrumentation diagram,english,ai,rejected,2,,2026-02-28 18:48:34,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+300,1,p&id,boru hattı şeması,turkish,ai,rejected,2,,2026-02-28 18:48:34,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+302,1,p&id,pıd,abbreviation,ai,rejected,2,,2026-02-28 18:48:34,,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+303,1,teknik,technical,english,ai,rejected,2,,2026-02-28 18:48:34,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+304,1,teknik,teknolojik,turkish,ai,rejected,2,,2026-02-28 18:48:34,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+306,1,teknik,engineering,english,ai,rejected,2,,2026-02-28 18:48:34,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+309,1,iletişim,haberleşme,turkish,ai,rejected,2,,2026-02-28 18:48:34,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+310,1,iletişim,etkileşim,turkish,ai,rejected,2,,2026-02-28 18:48:34,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+311,1,iletişim,interpersonal skills,english,ai,rejected,2,,2026-02-28 18:48:34,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+317,1,modelleme,process modeling,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+318,1,fiyat analizi,price analysis,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+319,1,fiyat analizi,maliyet analizi,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+320,1,fiyat analizi,pricing,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+321,1,fiyat analizi,fiyat değerlendirmesi,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+322,1,fiyat analizi,cost analysis,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+323,1,hakediş,progress payment,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+324,1,hakediş,ara ödeme,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+325,1,hakediş,progress billing,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+326,1,hakediş,aşama ödemesi,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+327,1,hakediş,milestone payment,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+328,1,metraj,quantity surveying,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+329,1,metraj,ölçüm,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+330,1,metraj,measurement,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+331,1,metraj,miktar hesabı,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+332,1,metraj,qs,abbreviation,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+333,1,primavera,p6,abbreviation,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+336,1,primavera,project management software,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+337,1,primavera,ppm,abbreviation,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+338,1,sözleşme,contract,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+339,1,sözleşme,anlaşma,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+340,1,sözleşme,agreement,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+341,1,sözleşme,kontrat,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+343,1,ms excel,excel,abbreviation,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+345,1,ms excel,spreadsheet,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+346,1,ms excel,hesap tablosu,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+353,1,şantiye,construction site,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+354,1,şantiye,inşaat sahası,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+356,1,şantiye,work site,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+357,1,şantiye,proje sahası,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+358,1,stok,inventory,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+359,1,stok,envanter,turkish,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+360,1,stok,stock,english,ai,approved,2,,2026-02-28 22:04:59,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+364,1,primavera p6,p6 eppm,abbreviation,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+366,1,primavera p6,project portfolio management,english,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+368,1,maliyet,cost,english,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+369,1,maliyet,gider,turkish,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+370,1,maliyet,expense,english,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+373,1,analiz,analysis,english,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+375,1,analiz,inceleme,turkish,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+378,1,nakit akış,cash flow,english,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+379,1,nakit akış,nakit akışı,turkish,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+380,1,nakit akış,cf,abbreviation,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+384,1,s4hana,sap,abbreviation,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+385,1,s4hana,erp,abbreviation,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+386,1,s4hana,kurumsal kaynak planlaması,turkish,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+387,1,s4hana,enterprise resource planning,english,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+392,1,proje,pm,abbreviation,ai,approved,2,,2026-02-28 22:05:00,2026-03-01 15:19:21,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+393,1,trafo,transformatör,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+394,1,trafo,transformer,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+397,1,trafo,dönüştürücü,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+398,1,süreçleri,processes,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+399,1,süreçleri,iş akışları,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+400,1,süreçleri,prosedürler,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+401,1,süreçleri,workflows,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+402,1,süreçleri,operasyonlar,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+405,1,dokümantasyon,kayıt tutma,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+406,1,dokümantasyon,evrak,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+408,1,arıza,failure,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+409,1,arıza,fault,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+410,1,arıza,bozukluk,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+411,1,arıza,hata,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+412,1,arıza,malfunction,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+413,1,iso,ınternational organization for standardization,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+414,1,iso,uluslararası standardizasyon örgütü,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+417,1,iso,tse,abbreviation,ai,rejected,2,,2026-03-01 16:02:26,,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+418,1,ts en iso 17025,laboratuvar yetkinlik standardı,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+421,1,ts en iso 17025,ıso/ıec 17025,abbreviation,ai,rejected,2,,2026-03-01 16:02:26,,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+422,1,ts en iso 17025,laboratory competence standard,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+423,1,kalibrasyon,calibration,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+424,1,kalibrasyon,ayarlama,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+427,1,kalibrasyon,metroloji,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+428,1,test,testing,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+429,1,test,deney,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+430,1,test,analiz,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+431,1,test,muayene,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+432,1,test,inspection,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+433,1,laboratuvar,laboratory,english,ai,rejected,2,,2026-03-01 16:02:26,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+434,1,laboratuvar,lab,abbreviation,ai,rejected,2,,2026-03-01 16:02:26,,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+435,1,laboratuvar,deney merkezi,turkish,ai,rejected,2,,2026-03-01 16:02:26,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+451,1,süreçleri,procedures,english,ai,rejected,2,,2026-03-01 16:31:06,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+462,1,iso,international organization for standardization,english,ai,rejected,2,,2026-03-01 16:31:06,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+463,1,iso,uluslararası standartlar örgütü,turkish,ai,rejected,2,,2026-03-01 16:31:06,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+466,1,ts en iso 17025,laboratuvar yeterlilik standardı,turkish,ai,rejected,2,,2026-03-01 16:31:06,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+467,1,ts en iso 17025,testing and calibration laboratories standard,english,ai,rejected,2,,2026-03-01 16:31:06,,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+472,1,kalibrasyon,kalibre etme,turkish,ai,rejected,2,,2026-03-01 16:31:06,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+476,1,test,deneme,turkish,ai,rejected,2,,2026-03-01 16:31:06,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+482,1,laboratuvar,deney ortamı,turkish,ai,rejected,2,,2026-03-01 16:31:06,,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+493,1,süreçleri,business processes,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+494,1,süreçleri,metodoloji,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+498,1,selenium,web otomasyon aracı,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+499,1,postman,api test aracı,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+500,1,postman,rest client,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+501,1,postman,http istemcisi,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+502,1,postman,api testing tool,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+503,1,api,application programming interface,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+504,1,api,uygulama programlama arayüzü,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+505,1,api,web servisleri,turkish,ai,rejected,2,,2026-03-01 17:02:47,,too_general,API icin web servisleri cok genel,0.85,1,,,1,2026-03-02 15:01:43,0.58
+507,1,api,web services,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+508,1,cucumber,bdd framework,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+509,1,cucumber,behavior driven development,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+510,1,cucumber,davranış odaklı geliştirme,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+514,1,test,sınama,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+515,1,test,kalite kontrol,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+516,1,test,qa,abbreviation,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.95,1,,,1,2026-03-02 15:01:43,0.58
+517,1,e-ticaret,ecommerce,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+518,1,e-ticaret,e-commerce,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+519,1,e-ticaret,online satış,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+520,1,e-ticaret,dijital ticaret,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+521,1,e-ticaret,elektronik ticaret,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+523,1,soapui,web servis test aracı,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+524,1,soapui,soap testing tool,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+525,1,soapui,api test platformu,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+528,1,teknik,mühendislik,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+529,1,teknik,uzmanlık,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+530,1,otomasyon,automation,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+531,1,otomasyon,otomatikleştirme,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+532,1,otomasyon,automated testing,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+533,1,otomasyon,otomatik test,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+534,1,otomasyon,robotik süreç otomasyonu,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+536,1,testrail,test yönetim aracı,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+537,1,testrail,test management tool,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+538,1,testrail,test case yönetimi,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+540,1,jira,proje yönetim aracı,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+541,1,jira,issue tracking,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+542,1,jira,hata takip sistemi,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+543,1,jira,agile tool,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+544,1,appium,mobil test aracı,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+545,1,appium,mobile automation,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+546,1,appium,mobil uygulama testi,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+547,1,appium,cross-platform testing,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+548,1,müşteri,customer,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+549,1,müşteri,client,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+550,1,müşteri,kullanıcı,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+551,1,müşteri,end user,english,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.9,1,,,1,2026-03-02 15:01:43,0.58
+552,1,müşteri,son kullanıcı,turkish,ai,approved,2,2,2026-03-01 17:02:47,2026-03-02 23:03:45,,,0.85,1,,,1,2026-03-02 15:01:43,0.58
+556,1,kiralama,rental,english,ai,approved,2,2,2026-03-02 23:07:01,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+557,1,kiralama,leasing,english,ai,approved,2,2,2026-03-02 23:07:31,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+558,1,kiralama,kira,exact_synonym,ai,approved,2,2,2026-03-02 23:08:01,2026-03-02 23:17:58,,,1.0,1,,,1,,0.58
+559,1,yedek parça,spare part,english,ai,approved,2,2,2026-03-02 23:08:31,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+560,1,yedek parça,component,english,ai,approved,2,2,2026-03-02 23:09:01,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+561,1,yedek parça,parça,broader_term,ai,approved,2,2,2026-03-02 23:09:32,2026-03-02 23:17:58,,,0.7,1,,,1,,0.58
+562,1,makine,machine,english,ai,approved,2,2,2026-03-02 23:10:02,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+563,1,makine,equipment,english,ai,approved,2,2,2026-03-02 23:10:32,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+564,1,makine,cihaz,exact_synonym,ai,approved,2,2,2026-03-02 23:11:02,2026-03-02 23:17:58,,,1.0,1,,,1,,0.58
+565,1,makine parkı,fleet,english,ai,approved,2,2,2026-03-02 23:11:32,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+566,1,makine parkı,machinery fleet,english,ai,approved,2,2,2026-03-02 23:12:02,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+567,1,makine parkı,equipment pool,english,ai,approved,2,2,2026-03-02 23:12:32,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+568,1,malzeme,material,english,ai,approved,2,2,2026-03-02 23:13:02,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+569,1,malzeme,supplies,english,ai,approved,2,2,2026-03-02 23:13:32,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+570,1,malzeme,inventory,broader_term,ai,approved,2,2,2026-03-02 23:14:02,2026-03-02 23:17:58,,,0.7,1,,,1,,0.58
+572,1,ekipman,machinery,exact_synonym,ai,approved,2,2,2026-03-02 23:14:32,2026-03-02 23:17:58,,,1.0,1,,,1,,0.58
+574,1,onarım,repair,english,ai,approved,2,2,2026-03-02 23:15:02,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58
+575,1,onarım,maintenance,broader_term,ai,approved,2,2,2026-03-02 23:15:32,2026-03-02 23:17:58,,,0.7,1,,,1,,0.58
+576,1,onarım,tamir,exact_synonym,ai,approved,2,2,2026-03-02 23:16:02,2026-03-02 23:17:58,,,1.0,1,,,1,,0.58
+578,1,arıza,breakdown,english,ai,approved,2,2,2026-03-02 23:16:33,2026-03-02 23:17:58,,,0.9,1,,,1,,0.58

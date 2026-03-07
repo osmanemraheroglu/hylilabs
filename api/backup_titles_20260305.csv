@@ -1,0 +1,42 @@
+id,position_id,title,category,is_approved,approved_at,created_at
+738,7785,System Integration Specialist,exact,1,2026-02-27 10:29:49,2026-02-27 10:29:26
+739,7785,Sistem Entegrasyon Uzmanı,exact,1,2026-02-27 10:29:49,2026-02-27 10:29:26
+740,7785,Gas System Integration Specialist,exact,1,2026-02-27 10:29:49,2026-02-27 10:29:26
+741,7785,Power System Integration Specialist,exact,1,2026-02-27 10:29:49,2026-02-27 10:29:26
+742,7785,Electrical & Instrument Manager,close,1,2026-02-27 10:29:49,2026-02-27 10:29:26
+743,7785,Elektrik ve Enstrüman Müdürü,close,1,2026-02-27 10:29:49,2026-02-27 10:29:26
+744,7785,Elektrik Mühendisi,close,1,2026-02-27 10:29:49,2026-02-27 10:29:26
+745,7785,Project Management Engineer,close,1,2026-02-27 10:29:49,2026-02-27 10:29:26
+746,7786,Automation Software Engineer,exact,1,2026-02-27 14:56:55,2026-02-27 14:54:58
+747,7786,PLC Programmer,exact,1,2026-02-27 14:56:55,2026-02-27 14:54:58
+748,7786,Otomasyon Mühendisi,exact,1,2026-02-27 14:56:55,2026-02-27 14:54:58
+749,7786,Automation Engineer,exact,1,2026-02-27 14:56:55,2026-02-27 14:54:58
+750,7786,Electrical Engineer,close,1,2026-02-27 14:56:55,2026-02-27 14:54:58
+751,7786,Elektrik Mühendisi,close,1,2026-02-27 14:56:55,2026-02-27 14:54:58
+752,7786,Embedded Software Engineer,close,1,2026-02-27 14:56:55,2026-02-27 14:54:58
+775,7791,MEP Modeller,exact,1,2026-02-28 18:48:42,2026-02-28 18:48:14
+776,7791,Mechanical Piping Designer,exact,1,2026-02-28 18:48:42,2026-02-28 18:48:14
+777,7791,Tesisat Teknik Çizer,exact,1,2026-02-28 18:48:42,2026-02-28 18:48:14
+778,7791,Piping Designer,exact,1,2026-02-28 18:48:42,2026-02-28 18:48:14
+779,7791,MEP Designer,exact,1,2026-02-28 18:48:42,2026-02-28 18:48:14
+780,7791,Makina Mühendisi,close,0,,2026-02-28 18:48:14
+781,7791,Mechanical Engineer - Supervisor,close,0,,2026-02-28 18:48:14
+782,7792,Budget and Cost Control Manager,exact,1,2026-02-28 22:05:21,2026-02-28 22:04:40
+784,7792,Bütçe ve Maliyet Kontrol Müdürü,exact,1,2026-02-28 22:05:21,2026-02-28 22:04:40
+785,7792,Maliyet Kontrol Mühendisi,exact,1,2026-02-28 22:05:21,2026-02-28 22:04:40
+786,7792,Planning Chief,close,0,,2026-02-28 22:04:40
+787,7792,Cost Control Engineer,close,1,2026-02-28 22:05:21,2026-02-28 22:04:40
+788,7792,Proje Müdürü,close,0,,2026-02-28 22:04:40
+795,7804,Test Engineer,exact,1,2026-03-01 16:31:23,2026-03-01 16:30:53
+796,7804,Test Mühendisi,exact,1,2026-03-01 16:31:23,2026-03-01 16:30:53
+797,7804,Laboratuvar Test Mühendisi,exact,1,2026-03-01 16:31:23,2026-03-01 16:30:53
+798,7804,Quality Test Engineer,exact,1,2026-03-01 16:31:23,2026-03-01 16:30:53
+799,7804,Electrical Engineer,close,0,,2026-03-01 16:30:53
+800,7804,Elektrik Mühendisi,close,0,,2026-03-01 16:30:53
+801,7804,Quality Control Engineer,close,0,,2026-03-01 16:30:53
+802,7804,Laboratory Engineer,close,0,,2026-03-01 16:30:53
+803,7805,Test Uzmanı,exact,0,,2026-03-01 17:02:29
+804,7805,Test Specialist,exact,0,,2026-03-01 17:02:29
+805,7805,QA Specialist,exact,0,,2026-03-01 17:02:29
+806,7805,Quality Assurance Specialist,exact,0,,2026-03-01 17:02:29
+807,7805,Test Engineer,exact,0,,2026-03-01 17:02:29
