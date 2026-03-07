@@ -37,7 +37,7 @@ Son guncelleme: 07.03.2026
 - level_indicators: A1-C2, ADVANCED, FLUENT, ILERI, ORTA vb.
 - DB fix: ID 402, 405 diller=NULL (hallucination temizligi)
 - 46/46 test PASSED
-- Commit: (pending)
+- Commit: 2580726
 
 ### 07.03.2026 - FAZ D: 110→100 Puan Rebalance (IK Direktor onaylı)
 - Position: 25→20 (title 8/5/3 + sector 7/4 + seniority 0-5)
