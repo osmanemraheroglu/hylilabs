@@ -842,7 +842,13 @@ Lütfen aşağıdaki JSON formatında yanıt ver:
 2. Bulunamayan bilgiler için null kullan
 3. Güncel yıl 2026 olarak hesapla
 4. Türkçe karakterleri koru (ğ, ü, ş, ı, ö, ç)
-5. Dil seviyeleri: A1, A2, B1, B2, C1, C2 formatında
+5. DİL SEVİYESİ KURALI:
+   - Dil seviyeleri: A1, A2, B1, B2, C1, C2 formatında
+   - ÖNEMLİ: Dil seviyesi CV'de AÇIKÇA belirtilmemişse seviye alanını null yaz
+   - ASLA tahmin yapma, çıkarım yapma. Sadece CV'de yazıyorsa seviye yaz
+   - Örnek: CV'de sadece "İngilizce" yazıyorsa → {{"dil": "İngilizce", "seviye": null}}
+   - CV'de "İngilizce - B2" veya "İngilizce (İleri)" yazıyorsa → seviye yaz
+   - Descriptive seviyeleri CEFR'e çevir: İleri/Advanced/Fluent→C1, Orta/Intermediate→B1, Başlangıç/Basic→A2
 6. Birden fazla eğitim/deneyim varsa hepsini listele
 7. Deneyim yılı = tüm iş sürelerinin toplamı
 8. LOKASYON KURALI: lokasyon = adayın YAŞADIĞI/İKAMET ETTİĞİ şehir.

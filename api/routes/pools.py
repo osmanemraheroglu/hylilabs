@@ -579,7 +579,7 @@ def get_candidate_detail(pool_id: int, candidate_id: int, current_user: dict = D
                 SELECT id, ad_soyad, email, telefon, lokasyon, egitim, universite, bolum,
                        toplam_deneyim_yil, mevcut_pozisyon, mevcut_sirket, deneyim_detay,
                        teknik_beceriler, diller, sertifikalar, cv_dosya_adi,
-                       linkedin, egitim_detay, olusturma_tarihi
+                       linkedin, egitim_detay, olusturma_tarihi, deneyim_aciklama
                 FROM candidates WHERE id = ? AND company_id = ?
             """, (candidate_id, company_id))
             row = cursor.fetchone()
