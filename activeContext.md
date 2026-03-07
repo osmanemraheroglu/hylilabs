@@ -31,6 +31,24 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 07.03.2026 - B5: Görev Tanımı Upload Frontend
+1. **"Görev Tanımı" butonu** eklendi (havuzlar/index.tsx:618)
+   - Pozisyon detay sayfası buton grubuna entegre
+   - Sadece pozisyon havuzlarında görünür (pool_type === 'position')
+   - FileText ikonu (lucide-react)
+2. **Upload Modal**:
+   - Drag-drop destekli dosya seçimi
+   - PDF/DOCX/DOC dosya tipi kontrolü (MIME + extension)
+   - 10MB boyut limiti
+   - Loading state (analiz sırasında spinner)
+   - Başarı ekranı (görev/keyword/title/rescore sayıları)
+3. **API entegrasyonu**:
+   - POST /api/pools/{pool_id}/job-description
+   - FormData ile multipart/form-data
+   - Authorization header (mevcut auth pattern)
+   - Pozisyon verilerini otomatik yenile (loadCandidates)
+- Dosya: src/features/havuzlar/index.tsx
+
 ### 06.03.2026 - FAZ C: Görev Eşleşmesi Scoring Layer
 1. **5 Katmanlı Puanlama**: Position(25) + Technical(40) + General(20) + Task(15) + Elimination(10)
 2. **calculate_task_match_score()** fonksiyonu (scoring_v2.py:589-698):

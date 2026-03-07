@@ -115,6 +115,17 @@ export default function Havuzlar() {
   const [evaluating, setEvaluating] = useState(false)
   const [rescoring, setRescoring] = useState(false)
 
+  // Job Description Upload (B5)
+  const [jdUploadOpen, setJdUploadOpen] = useState(false)
+  const [jdUploading, setJdUploading] = useState(false)
+  const [jdResult, setJdResult] = useState<{
+    success: boolean
+    gorev_sayisi?: number
+    keyword_sayisi?: number
+    title_sayisi?: number
+    rescore_sayisi?: number
+  } | null>(null)
+
   const loadTree = useCallback(() => {
     setLoading(true)
     fetch(`${API}/api/pools/hierarchical`, { headers: H() })
@@ -602,7 +613,10 @@ export default function Havuzlar() {
                 <div className="flex gap-1.5">
                   {poolInfo && !poolInfo.is_system && (<><Button variant="outline" size="sm" onClick={openEdit}><Edit className="h-3.5 w-3.5 mr-1" />Düzenle</Button><Button variant="outline" size="sm" className="text-red-500" onClick={() => setDeleteConfirm(selectedPoolId)}><Trash2 className="h-3.5 w-3.5 mr-1" />Sil</Button></>)}
                   {poolInfo && poolInfo.pool_type === 'position' && !poolInfo.is_system && (
-                    <Button variant="default" size="sm" onClick={handlePullCandidates} disabled={pulling}>{pulling ? <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1" />}CV Çek</Button>
+                    <>
+                      <Button variant="default" size="sm" onClick={handlePullCandidates} disabled={pulling}>{pulling ? <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Search className="h-3.5 w-3.5 mr-1" />}CV Çek</Button>
+                      <Button variant="outline" size="sm" onClick={() => { setJdResult(null); setJdUploadOpen(true) }}><FileText className="h-3.5 w-3.5 mr-1" />Görev Tanımı</Button>
+                    </>
                   )}
                   <Button variant="outline" size="sm" onClick={() => setAssignDialogOpen(true)}><UserPlus className="h-3.5 w-3.5 mr-1" />Aday Ata</Button>
                 </div>
@@ -1147,6 +1161,127 @@ export default function Havuzlar() {
             <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>İptal</Button>
             <Button onClick={handleAssignCandidate} disabled={!selectedCandidate}>Ata</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* B5: Görev Tanımı Upload Modal */}
+      <Dialog open={jdUploadOpen} onOpenChange={setJdUploadOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Görev Tanımı Yükle</DialogTitle>
+          </DialogHeader>
+
+          {!jdResult ? (
+            <div className="space-y-4">
+              {!jdUploading ? (
+                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground mb-3">PDF veya DOCX dosyası sürükleyin veya tıklayarak seçin</p>
+                  <Input
+                    type="file"
+                    accept=".pdf,.docx,.doc"
+                    className="max-w-[250px] mx-auto"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+
+                      // Dosya tipi kontrolü
+                      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword']
+                      const allowedExts = ['.pdf', '.docx', '.doc']
+                      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
+
+                      if (!allowedTypes.includes(file.type) && !allowedExts.includes(ext)) {
+                        toast.error('Sadece PDF, DOCX veya DOC dosyaları yüklenebilir')
+                        return
+                      }
+
+                      if (file.size > 10 * 1024 * 1024) {
+                        toast.error('Dosya boyutu 10MB\'dan küçük olmalı')
+                        return
+                      }
+
+                      // Upload
+                      setJdUploading(true)
+                      const formData = new FormData()
+                      formData.append('file', file)
+
+                      try {
+                        const res = await fetch(`${API}/api/pools/${selectedPoolId}/job-description`, {
+                          method: 'POST',
+                          headers: { 'Authorization': H()['Authorization'] },
+                          body: formData
+                        })
+                        const data = await res.json()
+
+                        if (data.success) {
+                          setJdResult({
+                            success: true,
+                            gorev_sayisi: data.data?.gorev_sayisi || 0,
+                            keyword_sayisi: data.data?.keyword_sayisi || 0,
+                            title_sayisi: data.data?.title_sayisi || 0,
+                            rescore_sayisi: data.data?.rescore_sayisi || 0
+                          })
+                          toast.success('Görev tanımı başarıyla analiz edildi')
+                          // Pozisyon verilerini yenile
+                          if (selectedPoolId) {
+                            loadCandidates(selectedPoolId)
+                          }
+                        } else {
+                          toast.error(data.detail || 'Görev tanımı yüklenirken hata oluştu')
+                        }
+                      } catch (err) {
+                        toast.error('Bağlantı hatası')
+                      } finally {
+                        setJdUploading(false)
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">Maksimum 10MB</p>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <RefreshCw className="h-8 w-8 mx-auto animate-spin text-primary mb-3" />
+                  <p className="text-sm font-medium">Görev tanımı analiz ediliyor...</p>
+                  <p className="text-xs text-muted-foreground mt-1">Bu işlem birkaç saniye sürebilir</p>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setJdUploadOpen(false)} disabled={jdUploading}>İptal</Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-green-700 font-medium mb-3">
+                  <Check className="h-5 w-5" />
+                  Görev Tanımı Analiz Edildi
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">📋 Bulunan Görevler:</span>
+                    <span className="font-medium">{jdResult.gorev_sayisi}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">🔑 Eklenen Keyword'ler:</span>
+                    <span className="font-medium">{jdResult.keyword_sayisi}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">🏷️ Önerilen Başlıklar:</span>
+                    <span className="font-medium">{jdResult.title_sayisi} <span className="text-xs text-muted-foreground">(onay bekliyor)</span></span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">👥 Güncellenen Adaylar:</span>
+                    <span className="font-medium">{jdResult.rescore_sayisi}</span>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button onClick={() => setJdUploadOpen(false)}>Kapat</Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
