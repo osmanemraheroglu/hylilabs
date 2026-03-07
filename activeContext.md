@@ -31,6 +31,12 @@ Son guncelleme: 07.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 08.03.2026 - Görev Tanımı Upload Response Fix
+- Backend response data wrapper eklendi (frontend uyumu)
+- ek_keyword_sayisi → keyword_sayisi (isim düzeltme)
+- title_sayisi eklendi (yeni alan)
+- save_job_description_results tuple döndürüyor
+
 ### 07.03.2026 - 100 Puan Sistemi Rescore
 - 6 pozisyon işlendi, 5 pozisyonda aday var
 - Toplam 33 aday rescore edildi

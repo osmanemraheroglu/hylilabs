@@ -1782,10 +1782,11 @@ KURALLAR:
 
 
 def save_job_description_results(pool_id: int, company_id: int,
-                                  parsed: dict, raw_text: str) -> int:
+                                  parsed: dict, raw_text: str) -> tuple:
     """Görev tanımı parse sonuçlarını DB'ye kaydet (MERGE)"""
 
     ek_keyword_sayisi = 0
+    title_sayisi = 0
 
     # 1. department_pools güncelle
     gorevler = parsed.get("gorevler", [])
@@ -1875,10 +1876,11 @@ def save_job_description_results(pool_id: int, company_id: int,
                     (position_id, related_title, match_level, source, approved, created_at)
                     VALUES (?, ?, ?, 'job_description', 0, datetime('now'))
                 """, (pool_id, title, match_level))
+                title_sayisi += 1
 
         conn.commit()
 
-    return ek_keyword_sayisi
+    return ek_keyword_sayisi, title_sayisi
 
 
 def rescore_position_candidates(pool_id: int, company_id: int) -> int:
@@ -2036,7 +2038,7 @@ async def upload_job_description(
             detail="Görev tanımı parse edilemedi")
 
     # 8. Sonuçları DB'ye kaydet
-    ek_keyword_sayisi = save_job_description_results(
+    ek_keyword_sayisi, title_sayisi = save_job_description_results(
         pool_id, company_id, parsed, raw_text)
 
     # 9. Mevcut adayları rescore (arka planda)
@@ -2048,9 +2050,12 @@ async def upload_job_description(
 
     return {
         "success": True,
+        "data": {
+            "gorev_sayisi": len(parsed.get("gorevler", [])),
+            "keyword_sayisi": ek_keyword_sayisi,
+            "title_sayisi": title_sayisi,
+            "rescore_sayisi": rescore_count
+        },
         "pozisyon_basligi": parsed.get("pozisyon_basligi", ""),
-        "gorev_sayisi": len(parsed.get("gorevler", [])),
-        "ek_keyword_sayisi": ek_keyword_sayisi,
-        "rescore_sayisi": rescore_count,
         "dosya_yolu": file_path
     }
