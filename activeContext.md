@@ -31,6 +31,14 @@ Son guncelleme: 07.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 07.03.2026 - Dil Seviyesi 2. Katman Savunma
+- cv_parser.py satir 1138-1148: CV raw text dogrulama eklendi
+- AI seviyesi varsa ama CV de level indicator yoksa seviye siliniyor
+- level_indicators: A1-C2, ADVANCED, FLUENT, ILERI, ORTA vb.
+- DB fix: ID 402, 405 diller=NULL (hallucination temizligi)
+- 46/46 test PASSED
+- Commit: (pending)
+
 ### 07.03.2026 - FAZ D: 110→100 Puan Rebalance (IK Direktor onaylı)
 - Position: 25→20 (title 8/5/3 + sector 7/4 + seniority 0-5)
 - Seniority: penalty sistemi → pozitif puan (0/3/4/5)

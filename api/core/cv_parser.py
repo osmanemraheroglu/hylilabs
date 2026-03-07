@@ -1134,6 +1134,19 @@ def parse_cv(content: bytes, filename: str, user_id: str = "system") -> CVParseR
         for dil in diller_list:
             dil_adi = dil.get("dil", "")
             seviye = dil.get("seviye", "")
+            
+            # 2. KATMAN: CV'de seviye belirteci yoksa AI seviyesini sil
+            if seviye and raw_text:
+                level_indicators = ['A1','A2','B1','B2','C1','C2',
+                                   'ADVANCED','INTERMEDIATE','FLUENT','NATIVE',
+                                   'İLERİ','ORTA','BAŞLANGIÇ','ANA DİL','AKICI',
+                                   'PROFESSIONAL WORKING','PROFICIENT',
+                                   'UPPER INTERMEDIATE','PRE-INTERMEDIATE',
+                                   'ELEMENTARY','BEGINNER']
+                cv_upper = raw_text.upper()
+                if not any(ind in cv_upper for ind in level_indicators):
+                    seviye = ""
+            
             if dil_adi:
                 dil_parts.append(f"{dil_adi} ({seviye})" if seviye else dil_adi)
         diller = ", ".join(dil_parts) if dil_parts else None
