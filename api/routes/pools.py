@@ -1312,12 +1312,19 @@ POZISYON: {pos["name"]}
 Keywords: {pos["keywords"] or ""}
 
 V2 SKOR: {total_v2}/100
-Pozisyon Uyumu: {pos_score}/33 (baslik: {title_match_level})
-Teknik Yetkinlik: {technical_score}/37
+Pozisyon Uyumu: {pos_score}/20 (baslik: {title_match_level})
+Teknik Yetkinlik: {technical_score}/40
 Kritik eslesen: {crit_matched_str}
 Kritik eksik: {crit_missing_str}
-Deneyim: {experience_score}/10, Egitim: {education_score}/10
+Deneyim: {experience_score}/8, Egitim: {education_score}/7
 {ko_str}
+
+ONEMLI KURALLAR:
+1. Pozisyon adi ve keyword'lerdeki teknik terimleri AYNEN kullan, KISALTMA.
+   "gaz jenerator guc sistemleri" -> "gaz jenerator guc sistemleri" (DOGRU)
+   "gaz jenerator guc sistemleri" -> "gaz sistemleri" (YANLIS)
+2. Yazilim isimleri, arac adlari ve sektorel jargon AYNEN korunmali.
+3. Kisaltma veya genellestirme YAPMA.
 
 Asagidaki formatta yanit ver (kisa ve oz, her baslik 2-3 madde):
 

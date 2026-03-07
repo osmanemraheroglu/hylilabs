@@ -31,6 +31,12 @@ Son guncelleme: 07.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 07.03.2026 - AI Evaluation Prompt Fix
+- pools.py satir 1322-1327: Terim koruma kurallari eklendi
+- ONEMLI KURALLAR: teknik terimleri AYNEN kullan, KISALTMA
+- Puan max degerleri guncellendi: 33→20, 37→40, 10→8, 10→7
+- "gaz jenerator guc sistemleri" → "gaz sistemleri" sorunu onlendi
+
 ### 07.03.2026 - Duplicate Teknik Beceri DB Temizligi
 - ID 404, 465: SAP duplicate temizlendi (4 fazla beceri)
 - Duplicate kalan: 0
