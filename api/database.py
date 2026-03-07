@@ -1160,6 +1160,8 @@ def get_connection():
     conn.row_factory = sqlite3.Row
     # WAL mode: Write-Ahead Logging - concurrent read/write performansı için
     conn.execute("PRAGMA journal_mode=WAL")
+    # busy_timeout: Lock durumunda 30 saniye bekle (database locked hatası önleme)
+    conn.execute("PRAGMA busy_timeout=30000")
     conn.execute("PRAGMA foreign_keys=ON")
     # Türkçe karakter duyarsız arama için custom SQL function
     conn.create_function("TURKISH_LOWER", 1, turkish_lower)
@@ -6124,6 +6126,8 @@ def get_pool_by_name(company_id: int, name: str, conn=None) -> Optional[dict]:
         ensure_data_dir()
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=30000")
         conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
@@ -6166,6 +6170,8 @@ def assign_candidate_to_department_pool(candidate_id: int, pool_id: int, company
         ensure_data_dir()
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=30000")
         conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 

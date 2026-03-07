@@ -1,5 +1,5 @@
 # HyliLabs — Aktif Baglam
-Son guncelleme: 06.03.2026
+Son guncelleme: 07.03.2026
 
 ## Mevcut Sistem Durumu
 - Frontend: React + Vite, port 3000
@@ -31,6 +31,23 @@ Son guncelleme: 06.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 07.03.2026 - DATABASE LOCKED Kalıcı Mimari Fix
+1. **LAYER 1: database.py get_connection()** düzeltildi
+   - PRAGMA busy_timeout=30000 eklendi (lock durumunda 30 saniye bekle)
+   - WAL mode zaten vardı, busy_timeout eksikti
+2. **LAYER 2: Direct sqlite3.connect() bypass'ları** düzeltildi
+   - database.py:6125 (get_department_pool_by_name) - WAL+busy_timeout eklendi
+   - database.py:6167 (assign_candidate_to_department_pool) - WAL+busy_timeout eklendi
+   - rate_limiter.py:70 (get_connection) - WAL+busy_timeout eklendi
+   - audit_logger.py:208 (get_connection) - WAL+busy_timeout eklendi
+3. **LAYER 3: Zaten tamam**
+   - log_synonym_usage ve save_match_details try/except sarılı
+   - G8 rescore commit SONRASI çalışıyor
+4. **CLAUDE.md Kural 33** eklendi: SQLite CONNECTION KURALI
+   - Her bağlantıda 3 PRAGMA zorunlu: WAL, busy_timeout, foreign_keys
+   - Direct sqlite3.connect() YASAK
+- Dosyalar: database.py, rate_limiter.py, audit_logger.py, CLAUDE.md
+
 ### 07.03.2026 - B5: Görev Tanımı Upload Frontend
 1. **"Görev Tanımı" butonu** eklendi (havuzlar/index.tsx:618)
    - Pozisyon detay sayfası buton grubuna entegre
