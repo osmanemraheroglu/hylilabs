@@ -514,19 +514,28 @@ export default function Havuzlar() {
     return (
       <div className="grid grid-cols-2 gap-3 text-xs mt-2">
         <div className="space-y-1">
-          <div className="font-medium">Pozisyon Uyumu: <span className="text-blue-600">{String(v2.position_score || 0)}/33</span></div>
+          <div className="font-medium">Pozisyon Uyumu: <span className="text-blue-600">{String(v2.position_score || 0)}/20</span></div>
           <div className="text-muted-foreground ml-2">Baslik: {String(v2.title_match_score || 0)} ({String(v2.title_match_level || '-')})</div>
           <div className="text-muted-foreground ml-2">Sektor: {String(v2.sector_score || 0)} ({String(v2.detected_sector || '-')})</div>
         </div>
         <div className="space-y-1">
-          <div className="font-medium">Teknik Yetkinlik: <span className="text-purple-600">{String(v2.technical_score || 0)}/47</span></div>
+          <div className="font-medium">Teknik Yetkinlik: <span className="text-purple-600">{String(v2.technical_score || 0)}/40</span></div>
+          <div className="text-muted-foreground ml-2">Must-have: {String(v2.must_have_score || 0)}</div>
           <div className="text-muted-foreground ml-2">Kritik: {String(v2.critical_score || 0)}</div>
           <div className="text-muted-foreground ml-2">Önemli: {String(v2.important_score || 0)}</div>
         </div>
         <div className="space-y-1">
-          <div className="font-medium">Genel: <span className="text-green-600">{String(v2.general_score || 0)}/20</span></div>
+          <div className="font-medium">Genel: <span className="text-green-600">{String(v2.general_score || 0)}/15</span></div>
           <div className="text-muted-foreground ml-2">Deneyim: {String(v2.experience_score || 0)}</div>
           <div className="text-muted-foreground ml-2">Eğitim: {String(v2.education_score || 0)}</div>
+        </div>
+        <div className="space-y-1">
+          <div className="font-medium">Görev Eşleşmesi: <span className="text-orange-600">{String(v2.task_score || 0)}/15</span></div>
+          <div className="text-muted-foreground ml-2">{String(v2.task_detail || '')}</div>
+        </div>
+        <div className="space-y-1">
+          <div className="font-medium">Eliminasyon: <span className="text-red-600">{String(v2.elimination_score || 0)}/10</span></div>
+          <div className="text-muted-foreground ml-2">Lokasyon: {String(v2.location_score || 0)}</div>
         </div>
         {v2.knockout && <div className="col-span-2 bg-red-50 border border-red-200 rounded p-2 text-red-700 font-medium">KNOCKOUT: {String(v2.knockout_reason || '')}</div>}
         {Array.isArray(v2.critical_missing) && (v2.critical_missing as string[]).length > 0 && (
@@ -735,6 +744,7 @@ export default function Havuzlar() {
                                           </div>
                                         </div>
                                       )}
+{/* Diller */}                                      {cd?.diller && (                                        <div className="mb-1"><span className="text-xs font-medium">Diller:</span> <span className="text-xs">{String(cd.diller)}</span></div>                                      )}                                      {/* Sertifikalar */}                                      {cd?.sertifikalar && (                                        <div className="mb-1"><span className="text-xs font-medium">Sertifikalar:</span> <span className="text-xs">{String(cd.sertifikalar)}</span></div>                                      )}                                      {/* Bölüm */}                                      {cd?.bolum && (                                        <div className="mb-1"><span className="text-xs font-medium">Bölüm:</span> <span className="text-xs">{String(cd.bolum)}</span></div>                                      )}                                      {/* Görev Açıklamaları */}                                      {cd?.deneyim_aciklama && (                                        <div className="mb-1"><span className="text-xs font-medium">Görev Açıklamaları:</span> <span className="text-xs text-muted-foreground">{String(cd.deneyim_aciklama).length > 300 ? String(cd.deneyim_aciklama).substring(0, 300) + "..." : String(cd.deneyim_aciklama)}</span></div>                                      )}
                                       {/* Deneyim Detay */}
                                       {cd?.deneyim_detay && (
                                         <div className="text-xs"><span className="font-medium">Deneyim:</span> {String(cd?.deneyim_detay)}</div>
