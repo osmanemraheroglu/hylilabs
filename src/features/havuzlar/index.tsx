@@ -542,7 +542,7 @@ export default function Havuzlar() {
           <div className="col-span-2"><span className="font-medium text-red-600">Eksik Kritik:</span> {(v2.critical_missing as string[]).join(', ')}</div>
         )}
         {Array.isArray(v2.critical_matched) && (v2.critical_matched as string[]).length > 0 && (
-          <div className="col-span-2"><span className="font-medium text-green-600">Eşleşen Kritik:</span> {(v2.critical_matched as string[]).join(', ')}</div>
+          <div className="col-span-2"><span className="font-medium text-green-600">Eşleşen Kritik:</span> {(v2.critical_matched as any[]).map(x => x.keyword || x).join(', ')}</div>
         )}
       </div>
     )
