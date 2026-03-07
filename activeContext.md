@@ -31,6 +31,13 @@ Son guncelleme: 07.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 07.03.2026 - 100 Puan Sistemi Rescore
+- 6 pozisyon işlendi, 5 pozisyonda aday var
+- Toplam 33 aday rescore edildi
+- Pozisyonlar: Otomasyon(2), Mekanik(1), Gas Groups(23), Test Teknikeri(2), Bütçe(5)
+- DB lock hatası: YOK
+- Script: rescore_100.py (çalıştırıldı, silindi)
+
 ### 07.03.2026 - Frontend Seniority Score Gösterimi
 - havuzlar/index.tsx renderV2Detail: Kıdem satırı eklendi
 - Pozisyon Uyumu altında: Başlık, Sektör, Kıdem
