@@ -31,6 +31,12 @@ Son guncelleme: 07.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 07.03.2026 - Havuzlar renderV2Detail Güncellemesi
+- must_have_score eklendi (Teknik Yetkinlik altına, Kritikten önce)
+- task_score/15 + task_detail eklendi (Görev Eşleşmesi bölümü)
+- elimination_score/10 + location_score eklendi (Eliminasyon bölümü)
+- Commit: c409884
+
 ### 07.03.2026 - DATABASE LOCKED Kalıcı Mimari Fix
 1. **LAYER 1: database.py get_connection()** düzeltildi
    - PRAGMA busy_timeout=30000 eklendi (lock durumunda 30 saniye bekle)
