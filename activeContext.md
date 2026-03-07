@@ -31,6 +31,11 @@ Son guncelleme: 07.03.2026
 15. Pozisyon Havuzu Sorgu Yönlendirmesi: pool_type=="position" → candidate_positions tablosu.
 
 ## Son 72 Saatte Tamamlananlar
+### 07.03.2026 - critical_matched [object Object] Fix
+- critical_matched object array render hatası düzeltildi
+- .map(x => x.keyword || x).join() kullanıldı
+- Commit: c3560c5
+
 ### 07.03.2026 - Havuzlar renderV2Detail Güncellemesi
 - must_have_score eklendi (Teknik Yetkinlik altına, Kritikten önce)
 - task_score/15 + task_detail eklendi (Görev Eşleşmesi bölümü)
