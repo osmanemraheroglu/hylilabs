@@ -5,7 +5,7 @@ Son güncelleme: 08.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** ad98978 (08.03.2026)
+- **Son commit:** 3a9f1b6 (08.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -18,6 +18,7 @@ Son güncelleme: 08.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 08.03.2026
+- ✅ AI Evaluation prompt TAM güncelleme — 16 yeni değişken, Türkçe (3a9f1b6)
 - ✅ critical_matched dict→string dönüşüm fix (ad98978)
 - ✅ .claudeignore oluşturuldu (0e7c03b)
 - ✅ CLAUDE.md güncellendi — puanlama, fazlar, savunma sistemleri (a3308e1)
