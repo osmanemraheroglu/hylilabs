@@ -1,70 +1,82 @@
-# HyliLabs İlerleme Takibi
+# HyliLabs İlerleme Durumu
+
+Son güncelleme: 08.03.2026
 
 ## Tamamlanan Fazlar
 
-### Faz 1: TalentFlow → HyliLabs Göç (Tamamlandı)
-- 12 fazlık göç projesi tamamlandı
-- 2,500+ satır Python backend, 10,000+ satır TypeScript frontend
-- 71 API endpoint, 0 TypeScript build hatası
+### Temel Sistem (Şubat 2026)
+| Faz | Açıklama | Tarih | Durum |
+|-----|----------|-------|-------|
+| FAZ 1 | Temel Altyapı (FastAPI + React) | 18.02 | ✅ |
+| FAZ 2 | Auth Sistemi (JWT + Role-based) | 18.02 | ✅ |
+| FAZ 3 | CV Parser (Claude API) | 19.02 | ✅ |
+| FAZ 4 | Scoring v1 | 19.02 | ✅ |
+| FAZ 5 | Multi-tenant İzolasyon | 19.02 | ✅ |
 
-### Faz 2: Eşleştirme Motoru v2 (Tamamlandı)
-- %100 doğruluk oranı
-- Fuzzy matching: 70→85, 85→92
-- Dynamic knockout, junior/senior ayrımı
-- Max 1 pozisyon/aday kuralı
+### Keyword & Synonym Sistemi (Şubat-Mart 2026)
+| Faz | Açıklama | Tarih | Durum |
+|-----|----------|-------|-------|
+| FAZ 6 | Production Geçişi | 20.02 | ✅ |
+| FAZ 7 | Keyword Lifecycle (BLACKLIST, Usage Count) | 01.03 | ✅ |
+| FAZ 8 | Synonym Quality System | 01.03 | ✅ |
+| FAZ 9 | Advanced Synonym (6 tip, versiyonlama) | 02.03 | ✅ |
+| FAZ 10.1 | Multiple Confidence Source | 02.03 | ✅ |
+| FAZ 10.2 | Semantic Similarity | 02.03 | ✅ |
+| FAZ 10.3 | Çoklu Dil Normalizasyonu | 02.03 | ✅ |
+| FAZ 10.4 | ML-Based Auto-Learning | 02.03 | ✅ |
 
-### Faz 3: Güvenlik Taramaları (Tamamlandı — 17 Şubat 2026)
-- GitLeaks: 3 bulgu → 3/3 düzeltildi
-- Nikto: 7 bulgu → 7/7 düzeltildi
-- OWASP ZAP: 0 bulgu (temiz)
-- Sonuç: 8/8 kontrol BAŞARILI
+### CV & Görev Sistemi (Mart 2026)
+| Faz | Açıklama | Tarih | Durum |
+|-----|----------|-------|-------|
+| FAZ A | CV Parse İyileştirme (deneyim, max 5 iş, search_text) | 05.03 | ✅ |
+| FAZ B | Görev Tanımı Upload (backend + frontend) | 06.03 | ✅ |
+| FAZ C | Görev Eşleşmesi + 15 Puan Task Kategorisi | 06.03 | ✅ |
+| FAZ D | 110→100 Puan Rebalance | 07.03 | ✅ |
 
-### Faz 4: UI/UX İyileştirmeleri (Tamamlandı — 17 Şubat 2026)
-- AI Değerlendir butonu tutarlılığı (cbc7706)
-- Aday detay kart layout düzeltmesi (0ebd802)
-- Tablo sütun hizalaması (8cd2d55)
-- Aday detay modal boş alan düzeltmesi (1a18484)
+### Diğer Tamamlananlar
+| Görev | Açıklama | Tarih | Durum |
+|-------|----------|-------|-------|
+| G1-G8 | Title + Scoring İyileştirmeleri | 05-06.03 | ✅ |
+| FAZ 1B | Company-specific Synonyms | 05.03 | ✅ |
+| G5 | must_have Ceza Kaldırma | 06.03 | ✅ |
+| KVKK | Mülakat KVKK Onay Sistemi | 06.03 | ✅ |
+| DB Lock | WAL + busy_timeout Çözümü | 06.03 | ✅ |
+| Dil Savunma | 2 Katman Hallucination Koruması | 07.03 | ✅ |
+| Memory Bank | .claudeignore + CLAUDE.md + activeContext | 08.03 | ✅ |
 
-### Faz 5: Data Management & Settings (Tamamlandı — 18 Şubat 2026)
-- Data Reset sistemi — 3 kademe (candidates/pools/full), backend + UI
-- CV ZIP Download — Adaylar + Havuzlar sayfası, filtre-bağımlı
-- Adaylar filtre fix — departman/pozisyon/arsiv candidate_pool_assignments JOIN
-- Duplicate CV kontrolü — create_candidate() email+telefon kontrolü
-- Ayarlar temizliği — 6→3 sekme (Şifre, Tema, Gelişmiş)
-- Şifre değiştir — PUT /api/auth/change-password endpoint + UI
-- Kilitleme — 14 dosya, 13 kural
+## Bekleyen / Açık Görevler
 
-## Devam Eden İşler
+| Öncelik | Görev | Durum |
+|---------|-------|-------|
+| 🔴 KRİTİK | Pozisyon sil→ekle aday kaybı | Analiz bekliyor |
+| 🟠 ORTA | Generic keyword temizliği | Planlama |
+| 🟡 DÜŞÜK | Görev tanımı duplicate uyarısı | Backlog |
+| ⏸️ BEKLEYEN | Görev eşleşmesi karar raporu | Onay bekliyor |
+| ⏸️ BEKLEYEN | Kariyer Sayfası | Güvenlik taraması sonrası |
+| ⏸️ BEKLEYEN | FAZ 7.6 Data Cleanup | Sırada |
 
-### Faz 6: Production Geçişi (Devam Ediyor)
-- [ ] Türkiye VPS seçimi ve kurulumu
-- [ ] DNS ayarları (hylilabs.com → Türkiye IP)
-- [ ] SSL sertifikası (Let's Encrypt)
-- [ ] Nginx reverse proxy
-- [ ] Database backup otomasyonu
-- [ ] admin123/demo123 şifre değişikliği
+## Kilitli Sistemler
 
-### Faz 7: Company Switcher (Planlandı)
-- [ ] Görev 1: Dynamic company list from API
-- [ ] Görev 2: Auth store company ID
-- [ ] Görev 3: Super admin context switch
-
-### Faz 8: Kariyer Sayfası (TODO)
-- [ ] Pozisyon bazlı dış başvuru formu
-- [ ] CV upload + otomatik parse
-- [ ] llms.txt + AEO optimizasyonu
-
-## Bilinen Hatalar
-| # | Hata | Durum | Öncelik |
-|---|------|-------|---------|
-| 1 | Havuzlar Manuel Giriş 500 | Açık | Yüksek |
-| 2 | Kariyer.net Cloudflare 403 | Açık | Orta |
-| 3 | Eski route dosyaları temizliği | Açık | Düşük |
-| 4 | SSL sorunu (HTTP indirme uyarısı) | Açık | Orta |
+- **Dosyalar (4):** scoring_v2.py, cv_parser.py, candidate_matcher.py, eval_report_v2.py
+- **Fonksiyonlar (13):** save_cv_file, validate_cv_access, convert_to_pdf, get_safe_content_disposition, vb.
+- **Kurallar (33):** CLAUDE.md Kural 1-33
+- **Puanlama:** 100 puan sistemi v2.1 (Position 20, Technical 40, General 15, Task 15, Elimination 10)
 
 ## İstatistikler
-- Toplam Commit (18 Şubat): 12
-- Toplam Aday: 51
-- Duplicate: 0
-- Kilitli Dosya: 14
-- Kilitli Kural: 13
+
+| Metrik | Değer |
+|--------|-------|
+| Toplam Commit | 50+ |
+| Son Commit | c5e3c84 (08.03.2026) |
+| Backend Endpoint | 71+ |
+| Frontend Sayfa | 11 |
+| Kilitli Sistem | 33 |
+| Aktif Şirket | 3 |
+| Toplam Aday | ~50 |
+
+## Son Commit Zinciri
+c5e3c84 - docs: clean activeContext.md (1652→80 lines)
+a3308e1 - docs: add scoring system, completed phases
+0e7c03b - feat: add .claudeignore
+6264245 - fix: job description upload response format
+2a53de5 - docs: 100 puan sistemi rescore
