@@ -1359,8 +1359,8 @@ export default function Havuzlar() {
                     setBlacklistReason('');
                     setBlacklistCandidateId(null);
                     // Listeyi yenile
-                    if (selectedPool) {
-                      loadCandidates(selectedPool.id);
+                    if (selectedPoolId) {
+                      loadCandidates(selectedPoolId);
                     }
                   } else {
                     toast.error(data.error || data.detail || 'Kara listeye ekleme başarısız');
