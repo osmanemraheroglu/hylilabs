@@ -1,0 +1,55 @@
+# ===========================================
+# HyliLabs .claudeignore
+# Claude Code'un okumaması gereken dosyalar
+# ===========================================
+
+# Build artifacts (489 MB)
+node_modules/
+dist/
+dist-ssr/
+build/
+__pycache__/
+*.pyc
+
+# Git (26 MB)
+.git/
+
+# Data klasörü (2.1 GB - CV'ler, DB, backup'lar)
+api/data/
+data/
+
+# Database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.*
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+*.temp
+*.bak
