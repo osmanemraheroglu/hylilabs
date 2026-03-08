@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   FolderTree, Plus, Edit, Trash2, RefreshCw, ChevronRight, ChevronDown,
   Archive, Inbox, Building2, Target, UserPlus, Search,
-  Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown
+  Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown, Ban
 } from 'lucide-react'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -29,7 +29,7 @@ interface SysPool { id: number; name: string; icon: string; is_system: boolean; 
 interface Position { id: number; name: string; icon: string; keywords: string|null; description: string|null; candidate_count: number }
 interface Dept { id: number; name: string; icon: string; candidate_count: number; positions: Position[]; total_position_candidates: number }
 interface TreeData { system_pools: SysPool[]; departments: Dept[]; total_candidates?: number }
-interface Candidate { id: number; ad_soyad: string; email: string|null; telefon: string|null; mevcut_pozisyon: string|null; toplam_deneyim_yil: number|null; lokasyon: string|null; location_status?: { status: "green" | "yellow" | "red" | "gray"; candidate_location: string; position_location: string; match_type: string }; match_score?: number; match_reason?: string; remaining_days?: number; assignment_type?: string; status?: string }
+interface Candidate { id: number; ad_soyad: string; email: string|null; telefon: string|null; mevcut_pozisyon: string|null; toplam_deneyim_yil: number|null; lokasyon: string|null; location_status?: { status: "green" | "yellow" | "red" | "gray"; candidate_location: string; position_location: string; match_type: string }; match_score?: number; match_reason?: string; remaining_days?: number; assignment_type?: string; status?: string; is_blacklisted?: number; durum?: string }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   aktif: { label: 'Aktif', color: 'bg-blue-100 text-blue-800' },
@@ -38,6 +38,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   mulakat: { label: 'Mülakat', color: 'bg-cyan-100 text-cyan-800' },
   teklif: { label: 'Teklif', color: 'bg-green-100 text-green-800' },
   red: { label: 'Red', color: 'bg-red-100 text-red-800' },
+  blacklist: { label: 'Kara Liste', color: 'bg-gray-900 text-white' },
 }
 
 function dayColor(d: number|undefined) {
@@ -80,6 +81,12 @@ export default function Havuzlar() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+
+  // Kara Liste Dialog
+  const [blacklistDialogOpen, setBlacklistDialogOpen] = useState(false)
+  const [blacklistReason, setBlacklistReason] = useState('')
+  const [blacklistCandidateId, setBlacklistCandidateId] = useState<number | null>(null)
+  const [blacklistLoading, setBlacklistLoading] = useState(false)
 
   // Forms
   const [poolForm, setPoolForm] = useState({ name: '', pool_type: 'department', parent_id: '', icon: '', keywords: '', description: '', gerekli_deneyim_yil: '0', gerekli_egitim: '', lokasyon: '' })
@@ -697,7 +704,7 @@ export default function Havuzlar() {
                         const si = c.match_score ? scoreIcon(c.match_score) : null
                         return (
                           <Fragment key={c.id}>
-                            <TableRow className="cursor-pointer" onClick={() => loadDetail(c.id)}>
+                            <TableRow className={`cursor-pointer ${c.is_blacklisted === 1 || c.durum === 'blacklist' ? 'bg-red-50' : ''}`} onClick={() => loadDetail(c.id)}>
                               <TableCell>
                                 <div className="font-medium text-sm flex items-center gap-1">{expandedCandidate === c.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}{c.ad_soyad}</div>
                                 {c.email && <div className="text-xs text-muted-foreground ml-4">{c.email}</div>}
@@ -719,6 +726,7 @@ export default function Havuzlar() {
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleRescore(c.id)} disabled={rescoring} title="Skoru Yeniden Hesapla"><RefreshCw className="h-3.5 w-3.5 text-blue-500" /></Button>
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEvaluate(c.id)} disabled={evaluating} title="AI Değerlendir"><Brain className="h-3.5 w-3.5 text-purple-500" /></Button>
                                   <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRemoveCandidate(c.id)} title="Çıkar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                                  <Button variant="ghost" size="sm" className="text-gray-700 hover:text-black h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); setBlacklistCandidateId(c.id); setBlacklistDialogOpen(true); }} title="Kara Listeye Al"><Ban className="h-3.5 w-3.5" /></Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -1293,6 +1301,81 @@ export default function Havuzlar() {
               </DialogFooter>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Kara Liste Dialog */}
+      <Dialog open={blacklistDialogOpen} onOpenChange={(o) => { setBlacklistDialogOpen(o); if (!o) { setBlacklistReason(''); setBlacklistCandidateId(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ban className="h-5 w-5 text-red-600" />
+              Kara Listeye Al
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800 font-medium">⚠️ Bu işlem:</p>
+              <ul className="text-sm text-red-700 mt-1 list-disc list-inside">
+                <li>Adayı tüm havuzlardan çıkaracak</li>
+                <li>Aktif mülakatları iptal edecek</li>
+                <li>Aday tekrar CV gönderirse sisteme alınmayacak</li>
+              </ul>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Kara Liste Nedeni *</label>
+              <textarea
+                className="w-full mt-1 p-2 border rounded-md text-sm min-h-[80px]"
+                placeholder="Örn: Mülakata gelmedi, iletişime geçilemiyor..."
+                value={blacklistReason}
+                onChange={(e) => setBlacklistReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlacklistDialogOpen(false)}>İptal</Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!blacklistCandidateId || !blacklistReason.trim()) {
+                  toast.error('Kara liste nedeni zorunludur');
+                  return;
+                }
+                if (blacklistReason.trim().length < 5) {
+                  toast.error('Kara liste nedeni en az 5 karakter olmalı');
+                  return;
+                }
+                setBlacklistLoading(true);
+                try {
+                  const res = await fetch(`${API}/api/candidates/${blacklistCandidateId}/blacklist`, {
+                    method: 'POST',
+                    headers: H(),
+                    body: JSON.stringify({ reason: blacklistReason.trim() })
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    toast.success('Aday kara listeye alındı');
+                    setBlacklistDialogOpen(false);
+                    setBlacklistReason('');
+                    setBlacklistCandidateId(null);
+                    // Listeyi yenile
+                    if (selectedPool) {
+                      loadCandidates(selectedPool.id);
+                    }
+                  } else {
+                    toast.error(data.error || data.detail || 'Kara listeye ekleme başarısız');
+                  }
+                } catch (err) {
+                  toast.error('Bir hata oluştu');
+                } finally {
+                  setBlacklistLoading(false);
+                }
+              }}
+              disabled={blacklistLoading || !blacklistReason.trim()}
+            >
+              {blacklistLoading ? 'İşleniyor...' : 'Kara Listeye Al'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

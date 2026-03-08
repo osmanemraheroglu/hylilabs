@@ -164,14 +164,15 @@ export default function Candidates() {
       kabul: 'Kabul',
       ise_alindi: 'İşe Alındı',
       red: 'Red',
-      arsiv: 'Arşiv'
+      arsiv: 'Arşiv',
+      blacklist: 'Kara Liste'
     }
     return map[d] || d
   }
 
   const durumVariant = (d: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
     if (d === 'kabul' || d === 'ise_alindi') return 'default'
-    if (d === 'red' || d === 'arsiv') return 'destructive'
+    if (d === 'red' || d === 'arsiv' || d === 'blacklist') return 'destructive'
     if (d === 'mulakat' || d === 'pozisyona_atandi') return 'outline'
     return 'secondary'
   }
@@ -228,6 +229,7 @@ export default function Candidates() {
                 <SelectItem value='mulakat'>Mülakat</SelectItem>
                 <SelectItem value='ise_alindi'>İşe Alındı</SelectItem>
                 <SelectItem value='arsiv'>Arşiv</SelectItem>
+                <SelectItem value='blacklist'>Kara Liste</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={handleSearch} variant='outline'>
@@ -266,7 +268,7 @@ export default function Candidates() {
                     </TableRow>
                   ) : (
                     candidates.map(c => (
-                      <TableRow key={c.id} className='cursor-pointer hover:bg-muted/50' onClick={() => loadDetail(c)}>
+                      <TableRow key={c.id} className={`cursor-pointer hover:bg-muted/50 ${c.durum === 'blacklist' ? 'bg-red-50' : ''}`} onClick={() => loadDetail(c)}>
                         <TableCell>
                           <div className='font-medium'>{c.ad_soyad}</div>
                           <div className='text-xs text-muted-foreground'>{c.email}</div>
