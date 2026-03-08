@@ -1275,6 +1275,23 @@ def evaluate_candidate(pool_id: int, candidate_id: int, current_user: dict = Dep
             education_score = 0
             knockout = False
             knockout_reason = ""
+            # Yeni değişkenler (TAM LİSTE - 16 adet)
+            seniority_score = 0
+            seniority_detail = ""
+            task_score = 0
+            task_matched = []
+            task_missing = []
+            elimination_score = 0
+            location_score = 0
+            location_detail = ""
+            general_score = 0
+            must_have_matched = []
+            must_have_missing = []
+            important_matched = []
+            important_missing = []
+            bonus_matched = []
+            matched_title = ""
+            sector_score = 0
             
             if match_row:
                 total_v2 = match_row["uyum_puani"] or 0
@@ -1290,52 +1307,114 @@ def evaluate_candidate(pool_id: int, candidate_id: int, current_user: dict = Dep
                         education_score = detail.get("education_score", 0)
                         knockout = detail.get("knockout", False)
                         knockout_reason = detail.get("knockout_reason", "")
+                        # Yeni okumalar (TAM LİSTE - 16 adet)
+                        seniority_score = detail.get("seniority_score", 0)
+                        seniority_detail = detail.get("seniority_detail", "")
+                        task_score = detail.get("task_score", 0)
+                        task_matched = detail.get("task_matched", [])[:5]
+                        task_missing = detail.get("task_missing", [])[:5]
+                        elimination_score = detail.get("elimination_score", 0)
+                        location_score = detail.get("location_score", 0)
+                        location_detail = detail.get("location_detail", "")
+                        general_score = detail.get("general_score", 0)
+                        must_have_matched = detail.get("must_have_matched", [])[:5]
+                        must_have_missing = detail.get("must_have_missing", [])[:5]
+                        important_matched = detail.get("important_matched", [])[:5]
+                        important_missing = detail.get("important_missing", [])[:5]
+                        bonus_matched = detail.get("bonus_matched", [])[:5]
+                        matched_title = detail.get("matched_title", "")
+                        sector_score = detail.get("sector_score", 0)
                     except:
                         pass
             
-            # Prompt oluştur (TalentFlow formatı)
+            # String dönüşümleri (TAM LİSTE - 9 adet)
             crit_matched_str = ", ".join([m['keyword'] if isinstance(m, dict) else m for m in critical_matched]) if critical_matched else "Yok"
             crit_missing_str = ", ".join(critical_missing) if critical_missing else "Yok"
+            must_have_matched_str = ", ".join([m['keyword'] if isinstance(m, dict) else m for m in must_have_matched]) if must_have_matched else "Yok"
+            must_have_missing_str = ", ".join(must_have_missing) if must_have_missing else "Yok"
+            important_matched_str = ", ".join([m['keyword'] if isinstance(m, dict) else m for m in important_matched]) if important_matched else "Yok"
+            important_missing_str = ", ".join(important_missing) if important_missing else "Yok"
+            task_matched_str = ", ".join([m['keyword'] if isinstance(m, dict) else m for m in task_matched]) if task_matched else "Yok"
+            task_missing_str = ", ".join(task_missing) if task_missing else "Yok"
+            bonus_matched_str = ", ".join([m['keyword'] if isinstance(m, dict) else m for m in bonus_matched]) if bonus_matched else "Yok"
             ko_str = f"KNOCKOUT: {knockout_reason}" if knockout else ""
             
-            eval_prompt = f"""Asagidaki adayi belirtilen pozisyon icin degerlendir. Turkce yanit ver.
+            eval_prompt = f"""Aşağıdaki adayı belirtilen pozisyon için değerlendir. Türkçe yanıt ver.
 
-ADAY: {cand["ad_soyad"]}
+═══════════════════════════════════════════════════════════════
+ADAY BİLGİLERİ
+═══════════════════════════════════════════════════════════════
+Ad Soyad: {cand["ad_soyad"]}
 Mevcut Pozisyon: {cand["mevcut_pozisyon"] or "-"}
-Deneyim: {cand["toplam_deneyim_yil"] or 0} yil
-Egitim: {cand["egitim"] or "-"}
+Toplam Deneyim: {cand["toplam_deneyim_yil"] or 0} yıl
+Eğitim: {cand["egitim"] or "-"}
 Teknik Beceriler: {cand["teknik_beceriler"] or "-"}
-Deneyim Detay: {(cand["deneyim_detay"] or "-")[:500]}
+Deneyim Detayı: {(cand["deneyim_detay"] or "-")[:500]}
 Lokasyon: {cand["lokasyon"] or "-"}
 
-POZISYON: {pos["name"]}
-Keywords: {pos["keywords"] or ""}
+═══════════════════════════════════════════════════════════════
+POZİSYON BİLGİLERİ
+═══════════════════════════════════════════════════════════════
+Pozisyon Adı: {pos["name"]}
+Aranan Beceriler: {pos["keywords"] or ""}
 
-V2 SKOR: {total_v2}/100
-Pozisyon Uyumu: {pos_score}/20 (baslik: {title_match_level})
-Teknik Yetkinlik: {technical_score}/40
-Kritik eslesen: {crit_matched_str}
-Kritik eksik: {crit_missing_str}
-Deneyim: {experience_score}/8, Egitim: {education_score}/7
+═══════════════════════════════════════════════════════════════
+PUANLAMA DETAYI (Toplam: {total_v2}/100)
+═══════════════════════════════════════════════════════════════
+
+1. POZİSYON UYUMU: {pos_score}/20
+   - Başlık Eşleşme Seviyesi: {title_match_level}
+   - Eşleşen Başlık: {matched_title or "-"}
+   - Sektör Puanı: {sector_score}/7
+   - Kıdem Puanı: {seniority_score}/5 ({seniority_detail or "-"})
+
+2. TEKNİK YETKİNLİK: {technical_score}/40
+   - Olmazsa Olmaz (Must-Have) Eşleşen: {must_have_matched_str}
+   - Olmazsa Olmaz (Must-Have) Eksik: {must_have_missing_str}
+   - Kritik Beceri Eşleşen: {crit_matched_str}
+   - Kritik Beceri Eksik: {crit_missing_str}
+   - Önemli Beceri Eşleşen: {important_matched_str}
+   - Önemli Beceri Eksik: {important_missing_str}
+   - Bonus Beceriler: {bonus_matched_str}
+
+3. GÖREV EŞLEŞMESİ: {task_score}/15
+   - Eşleşen Görevler: {task_matched_str}
+   - Eksik Görevler: {task_missing_str}
+
+4. GENEL YETKİNLİK: {general_score}/15
+   - Deneyim Puanı: {experience_score}/8
+   - Eğitim Puanı: {education_score}/7
+
+5. LOKASYON/ELEME: {elimination_score}/10
+   - Lokasyon Puanı: {location_score}/5
+   - Lokasyon Detay: {location_detail or "-"}
+
 {ko_str}
 
-ONEMLI KURALLAR:
-1. Pozisyon adi ve keyword'lerdeki teknik terimleri AYNEN kullan, KISALTMA.
-   "gaz jenerator guc sistemleri" -> "gaz jenerator guc sistemleri" (DOGRU)
-   "gaz jenerator guc sistemleri" -> "gaz sistemleri" (YANLIS)
-2. Yazilim isimleri, arac adlari ve sektorel jargon AYNEN korunmali.
-3. Kisaltma veya genellestirme YAPMA.
+═══════════════════════════════════════════════════════════════
+ÖNEMLİ KURALLAR
+═══════════════════════════════════════════════════════════════
+1. Pozisyon adı ve keyword'lerdeki teknik terimleri AYNEN kullan, KISALTMA YAPMA.
+   Örnek: "gaz jeneratör güç sistemleri" → "gaz jeneratör güç sistemleri" (DOĞRU)
+   Örnek: "gaz jeneratör güç sistemleri" → "gaz sistemleri" (YANLIŞ)
+2. Yazılım isimleri, araç adları ve sektörel jargon AYNEN korunmalı.
+3. Kısaltma veya genelleştirme YAPMA.
+4. Puanları yorumlarken tüm kategorilere dikkat et.
+5. Eksik becerileri belirtirken orijinal terimlerle yaz.
 
-Asagidaki formatta yanit ver (kisa ve oz, her baslik 2-3 madde):
+═══════════════════════════════════════════════════════════════
+ÇIKTI FORMATI
+═══════════════════════════════════════════════════════════════
+Aşağıdaki formatta yanıt ver (kısa ve öz, her başlık 2-3 madde):
 
-**Guclu Yonleri:**
+**Güçlü Yönleri:**
 - ...
 
 **Eksiklikleri:**
 - ...
 
-**Genel Degerlendirme:**
-(2-3 cumle)
+**Genel Değerlendirme:**
+(2-3 cümle, toplam puanı ve kritik eksikleri yorumla)
 
 **Alternatif Pozisyonlar:**
 - ...
