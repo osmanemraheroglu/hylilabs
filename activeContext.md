@@ -5,7 +5,7 @@ Son güncelleme: 08.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 3a9f1b6 (08.03.2026)
+- **Son commit:** a5f8c77 (08.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -18,6 +18,12 @@ Son güncelleme: 08.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 08.03.2026
+- ✅ **Kara Liste Sistemi** — database layer + CV upload check (a5f8c77)
+  - blacklisted_candidates tablosu (15 kolon, 3 index)
+  - candidates.is_blacklisted + blacklist_id kolonları
+  - create_candidate() blacklist check
+  - 4 yeni fonksiyon: check_blacklist, blacklist_candidate, remove_from_blacklist, get_blacklist_info
+  - cv.py blacklist response handling
 - ✅ AI Evaluation prompt TAM güncelleme — 16 yeni değişken, Türkçe (3a9f1b6)
 - ✅ critical_matched dict→string dönüşüm fix (ad98978)
 - ✅ .claudeignore oluşturuldu (0e7c03b)
@@ -70,10 +76,10 @@ Son güncelleme: 08.03.2026
 
 ## Sonraki Hedef
 
-Kritik bug çözümü: Pozisyon sil→ekle aday kaybı
-- Önce analiz raporu al
-- Root cause tespit et
-- Implementasyon planı yap
+Kara Liste Sistemi — Kalan Adımlar:
+- [ ] Backend API endpoints (routes/candidates.py)
+- [ ] Frontend UI (havuzlar + candidates)
+- [ ] Test ve deploy
 
 ## Notlar
 
