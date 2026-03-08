@@ -9,7 +9,10 @@ from database import (
     get_candidate_full_data,
     update_candidate,
     delete_candidate_cv_file,
-    get_candidate_positions
+    get_candidate_positions,
+    blacklist_candidate,
+    remove_from_blacklist,
+    get_blacklist_info
 )
 from routes.auth import get_current_user
 from core.cv_parser import validate_cv_access
@@ -494,7 +497,7 @@ def download_cvs(
         raise HTTPException(status_code=404, detail="İndirilecek CV dosyası bulunamadı")
     
     zip_buffer.seek(0)
-    
+
     return StreamingResponse(
         zip_buffer,
         media_type="application/zip",
@@ -502,3 +505,94 @@ def download_cvs(
             "Content-Disposition": f"attachment; filename=cv_export_{file_count}_dosya.zip"
         }
     )
+
+
+# ============================================================
+# KARA LİSTE ENDPOINT'LERİ
+# ============================================================
+
+@router.post("/{candidate_id}/blacklist")
+def add_to_blacklist(
+    candidate_id: int,
+    body: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Adayı kara listeye alır.
+    Body: {"reason": "Kara liste nedeni"}
+    """
+    company_id = current_user.get("company_id")
+    user_id = current_user.get("id")
+    reason = body.get("reason", "").strip()
+
+    if not reason:
+        raise HTTPException(status_code=400, detail="Kara liste nedeni zorunludur")
+
+    if len(reason) < 5:
+        raise HTTPException(status_code=400, detail="Kara liste nedeni en az 5 karakter olmalı")
+
+    result = blacklist_candidate(
+        candidate_id=candidate_id,
+        reason=reason,
+        blacklisted_by=user_id,
+        company_id=company_id
+    )
+
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Kara listeye ekleme başarısız"))
+
+    return result
+
+
+@router.delete("/{candidate_id}/blacklist")
+def remove_blacklist(
+    candidate_id: int,
+    body: dict = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Adayı kara listeden kaldırır.
+    Body (opsiyonel): {"removal_reason": "Kaldırma nedeni"}
+    """
+    company_id = current_user.get("company_id")
+    user_id = current_user.get("id")
+    removal_reason = None
+
+    if body:
+        removal_reason = body.get("removal_reason", "").strip() or None
+
+    result = remove_from_blacklist(
+        candidate_id=candidate_id,
+        removed_by=user_id,
+        company_id=company_id,
+        removal_reason=removal_reason
+    )
+
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Kara listeden kaldırma başarısız"))
+
+    return result
+
+
+@router.get("/{candidate_id}/blacklist")
+def get_blacklist(
+    candidate_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Aday için kara liste bilgilerini getirir.
+    """
+    company_id = current_user.get("company_id")
+
+    result = get_blacklist_info(
+        candidate_id=candidate_id,
+        company_id=company_id
+    )
+
+    if not result:
+        return {"is_blacklisted": False}
+
+    return {
+        "is_blacklisted": result.get("is_active") == 1,
+        **result
+    }

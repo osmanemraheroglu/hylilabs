@@ -5467,8 +5467,16 @@ def get_all_candidates(
                 params.append(havuz)
 
         if durum:
-            query += " AND durum = ?"
-            params.append(durum)
+            if durum == "blacklist":
+                # Kara listedeki adayları getir
+                query += " AND is_blacklisted = 1"
+            else:
+                # Normal durum filtresi + kara listedekiler hariç
+                query += " AND durum = ? AND (is_blacklisted = 0 OR is_blacklisted IS NULL)"
+                params.append(durum)
+        else:
+            # Durum filtresi yoksa da kara listedekiler hariç
+            query += " AND (is_blacklisted = 0 OR is_blacklisted IS NULL)"
 
         if arama:
             query += " AND (TURKISH_LOWER(ad_soyad) LIKE ? OR TURKISH_LOWER(email) LIKE ? OR TURKISH_LOWER(teknik_beceriler) LIKE ?)"
@@ -5537,8 +5545,16 @@ def get_candidates_count(
                 params.append(havuz)
 
         if durum:
-            query += " AND durum = ?"
-            params.append(durum)
+            if durum == "blacklist":
+                # Kara listedeki adayları say
+                query += " AND is_blacklisted = 1"
+            else:
+                # Normal durum filtresi + kara listedekiler hariç
+                query += " AND durum = ? AND (is_blacklisted = 0 OR is_blacklisted IS NULL)"
+                params.append(durum)
+        else:
+            # Durum filtresi yoksa da kara listedekiler hariç
+            query += " AND (is_blacklisted = 0 OR is_blacklisted IS NULL)"
 
         if arama:
             query += " AND (TURKISH_LOWER(ad_soyad) LIKE ? OR TURKISH_LOWER(email) LIKE ? OR TURKISH_LOWER(teknik_beceriler) LIKE ?)"
