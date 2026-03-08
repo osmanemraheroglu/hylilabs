@@ -171,7 +171,7 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
     def make_tags(items, color, bg):
         if not items:
             return '<span style="color:#94a3b8;font-size:0.65rem;">-</span>'
-        return ''.join(f'<span style="background:{bg};color:{color};padding:1px 5px;border-radius:8px;font-size:0.6rem;margin:1px;display:inline-block;word-break:break-word;overflow-wrap:break-word;">{item}</span>' for item in items[:5])
+        return ''.join(f'<span style="background:{bg};color:{color};padding:1px 5px;border-radius:8px;font-size:0.6rem;margin:1px;display:inline-block;word-break:break-word;overflow-wrap:break-word;">{item["keyword"] if isinstance(item, dict) else item}</span>' for item in items[:5])
 
     matched_tags = make_tags(critical_matched, "#166534", "#dcfce7")
     missing_tags = make_tags(critical_missing, "#991b1b", "#fef2f2")

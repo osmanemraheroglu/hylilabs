@@ -35,7 +35,7 @@ def generate_eval_html(candidate_name, position_name, v2_data, ai_text, eval_dat
     
     ko_html = f'<div style="background:#fef2f2;border:1px solid #ef4444;border-radius:6px;padding:10px;margin:10px 0;color:#991b1b;"><b>⛔ KNOCKOUT:</b> {knockout_reason}</div>' if knockout else ''
     
-    match_chips = ' '.join(f'<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:12px;font-size:12px;margin:2px;">{k}</span>' for k in (critical_matched[:8] if critical_matched else []))
+    match_chips = ' '.join(f'<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:12px;font-size:12px;margin:2px;">{k["keyword"] if isinstance(k, dict) else k}</span>' for k in (critical_matched[:8] if critical_matched else []))
     miss_chips = ' '.join(f'<span style="background:#fef2f2;color:#991b1b;padding:2px 8px;border-radius:12px;font-size:12px;margin:2px;">{k}</span>' for k in (critical_missing[:8] if critical_missing else []))
     
     html = f"""<!DOCTYPE html>

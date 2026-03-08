@@ -1294,7 +1294,7 @@ def evaluate_candidate(pool_id: int, candidate_id: int, current_user: dict = Dep
                         pass
             
             # Prompt oluştur (TalentFlow formatı)
-            crit_matched_str = ", ".join(critical_matched) if critical_matched else "Yok"
+            crit_matched_str = ", ".join([m['keyword'] if isinstance(m, dict) else m for m in critical_matched]) if critical_matched else "Yok"
             crit_missing_str = ", ".join(critical_missing) if critical_missing else "Yok"
             ko_str = f"KNOCKOUT: {knockout_reason}" if knockout else ""
             
