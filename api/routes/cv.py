@@ -105,6 +105,14 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
                 "data": {"existing_id": candidate_result["candidate_id"]}
             }
 
+        # Blacklist kontrolu
+        if isinstance(candidate_result, dict) and candidate_result.get("blacklisted"):
+            return {
+                "success": False,
+                "message": candidate_result["message"],
+                "data": {"blacklisted": True, "cv_attempt_count": candidate_result.get("cv_attempt_count", 1)}
+            }
+
         candidate_id = candidate_result
 
         # Application kaydı oluştur (sadece yeni aday için)

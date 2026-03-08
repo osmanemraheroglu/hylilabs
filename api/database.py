@@ -2041,6 +2041,17 @@ def init_database():
         except sqlite3.OperationalError:
             pass  # Kolon zaten var
 
+        # Candidates Migration: Kara liste kolonları (08.03.2026)
+        try:
+            cursor.execute("ALTER TABLE candidates ADD COLUMN is_blacklisted INTEGER DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass  # Kolon zaten var
+
+        try:
+            cursor.execute("ALTER TABLE candidates ADD COLUMN blacklist_id INTEGER")
+        except sqlite3.OperationalError:
+            pass  # Kolon zaten var
+
         # Email sablonlari tablosu
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS email_templates (
@@ -2143,6 +2154,35 @@ def init_database():
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_approved_titles_position ON approved_title_mappings(position_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_approved_titles_approved ON approved_title_mappings(is_approved)")
+
+        # Kara Liste tablosu
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS blacklisted_candidates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER NOT NULL,
+                email TEXT,
+                telefon TEXT,
+                ad_soyad TEXT,
+                reason TEXT NOT NULL,
+                blacklisted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                blacklisted_by INTEGER NOT NULL,
+                is_active INTEGER DEFAULT 1,
+                removed_at TIMESTAMP,
+                removed_by INTEGER,
+                removal_reason TEXT,
+                cv_attempt_count INTEGER DEFAULT 0,
+                last_cv_attempt_at TIMESTAMP,
+                original_candidate_id INTEGER,
+                FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+                FOREIGN KEY (blacklisted_by) REFERENCES users(id),
+                FOREIGN KEY (removed_by) REFERENCES users(id)
+            )
+        """)
+
+        # Kara Liste indeksleri
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_blacklist_email ON blacklisted_candidates(company_id, email, is_active)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_blacklist_telefon ON blacklisted_candidates(company_id, telefon, is_active)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_blacklist_company ON blacklisted_candidates(company_id, is_active)')
 
         # Varsayilan email sablonlarini ekle (company_id = 1)
         _init_default_email_templates(cursor)
@@ -5153,6 +5193,23 @@ def create_candidate(candidate: Candidate, company_id: int) -> int:
     """
     if not company_id:
         raise ValueError("company_id zorunludur - veri izolasyonu için firma ID gereklidir")
+
+    # BLACKLIST KONTROL — Kara listede mi?
+    email_check = getattr(candidate, 'email', None)
+    telefon_check = getattr(candidate, 'telefon', None)
+
+    if email_check or telefon_check:
+        blacklist_result = check_blacklist(
+            email=email_check or "",
+            telefon=telefon_check or "",
+            company_id=company_id
+        )
+        if blacklist_result.get("is_blacklisted"):
+            return {
+                "blacklisted": True,
+                "message": f"Bu aday kara listede: {blacklist_result.get('ad_soyad', 'Bilinmiyor')}. Sebep: {blacklist_result.get('reason', '-')}",
+                "cv_attempt_count": blacklist_result.get("cv_attempt_count", 1)
+            }
 
     # DUPLICATE KONTROL — Email veya telefon ile mevcut aday kontrolü
     email = getattr(candidate, 'email', None)
@@ -12605,3 +12662,247 @@ def delete_keyword_importance(id: int, company_id: int) -> dict:
     except Exception as e:
         logger.error(f"delete_keyword_importance hatası: {e}")
         return {"success": False, "message": str(e)}
+
+
+# ============================================================
+# KARA LİSTE FONKSİYONLARI
+# ============================================================
+
+def check_blacklist(email: str, telefon: str, company_id: int) -> dict:
+    """
+    Email veya telefon kara listede mi kontrol eder.
+    Kara listede ise cv_attempt_count'u artırır.
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT id, ad_soyad, reason, blacklisted_at, cv_attempt_count
+            FROM blacklisted_candidates
+            WHERE company_id = ? AND is_active = 1
+            AND (
+                (email IS NOT NULL AND email != '' AND LOWER(TRIM(email)) = LOWER(TRIM(?)))
+                OR (telefon IS NOT NULL AND telefon != '' AND telefon = ?)
+            )
+        ''', (company_id, email, telefon))
+
+        result = cursor.fetchone()
+
+        if result:
+            # CV deneme sayısını artır
+            cursor.execute('''
+                UPDATE blacklisted_candidates
+                SET cv_attempt_count = cv_attempt_count + 1,
+                    last_cv_attempt_at = datetime('now', 'localtime')
+                WHERE id = ?
+            ''', (result['id'],))
+            conn.commit()
+
+            return {
+                "is_blacklisted": True,
+                "blacklist_id": result['id'],
+                "ad_soyad": result['ad_soyad'],
+                "reason": result['reason'],
+                "blacklisted_at": result['blacklisted_at'],
+                "cv_attempt_count": result['cv_attempt_count'] + 1
+            }
+
+        return {"is_blacklisted": False}
+
+
+def blacklist_candidate(candidate_id: int, reason: str, blacklisted_by: int, company_id: int) -> dict:
+    """
+    Adayı kara listeye alır.
+    - blacklisted_candidates tablosuna kayıt ekler
+    - candidates tablosunda is_blacklisted = 1 ve durum = 'blacklist' yapar
+    - Tüm havuz atamalarından çıkarır
+    - Aktif mülakatları iptal eder
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+
+        try:
+            # 1. Aday bilgilerini al
+            cursor.execute('''
+                SELECT id, ad_soyad, email, telefon, company_id
+                FROM candidates
+                WHERE id = ? AND company_id = ?
+            ''', (candidate_id, company_id))
+            candidate = cursor.fetchone()
+
+            if not candidate:
+                return {"success": False, "error": "Aday bulunamadı"}
+
+            # 2. Zaten kara listede mi kontrol et
+            cursor.execute('''
+                SELECT id FROM blacklisted_candidates
+                WHERE company_id = ? AND is_active = 1
+                AND (
+                    (email IS NOT NULL AND email != '' AND LOWER(TRIM(email)) = LOWER(TRIM(?)))
+                    OR (telefon IS NOT NULL AND telefon != '' AND telefon = ?)
+                )
+            ''', (company_id, candidate['email'] or '', candidate['telefon'] or ''))
+            existing = cursor.fetchone()
+
+            if existing:
+                return {"success": False, "error": "Bu aday zaten kara listede"}
+
+            # 3. blacklisted_candidates tablosuna ekle
+            cursor.execute('''
+                INSERT INTO blacklisted_candidates
+                (company_id, email, telefon, ad_soyad, reason, blacklisted_by, original_candidate_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                company_id,
+                candidate['email'],
+                candidate['telefon'],
+                candidate['ad_soyad'],
+                reason,
+                blacklisted_by,
+                candidate_id
+            ))
+            blacklist_id = cursor.lastrowid
+
+            # 4. candidates tablosunu güncelle
+            cursor.execute('''
+                UPDATE candidates
+                SET is_blacklisted = 1,
+                    blacklist_id = ?,
+                    durum = 'blacklist'
+                WHERE id = ?
+            ''', (blacklist_id, candidate_id))
+
+            # 5. Tüm havuz atamalarından çıkar
+            cursor.execute('''
+                DELETE FROM candidate_pool_assignments
+                WHERE candidate_id = ?
+            ''', (candidate_id,))
+            deleted_assignments = cursor.rowcount
+
+            # 6. Aktif mülakatları iptal et
+            cursor.execute('''
+                UPDATE interviews
+                SET durum = 'iptal',
+                    notlar = COALESCE(notlar, '') || ' | Aday kara listeye alındı (' || datetime('now', 'localtime') || ')'
+                WHERE candidate_id = ?
+                AND durum NOT IN ('iptal', 'tamamlandi')
+            ''', (candidate_id,))
+            cancelled_interviews = cursor.rowcount
+
+            conn.commit()
+
+            logger.info(f"[BLACKLIST] Aday kara listeye alındı: candidate_id={candidate_id}, blacklist_id={blacklist_id}, deleted_assignments={deleted_assignments}, cancelled_interviews={cancelled_interviews}")
+
+            return {
+                "success": True,
+                "blacklist_id": blacklist_id,
+                "deleted_assignments": deleted_assignments,
+                "cancelled_interviews": cancelled_interviews,
+                "message": "Aday kara listeye alındı"
+            }
+
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"[BLACKLIST] Hata: {e}", exc_info=True)
+            return {"success": False, "error": str(e)}
+
+
+def remove_from_blacklist(candidate_id: int, removed_by: int, company_id: int, removal_reason: str = None) -> dict:
+    """
+    Adayı kara listeden kaldırır.
+    - blacklisted_candidates tablosunda is_active = 0 yapar
+    - candidates tablosunda is_blacklisted = 0, durum = 'yeni' yapar
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+
+        try:
+            # 1. Aday bilgilerini al
+            cursor.execute('''
+                SELECT id, blacklist_id, company_id
+                FROM candidates
+                WHERE id = ? AND company_id = ? AND is_blacklisted = 1
+            ''', (candidate_id, company_id))
+            candidate = cursor.fetchone()
+
+            if not candidate:
+                return {"success": False, "error": "Kara listede aday bulunamadı"}
+
+            # 2. blacklisted_candidates tablosunu güncelle
+            if candidate['blacklist_id']:
+                cursor.execute('''
+                    UPDATE blacklisted_candidates
+                    SET is_active = 0,
+                        removed_at = datetime('now', 'localtime'),
+                        removed_by = ?,
+                        removal_reason = ?
+                    WHERE id = ?
+                ''', (removed_by, removal_reason, candidate['blacklist_id']))
+
+            # 3. candidates tablosunu güncelle
+            cursor.execute('''
+                UPDATE candidates
+                SET is_blacklisted = 0,
+                    durum = 'yeni'
+                WHERE id = ?
+            ''', (candidate_id,))
+
+            conn.commit()
+
+            logger.info(f"[BLACKLIST] Aday kara listeden kaldırıldı: candidate_id={candidate_id}, removed_by={removed_by}")
+
+            return {
+                "success": True,
+                "message": "Aday kara listeden kaldırıldı"
+            }
+
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"[BLACKLIST] Kaldırma hatası: {e}", exc_info=True)
+            return {"success": False, "error": str(e)}
+
+
+def get_blacklist_info(candidate_id: int, company_id: int) -> dict:
+    """
+    Aday için kara liste bilgilerini getirir.
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT
+                bl.id,
+                bl.reason,
+                bl.blacklisted_at,
+                bl.cv_attempt_count,
+                bl.last_cv_attempt_at,
+                bl.is_active,
+                bl.removed_at,
+                bl.removal_reason,
+                u1.ad_soyad as blacklisted_by_name,
+                u2.ad_soyad as removed_by_name
+            FROM blacklisted_candidates bl
+            LEFT JOIN users u1 ON bl.blacklisted_by = u1.id
+            LEFT JOIN users u2 ON bl.removed_by = u2.id
+            WHERE bl.original_candidate_id = ? AND bl.company_id = ?
+            ORDER BY bl.id DESC
+            LIMIT 1
+        ''', (candidate_id, company_id))
+
+        result = cursor.fetchone()
+
+        if result:
+            return {
+                "blacklist_id": result['id'],
+                "reason": result['reason'],
+                "blacklisted_at": result['blacklisted_at'],
+                "blacklisted_by_name": result['blacklisted_by_name'],
+                "cv_attempt_count": result['cv_attempt_count'],
+                "last_cv_attempt_at": result['last_cv_attempt_at'],
+                "is_active": result['is_active'],
+                "removed_at": result['removed_at'],
+                "removed_by_name": result['removed_by_name'],
+                "removal_reason": result['removal_reason']
+            }
+
+        return None
