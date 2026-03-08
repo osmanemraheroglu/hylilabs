@@ -5,7 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { RefreshCw, Search, Users, ChevronLeft, ChevronRight, Eye, X, Download, Archive, CheckCircle, XCircle } from 'lucide-react'
+import { RefreshCw, Search, Users, ChevronLeft, ChevronRight, Eye, X, Download, Archive, CheckCircle, XCircle, Ban } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
 
@@ -59,6 +60,10 @@ export default function Candidates() {
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [blacklistInfo, setBlacklistInfo] = useState<{reason?: string; blacklisted_by_name?: string; blacklisted_at?: string} | null>(null)
+  const [removeBlacklistDialogOpen, setRemoveBlacklistDialogOpen] = useState(false)
+  const [removeBlacklistReason, setRemoveBlacklistReason] = useState('')
+  const [removeBlacklistLoading, setRemoveBlacklistLoading] = useState(false)
   const limit = 20
 
   const { auth } = useAuthStore()
@@ -119,17 +124,35 @@ export default function Candidates() {
     }
   }
 
-  const loadDetail = (candidate: CandidateItem) => {
+  const loadDetail = async (candidate: CandidateItem) => {
     setSelectedCandidate(candidate)
     setDetailLoading(true)
     setDetailData(null)
-    fetch(`${API_URL}/api/candidates/${candidate.id}`, { headers: getHeaders() })
-      .then(r => r.json())
-      .then(res => {
-        if (res.success) setDetailData(res.data.candidate || res.data)
-      })
-      .catch(err => console.error('Detail hatasi:', err))
-      .finally(() => setDetailLoading(false))
+    setBlacklistInfo(null)
+    try {
+      const res = await fetch(`${API_URL}/api/candidates/${candidate.id}`, { headers: getHeaders() })
+      const data = await res.json()
+      if (data.success) {
+        const candidateData = data.data.candidate || data.data
+        setDetailData(candidateData)
+        // Kara liste bilgisini yükle
+        if (candidateData.is_blacklisted === 1 || candidateData.durum === 'blacklist') {
+          try {
+            const blRes = await fetch(`${API_URL}/api/candidates/${candidate.id}/blacklist`, { headers: getHeaders() })
+            const blData = await blRes.json()
+            if (blData.is_blacklisted) {
+              setBlacklistInfo(blData.data || blData)
+            }
+          } catch (e) {
+            console.error('Blacklist info yüklenemedi:', e)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Detail hatasi:', err)
+    } finally {
+      setDetailLoading(false)
+    }
   }
 
   const handleStatusChange = async (candidateId: number, action: 'elen' | 'arsivle' | 'ise-al') => {
@@ -371,8 +394,31 @@ export default function Candidates() {
                   </div>
                 ) : null}
 
+                {/* Kara Liste Bilgisi */}
+                {(detailData.durum === 'blacklist' || detailData.is_blacklisted === 1) && blacklistInfo && (
+                  <div className='border-t pt-4 mt-4'>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-sm font-medium text-red-800 flex items-center gap-1">
+                        <Ban className="h-4 w-4" /> Kara Listede
+                      </p>
+                      <p className="text-xs text-red-700 mt-1">Neden: {blacklistInfo.reason || '-'}</p>
+                      <p className="text-xs text-red-600">Ekleyen: {blacklistInfo.blacklisted_by_name || '-'}</p>
+                      <p className="text-xs text-red-600">Tarih: {blacklistInfo.blacklisted_at ? new Date(blacklistInfo.blacklisted_at).toLocaleDateString('tr-TR') : '-'}</p>
+                    </div>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => setRemoveBlacklistDialogOpen(true)}
+                      className='mt-3 text-green-600 hover:text-green-700 hover:bg-green-50'
+                    >
+                      <CheckCircle className='h-4 w-4 mr-1' />
+                      Kara Listeden Çıkar
+                    </Button>
+                  </div>
+                )}
+
                 {/* Durum Değiştirme Butonları */}
-                {detailData.durum !== 'ise_alindi' && detailData.durum !== 'arsiv' && (
+                {detailData.durum !== 'ise_alindi' && detailData.durum !== 'arsiv' && detailData.durum !== 'blacklist' && detailData.is_blacklisted !== 1 && (
                   <div className='border-t pt-4 mt-4'>
                     <p className='text-sm text-muted-foreground mb-3'>Durum Değiştir:</p>
                     <div className='flex flex-wrap gap-2'>
@@ -415,6 +461,68 @@ export default function Candidates() {
           </div>
         </div>
       )}
+
+      {/* Kara Listeden Çıkar Dialog */}
+      <Dialog open={removeBlacklistDialogOpen} onOpenChange={(o) => { setRemoveBlacklistDialogOpen(o); if (!o) setRemoveBlacklistReason(''); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Kara Listeden Çıkar
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-sm text-green-800">Aday kara listeden çıkarılacak ve tekrar değerlendirmeye alınabilecektir.</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Çıkarma Nedeni (Opsiyonel)</label>
+              <textarea
+                className="w-full mt-1 p-2 border rounded-md text-sm min-h-[60px]"
+                placeholder="Örn: Yanlışlıkla eklenmişti, durumu değişti..."
+                value={removeBlacklistReason}
+                onChange={(e) => setRemoveBlacklistReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveBlacklistDialogOpen(false)}>İptal</Button>
+            <Button
+              variant="default"
+              className="bg-green-600 hover:bg-green-700"
+              onClick={async () => {
+                if (!selectedCandidate?.id) return;
+                setRemoveBlacklistLoading(true);
+                try {
+                  const res = await fetch(`${API_URL}/api/candidates/${selectedCandidate.id}/blacklist`, {
+                    method: 'DELETE',
+                    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ removal_reason: removeBlacklistReason.trim() || null })
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    toast.success('Aday kara listeden çıkarıldı');
+                    setRemoveBlacklistDialogOpen(false);
+                    setRemoveBlacklistReason('');
+                    setBlacklistInfo(null);
+                    setSelectedCandidate(null);
+                    loadCandidates();
+                  } else {
+                    toast.error(data.error || data.detail || 'Kara listeden çıkarma başarısız');
+                  }
+                } catch (err) {
+                  toast.error('Bir hata oluştu');
+                } finally {
+                  setRemoveBlacklistLoading(false);
+                }
+              }}
+              disabled={removeBlacklistLoading}
+            >
+              {removeBlacklistLoading ? 'İşleniyor...' : 'Kara Listeden Çıkar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

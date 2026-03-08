@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   FolderTree, Plus, Edit, Trash2, RefreshCw, ChevronRight, ChevronDown,
   Archive, Inbox, Building2, Target, UserPlus, Search,
-  Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown, Ban
+  Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown, Ban, CheckCircle
 } from 'lucide-react'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -87,6 +87,12 @@ export default function Havuzlar() {
   const [blacklistReason, setBlacklistReason] = useState('')
   const [blacklistCandidateId, setBlacklistCandidateId] = useState<number | null>(null)
   const [blacklistLoading, setBlacklistLoading] = useState(false)
+
+  // Kara Liste Bilgi + Çıkarma
+  const [blacklistInfo, setBlacklistInfo] = useState<{reason: string; blacklisted_at: string; blacklisted_by_name: string} | null>(null)
+  const [removeBlacklistDialogOpen, setRemoveBlacklistDialogOpen] = useState(false)
+  const [removeBlacklistReason, setRemoveBlacklistReason] = useState('')
+  const [removeBlacklistLoading, setRemoveBlacklistLoading] = useState(false)
 
   // Forms
   const [poolForm, setPoolForm] = useState({ name: '', pool_type: 'department', parent_id: '', icon: '', keywords: '', description: '', gerekli_deneyim_yil: '0', gerekli_egitim: '', lokasyon: '' })
@@ -178,11 +184,15 @@ export default function Havuzlar() {
 
   // Candidate Detail
   const loadDetail = (candidateId: number) => {
-    if (expandedCandidate === candidateId) { setExpandedCandidate(null); setCandidateDetail(null); return }
-    setExpandedCandidate(candidateId); setDetailLoading(true); setCandidateDetail(null)
+    if (expandedCandidate === candidateId) { setExpandedCandidate(null); setCandidateDetail(null); setBlacklistInfo(null); return }
+    setExpandedCandidate(candidateId); setDetailLoading(true); setCandidateDetail(null); setBlacklistInfo(null)
     fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/detail`, { headers: H() })
       .then(r => r.json()).then(res => { if (res.success) setCandidateDetail(res) })
       .catch(console.error).finally(() => setDetailLoading(false))
+    // Blacklist bilgisi çek
+    fetch(`${API}/api/candidates/${candidateId}/blacklist`, { headers: H() })
+      .then(r => r.json()).then(res => { if (res.success && res.is_blacklisted) setBlacklistInfo(res.data) })
+      .catch(() => {})
   }
 
   // CRUD handlers
@@ -718,7 +728,8 @@ export default function Havuzlar() {
                                   : '-'}
                               </TableCell>
                               <TableCell>
-                                {c.status && STATUS_MAP[c.status] ? <Badge className={`text-[10px] ${STATUS_MAP[c.status].color}`}>{STATUS_MAP[c.status].label}</Badge>
+                                {c.is_blacklisted === 1 || c.durum === 'blacklist' ? <Badge className="bg-gray-900 text-white text-[10px]">Kara Liste</Badge>
+                                  : c.status && STATUS_MAP[c.status] ? <Badge className={`text-[10px] ${STATUS_MAP[c.status].color}`}>{STATUS_MAP[c.status].label}</Badge>
                                   : c.assignment_type ? <Badge variant="secondary" className="text-[10px]">{c.assignment_type}</Badge> : null}
                               </TableCell>
                               <TableCell onClick={e => e.stopPropagation()}>
@@ -726,7 +737,7 @@ export default function Havuzlar() {
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleRescore(c.id)} disabled={rescoring} title="Skoru Yeniden Hesapla"><RefreshCw className="h-3.5 w-3.5 text-blue-500" /></Button>
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEvaluate(c.id)} disabled={evaluating} title="AI Değerlendir"><Brain className="h-3.5 w-3.5 text-purple-500" /></Button>
                                   <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRemoveCandidate(c.id)} title="Çıkar"><Trash2 className="h-3.5 w-3.5" /></Button>
-                                  <Button variant="ghost" size="sm" className="text-gray-700 hover:text-black h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); setBlacklistCandidateId(c.id); setBlacklistDialogOpen(true); }} title="Kara Listeye Al"><Ban className="h-3.5 w-3.5" /></Button>
+                                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); setBlacklistCandidateId(c.id); setBlacklistDialogOpen(true); }} title="Kara Listeye Al"><Ban className="h-3.5 w-3.5" /></Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -763,6 +774,22 @@ export default function Havuzlar() {
                                         <div className="border rounded p-3 bg-white">
                                           <div className="text-xs font-medium mb-1 flex items-center gap-1"><FileText className="h-3 w-3" />v2 Skor Detayı (Toplam: {String((v2d)?.uyum_puani || (candidateDetail as any).position_score || '-')})</div>
                                           {renderV2Detail(v2d)}
+                                        </div>
+                                      )}
+                                      {/* Blacklist Info */}
+                                      {blacklistInfo && (
+                                        <div className="border border-red-200 rounded p-3 bg-red-50">
+                                          <div className="flex items-center justify-between mb-2">
+                                            <div className="text-xs font-medium flex items-center gap-1 text-red-800"><Ban className="h-3 w-3" />Kara Liste Bilgisi</div>
+                                            <Button size="sm" variant="outline" onClick={() => setRemoveBlacklistDialogOpen(true)} className="h-6 text-[10px] px-2 border-green-500 text-green-700 hover:bg-green-50">
+                                              <CheckCircle className="h-3 w-3 mr-1" />Kara Listeden Çıkar
+                                            </Button>
+                                          </div>
+                                          <div className="text-xs text-red-700 space-y-1">
+                                            <div><span className="font-medium">Neden:</span> {blacklistInfo.reason}</div>
+                                            <div><span className="font-medium">Ekleyen:</span> {blacklistInfo.blacklisted_by_name}</div>
+                                            <div><span className="font-medium">Tarih:</span> {new Date(blacklistInfo.blacklisted_at).toLocaleDateString('tr-TR')}</div>
+                                          </div>
                                         </div>
                                       )}
                                       {/* AI Evaluation */}
@@ -1374,6 +1401,73 @@ export default function Havuzlar() {
               disabled={blacklistLoading || !blacklistReason.trim()}
             >
               {blacklistLoading ? 'İşleniyor...' : 'Kara Listeye Al'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Kara Listeden Çıkar Dialog */}
+      <Dialog open={removeBlacklistDialogOpen} onOpenChange={(o) => { setRemoveBlacklistDialogOpen(o); if (!o) setRemoveBlacklistReason(''); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Kara Listeden Çıkar
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-sm text-green-800 font-medium">Bu işlem:</p>
+              <ul className="text-sm text-green-700 mt-1 list-disc list-inside">
+                <li>Adayın kara liste kaydını kaldıracak</li>
+                <li>Aday tekrar CV gönderebilecek</li>
+                <li>Aday havuzlara eklenebilecek</li>
+              </ul>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Çıkarma Nedeni (Opsiyonel)</label>
+              <textarea
+                className="w-full mt-1 p-2 border rounded-md text-sm min-h-[60px]"
+                placeholder="Örn: Yanlış kara liste, tekrar değerlendirilecek..."
+                value={removeBlacklistReason}
+                onChange={(e) => setRemoveBlacklistReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveBlacklistDialogOpen(false)}>İptal</Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={async () => {
+                if (!expandedCandidate) return;
+                setRemoveBlacklistLoading(true);
+                try {
+                  const res = await fetch(`${API}/api/candidates/${expandedCandidate}/blacklist`, {
+                    method: 'DELETE',
+                    headers: H(),
+                    body: JSON.stringify({ reason: removeBlacklistReason.trim() || 'Kara listeden çıkarıldı' })
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    toast.success('Aday kara listeden çıkarıldı');
+                    setRemoveBlacklistDialogOpen(false);
+                    setRemoveBlacklistReason('');
+                    setBlacklistInfo(null);
+                    if (selectedPoolId) {
+                      loadCandidates(selectedPoolId);
+                    }
+                  } else {
+                    toast.error(data.error || data.detail || 'Kara listeden çıkarma başarısız');
+                  }
+                } catch (err) {
+                  toast.error('Bir hata oluştu');
+                } finally {
+                  setRemoveBlacklistLoading(false);
+                }
+              }}
+              disabled={removeBlacklistLoading}
+            >
+              {removeBlacklistLoading ? 'İşleniyor...' : 'Kara Listeden Çıkar'}
             </Button>
           </DialogFooter>
         </DialogContent>
