@@ -705,7 +705,7 @@ export default function Havuzlar() {
                         <TableHead className="w-[80px]">Deneyim</TableHead>
                         <TableHead className="w-[120px]">Lokasyon</TableHead>
                         <TableHead className="w-[80px]">Skor</TableHead>
-                        <TableHead className="w-[80px]">Durum</TableHead>
+                        <TableHead className="w-[80px] text-center">Kara Liste</TableHead>
                         <TableHead className="w-20"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -727,17 +727,20 @@ export default function Havuzlar() {
                                   : c.remaining_days !== undefined ? <Badge className={`text-xs ${dayColor(c.remaining_days)}`}>{c.remaining_days}g</Badge>
                                   : '-'}
                               </TableCell>
-                              <TableCell>
-                                {c.is_blacklisted === 1 || c.durum === 'blacklist' ? <Badge className="bg-gray-900 text-white text-[10px]">Kara Liste</Badge>
-                                  : c.status && STATUS_MAP[c.status] ? <Badge className={`text-[10px] ${STATUS_MAP[c.status].color}`}>{STATUS_MAP[c.status].label}</Badge>
-                                  : c.assignment_type ? <Badge variant="secondary" className="text-[10px]">{c.assignment_type}</Badge> : null}
+                              <TableCell className="text-center">
+                                {c.is_blacklisted === 1 || c.durum === 'blacklist' ? (
+                                  <Badge className="bg-gray-900 text-white text-[10px]">Kara Listede</Badge>
+                                ) : (
+                                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); setBlacklistCandidateId(c.id); setBlacklistDialogOpen(true); }} title="Kara Listeye Al">
+                                    <Ban className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </TableCell>
                               <TableCell onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center gap-1">
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleRescore(c.id)} disabled={rescoring} title="Skoru Yeniden Hesapla"><RefreshCw className="h-3.5 w-3.5 text-blue-500" /></Button>
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEvaluate(c.id)} disabled={evaluating} title="AI Değerlendir"><Brain className="h-3.5 w-3.5 text-purple-500" /></Button>
                                   <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRemoveCandidate(c.id)} title="Çıkar"><Trash2 className="h-3.5 w-3.5" /></Button>
-                                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); setBlacklistCandidateId(c.id); setBlacklistDialogOpen(true); }} title="Kara Listeye Al"><Ban className="h-3.5 w-3.5" /></Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -1442,10 +1445,10 @@ export default function Havuzlar() {
                 if (!expandedCandidate) return;
                 setRemoveBlacklistLoading(true);
                 try {
-                  const res = await fetch(`${API}/api/candidates/${expandedCandidate}/blacklist`, {
+                  const reasonParam = removeBlacklistReason.trim() ? `?removal_reason=${encodeURIComponent(removeBlacklistReason.trim())}` : '';
+                  const res = await fetch(`${API}/api/candidates/${expandedCandidate}/blacklist${reasonParam}`, {
                     method: 'DELETE',
-                    headers: H(),
-                    body: JSON.stringify({ reason: removeBlacklistReason.trim() || 'Kara listeden çıkarıldı' })
+                    headers: H()
                   });
                   const data = await res.json();
                   if (data.success) {

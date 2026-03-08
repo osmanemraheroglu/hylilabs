@@ -494,10 +494,10 @@ export default function Candidates() {
                 if (!selectedCandidate?.id) return;
                 setRemoveBlacklistLoading(true);
                 try {
-                  const res = await fetch(`${API_URL}/api/candidates/${selectedCandidate.id}/blacklist`, {
+                  const reasonParam = removeBlacklistReason.trim() ? `?removal_reason=${encodeURIComponent(removeBlacklistReason.trim())}` : '';
+                  const res = await fetch(`${API_URL}/api/candidates/${selectedCandidate.id}/blacklist${reasonParam}`, {
                     method: 'DELETE',
-                    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ removal_reason: removeBlacklistReason.trim() || null })
+                    headers: getHeaders()
                   });
                   const data = await res.json();
                   if (data.success) {

@@ -547,25 +547,21 @@ def add_to_blacklist(
 @router.delete("/{candidate_id}/blacklist")
 def remove_blacklist(
     candidate_id: int,
-    body: dict = None,
+    removal_reason: str = None,
     current_user: dict = Depends(get_current_user)
 ):
     """
     Adayı kara listeden kaldırır.
-    Body (opsiyonel): {"removal_reason": "Kaldırma nedeni"}
+    Query param (opsiyonel): removal_reason
     """
     company_id = current_user.get("company_id")
     user_id = current_user.get("id")
-    removal_reason = None
-
-    if body:
-        removal_reason = body.get("removal_reason", "").strip() or None
 
     result = remove_from_blacklist(
         candidate_id=candidate_id,
         removed_by=user_id,
         company_id=company_id,
-        removal_reason=removal_reason
+        removal_reason=removal_reason.strip() if removal_reason else None
     )
 
     if not result.get("success"):
