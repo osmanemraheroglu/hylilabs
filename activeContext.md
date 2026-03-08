@@ -5,7 +5,7 @@ Son güncelleme: 08.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** a3308e1 (08.03.2026)
+- **Son commit:** ad98978 (08.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -18,9 +18,10 @@ Son güncelleme: 08.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 08.03.2026
+- ✅ critical_matched dict→string dönüşüm fix (ad98978)
 - ✅ .claudeignore oluşturuldu (0e7c03b)
 - ✅ CLAUDE.md güncellendi — puanlama, fazlar, savunma sistemleri (a3308e1)
-- ✅ activeContext.md temizliği (bu görev)
+- ✅ activeContext.md temizliği
 
 ### 07.03.2026
 - ✅ Görev Tanımı Upload Response Fix (6264245)
