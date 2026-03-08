@@ -109,6 +109,85 @@ JOIN iceren tum SQL sorgularinda company_id her zaman tablo prefixiyle yazilmali
 
 ---
 
+---
+
+## PUANLAMA SİSTEMİ v2.1 (07.03.2026) — DEĞİŞMEZ
+
+Toplam: 100 puan (önceki 110 → 100 rebalance yapıldı)
+
+| Kategori | Max | Detay |
+|----------|-----|-------|
+| Position | 20 | title(8/5/3) + sector(7/4) + seniority(0-5) |
+| Technical | 40 | MOD A veya MOD B |
+| General | 15 | experience(8 cap) + education(7) |
+| Task | 15 | görev eşleşmesi |
+| Elimination | 10 | lokasyon(5) + diğer(5) |
+
+**Technical 40 Puan Modları:**
+- MOD A (must_have VAR): must_have(15) + critical(15) + important(10) = 40
+- MOD B (must_have YOK): critical(30) + important(10) = 40 (SİMETRİK)
+
+**Seniority Pozitif Puanlama:**
+- Eşit kıdem: 5 puan
+- 1 kademe fark: 3 puan
+- Aday daha kıdemli (fazla): 4 puan
+- Aday 2+ kademe eksik: 0 puan
+
+**Title Puanlama:**
+- Exact match: 8 puan
+- Partial match: 5 puan
+- Related match: 3 puan
+
+---
+
+## TAMAMLANAN FAZLAR — REFERANS
+
+### FAZ A: CV Parse İyileştirme (05.03.2026) ✅
+- deneyim_aciklama alanı eklendi
+- Max 5 iş deneyimi limiti
+- search_text 6 alan birleşimi
+
+### FAZ B: Görev Tanımı Upload (06.03.2026) ✅
+- Backend + Frontend implementasyonu
+- Response format düzeltmesi
+
+### FAZ C: Görev Eşleşmesi (06.03.2026) ✅
+- 15 puan Task kategorisi
+- 5 katmanlı puanlama
+
+### FAZ D: 110→100 Rebalance (07.03.2026) ✅
+- Position: 25→20
+- Seniority: penalty→pozitif
+- 46/46 test PASSED
+
+---
+
+## SAVUNMA SİSTEMLERİ — DEĞİŞMEZ
+
+### Dil Seviyesi Hallucination Savunması (07.03.2026)
+- Katman 1: CV parser prompt — "seviye CV'de yoksa null"
+- Katman 2: cv_parser.py satır 1138-1148 — raw text validation
+- AI seviyesi varsa ama CV'de level indicator yoksa → seviye siliniyor
+
+### DB Lock Kalıcı Çözüm (06.03.2026)
+- WAL mode + busy_timeout=30000
+- Her aday için ayrı connection aç-kapa
+- log_* fonksiyonları try/except ZORUNLU
+
+---
+
+## SON COMMIT ZİNCİRİ
+0e7c03b - feat: add .claudeignore (08.03.2026)
+6264245 - fix: job description upload response format
+2a53de5 - docs: 100 puan sistemi rescore
+906cd98 - feat: show seniority_score in v2 detail
+0004039 - fix: AI evaluation prompt term preservation
+2580726 - feat: language 2-layer defense
+4378a26 - feat: 110→100 point rebalance
+c3560c5 - fix: [object Object] render
+8dfa5e7 - fix: DB lock kalıcı çözüm
+
+
 ## KILITLI SISTEMLER (21.02.2026)
 
 ### Mulakat Takvimi UI — DEGISMEZ
