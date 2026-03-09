@@ -116,6 +116,13 @@ export default function CvCollect() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null)
   const [scanProgress, setScanProgress] = useState(0)
 
+  // Progress tracking state
+  const [processingStatus, setProcessingStatus] = useState<{
+    active: any[];
+    recent: any[];
+    has_active: boolean;
+  } | null>(null)
+
   const loadData = useCallback(() => {
     Promise.all([
       fetch(`${API_URL}/api/cv/stats`, { headers: getJsonHeaders() }).then(r => r.json()),
@@ -144,6 +151,31 @@ export default function CvCollect() {
   }, [selectedAccountId])
 
   useEffect(() => { loadData() }, [loadData])
+
+  // Processing status polling (her 5 saniyede)
+  useEffect(() => {
+    const fetchProcessingStatus = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/cv/processing-status`, {
+          headers: getJsonHeaders()
+        })
+        const data = await res.json()
+        if (data.success) {
+          setProcessingStatus(data.data)
+        }
+      } catch (err) {
+        console.error('Processing status fetch error:', err)
+      }
+    }
+
+    // İlk yükleme
+    fetchProcessingStatus()
+
+    // 5 saniyede bir polling
+    const interval = setInterval(fetchProcessingStatus, 5000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   const showMsg = (msg: string) => {
     setMessage(msg)
@@ -435,6 +467,43 @@ export default function CvCollect() {
             </Card>
           ) : (
             <>
+              {/* Progress Bar - Aktif İşlem Varsa */}
+              {processingStatus?.has_active && processingStatus.active.length > 0 && (
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    <span className="font-medium text-blue-700">
+                      Email'den CV Çekiliyor
+                    </span>
+                  </div>
+                  {processingStatus.active.map((job) => (
+                    <div key={job.id} className="mt-2">
+                      <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>{job.account_email}</span>
+                        <span>
+                          {job.basarili_cv || 0} başarılı / {job.bulunan_cv || 0} toplam CV
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${job.bulunan_cv > 0
+                              ? Math.round((job.basarili_cv / job.bulunan_cv) * 100)
+                              : 0}%`
+                          }}
+                        ></div>
+                      </div>
+                      {job.hatali_cv > 0 && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {job.hatali_cv} hatalı CV
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Email Hesabi Secimi */}
               <Card>
                 <CardHeader>

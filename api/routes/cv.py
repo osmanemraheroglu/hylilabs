@@ -356,3 +356,59 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Tarama hatasi: {str(e)}")
+
+
+@router.get("/processing-status")
+def get_processing_status(current_user = Depends(get_current_user)):
+    """
+    Firma için aktif ve son CV işlemlerini döndür.
+    Progress UI için polling endpoint.
+    """
+    company_id = current_user["company_id"]
+
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Aktif işlemler (devam_ediyor)
+            cursor.execute("""
+                SELECT
+                    id, account_email, klasor, taranan_email, bulunan_cv,
+                    basarili_cv, mevcut_aday, hatali_cv, durum, tarih
+                FROM email_collection_logs
+                WHERE company_id = ? AND durum = 'devam_ediyor'
+                ORDER BY tarih DESC
+                LIMIT 5
+            """, (company_id,))
+
+            active_columns = ['id', 'account_email', 'klasor', 'taranan_email', 'bulunan_cv',
+                             'basarili_cv', 'mevcut_aday', 'hatali_cv', 'durum', 'created_at']
+            active = [dict(zip(active_columns, row)) for row in cursor.fetchall()]
+
+            # Son 5 tamamlanan
+            cursor.execute("""
+                SELECT
+                    id, account_email, klasor, taranan_email, bulunan_cv,
+                    basarili_cv, mevcut_aday, hatali_cv, durum, tarih
+                FROM email_collection_logs
+                WHERE company_id = ? AND durum != 'devam_ediyor'
+                ORDER BY tarih DESC
+                LIMIT 5
+            """, (company_id,))
+
+            recent = [dict(zip(active_columns, row)) for row in cursor.fetchall()]
+
+        return {
+            "success": True,
+            "data": {
+                "active": active,
+                "recent": recent,
+                "has_active": len(active) > 0
+            }
+        }
+    except Exception as e:
+        logger.error(f"processing-status hatası: {e}")
+        return {
+            "success": False,
+            "detail": "İşlem durumu alınamadı"
+        }
