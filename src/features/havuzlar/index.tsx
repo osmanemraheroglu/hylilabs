@@ -226,7 +226,7 @@ export default function Havuzlar() {
 
   const handleUpdatePool = () => {
     if (!selectedPoolId || !poolForm.name) return
-    fetch(`${API}/api/pools/${selectedPoolId}`, { method: 'PUT', headers: H(), body: JSON.stringify({ name: poolForm.name, keywords: poolForm.keywords ? poolForm.keywords.split(',').map(k => k.trim()).filter(Boolean) : [], description: poolForm.description }) })
+    fetch(`${API}/api/pools/${selectedPoolId}`, { method: 'PUT', headers: H(), body: JSON.stringify({ name: poolForm.name, keywords: editKeywords, description: poolForm.description }) })
       .then(r => r.json()).then(res => { if (res.success) { setEditDialogOpen(false); loadTree(); loadCandidates(selectedPoolId) } else toast.error(res.detail || 'Hata') })
   }
 
