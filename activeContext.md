@@ -5,7 +5,7 @@ Son güncelleme: 09.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** f45979c (09.03.2026)
+- **Son commit:** 9f79fe0 (09.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -18,6 +18,9 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
+- ✅ **Keyword double encoding fix** (9f79fe0)
+  - handleUpdatePool: editKeywords array kullanılıyor
+  - Çift JSON encoding sorunu çözüldü
 - ✅ **Keyword parse bug fix** (f45979c)
   - Havuz düzenle modalında anahtar kelimeler doğru görünüyor
   - json.loads ile JSON string parse, split fallback korundu
