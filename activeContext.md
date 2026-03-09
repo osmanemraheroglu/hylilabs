@@ -5,7 +5,7 @@ Son güncelleme: 09.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 53d2419 (09.03.2026)
+- **Son commit:** 9f8ca0b (09.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -22,6 +22,9 @@ Son güncelleme: 09.03.2026
   - Kısım 1: CV Çek sadece durum='yeni' tarıyor (f872d62)
   - Kısım 2: Pozisyon silinince TÜM adaylar Genel Havuz'a (53d2419)
   - 30 gün arşiv mantığı kaldırıldı
+- ✅ **Otomatik arşivleme kuralı güncellendi** (9f8ca0b)
+  - 30→90 gün, eşleşme kontrolü eklendi (candidate_positions)
+  - candidates.durum güncelleme bug'ı düzeltildi
 
 ### 08.03.2026
 - ✅ **Kara Liste Sistemi TAM** — database + API + frontend (16aee37)
