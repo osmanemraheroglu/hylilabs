@@ -5,7 +5,7 @@ Son güncelleme: 09.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 723bcc9 (09.03.2026)
+- **Son commit:** f45979c (09.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -18,6 +18,9 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
+- ✅ **Keyword parse bug fix** (f45979c)
+  - Havuz düzenle modalında anahtar kelimeler doğru görünüyor
+  - json.loads ile JSON string parse, split fallback korundu
 - ✅ **Manuel Giriş sekmesi kaldırıldı** (723bcc9)
   - Pozisyon ekleme: Sadece "URL ile Ekle" ve "Dokümandan Ekle" kaldı
   - grid-cols-3 → grid-cols-2, 30 satır TabsContent silindi
