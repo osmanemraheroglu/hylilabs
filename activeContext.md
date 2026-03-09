@@ -18,6 +18,11 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
+- ✅ **Progress UI Step 2: update_email_collection_log fonksiyonu** (f6c4a04)
+  - database.py'ye update_email_collection_log() eklendi
+  - Dinamik UPDATE sorgusu (sadece non-None alanlar)
+  - bitis_zamani otomatik güncelleme
+  - with get_connection() context manager kullanımı
 - ✅ **Progress UI Step 1: log_email_collection entegrasyonu**
   - email_worker.py'ye log_email_collection import eklendi
   - check_emails_for_account() sonunda log çağrısı eklendi
