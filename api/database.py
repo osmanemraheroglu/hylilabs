@@ -6494,7 +6494,12 @@ def remove_candidate_from_department_pool(candidate_id: int, pool_id: int) -> bo
 
 
 def auto_archive_old_candidates(company_id: int) -> dict:
-    """30 günden eski Genel Havuz adaylarını Arşiv'e taşı
+    """90 günden eski, eşleşmesi olmayan Genel Havuz adaylarını Arşiv'e taşı
+
+    Kriterler:
+    - olusturma_tarihi 90 günden eski
+    - Genel Havuz'da (durum='yeni')
+    - Hiç pozisyona atanmamış (candidate_positions kaydı yok)
 
     Günlük cron job olarak çalıştırılmalı.
 
@@ -6512,13 +6517,14 @@ def auto_archive_old_candidates(company_id: int) -> dict:
     with get_connection() as conn:
         cursor = conn.cursor()
 
-        # 30 günden eski CV'ler (olusturma_tarihi'ne göre)
+        # 90 günden eski + pozisyon eşleşmesi olmayan adaylar
         cursor.execute("""
-            SELECT cpa.candidate_id 
+            SELECT cpa.candidate_id
             FROM candidate_pool_assignments cpa
             JOIN candidates c ON cpa.candidate_id = c.id
             WHERE cpa.department_pool_id = ?
-            AND julianday('now') - julianday(c.olusturma_tarihi) > 30
+            AND julianday('now') - julianday(c.olusturma_tarihi) > 90
+            AND c.id NOT IN (SELECT candidate_id FROM candidate_positions)
         """, (general_pool['id'],))
 
         old_candidates = [row[0] for row in cursor.fetchall()]
@@ -6529,9 +6535,16 @@ def auto_archive_old_candidates(company_id: int) -> dict:
                 cursor.execute("""
                     UPDATE candidate_pool_assignments
                     SET department_pool_id = ?,
-                        match_reason = 'Otomatik arşivlendi (30 gün)'
+                        match_reason = 'Otomatik arşivlendi (90 gün, eşleşme yok)'
                     WHERE candidate_id = ? AND department_pool_id = ?
                 """, (archive_pool['id'], candidate_id, general_pool['id']))
+
+                # Aday durumunu da güncelle
+                cursor.execute("""
+                    UPDATE candidates
+                    SET durum = 'arsiv', havuz = 'arsiv', guncelleme_tarihi = datetime('now')
+                    WHERE id = ? AND company_id = ?
+                """, (candidate_id, company_id))
 
                 stats['archived'] += 1
             except Exception:
