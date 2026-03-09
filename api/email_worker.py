@@ -10,7 +10,7 @@ from database import (
     get_all_email_accounts, is_email_processed, mark_email_processed,
     find_duplicate_candidate, create_candidate, create_application,
     get_all_positions, log_email, auto_assign_candidate_to_pool,
-    log_email_collection
+    log_email_collection, update_email_collection_log
 )
 from email_reader import EmailReader
 from core.cv_parser import parse_cv, save_cv_file
@@ -36,6 +36,26 @@ EMAIL_LIMIT_PER_ACCOUNT = 50  # Hesap basina max email
 def check_emails_for_account(account: dict) -> dict:
     """Tek bir email hesabini kontrol et"""
     stats = {"processed": 0, "success": 0, "duplicate": 0, "error": 0}
+
+    # Progress tracking için log_id
+    log_id = None
+    try:
+        log_id = log_email_collection(
+            account_id=account.get("id"),
+            account_email=account.get("email", ""),
+            klasor="INBOX",
+            taranan_email=0,
+            bulunan_cv=0,
+            basarili_cv=0,
+            mevcut_aday=0,
+            hatali_cv=0,
+            durum="devam_ediyor",
+            company_id=account.get("company_id"),
+            user_id=None
+        )
+        logger.info(f"Email tarama başladı, log_id: {log_id}")
+    except Exception as log_start_err:
+        logger.warning(f"Başlangıç log hatası: {log_start_err}")
 
     try:
         logger.info(f"Hesap kontrol ediliyor: {account['email']}")
@@ -271,13 +291,28 @@ def check_emails_for_account(account: dict) -> dict:
                         logger.error(f"Ek isleme hatasi: {attachment.filename} - {e}")
                         stats["error"] += 1
 
+                # Progress update (her 25 CV'de bir)
+                total_processed = stats["success"] + stats["duplicate"] + stats["error"]
+                if log_id and total_processed > 0 and total_processed % 25 == 0:
+                    try:
+                        update_email_collection_log(
+                            log_id=log_id,
+                            bulunan_cv=total_processed,
+                            basarili_cv=stats["success"],
+                            mevcut_aday=stats["duplicate"],
+                            hatali_cv=stats["error"]
+                        )
+                        logger.debug(f"Progress update: {total_processed} CV işlendi")
+                    except Exception as progress_err:
+                        logger.warning(f"Progress update hatası: {progress_err}")
+
             # Email'i islendi isaretle
             mark_email_processed(email_msg.message_id)
 
     except Exception as e:
         logger.error(f"Hesap hatasi ({account['email']}): {e}")
 
-    # Email toplama islemini logla
+    # Email toplama islemini GÜNCELLE (başlangıçta oluşturuldu)
     try:
         bulunan_cv = stats["success"] + stats["duplicate"] + stats["error"]
         if stats["error"] == 0 and stats["success"] > 0:
@@ -289,22 +324,35 @@ def check_emails_for_account(account: dict) -> dict:
         else:
             durum = "basarisiz"
 
-        log_email_collection(
-            account_id=account.get("id"),
-            account_email=account.get("email", ""),
-            klasor="INBOX",
-            taranan_email=stats["processed"],
-            bulunan_cv=bulunan_cv,
-            basarili_cv=stats["success"],
-            mevcut_aday=stats["duplicate"],
-            hatali_cv=stats["error"],
-            durum=durum,
-            company_id=account.get("company_id"),
-            user_id=None
-        )
-        logger.info(f"Email collection log yazildi: {durum}, {bulunan_cv} CV")
+        if log_id:
+            update_email_collection_log(
+                log_id=log_id,
+                taranan_email=stats["processed"],
+                bulunan_cv=bulunan_cv,
+                basarili_cv=stats["success"],
+                mevcut_aday=stats["duplicate"],
+                hatali_cv=stats["error"],
+                durum=durum
+            )
+            logger.info(f"Email tarama tamamlandı: {durum}, {bulunan_cv} CV, log_id: {log_id}")
+        else:
+            # log_id yoksa yeni kayıt oluştur (fallback)
+            log_email_collection(
+                account_id=account.get("id"),
+                account_email=account.get("email", ""),
+                klasor="INBOX",
+                taranan_email=stats["processed"],
+                bulunan_cv=bulunan_cv,
+                basarili_cv=stats["success"],
+                mevcut_aday=stats["duplicate"],
+                hatali_cv=stats["error"],
+                durum=durum,
+                company_id=account.get("company_id"),
+                user_id=None
+            )
+            logger.info(f"Email collection log yazildi (fallback): {durum}, {bulunan_cv} CV")
     except Exception as log_err:
-        logger.warning(f"Email collection log hatasi: {log_err}")
+        logger.warning(f"Email collection log hatası: {log_err}")
 
     return stats
 
