@@ -5,7 +5,7 @@ Son güncelleme: 09.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 9f8ca0b (09.03.2026)
+- **Son commit:** 17f1a5d (09.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -18,6 +18,11 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
+- ✅ **CLAUDE.md 3-Katmanlı Mimari** (17f1a5d)
+  - MİMARİ PRENSİPLER bölümü eklendi
+  - 3-Katmanlı Sistem: Directive, Orchestration, Execution
+  - Self-Annealing Döngüsü: hata → düzeltme → öğrenme
+  - Execution Mapping tablosu
 - ✅ **Pozisyon sil→aday kaybı FIX TAM** (f872d62 + 53d2419)
   - Kısım 1: CV Çek sadece durum='yeni' tarıyor (f872d62)
   - Kısım 2: Pozisyon silinince TÜM adaylar Genel Havuz'a (53d2419)
@@ -111,6 +116,6 @@ Son güncelleme: 09.03.2026
 
 ## Notlar
 
-- CLAUDE.md'de tüm kalıcı kurallar mevcut (656 satır)
+- CLAUDE.md'de tüm kalıcı kurallar mevcut (763 satır, 3-katmanlı mimari eklendi)
 - progress.md güncellenmeli (17 gün eski)
 - .claudeignore aktif (~2.6 GB filtreleniyor)
