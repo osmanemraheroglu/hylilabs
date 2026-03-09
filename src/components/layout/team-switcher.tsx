@@ -3,11 +3,12 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import { Logo } from '@/assets/logo'
 
 type TeamSwitcherProps = {
   teams: {
     name: string
-    logo: React.ElementType
+    logo: React.ElementType | null
     plan: string
   }[]
 }
@@ -19,8 +20,8 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
     <SidebarMenu>
       <SidebarMenuItem>
         <div className='flex items-center gap-2 px-2 py-2'>
-          <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground'>
-            <activeTeam.logo className='size-4' />
+          <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-white overflow-hidden'>
+            <Logo size='sm' className='h-6 w-6' />
           </div>
           <div className='grid flex-1 text-start text-sm leading-tight'>
             <span className='truncate font-semibold'>

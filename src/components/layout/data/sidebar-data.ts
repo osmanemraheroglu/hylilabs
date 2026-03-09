@@ -9,9 +9,6 @@ import {
   Users,
   UserCog,
   FileUp,
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
   Languages,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
@@ -38,22 +35,12 @@ const ROLE_MENUS: Record<string, string[]> = {
   user: ['dashboard', 'cvTopla', 'adaylar', 'havuzlar', 'mulakatTakvimi', 'synonymlar'],
 }
 
-// Varsayılan teams
+// Varsayılan teams - sadece HyliLabs
 const defaultTeams = [
   {
     name: 'HyliLabs',
-    logo: Command,
+    logo: null as unknown as React.ElementType, // Logo bileşeni team-switcher'da kullanılıyor
     plan: 'AI HR Platform',
-  },
-  {
-    name: 'Acme Inc',
-    logo: GalleryVerticalEnd,
-    plan: 'Enterprise',
-  },
-  {
-    name: 'Acme Corp.',
-    logo: AudioWaveform,
-    plan: 'Startup',
   },
 ]
 
