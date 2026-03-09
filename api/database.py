@@ -6649,7 +6649,7 @@ def get_candidates_expiring_soon(company_id: int, days: int = 7) -> list[dict]:
 
 
 def pull_matching_candidates_to_position(position_pool_id: int, company_id: int, limit: int = 50) -> dict:
-    """Pozisyonun onaylı başlıklarına uyan CV'leri Genel Havuz ve Arşiv'den çek (v2 Title Match)
+    """Sadece Genel Havuz'dan (durum='yeni') eşleşen adayları pozisyona çeker (v2 Title Match)
 
     Kullanıcı "CV Çek" butonuna tıkladığında çağrılır.
     SADECE pozisyon başlığı eşleşmesi olan adayları pozisyona ekler.
@@ -6721,7 +6721,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
         cursor.execute("""
             SELECT COUNT(*) as total
             FROM candidates
-            WHERE company_id = ? AND durum NOT IN ('ise_alindi', 'arsiv')
+            WHERE company_id = ? AND durum = 'yeni'
         """, (company_id,))
         total_candidates = cursor.fetchone()['total']
         stats['total_scanned'] = total_candidates
@@ -6738,7 +6738,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                        c.deneyim_detay, c.toplam_deneyim_yil, c.egitim, c.lokasyon, c.mevcut_sirket
                 FROM candidates c
                 WHERE c.company_id = ?
-                  AND c.durum NOT IN ('ise_alindi', 'arsiv')
+                  AND c.durum = 'yeni'
                 ORDER BY c.id
                 LIMIT ? OFFSET ?
             """, (company_id, BATCH_SIZE, offset))
