@@ -18,6 +18,11 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
+- ✅ **HyliLabs Logo Ekleme** (cf3841a)
+  - PNG optimize: 1.45 MB → 222 KB (%85 küçültme)
+  - logo.tsx: PNG kullanan img bileşeni
+  - Sidebar: Logo + "HyliLabs" / "AI HR Platform"
+  - Login: Logo + "HyliLabs"
 - ✅ **Progress UI Step 4: API + Frontend Progress Bar** (ab71c7a)
   - GET /api/cv/processing-status endpoint
   - processingStatus state + 5sn polling
