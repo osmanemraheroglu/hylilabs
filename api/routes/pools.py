@@ -917,7 +917,11 @@ def update_keywords(pool_id: int, data: dict, current_user: dict = Depends(get_c
 
         current_keywords = pool.get("keywords") or []
         if isinstance(current_keywords, str):
-            current_keywords = [k.strip() for k in current_keywords.split(",") if k.strip()]
+            try:
+                parsed = json.loads(current_keywords)
+                current_keywords = parsed if isinstance(parsed, list) else [k.strip() for k in current_keywords.split(",") if k.strip()]
+            except (json.JSONDecodeError, ValueError):
+                current_keywords = [k.strip() for k in current_keywords.split(",") if k.strip()]
 
         if action == "add" and keyword not in current_keywords:
             current_keywords.append(keyword)
