@@ -18,6 +18,11 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
+- ✅ **Progress UI Step 4: API + Frontend Progress Bar** (ab71c7a)
+  - GET /api/cv/processing-status endpoint
+  - processingStatus state + 5sn polling
+  - Progress bar UI (Email sekmesinde)
+  - Aktif taramalar gerçek zamanlı izlenebilir
 - ✅ **Progress UI Step 3: Worker Progress Entegrasyonu** (56d065d)
   - Başlangıç log: durum='devam_ediyor' ile kayıt oluştur
   - Progress update: Her 25 CV'de bir update
