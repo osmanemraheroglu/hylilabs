@@ -9,7 +9,8 @@ from datetime import datetime
 from database import (
     get_all_email_accounts, is_email_processed, mark_email_processed,
     find_duplicate_candidate, create_candidate, create_application,
-    get_all_positions, log_email, auto_assign_candidate_to_pool
+    get_all_positions, log_email, auto_assign_candidate_to_pool,
+    log_email_collection
 )
 from email_reader import EmailReader
 from core.cv_parser import parse_cv, save_cv_file
@@ -275,6 +276,35 @@ def check_emails_for_account(account: dict) -> dict:
 
     except Exception as e:
         logger.error(f"Hesap hatasi ({account['email']}): {e}")
+
+    # Email toplama islemini logla
+    try:
+        bulunan_cv = stats["success"] + stats["duplicate"] + stats["error"]
+        if stats["error"] == 0 and stats["success"] > 0:
+            durum = "tamamlandi"
+        elif stats["success"] > 0:
+            durum = "kismi_basarili"
+        elif stats["processed"] == 0:
+            durum = "bos"
+        else:
+            durum = "basarisiz"
+
+        log_email_collection(
+            account_id=account.get("id"),
+            account_email=account.get("email", ""),
+            klasor="INBOX",
+            taranan_email=stats["processed"],
+            bulunan_cv=bulunan_cv,
+            basarili_cv=stats["success"],
+            mevcut_aday=stats["duplicate"],
+            hatali_cv=stats["error"],
+            durum=durum,
+            company_id=account.get("company_id"),
+            user_id=None
+        )
+        logger.info(f"Email collection log yazildi: {durum}, {bulunan_cv} CV")
+    except Exception as log_err:
+        logger.warning(f"Email collection log hatasi: {log_err}")
 
     return stats
 

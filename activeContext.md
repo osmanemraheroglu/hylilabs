@@ -18,6 +18,11 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
+- ✅ **Progress UI Step 1: log_email_collection entegrasyonu**
+  - email_worker.py'ye log_email_collection import eklendi
+  - check_emails_for_account() sonunda log çağrısı eklendi
+  - Scheduler-triggered taramalar artık DB'ye loglanacak
+  - Durum tespiti: tamamlandi/kismi_basarili/bos/basarisiz
 - ✅ **Email CV check scheduler.py'ye taşındı** (67253b7)
   - Saat başı çalışma (00:00-23:00), APScheduler CronTrigger
   - email_worker.py'den schedule döngüsü kaldırıldı
