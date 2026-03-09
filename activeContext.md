@@ -5,7 +5,7 @@ Son güncelleme: 09.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 4de9ddb (09.03.2026)
+- **Son commit:** 9f8ca0b (09.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -18,6 +18,13 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
+- ✅ **Pozisyon sil→aday kaybı FIX TAM** (f872d62 + 53d2419)
+  - Kısım 1: CV Çek sadece durum='yeni' tarıyor (f872d62)
+  - Kısım 2: Pozisyon silinince TÜM adaylar Genel Havuz'a (53d2419)
+  - 30 gün arşiv mantığı kaldırıldı
+- ✅ **Otomatik arşivleme kuralı güncellendi** (9f8ca0b)
+  - 30→90 gün, eşleşme kontrolü eklendi (candidate_positions)
+  - candidates.durum güncelleme bug'ı düzeltildi
 - ✅ **Kara Liste UI İyileştirmeleri** — TAM (4de9ddb)
   - Havuzlar: "Durum" kolonu → "Kara Liste" kolonu
   - Ban ikonu tıklanabilir (kara listede değilse)
@@ -77,21 +84,23 @@ Son güncelleme: 09.03.2026
 
 ## Devam Eden / Açık Görevler
 
-### 🔴 KRİTİK
-1. **Pozisyon sil→ekle aday kaybı** — 5 aday → silip ekle → 2 aday sorunu
-
 ### 🟠 ORTA
-2. **Generic keyword temizliği** — üç aylık, quarterly gibi terimler
+1. **Generic keyword temizliği** — üç aylık, quarterly gibi terimler
 
 ### 🟡 DÜŞÜK
-3. **Görev tanımı duplicate uyarısı** — aynı pozisyona 2. yüklemede uyarı
+2. **Görev tanımı duplicate uyarısı** — aynı pozisyona 2. yüklemede uyarı
 
 ### ⏸️ BEKLEYEN
-4. **Görev eşleşmesi karar raporu** — A/B/C seçenek onayı bekliyor
-5. **Kariyer Sayfası** — güvenlik taraması sonrası
-6. **FAZ 7.6 Data Cleanup** — corrupted keywords, orphaned synonyms
+3. **Görev eşleşmesi karar raporu** — A/B/C seçenek onayı bekliyor
+4. **Kariyer Sayfası** — güvenlik taraması sonrası
+5. **FAZ 7.6 Data Cleanup** — corrupted keywords, orphaned synonyms
 
 ## Tamamlanan Büyük Özellikler
+
+### Pozisyon Sil→Aday Kaybı Fix ✅ (09.03.2026)
+- [x] CV Çek sadece durum='yeni' tarıyor
+- [x] Pozisyon silinince TÜM adaylar Genel Havuz'a
+- [x] Otomatik arşivleme 30→90 gün
 
 ### Kara Liste Sistemi ✅ (08-09.03.2026)
 - [x] Database layer (blacklisted_candidates tablosu)

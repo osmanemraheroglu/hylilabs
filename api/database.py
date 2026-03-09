@@ -6494,7 +6494,12 @@ def remove_candidate_from_department_pool(candidate_id: int, pool_id: int) -> bo
 
 
 def auto_archive_old_candidates(company_id: int) -> dict:
-    """30 günden eski Genel Havuz adaylarını Arşiv'e taşı
+    """90 günden eski, eşleşmesi olmayan Genel Havuz adaylarını Arşiv'e taşı
+
+    Kriterler:
+    - olusturma_tarihi 90 günden eski
+    - Genel Havuz'da (durum='yeni')
+    - Hiç pozisyona atanmamış (candidate_positions kaydı yok)
 
     Günlük cron job olarak çalıştırılmalı.
 
@@ -6512,13 +6517,14 @@ def auto_archive_old_candidates(company_id: int) -> dict:
     with get_connection() as conn:
         cursor = conn.cursor()
 
-        # 30 günden eski CV'ler (olusturma_tarihi'ne göre)
+        # 90 günden eski + pozisyon eşleşmesi olmayan adaylar
         cursor.execute("""
-            SELECT cpa.candidate_id 
+            SELECT cpa.candidate_id
             FROM candidate_pool_assignments cpa
             JOIN candidates c ON cpa.candidate_id = c.id
             WHERE cpa.department_pool_id = ?
-            AND julianday('now') - julianday(c.olusturma_tarihi) > 30
+            AND julianday('now') - julianday(c.olusturma_tarihi) > 90
+            AND c.id NOT IN (SELECT candidate_id FROM candidate_positions)
         """, (general_pool['id'],))
 
         old_candidates = [row[0] for row in cursor.fetchall()]
@@ -6529,9 +6535,16 @@ def auto_archive_old_candidates(company_id: int) -> dict:
                 cursor.execute("""
                     UPDATE candidate_pool_assignments
                     SET department_pool_id = ?,
-                        match_reason = 'Otomatik arşivlendi (30 gün)'
+                        match_reason = 'Otomatik arşivlendi (90 gün, eşleşme yok)'
                     WHERE candidate_id = ? AND department_pool_id = ?
                 """, (archive_pool['id'], candidate_id, general_pool['id']))
+
+                # Aday durumunu da güncelle
+                cursor.execute("""
+                    UPDATE candidates
+                    SET durum = 'arsiv', havuz = 'arsiv', guncelleme_tarihi = datetime('now')
+                    WHERE id = ? AND company_id = ?
+                """, (candidate_id, company_id))
 
                 stats['archived'] += 1
             except Exception:
@@ -6649,7 +6662,7 @@ def get_candidates_expiring_soon(company_id: int, days: int = 7) -> list[dict]:
 
 
 def pull_matching_candidates_to_position(position_pool_id: int, company_id: int, limit: int = 50) -> dict:
-    """Pozisyonun onaylı başlıklarına uyan CV'leri Genel Havuz ve Arşiv'den çek (v2 Title Match)
+    """Sadece Genel Havuz'dan (durum='yeni') eşleşen adayları pozisyona çeker (v2 Title Match)
 
     Kullanıcı "CV Çek" butonuna tıkladığında çağrılır.
     SADECE pozisyon başlığı eşleşmesi olan adayları pozisyona ekler.
@@ -6721,7 +6734,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
         cursor.execute("""
             SELECT COUNT(*) as total
             FROM candidates
-            WHERE company_id = ? AND durum NOT IN ('ise_alindi', 'arsiv')
+            WHERE company_id = ? AND durum = 'yeni'
         """, (company_id,))
         total_candidates = cursor.fetchone()['total']
         stats['total_scanned'] = total_candidates
@@ -6738,7 +6751,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                        c.deneyim_detay, c.toplam_deneyim_yil, c.egitim, c.lokasyon, c.mevcut_sirket
                 FROM candidates c
                 WHERE c.company_id = ?
-                  AND c.durum NOT IN ('ise_alindi', 'arsiv')
+                  AND c.durum = 'yeni'
                 ORDER BY c.id
                 LIMIT ? OFFSET ?
             """, (company_id, BATCH_SIZE, offset))
@@ -11802,13 +11815,11 @@ def remove_candidate_from_position(candidate_id: int, position_id: int) -> bool:
 
 
 def handle_position_deletion(position_id: int, company_id: int, conn=None) -> dict:
-    """Pozisyon silindiğinde adayları uygun havuzlara taşı
+    """Pozisyon silindiğinde adayları Genel Havuz'a taşı
 
     Mantık:
     - Adayın başka pozisyonu varsa: Sadece bu pozisyondan sil
-    - Adayın başka pozisyonu yoksa:
-      - CV 30 günden yeni ise: Genel Havuz'a taşı
-      - CV 30 günden eski ise: Arşiv'e taşı
+    - Adayın başka pozisyonu yoksa: Genel Havuz'a taşı (durum='yeni')
 
     Args:
         position_id: Silinen pozisyon ID
@@ -11816,9 +11827,9 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
         conn: Mevcut veritabanı bağlantısı (isteğe bağlı). Verilmezse yeni bağlantı açılır.
 
     Returns:
-        {'deleted': int, 'to_general': int, 'to_archive': int}
+        {'deleted': int, 'to_general': int}
     """
-    stats = {'deleted': 0, 'to_general': 0, 'to_archive': 0}
+    stats = {'deleted': 0, 'to_general': 0}
 
     # Bağlantı yönetimi
     close_conn = False
@@ -11831,22 +11842,20 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
         close_conn = True
 
     try:
-        # Genel Havuz ve Arşiv'i bul
+        # Genel Havuz'u bul
         general_pool = get_pool_by_name(company_id, 'Genel Havuz', conn=conn)
-        archive_pool = get_pool_by_name(company_id, 'Arşiv', conn=conn)
 
         cursor = conn.cursor()
 
         # Bu pozisyondaki adayları al
         cursor.execute("""
-            SELECT cp.candidate_id, c.olusturma_tarihi
+            SELECT cp.candidate_id
             FROM candidate_positions cp
-            JOIN candidates c ON cp.candidate_id = c.id
             WHERE cp.position_id = ?
         """, (position_id,))
         candidates = cursor.fetchall()
 
-        for candidate_id, created_at in candidates:
+        for (candidate_id,) in candidates:
             # Adayın başka pozisyonu var mı?
             other_positions = get_candidate_position_count(candidate_id, conn=conn)
 
@@ -11858,29 +11867,13 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
                 """, (candidate_id, position_id))
                 stats['deleted'] += 1
             else:
-                # Başka pozisyonu yok, havuza taşı
+                # Başka pozisyonu yok, Genel Havuz'a taşı
                 cursor.execute("""
                     DELETE FROM candidate_positions
                     WHERE candidate_id = ? AND position_id = ?
                 """, (candidate_id, position_id))
 
-                # CV yaşını hesapla
-                if created_at:
-                    try:
-                        from datetime import datetime
-                        if isinstance(created_at, str):
-                            cv_date = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-                        else:
-                            cv_date = created_at
-                        days_old = (datetime.now() - cv_date.replace(tzinfo=None)).days
-                    except Exception as e:
-                        logger.debug(f"CV tarihi parse hatası: {e}")
-                        days_old = 0
-                else:
-                    days_old = 0
-
-                # 30 günden yeni mi?
-                if days_old < 30 and general_pool:
+                if general_pool:
                     assign_candidate_to_department_pool(
                         candidate_id, general_pool['id'], company_id, 'auto', 0,
                         'Pozisyon silindi - Genel Havuz\'a taşındı', conn=conn
@@ -11892,18 +11885,6 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
                         WHERE id = ? AND company_id = ?
                     """, (candidate_id, company_id))
                     stats['to_general'] += 1
-                elif archive_pool:
-                    assign_candidate_to_department_pool(
-                        candidate_id, archive_pool['id'], company_id, 'auto', 0,
-                        'Pozisyon silindi - Arşiv\'e taşındı', conn=conn
-                    )
-                    # Aday durumunu da güncelle
-                    cursor.execute("""
-                        UPDATE candidates
-                        SET durum = 'arsiv', havuz = 'arsiv', guncelleme_tarihi = datetime('now')
-                        WHERE id = ? AND company_id = ?
-                    """, (candidate_id, company_id))
-                    stats['to_archive'] += 1
 
         # Commit işlemi (sadece yeni bağlantı açıldıysa)
         if close_conn:
