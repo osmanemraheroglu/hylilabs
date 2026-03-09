@@ -85,13 +85,26 @@ Son güncelleme: 09.03.2026
 5. **Kariyer Sayfası** — güvenlik taraması sonrası
 6. **FAZ 7.6 Data Cleanup** — corrupted keywords, orphaned synonyms
 
+## Tamamlanan İşler (09.03.2026)
+
+### ✅ Pozisyon Sil→Aday Kaybı Bug Fix
+| Görev | Commit | Değişiklik |
+|-------|--------|------------|
+| 1 | f872d62 | CV Çek: sadece durum='yeni' tarasın |
+| 2 | 53d2419 | Pozisyon sil: TÜM adaylar Genel Havuz'a |
+| 3 | 9f8ca0b | Oto arşiv: 90 gün + eşleşme yok |
+
+### ✅ Kara Liste UI Düzeltmeleri
+| Commit | Değişiklik |
+|--------|------------|
+| 4de9ddb | Tablo: "Durum" → "Kara Liste" kolonu, DELETE query param |
+
 ## Sonraki Hedef
 
-Kara Liste Sistemi — TAMAMLANDI ✅
-- [x] Database layer (blacklisted_candidates tablosu)
-- [x] Backend API endpoints (routes/candidates.py)
-- [x] Frontend UI (havuzlar + candidates)
-- [ ] Deploy ve test (sunucuda)
+### Bekleyen Görevler
+1. **Görev Tanımı sekmesi** — Manuel Giriş yerine Görev Tanımı (pozisyon ekleme)
+2. **Generic keyword temizliği**
+3. **Kariyer Sayfası** (Security taraması önce)
 
 ## Notlar
 
