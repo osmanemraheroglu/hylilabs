@@ -1,11 +1,11 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 08.03.2026
+Son güncelleme: 09.03.2026
 
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 16aee37 (08.03.2026)
+- **Son commit:** 4de9ddb (09.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -16,6 +16,21 @@ Son güncelleme: 08.03.2026
 - 3 şirket, ~50 aday, 5 pozisyon
 
 ## Son 72 Saatte Tamamlananlar
+
+### 09.03.2026
+- ✅ **Kara Liste UI İyileştirmeleri** — TAM (4de9ddb)
+  - Havuzlar: "Durum" kolonu → "Kara Liste" kolonu
+  - Ban ikonu tıklanabilir (kara listede değilse)
+  - "Kara Listede" badge (kara listedeyse)
+  - Duplicate Ban butonu kaldırıldı
+  - Blacklist info kartı (neden, ekleyen, tarih)
+  - "Kara Listeden Çıkar" butonu + modal
+  - loadDetail'de blacklist info fetch
+  - DELETE API: body → query param
+- ✅ **Kara Liste Badge + Info** — havuzlar + candidates (d43b22e)
+  - Durum badge blacklist önceliği
+  - Kara liste bilgi kartı
+  - Çıkarma modalları
 
 ### 08.03.2026
 - ✅ **Kara Liste Sistemi TAM** — database + API + frontend (16aee37)
@@ -76,13 +91,14 @@ Son güncelleme: 08.03.2026
 5. **Kariyer Sayfası** — güvenlik taraması sonrası
 6. **FAZ 7.6 Data Cleanup** — corrupted keywords, orphaned synonyms
 
-## Sonraki Hedef
+## Tamamlanan Büyük Özellikler
 
-Kara Liste Sistemi — TAMAMLANDI ✅
+### Kara Liste Sistemi ✅ (08-09.03.2026)
 - [x] Database layer (blacklisted_candidates tablosu)
 - [x] Backend API endpoints (routes/candidates.py)
 - [x] Frontend UI (havuzlar + candidates)
-- [ ] Deploy ve test (sunucuda)
+- [x] Blacklist info kartı + çıkarma modalı
+- [x] Deploy ve test (sunucuda)
 
 ## Notlar
 
