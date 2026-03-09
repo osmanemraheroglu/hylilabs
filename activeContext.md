@@ -5,7 +5,7 @@ Son güncelleme: 09.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 17f1a5d (09.03.2026)
+- **Son commit:** 67253b7 (09.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -18,7 +18,11 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
-- ✅ **CLAUDE.md 3-Katmanlı Mimari** (17f1a5d)
+- ✅ **Email CV check scheduler.py'ye taşındı** (67253b7)
+  - Saat başı çalışma (00:00-23:00), APScheduler CronTrigger
+  - email_worker.py'den schedule döngüsü kaldırıldı
+  - Fonksiyonlar korundu (check_all_emails, check_emails_for_account)
+- ✅ **CLAUDE.md 3-Katmanlı Mimari** (fe210fe)
   - MİMARİ PRENSİPLER bölümü eklendi
   - 3-Katmanlı Sistem: Directive, Orchestration, Execution
   - Self-Annealing Döngüsü: hata → düzeltme → öğrenme

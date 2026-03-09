@@ -1,10 +1,8 @@
 """
-TalentFlow - Otomatik Email CV Toplama Worker
-6 saatte bir calisir, mukerrer kontrol eder
+HyliLabs - Email CV Toplama Fonksiyonlari
+scheduler.py tarafindan saat basi cagrilir
 """
 
-import time
-import schedule
 import logging
 from datetime import datetime
 
@@ -31,7 +29,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Konfigürasyon
-CHECK_INTERVAL_HOURS = 6  # 6 saatte bir
 EMAIL_LIMIT_PER_ACCOUNT = 50  # Hesap basina max email
 
 
@@ -65,7 +62,7 @@ def check_emails_for_account(account: dict) -> dict:
             # İlk ek aday oluşturur, sonraki ekler mevcut adaya eklenir veya atlanır
             email_candidate_id = None
             company_id = account.get("company_id", 1)
-            
+
             # Ekleri isle
             for attachment in email_msg.attachments:
                 try:
@@ -81,13 +78,13 @@ def check_emails_for_account(account: dict) -> dict:
 
                     # Duplicate kontrolu
                     existing = find_duplicate_candidate(candidate.email, candidate.telefon)
-                    
+
                     # Eğer aynı email mesajından daha önce bir aday oluşturulduysa, onu kullan
                     if email_candidate_id:
                         logger.info(f"Aday zaten mevcut (aynı email'den), ek atlandı: {attachment.filename} - Aday ID: {email_candidate_id}")
                         stats["duplicate"] += 1
                         continue
-                    
+
                     if existing:
                         # Mevcut adayı kullan
                         email_candidate_id = existing['id']
@@ -116,32 +113,32 @@ def check_emails_for_account(account: dict) -> dict:
                             from thefuzz import fuzz
                         except ImportError:
                             fuzz = None
-                        
+
                         # Sistem havuzlarını oluştur (yoksa)
                         create_system_pools(company_id)
-                        
+
                         # v2 scoring ile pozisyonlara eşleştir
                         match_result = match_candidate_to_positions_keyword(candidate_id, company_id)
-                        
+
                         # approved_title_mappings kontrolü - adayın mevcut_pozisyon/deneyim ile eşleşen pozisyonlar
                         candidate_pos_text = (candidate.mevcut_pozisyon or '') + ' ' + (getattr(candidate, 'deneyim_detay', '') or '')
                         candidate_pos_lower = turkish_lower(candidate_pos_text) if candidate_pos_text.strip() else ''
-                        
+
                         if candidate_pos_lower:
                             # Tüm pozisyonlar için approved_title_mappings kontrolü
                             from database import get_department_pools
                             all_positions = get_department_pools(company_id, include_inactive=False, pool_type='position')
-                            
+
                             for pos in all_positions:
                                 approved_titles = get_approved_titles(pos['id'])
                                 if not approved_titles:
                                     continue
-                                
+
                                 # Adayın pozisyon bilgileri ile approved başlıkları karşılaştır
                                 matched = False
                                 for title_info in approved_titles:
                                     title_lower = turkish_lower(title_info['title'])
-                                    
+
                                     # Fuzzy matching veya substring kontrolü
                                     if fuzz:
                                         ratio = fuzz.partial_ratio(candidate_pos_lower, title_lower)
@@ -151,21 +148,21 @@ def check_emails_for_account(account: dict) -> dict:
                                     elif title_lower in candidate_pos_lower or candidate_pos_lower in title_lower:
                                         matched = True
                                         break
-                                
+
                                 if matched:
                                     # Bu pozisyona ekle (eğer zaten eklenmemişse ve limit dolmamışsa)
                                     from database import add_candidate_to_position, get_candidate_position_count, get_candidate
                                     from scoring_v2 import calculate_match_score_v2
-                                    
+
                                     current_count = get_candidate_position_count(candidate_id)
                                     if current_count >= 5:  # MAX 5 pozisyon limiti
                                         continue
-                                    
+
                                     # Aday bilgilerini veritabanından al (tam bilgiler için)
                                     candidate_db = get_candidate(candidate_id, company_id=company_id)
                                     if not candidate_db:
                                         continue
-                                    
+
                                     # Candidate'i dict'e çevir
                                     if isinstance(candidate_db, dict):
                                         candidate_dict = candidate_db
@@ -186,7 +183,7 @@ def check_emails_for_account(account: dict) -> dict:
                                             'cv_raw_text': getattr(candidate_db, 'cv_raw_text', '') or '',
                                             'mevcut_sirket': getattr(candidate_db, 'mevcut_sirket', '') or ''
                                         }
-                                    
+
                                     # Pozisyon bilgilerini dict formatına çevir
                                     pos_dict = {
                                         'id': pos['id'],
@@ -196,7 +193,7 @@ def check_emails_for_account(account: dict) -> dict:
                                         'gerekli_egitim': pos.get('gerekli_egitim', '') or '',
                                         'lokasyon': pos.get('lokasyon', '') or ''
                                     }
-                                    
+
                                     # v2 scoring ile skor hesapla
                                     try:
                                         v2_score = calculate_match_score_v2(candidate_dict, pos_dict)
@@ -208,7 +205,7 @@ def check_emails_for_account(account: dict) -> dict:
                                     except Exception as e:
                                         logger.warning(f"approved_title_mappings eşleşmesi için v2 scoring hatası: {e}")
                                         continue
-                        
+
                         # Hiçbir pozisyona eşleşmediyse Genel Havuz'a at
                         if match_result.get('added', 0) == 0:
                             from database import get_pool_by_name, assign_candidate_to_department_pool
@@ -220,7 +217,7 @@ def check_emails_for_account(account: dict) -> dict:
                                 logger.info(f"Aday Genel Havuz'a atandı (pozisyon eşleşmesi yok): {candidate.ad_soyad}")
                         else:
                             logger.info(f"Aday {match_result.get('added', 0)} pozisyona atandı: {candidate.ad_soyad}")
-                    
+
                     except Exception as e:
                         # v2 başarısız, fallback kullanıldı
                         logger.warning(f"v2 scoring başarısız, fallback kullanılıyor: {e}")
@@ -303,23 +300,3 @@ def check_all_emails():
     logger.info(f"Toplam sonuc: {total_stats}")
     logger.info(f"Email kontrolu bitti: {datetime.now()}")
     logger.info("="*50)
-
-
-def run_worker():
-    """Worker'i baslat"""
-    logger.info(f"Email worker baslatildi. Kontrol araligi: {CHECK_INTERVAL_HOURS} saat")
-
-    # Ilk calistirmada hemen kontrol et
-    check_all_emails()
-
-    # Zamanlayici ayarla
-    schedule.every(CHECK_INTERVAL_HOURS).hours.do(check_all_emails)
-
-    # Sonsuz dongu
-    while True:
-        schedule.run_pending()
-        time.sleep(60)  # Her dakika kontrol et
-
-
-if __name__ == "__main__":
-    run_worker()

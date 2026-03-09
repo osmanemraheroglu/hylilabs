@@ -8,6 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 from database import get_connection
 from email_sender import send_interview_invite, send_email, format_turkish_date, get_interview_type_label
 from audit_logger import log_action, AuditAction, EntityType
+from email_worker import check_all_emails
 import logging
 from datetime import datetime, date, timedelta
 
@@ -557,8 +558,17 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # Her saat basi email CV toplama (00:00, 01:00, ..., 23:00)
+    scheduler.add_job(
+        check_all_emails,
+        CronTrigger(hour='0-23', minute=0),
+        id='email_cv_check_hourly',
+        replace_existing=True,
+        misfire_grace_time=300
+    )
+
     scheduler.start()
     logger.info(
-        "Scheduler baslatildi - 09:00 hatirlatma emaili, 09:05 otomatik iptal kontrolu"
+        "Scheduler baslatildi - 09:00 hatirlatma emaili, 09:05 otomatik iptal, saat basi email CV check"
     )
     return scheduler
