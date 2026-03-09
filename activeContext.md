@@ -5,7 +5,7 @@ Son güncelleme: 09.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 9f8ca0b (09.03.2026)
+- **Son commit:** 67253b7 (09.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -18,6 +18,15 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
+- ✅ **Email CV check scheduler.py'ye taşındı** (67253b7)
+  - Saat başı çalışma (00:00-23:00), APScheduler CronTrigger
+  - email_worker.py'den schedule döngüsü kaldırıldı
+  - Fonksiyonlar korundu (check_all_emails, check_emails_for_account)
+- ✅ **CLAUDE.md 3-Katmanlı Mimari** (fe210fe)
+  - MİMARİ PRENSİPLER bölümü eklendi
+  - 3-Katmanlı Sistem: Directive, Orchestration, Execution
+  - Self-Annealing Döngüsü: hata → düzeltme → öğrenme
+  - Execution Mapping tablosu
 - ✅ **Pozisyon sil→aday kaybı FIX TAM** (f872d62 + 53d2419)
   - Kısım 1: CV Çek sadece durum='yeni' tarıyor (f872d62)
   - Kısım 2: Pozisyon silinince TÜM adaylar Genel Havuz'a (53d2419)
@@ -25,6 +34,19 @@ Son güncelleme: 09.03.2026
 - ✅ **Otomatik arşivleme kuralı güncellendi** (9f8ca0b)
   - 30→90 gün, eşleşme kontrolü eklendi (candidate_positions)
   - candidates.durum güncelleme bug'ı düzeltildi
+- ✅ **Kara Liste UI İyileştirmeleri** — TAM (4de9ddb)
+  - Havuzlar: "Durum" kolonu → "Kara Liste" kolonu
+  - Ban ikonu tıklanabilir (kara listede değilse)
+  - "Kara Listede" badge (kara listedeyse)
+  - Duplicate Ban butonu kaldırıldı
+  - Blacklist info kartı (neden, ekleyen, tarih)
+  - "Kara Listeden Çıkar" butonu + modal
+  - loadDetail'de blacklist info fetch
+  - DELETE API: body → query param
+- ✅ **Kara Liste Badge + Info** — havuzlar + candidates (d43b22e)
+  - Durum badge blacklist önceliği
+  - Kara liste bilgi kartı
+  - Çıkarma modalları
 
 ### 08.03.2026
 - ✅ **Kara Liste Sistemi TAM** — database + API + frontend (16aee37)
@@ -71,33 +93,30 @@ Son güncelleme: 09.03.2026
 
 ## Devam Eden / Açık Görevler
 
-### 🔴 KRİTİK
-1. ~~**Pozisyon sil→ekle aday kaybı**~~ — ÇÖZÜLDÜ ✅ (f872d62 + 53d2419)
-
 ### 🟠 ORTA
-2. **Generic keyword temizliği** — üç aylık, quarterly gibi terimler
+1. **Generic keyword temizliği** — üç aylık, quarterly gibi terimler
 
 ### 🟡 DÜŞÜK
-3. **Görev tanımı duplicate uyarısı** — aynı pozisyona 2. yüklemede uyarı
+2. **Görev tanımı duplicate uyarısı** — aynı pozisyona 2. yüklemede uyarı
 
 ### ⏸️ BEKLEYEN
-4. **Görev eşleşmesi karar raporu** — A/B/C seçenek onayı bekliyor
-5. **Kariyer Sayfası** — güvenlik taraması sonrası
-6. **FAZ 7.6 Data Cleanup** — corrupted keywords, orphaned synonyms
+3. **Görev eşleşmesi karar raporu** — A/B/C seçenek onayı bekliyor
+4. **Kariyer Sayfası** — güvenlik taraması sonrası
+5. **FAZ 7.6 Data Cleanup** — corrupted keywords, orphaned synonyms
 
-## Tamamlanan İşler (09.03.2026)
+## Tamamlanan Büyük Özellikler
 
-### ✅ Pozisyon Sil→Aday Kaybı Bug Fix
-| Görev | Commit | Değişiklik |
-|-------|--------|------------|
-| 1 | f872d62 | CV Çek: sadece durum='yeni' tarasın |
-| 2 | 53d2419 | Pozisyon sil: TÜM adaylar Genel Havuz'a |
-| 3 | 9f8ca0b | Oto arşiv: 90 gün + eşleşme yok |
+### Pozisyon Sil→Aday Kaybı Fix ✅ (09.03.2026)
+- [x] CV Çek sadece durum='yeni' tarıyor (f872d62)
+- [x] Pozisyon silinince TÜM adaylar Genel Havuz'a (53d2419)
+- [x] Otomatik arşivleme 30→90 gün + eşleşme kontrolü (9f8ca0b)
 
-### ✅ Kara Liste UI Düzeltmeleri
-| Commit | Değişiklik |
-|--------|------------|
-| 4de9ddb | Tablo: "Durum" → "Kara Liste" kolonu, DELETE query param |
+### Kara Liste Sistemi ✅ (08-09.03.2026)
+- [x] Database layer (blacklisted_candidates tablosu)
+- [x] Backend API endpoints (routes/candidates.py)
+- [x] Frontend UI (havuzlar + candidates)
+- [x] Blacklist info kartı + çıkarma modalı (4de9ddb)
+- [x] Deploy ve test (sunucuda)
 
 ## Sonraki Hedef
 
@@ -108,6 +127,6 @@ Son güncelleme: 09.03.2026
 
 ## Notlar
 
-- CLAUDE.md'de tüm kalıcı kurallar mevcut (656 satır)
+- CLAUDE.md'de tüm kalıcı kurallar mevcut (763 satır, 3-katmanlı mimari eklendi)
 - progress.md güncellenmeli (17 gün eski)
 - .claudeignore aktif (~2.6 GB filtreleniyor)

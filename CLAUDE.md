@@ -1,5 +1,112 @@
 # HyliLabs — Claude Kurallari
 
+## MİMARİ PRENSİPLER — ÖNCE OKU
+
+Bu bölüm Claude Code'un HyliLabs'ta nasıl çalışacağını tanımlar. Her görev başında bu prensipleri hatırla.
+
+### 3-Katmanlı Sistem
+
+HyliLabs 3 katmanlı bir mimari kullanır. Her katmanın görevi farklıdır:
+
+| Katman | Görev | HyliLabs Karşılığı |
+|--------|-------|-------------------|
+| **1. Directive** | Ne yapılacak | `CLAUDE.md`, `activeContext.md`, `hylilabs-tum-skills.md` |
+| **2. Orchestration** | Karar verme | Claude Opus (planlama), Claude Code (yönlendirme) |
+| **3. Execution** | Deterministic kod | FastAPI backend (`/api/`), Python scriptleri |
+
+**Neden Önemli:**
+- LLM'ler probabilistik → her seferinde farklı çıktı verebilir
+- Business logic deterministik olmalı → tutarlı sonuç gerekli
+- Çözüm: Karmaşıklığı koda it, Claude sadece karar versin
+
+**Pratik Sonuç:**
+- Claude Code kendi başına uzun kod YAZMAZ
+- Mevcut script varsa onu KULLANIR
+- Yeni script gerekiyorsa ÖNCE onay alır
+
+---
+
+### Self-Annealing Döngüsü
+
+Hata oluştuğunda sistem kendini güçlendirir:
+
+```
+1. Hata oluştu
+   ↓
+2. Error + stack trace oku
+   ↓
+3. Script'i düzelt
+   ↓
+4. Test et (token/kredi kullanıyorsa önce onay al)
+   ↓
+5. CLAUDE.md'ye öğrenileni ekle
+   ↓
+6. Sistem artık daha güçlü
+```
+
+**Örnekler:**
+- API rate limit → batch endpoint keşfet → script güncelle → kural ekle
+- DB lock hatası → WAL mode ekle → test et → CLAUDE.md'ye yaz
+- Import hatası → PYTHONPATH düzelt → ecosystem.config güncelle → kural ekle
+
+---
+
+### Operasyonel Kurallar
+
+**1. Önce Araç Ara**
+Yeni script yazmadan önce mevcut araçları kontrol et:
+- `/api/routes/` → Mevcut endpoint'ler
+- `/api/core/` → Utility fonksiyonlar
+- `/api/database.py` → DB fonksiyonları
+
+Script varsa KULLAN, yoksa yaz.
+
+**2. Directive'leri Güncelle**
+API limiti, timing, edge case öğrendiğinde:
+- CLAUDE.md'ye kural ekle
+- activeContext.md'yi güncelle
+- Commit mesajında belirt
+
+**3. Ara Dosya Yönetimi**
+| Tip | Konum | Commit? |
+|-----|-------|---------|
+| Geçici işlem | `/data/temp/` | ❌ |
+| CV processing | `/data/cvs/{company_id}/` | ❌ |
+| Export/Report | PDF/Excel → kullanıcıya teslim | - |
+| Log | `/var/log/` | ❌ |
+
+---
+
+### Execution Mapping
+
+Hangi iş için hangi script kullanılır:
+
+| İş | Script/Modül | Notlar |
+|----|--------------|--------|
+| CV parse | `core/cv_parser.py` | KİLİTLİ |
+| Puanlama | `core/scoring_v2.py` | KİLİTLİ |
+| Email gönder | `api/email_sender.py` | KİLİTLİ |
+| Aday eşleştir | `core/candidate_matcher.py` | KİLİTLİ |
+| Mülakat CRUD | `routes/interviews.py` | KİLİTLİ |
+| Havuz sorgu | `routes/pools.py` | KİLİTLİ |
+| DB işlemleri | `api/database.py` | Ana kaynak |
+
+**KURAL:** Kilitli script'e dokunma, yeni fonksiyon AYRI dosyaya yaz.
+
+---
+
+### Hata Önleme Checklist
+
+Her değişiklik öncesi:
+
+- [ ] Mevcut script var mı? (`/api/`, `/api/core/`)
+- [ ] Kilitli dosyaya dokunuyor muyum?
+- [ ] Test edebilir miyim (token/kredi harcamadan)?
+- [ ] Öğrenilen bir şey var mı? (CLAUDE.md'ye ekle)
+- [ ] activeContext.md güncel mi?
+
+---
+
 ## KRİTİK KURAL — MEVCUT ÇALIŞAN SİSTEMLERİ BOZMA
 
 Herhangi bir dosyada değişiklik yaparken, o dosyadaki MEVCUT ÇALIŞAN FONKSİYONLARI BOZMA.
@@ -654,3 +761,4 @@ Commit: e02992c — DEGISTIRME
 31. MÜLAKAT KAYDET BUTONU UX (06.03.2026): handleSave fonksiyonu toast.success() ile kullanıcıya geri bildirim verir ("Mülakat oluşturuldu"/"Mülakat güncellendi"). saving state + Loader2 spinner ile çift tıklama önleme ve loading göstergesi. Edge case: res.ok && !data.success → toast.error("Beklenmeyen sunucu yanıtı"). Kaydet butonu saving sırasında disabled + "Kaydediliyor..." gösterir. DEĞİŞMEZ.
 32. KVKK ONAYLARI PANELİ (06.03.2026): Mülakat takviminde KVKK Onayları butonu ve modal. GET /api/interviews/kvkk-consents endpoint (Auth + company_id izolasyonu). 4 istatistik kartı, aday arama, tablo (aday, pozisyon, onay tarihi, KVKK/mülakat durumu, IP, versiyon). Detay modal: damgalama bilgileri + KVKK metin tam kopyası + immutable uyarı. kvkk_consents tablosu sadece okunur (immutable). DEĞİŞMEZ.
 33. SQLite CONNECTION KURALI (07.03.2026): Her SQLite bağlantısında 3 PRAGMA zorunlu: (1) journal_mode=WAL - concurrent read/write (2) busy_timeout=30000 - lock bekleme 30 saniye (3) foreign_keys=ON - referans bütünlüğü. Direct sqlite3.connect() YASAK, database.py get_connection() kullanılmalı. Ayrı modüllerde (rate_limiter.py, audit_logger.py) kendi get_connection varsa aynı PRAGMA'lar eklenmeli. Yeni bağlantı noktası eklenirken bu kural kontrol edilmeli. DEĞİŞMEZ.
+34. Email Check Schedule (09.03.2026): Email CV toplama scheduler.py'de, saat başı çalışır (hour='0-23', minute=0). email_worker.py sadece fonksiyonları içerir (check_all_emails, check_emails_for_account), schedule döngüsü İÇERMEZ. APScheduler CronTrigger ile yönetilir. Bu yapı DEĞİŞTİRİLEMEZ.
