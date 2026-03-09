@@ -18,6 +18,11 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
+- ✅ **Progress UI Step 3: Worker Progress Entegrasyonu** (56d065d)
+  - Başlangıç log: durum='devam_ediyor' ile kayıt oluştur
+  - Progress update: Her 25 CV'de bir update
+  - Bitiş: update_email_collection_log ile final durum
+  - Fallback: log_id yoksa yeni kayıt oluştur
 - ✅ **Progress UI Step 2: update_email_collection_log fonksiyonu** (f6c4a04)
   - database.py'ye update_email_collection_log() eklendi
   - Dinamik UPDATE sorgusu (sadece non-None alanlar)
