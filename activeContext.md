@@ -5,7 +5,7 @@ Son güncelleme: 09.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** f872d62 (09.03.2026)
+- **Son commit:** 53d2419 (09.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -18,10 +18,10 @@ Son güncelleme: 09.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 09.03.2026
-- ✅ **CV Çek filtre düzeltmesi** — sadece durum='yeni' taranıyor (f872d62)
-  - Önceki: durum NOT IN ('ise_alindi', 'arsiv') → mulakat, pozisyona_atandi da taranıyordu
-  - Şimdi: sadece durum='yeni' → Genel Havuz adayları
-  - Pozisyon sil→ekle aday kaybı sorununu çözer (Kısım 1/2)
+- ✅ **Pozisyon sil→aday kaybı FIX TAM** (f872d62 + 53d2419)
+  - Kısım 1: CV Çek sadece durum='yeni' tarıyor (f872d62)
+  - Kısım 2: Pozisyon silinince TÜM adaylar Genel Havuz'a (53d2419)
+  - 30 gün arşiv mantığı kaldırıldı
 
 ### 08.03.2026
 - ✅ **Kara Liste Sistemi TAM** — database + API + frontend (16aee37)
@@ -69,7 +69,7 @@ Son güncelleme: 09.03.2026
 ## Devam Eden / Açık Görevler
 
 ### 🔴 KRİTİK
-1. **Pozisyon sil→ekle aday kaybı** — CV Çek filtresi düzeltildi (Kısım 1). Kısım 2: handle_position_deletion() 30 gün arşiv mantığı incelenmeli
+1. ~~**Pozisyon sil→ekle aday kaybı**~~ — ÇÖZÜLDÜ ✅ (f872d62 + 53d2419)
 
 ### 🟠 ORTA
 2. **Generic keyword temizliği** — üç aylık, quarterly gibi terimler
