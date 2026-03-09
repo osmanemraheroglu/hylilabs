@@ -4487,6 +4487,72 @@ def log_email_collection(
         return cursor.lastrowid
 
 
+def update_email_collection_log(
+    log_id: int,
+    taranan_email: int = None,
+    bulunan_cv: int = None,
+    basarili_cv: int = None,
+    mevcut_aday: int = None,
+    hatali_cv: int = None,
+    durum: str = None,
+    hata_mesaji: str = None
+) -> bool:
+    """
+    Mevcut email collection log kaydını güncelle.
+    Progress tracking için kullanılır.
+    Sadece verilen (None olmayan) alanlar güncellenir.
+
+    Returns:
+        bool: Güncelleme başarılı ise True
+    """
+    if not log_id:
+        return False
+
+    try:
+        # Dinamik UPDATE sorgusu oluştur
+        updates = []
+        params = []
+
+        if taranan_email is not None:
+            updates.append("taranan_email = ?")
+            params.append(taranan_email)
+        if bulunan_cv is not None:
+            updates.append("bulunan_cv = ?")
+            params.append(bulunan_cv)
+        if basarili_cv is not None:
+            updates.append("basarili_cv = ?")
+            params.append(basarili_cv)
+        if mevcut_aday is not None:
+            updates.append("mevcut_aday = ?")
+            params.append(mevcut_aday)
+        if hatali_cv is not None:
+            updates.append("hatali_cv = ?")
+            params.append(hatali_cv)
+        if durum is not None:
+            updates.append("durum = ?")
+            params.append(durum)
+        if hata_mesaji is not None:
+            updates.append("hata_detaylari = ?")
+            params.append(hata_mesaji)
+
+        if not updates:
+            return False
+
+        # bitis_zamani ekle
+        updates.append("bitis_zamani = datetime('now')")
+
+        query = f"UPDATE email_collection_logs SET {', '.join(updates)} WHERE id = ?"
+        params.append(log_id)
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            return cursor.rowcount > 0
+    except Exception as e:
+        logger.error(f"update_email_collection_log hatası: {e}")
+        return False
+
+
 def get_email_collection_history(
     company_id: Optional[int] = None,
     account_id: Optional[int] = None,
