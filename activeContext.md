@@ -5,7 +5,7 @@ Son güncelleme: 09.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 67253b7 (09.03.2026)
+- **Son commit:** 9f79fe0 (09.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -23,6 +23,15 @@ Son güncelleme: 09.03.2026
   - check_emails_for_account() sonunda log çağrısı eklendi
   - Scheduler-triggered taramalar artık DB'ye loglanacak
   - Durum tespiti: tamamlandi/kismi_basarili/bos/basarisiz
+- ✅ **Keyword double encoding fix** (9f79fe0)
+  - handleUpdatePool: editKeywords array kullanılıyor
+  - Çift JSON encoding sorunu çözüldü
+- ✅ **Keyword parse bug fix** (f45979c)
+  - Havuz düzenle modalında anahtar kelimeler doğru görünüyor
+  - json.loads ile JSON string parse, split fallback korundu
+- ✅ **Manuel Giriş sekmesi kaldırıldı** (723bcc9)
+  - Pozisyon ekleme: Sadece "URL ile Ekle" ve "Dokümandan Ekle" kaldı
+  - grid-cols-3 → grid-cols-2, 30 satır TabsContent silindi
 - ✅ **Email CV check scheduler.py'ye taşındı** (67253b7)
   - Saat başı çalışma (00:00-23:00), APScheduler CronTrigger
   - email_worker.py'den schedule döngüsü kaldırıldı
@@ -112,16 +121,23 @@ Son güncelleme: 09.03.2026
 ## Tamamlanan Büyük Özellikler
 
 ### Pozisyon Sil→Aday Kaybı Fix ✅ (09.03.2026)
-- [x] CV Çek sadece durum='yeni' tarıyor
-- [x] Pozisyon silinince TÜM adaylar Genel Havuz'a
-- [x] Otomatik arşivleme 30→90 gün
+- [x] CV Çek sadece durum='yeni' tarıyor (f872d62)
+- [x] Pozisyon silinince TÜM adaylar Genel Havuz'a (53d2419)
+- [x] Otomatik arşivleme 30→90 gün + eşleşme kontrolü (9f8ca0b)
 
 ### Kara Liste Sistemi ✅ (08-09.03.2026)
 - [x] Database layer (blacklisted_candidates tablosu)
 - [x] Backend API endpoints (routes/candidates.py)
 - [x] Frontend UI (havuzlar + candidates)
-- [x] Blacklist info kartı + çıkarma modalı
+- [x] Blacklist info kartı + çıkarma modalı (4de9ddb)
 - [x] Deploy ve test (sunucuda)
+
+## Sonraki Hedef
+
+### Bekleyen Görevler
+1. **Görev Tanımı sekmesi** — Manuel Giriş yerine Görev Tanımı (pozisyon ekleme)
+2. **Generic keyword temizliği**
+3. **Kariyer Sayfası** (Security taraması önce)
 
 ## Notlar
 

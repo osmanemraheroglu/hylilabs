@@ -226,7 +226,7 @@ export default function Havuzlar() {
 
   const handleUpdatePool = () => {
     if (!selectedPoolId || !poolForm.name) return
-    fetch(`${API}/api/pools/${selectedPoolId}`, { method: 'PUT', headers: H(), body: JSON.stringify({ name: poolForm.name, keywords: poolForm.keywords ? poolForm.keywords.split(',').map(k => k.trim()).filter(Boolean) : [], description: poolForm.description }) })
+    fetch(`${API}/api/pools/${selectedPoolId}`, { method: 'PUT', headers: H(), body: JSON.stringify({ name: poolForm.name, keywords: editKeywords, description: poolForm.description }) })
       .then(r => r.json()).then(res => { if (res.success) { setEditDialogOpen(false); loadTree(); loadCandidates(selectedPoolId) } else toast.error(res.detail || 'Hata') })
   }
 
@@ -928,10 +928,9 @@ export default function Havuzlar() {
 
           {poolForm.pool_type === 'position' ? (
             <Tabs defaultValue="url" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="url"><Link className="h-3.5 w-3.5 mr-1" />URL ile Ekle</TabsTrigger>
                 <TabsTrigger value="document"><FileText className="h-3.5 w-3.5 mr-1" />Dokümandan Ekle</TabsTrigger>
-                <TabsTrigger value="manual"><Edit className="h-3.5 w-3.5 mr-1" />Manuel Giriş</TabsTrigger>
               </TabsList>
 
               {/* TAB 1: URL ile Ekle */}
@@ -1066,36 +1065,8 @@ export default function Havuzlar() {
                 )}
               </TabsContent>
 
-              {/* TAB 3: Manuel Giriş */}
-              <TabsContent value="manual" className="space-y-3 mt-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div><Label className="text-sm">Pozisyon Adı *</Label><Input value={positionForm.pozisyon_adi} onChange={e => setPositionForm({...positionForm, pozisyon_adi: e.target.value})} placeholder="Örnek: Frontend Developer" /></div>
-                  <div><Label className="text-sm">Lokasyon</Label><Input value={positionForm.lokasyon} onChange={e => setPositionForm({...positionForm, lokasyon: e.target.value})} placeholder="İstanbul" /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div><Label className="text-sm">Deneyim (yıl)</Label><Input type="number" value={positionForm.deneyim_yil} onChange={e => setPositionForm({...positionForm, deneyim_yil: e.target.value})} /></div>
-                  <div>
-                    <Label className="text-sm">Eğitim Seviyesi</Label>
-                    <Select value={positionForm.egitim_seviyesi || "none"} onValueChange={v => setPositionForm({...positionForm, egitim_seviyesi: v === "none" ? "" : v})}>
-                      <SelectTrigger><SelectValue placeholder="Seçin..." /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">-</SelectItem>
-                        <SelectItem value="Lise">Lise</SelectItem>
-                        <SelectItem value="Ön Lisans">Ön Lisans</SelectItem>
-                        <SelectItem value="Lisans">Lisans</SelectItem>
-                        <SelectItem value="Yüksek Lisans">Yüksek Lisans</SelectItem>
-                        <SelectItem value="Doktora">Doktora</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div><Label className="text-sm">Anahtar Kelimeler (virgül ile)</Label><Input value={positionForm.keywords} onChange={e => setPositionForm({...positionForm, keywords: e.target.value})} placeholder="react, typescript, node.js" /></div>
-                <div><Label className="text-sm">Aranan Nitelikler</Label><Textarea value={positionForm.aranan_nitelikler} onChange={e => setPositionForm({...positionForm, aranan_nitelikler: e.target.value})} rows={3} placeholder="Gerekli beceriler ve nitelikler..." /></div>
-                <div><Label className="text-sm">İş Tanımı</Label><Textarea value={positionForm.is_tanimi} onChange={e => setPositionForm({...positionForm, is_tanimi: e.target.value})} rows={3} placeholder="Pozisyon hakkında detaylar..." /></div>
-                <Button onClick={handleSaveParsed} disabled={savingPosition || !positionForm.pozisyon_adi} className="w-full">
-                  {savingPosition ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : null}Kaydet
-                </Button>
-              </TabsContent>
+
+
             </Tabs>
           ) : (
             /* Departman ekleme (eski basit form) */
