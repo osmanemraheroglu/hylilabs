@@ -1130,7 +1130,7 @@ export default function Havuzlar() {
               </div>
             )}
           </div>
-          <DialogFooter className="sticky bottom-0 bg-background pt-4 border-t mt-4"><Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button><Button onClick={handleUpdatePool} disabled={!poolForm.name}>Kaydet</Button></DialogFooter>
+          <DialogFooter className="shrink-0 border-t pt-4"><Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button><Button onClick={handleUpdatePool} disabled={!poolForm.name}>Kaydet</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
