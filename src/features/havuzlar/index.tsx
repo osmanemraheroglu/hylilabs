@@ -557,10 +557,10 @@ export default function Havuzlar() {
         </div>
         {v2.knockout && <div className="col-span-2 bg-red-50 border border-red-200 rounded p-2 text-red-700 font-medium">KNOCKOUT: {String(v2.knockout_reason || '')}</div>}
         {Array.isArray(v2.critical_missing) && (v2.critical_missing as string[]).length > 0 && (
-          <div className="col-span-2"><span className="font-medium text-red-600">Eksik Kritik:</span> {(v2.critical_missing as string[]).join(', ')}</div>
+          <div className="col-span-2 whitespace-normal break-words"><span className="font-medium text-red-600">Eksik Kritik:</span> {(v2.critical_missing as string[]).join(', ')}</div>
         )}
         {Array.isArray(v2.critical_matched) && (v2.critical_matched as string[]).length > 0 && (
-          <div className="col-span-2"><span className="font-medium text-green-600">Eşleşen Kritik:</span> {(v2.critical_matched as any[]).map(x => x.keyword || x).join(', ')}</div>
+          <div className="col-span-2 whitespace-normal break-words"><span className="font-medium text-green-600">Eşleşen Kritik:</span> {(v2.critical_matched as any[]).map(x => x.keyword || x).join(', ')}</div>
         )}
       </div>
     )
@@ -632,12 +632,12 @@ export default function Havuzlar() {
           ) : (
             <Card><CardContent className="p-4 space-y-3">
               {/* Pool Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold flex items-center gap-2">{poolInfo?.name}<Badge variant="outline" className="text-xs">{poolInfo?.pool_type}</Badge></h3>
-                  {poolInfo?.description && <p className="text-xs text-muted-foreground">{poolInfo.description}</p>}
-                </div>
-                <div className="flex gap-1.5">
+              <div className="space-y-3">
+                {/* Başlık */}
+                <h3 className="text-lg font-semibold flex items-center gap-2">{poolInfo?.name}<Badge variant="outline" className="text-xs">{poolInfo?.pool_type}</Badge></h3>
+
+                {/* Butonlar */}
+                <div className="flex flex-wrap gap-1.5">
                   {poolInfo && !poolInfo.is_system && (<><Button variant="outline" size="sm" onClick={openEdit}><Edit className="h-3.5 w-3.5 mr-1" />Düzenle</Button><Button variant="outline" size="sm" className="text-red-500" onClick={() => setDeleteConfirm(selectedPoolId)}><Trash2 className="h-3.5 w-3.5 mr-1" />Sil</Button></>)}
                   {poolInfo && poolInfo.pool_type === 'position' && !poolInfo.is_system && (
                     <>
@@ -647,6 +647,9 @@ export default function Havuzlar() {
                   )}
                   <Button variant="outline" size="sm" onClick={() => setAssignDialogOpen(true)}><UserPlus className="h-3.5 w-3.5 mr-1" />Aday Ata</Button>
                 </div>
+
+                {/* Açıklama */}
+                {poolInfo?.description && <p className="text-sm text-muted-foreground">{poolInfo.description}</p>}
               </div>
 
               {/* Toolbar: Search + Filters */}
@@ -747,9 +750,9 @@ export default function Havuzlar() {
                             {/* Expanded Detail Row */}
                             {expandedCandidate === c.id && (
                               <TableRow key={`detail-${c.id}`}>
-                                <TableCell colSpan={7} className="bg-muted/30 p-4">
+                                <TableCell colSpan={7} className="bg-muted/30 p-4 max-w-0 overflow-hidden">
                                   {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const v2d = (candidateDetail as any).v2_detail; const aie = (candidateDetail as any).ai_evaluation; return (
-                                    <div className="space-y-3">
+                                    <div className="w-full max-w-6xl space-y-3 overflow-hidden">
                                       {/* Kisisel Bilgiler */}
                                       <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-xs">
                                         <div className="min-w-0 truncate"><span className="font-medium">Email:</span> {String(cd?.email || '-')}</div>
@@ -761,16 +764,31 @@ export default function Havuzlar() {
                                       </div>
                                       {/* Teknik Beceriler */}
                                       {cd?.teknik_beceriler && (
-                                        <div><span className="text-xs font-medium">Teknik Beceriler:</span>
+                                        <div className="w-full"><span className="text-xs font-medium">Teknik Beceriler:</span>
                                           <div className="flex flex-wrap gap-1 mt-1">
                                             {String(cd?.teknik_beceriler).split(',').map((s, i) => <Badge key={i} variant="secondary" className="text-[10px]">{s.trim()}</Badge>)}
                                           </div>
                                         </div>
                                       )}
-{/* Diller */}                                      {cd?.diller && (                                        <div className="mb-1"><span className="text-xs font-medium">Diller:</span> <span className="text-xs">{String(cd.diller)}</span></div>                                      )}                                      {/* Sertifikalar */}                                      {cd?.sertifikalar && (                                        <div className="mb-1"><span className="text-xs font-medium">Sertifikalar:</span> <span className="text-xs">{String(cd.sertifikalar)}</span></div>                                      )}                                      {/* Bölüm */}                                      {cd?.bolum && (                                        <div className="mb-1"><span className="text-xs font-medium">Bölüm:</span> <span className="text-xs">{String(cd.bolum)}</span></div>                                      )}                                      {/* Görev Açıklamaları */}                                      {cd?.deneyim_aciklama && (                                        <div className="mb-1"><span className="text-xs font-medium">Görev Açıklamaları:</span> <span className="text-xs text-muted-foreground">{String(cd.deneyim_aciklama).length > 300 ? String(cd.deneyim_aciklama).substring(0, 300) + "..." : String(cd.deneyim_aciklama)}</span></div>                                      )}
+{/* Diller */}
+                                      {cd?.diller && (
+                                        <div className="w-full mb-1 whitespace-normal break-words"><span className="text-xs font-medium">Diller:</span> <span className="text-xs">{String(cd.diller)}</span></div>
+                                      )}
+                                      {/* Sertifikalar */}
+                                      {cd?.sertifikalar && (
+                                        <div className="w-full mb-1 whitespace-normal break-words"><span className="text-xs font-medium">Sertifikalar:</span> <span className="text-xs">{String(cd.sertifikalar)}</span></div>
+                                      )}
+                                      {/* Bölüm */}
+                                      {cd?.bolum && (
+                                        <div className="w-full mb-1 whitespace-normal break-words"><span className="text-xs font-medium">Bölüm:</span> <span className="text-xs">{String(cd.bolum)}</span></div>
+                                      )}
+                                      {/* Görev Açıklamaları */}
+                                      {cd?.deneyim_aciklama && (
+                                        <div className="w-full mb-1 whitespace-normal break-words"><span className="text-xs font-medium">Görev Açıklamaları:</span> <span className="text-xs text-muted-foreground">{String(cd.deneyim_aciklama).length > 300 ? String(cd.deneyim_aciklama).substring(0, 300) + "..." : String(cd.deneyim_aciklama)}</span></div>
+                                      )}
                                       {/* Deneyim Detay */}
                                       {cd?.deneyim_detay && (
-                                        <div className="text-xs"><span className="font-medium">Deneyim:</span> {String(cd?.deneyim_detay)}</div>
+                                        <div className="w-full text-xs whitespace-normal break-words"><span className="font-medium">Deneyim:</span> {String(cd?.deneyim_detay)}</div>
                                       )}
                                       {/* v2 Score Detail */}
                                       {v2d && (
@@ -1080,9 +1098,9 @@ export default function Havuzlar() {
       </Dialog>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
           <DialogHeader><DialogTitle>Havuz Düzenle</DialogTitle></DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-y-auto">
             <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} /></div>
             <div><Label className="text-sm">Açıklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
 
@@ -1127,7 +1145,7 @@ export default function Havuzlar() {
               </div>
             )}
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button><Button onClick={handleUpdatePool} disabled={!poolForm.name}>Kaydet</Button></DialogFooter>
+          <DialogFooter className="shrink-0 border-t pt-4"><Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button><Button onClick={handleUpdatePool} disabled={!poolForm.name}>Kaydet</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
