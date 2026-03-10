@@ -750,9 +750,9 @@ export default function Havuzlar() {
                             {/* Expanded Detail Row */}
                             {expandedCandidate === c.id && (
                               <TableRow key={`detail-${c.id}`}>
-                                <TableCell colSpan={7} className="bg-muted/30 p-4 overflow-hidden">
+                                <TableCell colSpan={7} className="bg-muted/30 p-4 max-w-0 overflow-hidden">
                                   {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const v2d = (candidateDetail as any).v2_detail; const aie = (candidateDetail as any).ai_evaluation; return (
-                                    <div className="w-full space-y-3 overflow-hidden">
+                                    <div className="w-full max-w-full space-y-3 overflow-hidden">
                                       {/* Kisisel Bilgiler */}
                                       <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-xs">
                                         <div className="min-w-0 truncate"><span className="font-medium">Email:</span> {String(cd?.email || '-')}</div>
