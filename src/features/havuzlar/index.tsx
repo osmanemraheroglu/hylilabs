@@ -557,10 +557,10 @@ export default function Havuzlar() {
         </div>
         {v2.knockout && <div className="col-span-2 bg-red-50 border border-red-200 rounded p-2 text-red-700 font-medium">KNOCKOUT: {String(v2.knockout_reason || '')}</div>}
         {Array.isArray(v2.critical_missing) && (v2.critical_missing as string[]).length > 0 && (
-          <div className="col-span-2"><span className="font-medium text-red-600">Eksik Kritik:</span> {(v2.critical_missing as string[]).join(', ')}</div>
+          <div className="col-span-2 whitespace-normal break-words"><span className="font-medium text-red-600">Eksik Kritik:</span> {(v2.critical_missing as string[]).join(', ')}</div>
         )}
         {Array.isArray(v2.critical_matched) && (v2.critical_matched as string[]).length > 0 && (
-          <div className="col-span-2"><span className="font-medium text-green-600">Eşleşen Kritik:</span> {(v2.critical_matched as any[]).map(x => x.keyword || x).join(', ')}</div>
+          <div className="col-span-2 whitespace-normal break-words"><span className="font-medium text-green-600">Eşleşen Kritik:</span> {(v2.critical_matched as any[]).map(x => x.keyword || x).join(', ')}</div>
         )}
       </div>
     )
@@ -752,7 +752,7 @@ export default function Havuzlar() {
                               <TableRow key={`detail-${c.id}`}>
                                 <TableCell colSpan={7} className="bg-muted/30 p-4 max-w-0 overflow-hidden">
                                   {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const v2d = (candidateDetail as any).v2_detail; const aie = (candidateDetail as any).ai_evaluation; return (
-                                    <div className="w-full max-w-full space-y-3 overflow-hidden">
+                                    <div className="w-full max-w-6xl space-y-3 overflow-hidden">
                                       {/* Kisisel Bilgiler */}
                                       <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-xs">
                                         <div className="min-w-0 truncate"><span className="font-medium">Email:</span> {String(cd?.email || '-')}</div>
@@ -772,23 +772,23 @@ export default function Havuzlar() {
                                       )}
 {/* Diller */}
                                       {cd?.diller && (
-                                        <div className="w-full mb-1 break-all"><span className="text-xs font-medium">Diller:</span> <span className="text-xs">{String(cd.diller)}</span></div>
+                                        <div className="w-full mb-1 whitespace-normal break-words"><span className="text-xs font-medium">Diller:</span> <span className="text-xs">{String(cd.diller)}</span></div>
                                       )}
                                       {/* Sertifikalar */}
                                       {cd?.sertifikalar && (
-                                        <div className="w-full mb-1 break-all"><span className="text-xs font-medium">Sertifikalar:</span> <span className="text-xs">{String(cd.sertifikalar)}</span></div>
+                                        <div className="w-full mb-1 whitespace-normal break-words"><span className="text-xs font-medium">Sertifikalar:</span> <span className="text-xs">{String(cd.sertifikalar)}</span></div>
                                       )}
                                       {/* Bölüm */}
                                       {cd?.bolum && (
-                                        <div className="w-full mb-1 break-all"><span className="text-xs font-medium">Bölüm:</span> <span className="text-xs">{String(cd.bolum)}</span></div>
+                                        <div className="w-full mb-1 whitespace-normal break-words"><span className="text-xs font-medium">Bölüm:</span> <span className="text-xs">{String(cd.bolum)}</span></div>
                                       )}
                                       {/* Görev Açıklamaları */}
                                       {cd?.deneyim_aciklama && (
-                                        <div className="w-full mb-1 break-all"><span className="text-xs font-medium">Görev Açıklamaları:</span> <span className="text-xs text-muted-foreground">{String(cd.deneyim_aciklama).length > 300 ? String(cd.deneyim_aciklama).substring(0, 300) + "..." : String(cd.deneyim_aciklama)}</span></div>
+                                        <div className="w-full mb-1 whitespace-normal break-words"><span className="text-xs font-medium">Görev Açıklamaları:</span> <span className="text-xs text-muted-foreground">{String(cd.deneyim_aciklama).length > 300 ? String(cd.deneyim_aciklama).substring(0, 300) + "..." : String(cd.deneyim_aciklama)}</span></div>
                                       )}
                                       {/* Deneyim Detay */}
                                       {cd?.deneyim_detay && (
-                                        <div className="w-full text-xs break-all"><span className="font-medium">Deneyim:</span> {String(cd?.deneyim_detay)}</div>
+                                        <div className="w-full text-xs whitespace-normal break-words"><span className="font-medium">Deneyim:</span> {String(cd?.deneyim_detay)}</div>
                                       )}
                                       {/* v2 Score Detail */}
                                       {v2d && (
