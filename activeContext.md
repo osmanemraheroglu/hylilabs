@@ -1,11 +1,11 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 09.03.2026
+Son güncelleme: 10.03.2026
 
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 9f79fe0 (09.03.2026)
+- **Son commit:** 7ab8e62 (10.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -16,6 +16,11 @@ Son güncelleme: 09.03.2026
 - 3 şirket, ~50 aday, 5 pozisyon
 
 ## Son 72 Saatte Tamamlananlar
+
+### 10.03.2026
+- ✅ **Havuz Düzenle modal scroll fix** (7ab8e62)
+  - Uzun içeriklerde Kaydet butonuna ulaşılabiliyor
+  - max-h-[90vh], overflow-y-auto, sticky footer
 
 ### 09.03.2026
 - ✅ **HyliLabs Logo Ekleme** (cf3841a)
