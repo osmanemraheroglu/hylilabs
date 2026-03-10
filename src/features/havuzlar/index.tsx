@@ -1080,9 +1080,9 @@ export default function Havuzlar() {
       </Dialog>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
           <DialogHeader><DialogTitle>Havuz Düzenle</DialogTitle></DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-y-auto">
             <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} /></div>
             <div><Label className="text-sm">Açıklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
 
@@ -1127,7 +1127,7 @@ export default function Havuzlar() {
               </div>
             )}
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button><Button onClick={handleUpdatePool} disabled={!poolForm.name}>Kaydet</Button></DialogFooter>
+          <DialogFooter className="sticky bottom-0 bg-background pt-4 border-t mt-4"><Button variant="outline" onClick={() => setEditDialogOpen(false)}>İptal</Button><Button onClick={handleUpdatePool} disabled={!poolForm.name}>Kaydet</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
