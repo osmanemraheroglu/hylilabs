@@ -632,12 +632,12 @@ export default function Havuzlar() {
           ) : (
             <Card><CardContent className="p-4 space-y-3">
               {/* Pool Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold flex items-center gap-2">{poolInfo?.name}<Badge variant="outline" className="text-xs">{poolInfo?.pool_type}</Badge></h3>
-                  {poolInfo?.description && <p className="text-xs text-muted-foreground">{poolInfo.description}</p>}
-                </div>
-                <div className="flex gap-1.5">
+              <div className="space-y-3">
+                {/* Başlık */}
+                <h3 className="text-lg font-semibold flex items-center gap-2">{poolInfo?.name}<Badge variant="outline" className="text-xs">{poolInfo?.pool_type}</Badge></h3>
+
+                {/* Butonlar */}
+                <div className="flex flex-wrap gap-1.5">
                   {poolInfo && !poolInfo.is_system && (<><Button variant="outline" size="sm" onClick={openEdit}><Edit className="h-3.5 w-3.5 mr-1" />Düzenle</Button><Button variant="outline" size="sm" className="text-red-500" onClick={() => setDeleteConfirm(selectedPoolId)}><Trash2 className="h-3.5 w-3.5 mr-1" />Sil</Button></>)}
                   {poolInfo && poolInfo.pool_type === 'position' && !poolInfo.is_system && (
                     <>
@@ -647,6 +647,9 @@ export default function Havuzlar() {
                   )}
                   <Button variant="outline" size="sm" onClick={() => setAssignDialogOpen(true)}><UserPlus className="h-3.5 w-3.5 mr-1" />Aday Ata</Button>
                 </div>
+
+                {/* Açıklama */}
+                {poolInfo?.description && <p className="text-sm text-muted-foreground">{poolInfo.description}</p>}
               </div>
 
               {/* Toolbar: Search + Filters */}
