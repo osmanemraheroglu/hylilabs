@@ -13,7 +13,9 @@ dist-ssr
 *.local
 
 .env
+*.env
 *.env.save
+*.env.*
 api/.env.save
 
 # Editor directories and files
