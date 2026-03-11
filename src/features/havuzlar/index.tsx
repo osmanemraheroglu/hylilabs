@@ -919,7 +919,7 @@ export default function Havuzlar() {
                                                 <div>
                                                   <span className="font-medium">Öne Çıkan Beceriler:</span>
                                                   <div className="flex flex-wrap gap-1 mt-1">
-                                                    {intel.key_skills.map((sk, i) => <Badge key={i} variant="outline" className="text-[10px] border-blue-200 bg-blue-50">{sk}</Badge>)}
+                                                    {intel.key_skills.map((sk: any, i: number) => <Badge key={i} variant="outline" className="text-[10px] border-blue-200 bg-blue-50">{typeof sk === 'string' ? sk : sk.skill}</Badge>)}
                                                   </div>
                                                 </div>
                                               )}
