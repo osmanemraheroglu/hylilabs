@@ -4,6 +4,11 @@ SmartPromptBuilder - Scoring V3 Prompt Oluşturucu
 CV verisi + Pozisyon verisi → AI değerlendirme prompt'u oluşturur.
 Türkiye İK piyasasına özel, Türkçe prompt üretir.
 
+V2 Entegrasyonu:
+- position_data["v2_keywords"] → Pozisyon anahtar kelimeleri
+- position_data["v2_synonyms"] → Onaylı eş anlamlılar
+- position_data["v2_titles"] → Onaylı pozisyon başlıkları
+
 Kullanım:
     builder = SmartPromptBuilder()
     prompt = builder.build_evaluation_prompt(candidate_data, position_data)
@@ -134,6 +139,7 @@ JSON_SCHEMA = """{
     }
   },
   "total_score": 0-100 arası toplam puan,
+  "keyword_match_ratio": 0.0-1.0 arası (eşleşen keyword / toplam keyword),
   "strengths": ["Güçlü yön 1", "Güçlü yön 2", "Güçlü yön 3"],
   "weaknesses": ["Zayıf yön 1", "Zayıf yön 2"],
   "notes_for_hr": ["İK için not 1", "İK için not 2"],
@@ -158,6 +164,43 @@ Aranan Nitelikler:
 
 Teknik Beceriler/Anahtar Kelimeler:
 {position_keywords}
+
+═══════════════════════════════════════════════════════════════════════════════
+İK TARAFINDAN BELİRLENEN KRİTERLER (V2 VERİLERİ)
+═══════════════════════════════════════════════════════════════════════════════
+
+Aranan Anahtar Kelimeler ({v2_keyword_count} adet):
+{v2_keywords_formatted}
+
+Kabul Edilen Eş Anlamlılar:
+{v2_synonyms_formatted}
+
+Uyumlu Pozisyon Başlıkları:
+{v2_titles_formatted}
+
+───────────────────────────────────────────────────────────────────────────────
+V2 KEYWORD EŞLEŞME TALİMATI:
+───────────────────────────────────────────────────────────────────────────────
+- Adayın CV'sinde bulunan keyword sayısını / toplam keyword sayısına böl
+- Bu oran %70+ ise YÜKSEK eşleşme (teknik beceri puanı yüksek)
+- %40-70 arası ORTA eşleşme (teknik beceri puanı orta)
+- %40 altı DÜŞÜK eşleşme (teknik beceri puanı düşük)
+- keyword_match_ratio alanına bu oranı yaz (0.0-1.0 arası)
+
+───────────────────────────────────────────────────────────────────────────────
+V2 SYNONYM AĞIRLIK TALİMATI:
+───────────────────────────────────────────────────────────────────────────────
+- Eş anlamlı eşleşmesi de keyword eşleşmesi sayılır
+- weight değeri 0.9+ ise TAM eşleşme (keyword bulunmuş sayılır)
+- weight değeri 0.7-0.9 ise KISMİ eşleşme (0.8 keyword sayılır)
+- weight değeri 0.7 altı ise ZAYIF eşleşme (0.5 keyword sayılır)
+
+───────────────────────────────────────────────────────────────────────────────
+V2 TITLE EŞLEŞME TALİMATI:
+───────────────────────────────────────────────────────────────────────────────
+- Adayın son pozisyon başlığı "exact" listesinde varsa → pozisyon uyumu YÜKSEK (+20-25 puan)
+- "related" listesinde varsa → pozisyon uyumu ORTA (+10-15 puan)
+- Hiçbirinde yoksa → pozisyon uyumu DÜŞÜK (+0-10 puan)
 
 ═══════════════════════════════════════════════════════════════════════════════
 ADAY BİLGİLERİ
@@ -188,9 +231,11 @@ Yabancı Dil:
 DEĞERLENDİRME TALİMATI
 ═══════════════════════════════════════════════════════════════════════════════
 
-Yukarıdaki aday bilgilerini, yukarıdaki pozisyon gereksinimleriyle karşılaştır.
-Puanlama matrisine göre 0-100 puan ver.
-SADECE JSON formatında yanıt ver, başka hiçbir şey yazma.
+1. Yukarıdaki V2 anahtar kelimelerini CV'de ARA
+2. Eş anlamlıları da kabul et (örn: "forklift" yerine "fork lift" geçerli)
+3. Pozisyon başlıkları uyumunu değerlendir (exact > related > yok)
+4. Puanlama matrisine göre 0-100 puan ver
+5. SADECE JSON formatında yanıt ver, başka hiçbir şey yazma
 
 {json_schema}
 """
@@ -200,6 +245,11 @@ class SmartPromptBuilder:
     """
     CV ve Pozisyon verisinden AI değerlendirme promptu oluşturur.
     Türkiye İK piyasasına özel, Türkçe prompt üretir.
+
+    V2 Entegrasyonu:
+    - position_data["v2_keywords"] → Pozisyon anahtar kelimeleri
+    - position_data["v2_synonyms"] → Onaylı eş anlamlılar
+    - position_data["v2_titles"] → Onaylı pozisyon başlıkları
     """
 
     def __init__(self):
@@ -248,13 +298,23 @@ class SmartPromptBuilder:
                 - gerekli_egitim: Gerekli eğitim
                 - description/aranan_nitelikler: Aranan nitelikler
                 - keywords: Anahtar kelimeler
+                - v2_keywords: V2 anahtar kelimeleri (opsiyonel)
+                - v2_synonyms: V2 eş anlamlıları (opsiyonel)
+                - v2_titles: V2 pozisyon başlıkları (opsiyonel)
 
         Returns:
             str: AI'ya gönderilecek tam prompt metni (system + evaluation)
         """
-        # Bölümleri formatla
-        candidate_section = self._format_candidate_section(candidate_data)
-        position_section = self._format_position_section(position_data)
+        # V2 verilerini formatla
+        v2_keywords = position_data.get("v2_keywords", [])
+        v2_synonyms = position_data.get("v2_synonyms", {})
+        v2_titles = position_data.get("v2_titles", {"exact": [], "related": []})
+
+        v2_keywords_formatted = self._format_v2_keywords(v2_keywords)
+        v2_synonyms_formatted = self._format_v2_synonyms(v2_synonyms)
+        v2_titles_formatted = self._format_v2_titles(v2_titles)
+
+        # JSON şemasını al
         json_schema = self._get_json_schema()
 
         # Değişkenleri hazırla
@@ -269,6 +329,12 @@ class SmartPromptBuilder:
             "required_education": self._safe_get(position_data, "gerekli_egitim", "education"),
             "position_requirements": self._format_requirements(position_data),
             "position_keywords": self._format_keywords(position_data),
+
+            # V2 verileri
+            "v2_keyword_count": len(v2_keywords),
+            "v2_keywords_formatted": v2_keywords_formatted,
+            "v2_synonyms_formatted": v2_synonyms_formatted,
+            "v2_titles_formatted": v2_titles_formatted,
 
             # Aday bilgileri
             "candidate_name": self._safe_get(candidate_data, "name", "ad_soyad"),
@@ -296,6 +362,106 @@ class SmartPromptBuilder:
         full_prompt = f"{self.system_prompt}\n\n{evaluation_prompt}"
 
         return full_prompt
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # V2 VERİ FORMATLAMA FONKSİYONLARI
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    def _format_v2_keywords(self, keywords: List[str]) -> str:
+        """
+        V2 keyword listesini bullet points formatında döndürür.
+
+        Args:
+            keywords: Keyword listesi
+
+        Returns:
+            Formatlanmış string (bullet points)
+        """
+        if not keywords:
+            return "• (Henüz İK tarafından keyword belirlenmemiş)"
+
+        lines = []
+        for kw in keywords:
+            if kw:
+                lines.append(f"• {kw}")
+
+        if not lines:
+            return "• (Henüz İK tarafından keyword belirlenmemiş)"
+
+        return "\n".join(lines)
+
+    def _format_v2_synonyms(self, synonyms: Dict[str, List[Dict[str, Any]]]) -> str:
+        """
+        V2 synonym dict'ini keyword: [synonyms] formatında döndürür.
+
+        Args:
+            synonyms: {keyword: [{synonym, weight, type}, ...]}
+
+        Returns:
+            Formatlanmış string
+        """
+        if not synonyms:
+            return "• (Henüz İK tarafından eş anlamlı belirlenmemiş)"
+
+        lines = []
+        for keyword, synonym_list in synonyms.items():
+            if synonym_list:
+                # Synonym'ları weight'e göre sırala
+                sorted_synonyms = sorted(synonym_list, key=lambda x: x.get("weight", 0), reverse=True)
+
+                # En fazla 5 synonym göster
+                synonym_texts = []
+                for syn in sorted_synonyms[:5]:
+                    weight = syn.get("weight", 0.85)
+                    synonym_text = syn.get("synonym", "")
+                    if synonym_text:
+                        # Weight'i yüzde olarak göster
+                        weight_pct = int(weight * 100)
+                        synonym_texts.append(f"{synonym_text} ({weight_pct}%)")
+
+                if synonym_texts:
+                    lines.append(f"• {keyword}: {', '.join(synonym_texts)}")
+
+        if not lines:
+            return "• (Henüz İK tarafından eş anlamlı belirlenmemiş)"
+
+        return "\n".join(lines)
+
+    def _format_v2_titles(self, titles: Dict[str, List[str]]) -> str:
+        """
+        V2 title dict'ini exact/related formatında döndürür.
+
+        Args:
+            titles: {exact: [...], related: [...]}
+
+        Returns:
+            Formatlanmış string
+        """
+        exact_titles = titles.get("exact", [])
+        related_titles = titles.get("related", [])
+
+        if not exact_titles and not related_titles:
+            return "• (Henüz İK tarafından pozisyon başlığı belirlenmemiş)"
+
+        lines = []
+
+        if exact_titles:
+            lines.append("TAM EŞLEŞME (exact):")
+            for title in exact_titles[:10]:  # Max 10
+                lines.append(f"  • {title}")
+
+        if related_titles:
+            if exact_titles:
+                lines.append("")  # Boş satır
+            lines.append("İLİŞKİLİ (related):")
+            for title in related_titles[:10]:  # Max 10
+                lines.append(f"  • {title}")
+
+        return "\n".join(lines)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # MEVCUT YARDIMCI FONKSİYONLAR
+    # ═══════════════════════════════════════════════════════════════════════════
 
     def _format_candidate_section(self, candidate_data: Dict[str, Any]) -> str:
         """
@@ -746,7 +912,7 @@ class SmartPromptBuilder:
 
 if __name__ == "__main__":
     print("=" * 77)
-    print("SmartPromptBuilder Test")
+    print("SmartPromptBuilder Test (V2 Entegrasyonu)")
     print("=" * 77)
 
     builder = SmartPromptBuilder()
@@ -779,7 +945,23 @@ if __name__ == "__main__":
 • Minimum 3 yıl deneyim
 • SCADA, AutoCAD, E-PLAN bilgisi
 • İngilizce (yazılı ve sözlü)""",
-        "keywords": ["scada", "autocad", "e-plan", "solidworks", "etap"]
+        "keywords": ["scada", "autocad", "e-plan", "solidworks", "etap"],
+        # V2 verileri
+        "v2_keywords": ["scada", "autocad", "e-plan", "solidworks", "etap", "plc", "hmi"],
+        "v2_synonyms": {
+            "scada": [
+                {"synonym": "supervisory control", "weight": 0.95, "type": "exact_synonym"},
+                {"synonym": "otomasyon sistemi", "weight": 0.85, "type": "turkish"}
+            ],
+            "plc": [
+                {"synonym": "siemens s7", "weight": 0.90, "type": "exact_synonym"},
+                {"synonym": "allen bradley", "weight": 0.90, "type": "exact_synonym"}
+            ]
+        },
+        "v2_titles": {
+            "exact": ["Sistem Entegrasyon Uzmanı", "System Integration Specialist"],
+            "related": ["Otomasyon Mühendisi", "Elektrik Mühendisi", "SCADA Mühendisi"]
+        }
     }
 
     # Prompt oluştur
@@ -788,9 +970,9 @@ if __name__ == "__main__":
     print(f"\nOluşturulan prompt uzunluğu: {len(prompt)} karakter")
     print(f"Tahmini token sayısı: ~{len(prompt) // 4}")
     print("\n" + "-" * 77)
-    print("PROMPT ÖNİZLEME (ilk 2000 karakter):")
+    print("PROMPT ÖNİZLEME (ilk 3000 karakter):")
     print("-" * 77)
-    print(prompt[:2000])
+    print(prompt[:3000])
     print("\n... (devamı var)")
     print("\n" + "=" * 77)
     print("TEST TAMAMLANDI")

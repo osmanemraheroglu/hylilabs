@@ -38,6 +38,9 @@ from core.scoring_v3 import (
     IntelligenceResult
 )
 
+# V2 Veri Entegrasyonu
+from core.scoring_v3.data_integration import get_v2_data_for_prompt
+
 router = APIRouter(prefix="/api/ai-evaluation", tags=["AI Evaluation"])
 logger = logging.getLogger(__name__)
 
@@ -68,8 +71,14 @@ def _get_candidate_data(candidate) -> dict:
     }
 
 
-def _get_position_data(pool: dict) -> dict:
-    """Pozisyon havuzunu dict'e çevirir (AI için)"""
+def _get_position_data(pool: dict, pool_id: int = None) -> dict:
+    """
+    Pozisyon havuzunu dict'e çevirir (AI için).
+
+    V2 Veri Entegrasyonu:
+    - pool_id verilirse, V2 verilerini (keywords, synonyms, titles) dahil eder
+    - Bu veriler smart_prompt_builder tarafından prompt'a eklenir
+    """
     keywords = pool.get("keywords", [])
     if isinstance(keywords, str):
         try:
@@ -77,7 +86,7 @@ def _get_position_data(pool: dict) -> dict:
         except:
             keywords = []
 
-    return {
+    position_data = {
         "name": pool.get("name", ""),
         "lokasyon": pool.get("lokasyon", ""),
         "gerekli_deneyim_yil": pool.get("gerekli_deneyim_yil", 0),
@@ -87,6 +96,35 @@ def _get_position_data(pool: dict) -> dict:
         "is_tanimi": pool.get("is_tanimi", ""),
         "gorev_tanimi_raw_text": pool.get("gorev_tanimi_raw_text", "")
     }
+
+    # V2 Veri Entegrasyonu - İK'nın girdiği veriler
+    if pool_id:
+        try:
+            v2_data = get_v2_data_for_prompt(pool_id)
+            position_data["v2_keywords"] = v2_data.get("keywords", [])
+            position_data["v2_synonyms"] = v2_data.get("synonyms", {})
+            position_data["v2_titles"] = v2_data.get("titles", {"exact": [], "related": []})
+            position_data["v2_stats"] = v2_data.get("stats", {})
+
+            # Log for debugging
+            stats = v2_data.get("stats", {})
+            if stats.get("keyword_count", 0) > 0 or stats.get("synonym_count", 0) > 0:
+                logger.info(
+                    f"V2 veri entegrasyonu: pool_id={pool_id}, "
+                    f"keywords={stats.get('keyword_count', 0)}, "
+                    f"synonyms={stats.get('synonym_count', 0)}, "
+                    f"exact_titles={stats.get('exact_title_count', 0)}, "
+                    f"related_titles={stats.get('related_title_count', 0)}"
+                )
+        except Exception as e:
+            logger.warning(f"V2 veri entegrasyonu hatası (pool_id={pool_id}): {e}")
+            # Hata durumunda boş değerler kullan
+            position_data["v2_keywords"] = []
+            position_data["v2_synonyms"] = {}
+            position_data["v2_titles"] = {"exact": [], "related": []}
+            position_data["v2_stats"] = {}
+
+    return position_data
 
 
 def _save_v3_evaluation(
@@ -233,7 +271,7 @@ async def evaluate_single(
 
         # AI değerlendirmesi yap
         candidate_data = _get_candidate_data(candidate)
-        position_data = _get_position_data(pool)
+        position_data = _get_position_data(pool, position_id)
 
         logger.info(f"AI değerlendirme başlatılıyor: candidate={candidate_id}, position={position_id}")
 
@@ -342,7 +380,7 @@ async def evaluate_batch(
                 detail="Bu pozisyona erişim yetkiniz yok"
             )
 
-        position_data = _get_position_data(pool)
+        position_data = _get_position_data(pool, position_id)
         results = []
         successful = 0
         failed = 0
