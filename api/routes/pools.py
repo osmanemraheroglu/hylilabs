@@ -327,6 +327,26 @@ def get_pool_candidates(pool_id: int, current_user: dict = Depends(get_current_u
             c.pop("sifre", None)
             c.pop("password_hash", None)
 
+        # CV Intelligence verisi ekle (toplu sorgu)
+        if candidates:
+            candidate_ids = [c["id"] for c in candidates]
+            placeholders = ",".join("?" * len(candidate_ids))
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(f"""
+                    SELECT candidate_id, level, career_path, experience_years
+                    FROM candidate_intelligence
+                    WHERE candidate_id IN ({placeholders})
+                """, candidate_ids)
+                intel_map = {row["candidate_id"]: {
+                    "level": row["level"],
+                    "career_path": row["career_path"],
+                    "experience_years": row["experience_years"]
+                } for row in cursor.fetchall()}
+
+            for c in candidates:
+                c["intelligence"] = intel_map.get(c["id"])
+
         return {
             "success": True,
             "data": candidates,
