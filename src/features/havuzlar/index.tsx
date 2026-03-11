@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   FolderTree, Plus, Edit, Trash2, RefreshCw, ChevronRight, ChevronDown,
-  Archive, Inbox, Building2, Target, UserPlus, Search,
+  Archive, Inbox, Building2, Target, UserPlus, Search, User,
   Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown, Ban, CheckCircle
 } from 'lucide-react'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
@@ -29,7 +29,7 @@ interface SysPool { id: number; name: string; icon: string; is_system: boolean; 
 interface Position { id: number; name: string; icon: string; keywords: string|null; description: string|null; candidate_count: number }
 interface Dept { id: number; name: string; icon: string; candidate_count: number; positions: Position[]; total_position_candidates: number }
 interface TreeData { system_pools: SysPool[]; departments: Dept[]; total_candidates?: number }
-interface Candidate { id: number; ad_soyad: string; email: string|null; telefon: string|null; mevcut_pozisyon: string|null; toplam_deneyim_yil: number|null; lokasyon: string|null; location_status?: { status: "green" | "yellow" | "red" | "gray"; candidate_location: string; position_location: string; match_type: string }; match_score?: number; match_reason?: string; remaining_days?: number; assignment_type?: string; status?: string; is_blacklisted?: number; durum?: string }
+interface Candidate { id: number; ad_soyad: string; email: string|null; telefon: string|null; mevcut_pozisyon: string|null; toplam_deneyim_yil: number|null; lokasyon: string|null; location_status?: { status: "green" | "yellow" | "red" | "gray"; candidate_location: string; position_location: string; match_type: string }; match_score?: number; match_reason?: string; remaining_days?: number; assignment_type?: string; status?: string; is_blacklisted?: number; durum?: string; intelligence?: { career_path?: string; level?: string; experience_years?: number; sectors?: string[]; suitable_positions?: string[]; key_skills?: string[]; education_level?: string; education_field?: string; analyzed_at?: string } }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   aktif: { label: 'Aktif', color: 'bg-blue-100 text-blue-800' },
@@ -52,6 +52,19 @@ function scoreIcon(s: number) {
   if (s >= 80) return { icon: '\uD83D\uDFE2', label: 'Tam Uyumlu' }
   if (s >= 50) return { icon: '\uD83D\uDFE1', label: 'Kısmi Uyumlu' }
   return { icon: '\uD83D\uDD34', label: 'Uyumsuz' }
+}
+
+// Level Badge Komponenti
+const LevelBadge = ({ level }: { level?: string }) => {
+  if (!level) return <span className="text-gray-400 text-xs">-</span>
+  const colors: Record<string, string> = {
+    junior: 'bg-blue-100 text-blue-700',
+    mid: 'bg-green-100 text-green-700',
+    senior: 'bg-orange-100 text-orange-700',
+    lead: 'bg-purple-100 text-purple-700'
+  }
+  const labels: Record<string, string> = { junior: 'Junior', mid: 'Mid', senior: 'Senior', lead: 'Lead' }
+  return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors[level] || 'bg-gray-100 text-gray-700'}`}>{labels[level] || level}</span>
 }
 
 export default function Havuzlar() {
@@ -128,6 +141,10 @@ export default function Havuzlar() {
   const [evaluating, setEvaluating] = useState(false)
   const [rescoring, setRescoring] = useState(false)
 
+  // CV Intelligence
+  const [intelligenceData, setIntelligenceData] = useState<Record<number, Candidate['intelligence']>>({})
+  const [analyzingIntelligence, setAnalyzingIntelligence] = useState(false)
+
   // Job Description Upload (B5)
   const [jdUploadOpen, setJdUploadOpen] = useState(false)
   const [jdUploading, setJdUploading] = useState(false)
@@ -153,6 +170,43 @@ export default function Havuzlar() {
       .then(r => r.json()).then(res => { if (res.success) { setCandidates(res.data); setPoolInfo(res.pool) } })
       .catch(console.error).finally(() => setCandidatesLoading(false))
   }, [])
+
+  // CV Intelligence API fonksiyonları
+  const fetchIntelligence = useCallback(async (candidateId: number) => {
+    try {
+      const res = await fetch(`${API}/api/ai-evaluation/intelligence/${candidateId}`, { headers: H() })
+      if (res.ok) { const data = await res.json(); return data.data }
+      return null
+    } catch { return null }
+  }, [])
+
+  const handleAnalyzeIntelligence = useCallback(async (candidateId: number) => {
+    setAnalyzingIntelligence(true)
+    try {
+      const res = await fetch(`${API}/api/ai-evaluation/intelligence/analyze`, {
+        method: 'POST', headers: H(), body: JSON.stringify({ candidate_id: candidateId })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success) {
+          toast.success('CV profil analizi tamamlandı')
+          const intel = await fetchIntelligence(candidateId)
+          if (intel) {
+            setIntelligenceData(prev => ({ ...prev, [candidateId]: intel }))
+            setCandidates(prev => prev.map(c => c.id === candidateId ? { ...c, intelligence: intel } : c))
+          }
+          return data
+        }
+      }
+      toast.error('Profil analizi başarısız')
+      return null
+    } catch {
+      toast.error('Profil analizi hatası')
+      return null
+    } finally {
+      setAnalyzingIntelligence(false)
+    }
+  }, [fetchIntelligence])
 
   useEffect(() => { loadTree() }, [loadTree])
   useEffect(() => { if (selectedPoolId) loadCandidates(selectedPoolId) }, [selectedPoolId, loadCandidates])
@@ -183,7 +237,7 @@ export default function Havuzlar() {
   const toggleDept = (id: number) => setExpandedDepts(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
 
   // Candidate Detail
-  const loadDetail = (candidateId: number) => {
+  const loadDetail = async (candidateId: number) => {
     if (expandedCandidate === candidateId) { setExpandedCandidate(null); setCandidateDetail(null); setBlacklistInfo(null); return }
     setExpandedCandidate(candidateId); setDetailLoading(true); setCandidateDetail(null); setBlacklistInfo(null)
     fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/detail`, { headers: H() })
@@ -193,6 +247,12 @@ export default function Havuzlar() {
     fetch(`${API}/api/candidates/${candidateId}/blacklist`, { headers: H() })
       .then(r => r.json()).then(res => { if (res.success && res.is_blacklisted) setBlacklistInfo(res.data) })
       .catch(() => {})
+    // CV Intelligence verisi çek
+    const intel = await fetchIntelligence(candidateId)
+    if (intel) {
+      setIntelligenceData(prev => ({ ...prev, [candidateId]: intel }))
+      setCandidates(prev => prev.map(c => c.id === candidateId ? { ...c, intelligence: intel } : c))
+    }
   }
 
   // CRUD handlers
@@ -708,6 +768,7 @@ export default function Havuzlar() {
                         <TableHead className="w-[80px]">Deneyim</TableHead>
                         <TableHead className="w-[120px]">Lokasyon</TableHead>
                         <TableHead className="w-[80px]">Skor</TableHead>
+                        <TableHead className="w-[70px]">Seviye</TableHead>
                         <TableHead className="w-[80px] text-center">Kara Liste</TableHead>
                         <TableHead className="w-20"></TableHead>
                       </TableRow>
@@ -730,6 +791,9 @@ export default function Havuzlar() {
                                   : c.remaining_days !== undefined ? <Badge className={`text-xs ${dayColor(c.remaining_days)}`}>{c.remaining_days}g</Badge>
                                   : '-'}
                               </TableCell>
+                              <TableCell>
+                                <LevelBadge level={c.intelligence?.level || intelligenceData[c.id]?.level} />
+                              </TableCell>
                               <TableCell className="text-center">
                                 {c.is_blacklisted === 1 || c.durum === 'blacklist' ? (
                                   <Badge className="bg-gray-900 text-white text-[10px]">Kara Listede</Badge>
@@ -750,7 +814,7 @@ export default function Havuzlar() {
                             {/* Expanded Detail Row */}
                             {expandedCandidate === c.id && (
                               <TableRow key={`detail-${c.id}`}>
-                                <TableCell colSpan={7} className="bg-muted/30 p-4 max-w-0 overflow-hidden">
+                                <TableCell colSpan={8} className="bg-muted/30 p-4 max-w-0 overflow-hidden">
                                   {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const v2d = (candidateDetail as any).v2_detail; const aie = (candidateDetail as any).ai_evaluation; return (
                                     <div className="w-full max-w-6xl space-y-3 overflow-hidden">
                                       {/* Kisisel Bilgiler */}
@@ -813,6 +877,63 @@ export default function Havuzlar() {
                                           </div>
                                         </div>
                                       )}
+                                      {/* CV Intelligence */}
+                                      <div className="border rounded p-3 bg-white">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="text-xs font-medium flex items-center gap-1"><User className="h-3 w-3" />CV Profil Analizi</div>
+                                          <Button size="sm" variant="outline" onClick={() => handleAnalyzeIntelligence(cd.id)} disabled={analyzingIntelligence} className="h-6 text-[10px] px-2">
+                                            {analyzingIntelligence ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Brain className="h-3 w-3 mr-1" />}
+                                            {(c.intelligence || intelligenceData[cd.id]) ? 'Yeniden Analiz' : 'Profil Analizi'}
+                                          </Button>
+                                        </div>
+                                        {(c.intelligence || intelligenceData[cd.id]) ? (() => {
+                                          const intel = c.intelligence || intelligenceData[cd.id]
+                                          return (
+                                            <div className="space-y-2 text-xs">
+                                              <div className="flex items-center gap-2">
+                                                <span className="font-medium">Kariyer Yolu:</span>
+                                                <span>{intel?.career_path || '-'}</span>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                <span className="font-medium">Seviye:</span>
+                                                <LevelBadge level={intel?.level} />
+                                                {intel?.experience_years && <span className="text-muted-foreground">({intel.experience_years} yıl)</span>}
+                                              </div>
+                                              {intel?.sectors && intel.sectors.length > 0 && (
+                                                <div>
+                                                  <span className="font-medium">Sektörler:</span>
+                                                  <div className="flex flex-wrap gap-1 mt-1">
+                                                    {intel.sectors.map((s, i) => <Badge key={i} variant="outline" className="text-[10px]">{s}</Badge>)}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              {intel?.suitable_positions && intel.suitable_positions.length > 0 && (
+                                                <div>
+                                                  <span className="font-medium">Uygun Pozisyonlar:</span>
+                                                  <div className="flex flex-wrap gap-1 mt-1">
+                                                    {intel.suitable_positions.map((p, i) => <Badge key={i} variant="secondary" className="text-[10px]">{p}</Badge>)}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              {intel?.key_skills && intel.key_skills.length > 0 && (
+                                                <div>
+                                                  <span className="font-medium">Öne Çıkan Beceriler:</span>
+                                                  <div className="flex flex-wrap gap-1 mt-1">
+                                                    {intel.key_skills.map((sk, i) => <Badge key={i} variant="outline" className="text-[10px] border-blue-200 bg-blue-50">{sk}</Badge>)}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              {intel?.analyzed_at && (
+                                                <div className="text-[10px] text-muted-foreground mt-1">
+                                                  Son analiz: {new Date(intel.analyzed_at).toLocaleDateString('tr-TR')}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )
+                                        })() : (
+                                          <div className="text-xs text-muted-foreground italic">Henüz profil analizi yapılmamış</div>
+                                        )}
+                                      </div>
                                       {/* AI Evaluation */}
                                       <div className="border rounded p-3 bg-white">
                                         <div className="flex items-center justify-between mb-2">
