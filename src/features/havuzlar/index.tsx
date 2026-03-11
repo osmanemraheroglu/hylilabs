@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils'
 import { LocationBadge } from '@/components/ui/location-badge'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ScoreBadge } from '@/components/ui/score-badge'
 
 const API = 'http://***REMOVED***:8000'
 const H = () => ({ 'Authorization': `Bearer ${localStorage.getItem('access_token')}`, 'Content-Type': 'application/json' })
@@ -39,19 +40,6 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   teklif: { label: 'Teklif', color: 'bg-green-100 text-green-800' },
   red: { label: 'Red', color: 'bg-red-100 text-red-800' },
   blacklist: { label: 'Kara Liste', color: 'bg-gray-900 text-white' },
-}
-
-function dayColor(d: number|undefined) {
-  if (d === undefined) return ''
-  if (d <= 7) return 'bg-red-100 text-red-700'
-  if (d <= 15) return 'bg-orange-100 text-orange-700'
-  return 'bg-green-100 text-green-700'
-}
-
-function scoreIcon(s: number) {
-  if (s >= 80) return { icon: '\uD83D\uDFE2', label: 'Tam Uyumlu' }
-  if (s >= 50) return { icon: '\uD83D\uDFE1', label: 'Kısmi Uyumlu' }
-  return { icon: '\uD83D\uDD34', label: 'Uyumsuz' }
 }
 
 // Level Badge Komponenti
@@ -794,7 +782,7 @@ export default function Havuzlar() {
                         <TableHead className="w-[180px]">CV'de Belirtilen Unvan</TableHead>
                         <TableHead className="w-[80px]">Deneyim</TableHead>
                         <TableHead className="w-[120px]">Lokasyon</TableHead>
-                        <TableHead className="w-[80px]">Skor</TableHead>
+                        <TableHead className="w-[100px]">Uyum Skoru</TableHead>
                         <TableHead className="w-[70px]">Seviye</TableHead>
                         <TableHead className="w-[80px] text-center">Kara Liste</TableHead>
                         <TableHead className="w-20"></TableHead>
@@ -802,7 +790,6 @@ export default function Havuzlar() {
                     </TableHeader>
                     <TableBody>
                       {filteredCandidates.map(c => {
-                        const si = c.match_score ? scoreIcon(c.match_score) : null
                         return (
                           <Fragment key={c.id}>
                             <TableRow className={`cursor-pointer ${c.is_blacklisted === 1 || c.durum === 'blacklist' ? 'bg-red-50' : ''}`} onClick={() => loadDetail(c.id)}>
@@ -814,9 +801,20 @@ export default function Havuzlar() {
                               <TableCell className="text-sm">{c.toplam_deneyim_yil ? `${c.toplam_deneyim_yil} yıl` : '-'}</TableCell>
                               <TableCell className="text-sm max-w-[200px] overflow-hidden"><LocationBadge status={c.location_status?.status || 'gray'} candidateLocation={c.location_status?.candidate_location || c.lokasyon || '-'} positionLocation={c.location_status?.position_location || '-'} matchType={c.location_status?.match_type || 'Veri yok'} /></TableCell>
                               <TableCell>
-                                {c.match_score ? <Badge variant="outline" className="text-xs">{si?.icon} {c.match_score}</Badge>
-                                  : c.remaining_days !== undefined ? <Badge className={`text-xs ${dayColor(c.remaining_days)}`}>{c.remaining_days}g</Badge>
-                                  : '-'}
+                                {v3Evaluation[c.id] ? (
+                                  <ScoreBadge score={v3Evaluation[c.id].total_score} size="sm" />
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 text-[10px] px-2"
+                                    onClick={(e) => { e.stopPropagation(); handleEvaluate(c.id) }}
+                                    disabled={evaluating || v3Loading[c.id]}
+                                  >
+                                    {(evaluating || v3Loading[c.id]) ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3 mr-1" />}
+                                    Değerlendir
+                                  </Button>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <LevelBadge level={c.intelligence?.level || intelligenceData[c.id]?.level} />
@@ -961,21 +959,14 @@ export default function Havuzlar() {
                                           <div className="text-xs text-muted-foreground italic">Henüz profil analizi yapılmamış</div>
                                         )}
                                       </div>
-                                      {/* AI Evaluation V3 */}
+                                      {/* Uyum Değerlendirmesi */}
                                       <div className="border rounded p-3 bg-white">
                                         <div className="flex items-center justify-between mb-2">
                                           <div className="text-xs font-medium flex items-center gap-2">
                                             <Brain className="h-3 w-3" />
-                                            <span>AI Değerlendirme (V3)</span>
+                                            <span>Uyum Değerlendirmesi</span>
                                             {v3Evaluation[cd.id] && (
-                                              <>
-                                                <Badge className={v3Evaluation[cd.id].eligible ? 'bg-green-500' : 'bg-red-500'} variant="default">
-                                                  {v3Evaluation[cd.id].total_score} puan
-                                                </Badge>
-                                                <span className="text-[10px] text-muted-foreground">
-                                                  Gemini: {v3Evaluation[cd.id].gemini_score} | Hermes: {v3Evaluation[cd.id].hermes_score}
-                                                </span>
-                                              </>
+                                              <ScoreBadge score={v3Evaluation[cd.id].total_score} size="md" />
                                             )}
                                           </div>
                                           <div className="flex gap-1">
@@ -984,7 +975,7 @@ export default function Havuzlar() {
                                             </Button>
                                             <Button size="sm" variant="outline" onClick={() => handleEvaluate(cd.id)} disabled={evaluating || v3Loading[cd.id]} className="h-6 text-[10px] px-2">
                                               {(evaluating || v3Loading[cd.id]) ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Brain className="h-3 w-3 mr-1" />}
-                                              {v3Evaluation[cd.id] ? 'Yeniden Değerlendir' : 'AI Değerlendir'}
+                                              {v3Evaluation[cd.id] ? 'Yeniden Değerlendir' : 'Değerlendir'}
                                             </Button>
                                             <Button size="sm" variant="outline" onClick={() => handleDownloadReport(cd.id)} disabled={!aie} className="h-6 text-[10px] px-2">
                                               <FileText className="h-3 w-3 mr-1" />Rapor
