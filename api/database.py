@@ -12231,9 +12231,10 @@ def get_daily_ai_usage(company_id: int) -> int:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT COUNT(*) as count
-                FROM ai_evaluations
-                WHERE company_id = ?
-                AND date(created_at) = date('now')
+                FROM ai_evaluations ae
+                JOIN candidates c ON ae.candidate_id = c.id
+                WHERE c.company_id = ?
+                AND date(ae.created_at) = date('now')
             """, (company_id,))
             row = cursor.fetchone()
             return row['count'] if row else 0

@@ -1,0 +1,898 @@
+{
+  "timestamp": "2026-03-11T01:08:08.894377",
+  "total_tests": 34,
+  "successful": 34,
+  "failed": 0,
+  "results": [
+    {
+      "candidate_id": 454,
+      "candidate_name": "Mehmet Kaya",
+      "position_id": 7786,
+      "position_name": "Otomasyon Yazılım Mühendisi",
+      "score": 50,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 38.55,
+      "strengths": [
+        "Elektrik Mühendisliği eğitimi",
+        "SCADA ve endüstriyel otomasyon bilgisi",
+        "İngilizce bilgisi"
+      ],
+      "weaknesses": [
+        "Yetersiz deneyim süresi",
+        "Eksik PLC ve motion control deneyimi",
+        "Endüstriyel haberleşme ve TCP/IP bilgisinin eksikliği"
+      ],
+      "overall_assessment": "Mehmet Kaya, otomasyon yazılım mühendisi pozisyonu için eğitim ve temel yetkinlikler açısından uygun bir adaydır. Ancak, 3 yıl olan minimum deneyim gereksinimini karşılamaması ve kritik teknik becerik",
+      "elimination_reason": "Deneyim yılı eksikliği (3 yıl gereklidir, aday 2 yıl deneyime sahiptir)"
+    },
+    {
+      "candidate_id": 457,
+      "candidate_name": "SAMI DEVRIM",
+      "position_id": 7786,
+      "position_name": "Otomasyon Yazılım Mühendisi",
+      "score": 25,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 17.92,
+      "strengths": [
+        "Elektronik mühendisliği eğitimi",
+        "Yüksek lisans derecesi",
+        "B sınıfı ehliyet"
+      ],
+      "weaknesses": [
+        "Otomasyon sektöründe deneyim eksikliği",
+        "Gerekli teknik becerilere sahip değil",
+        "Lokasyon uyumsuzluğu (İstanbul vs Bursa)"
+      ],
+      "overall_assessment": "Elektronik mühendisliği geçmişine rağmen otomasyon sektöründe deneyimsiz ve gerekli teknik becerilere sahip olmayan aday. Kariyer değişikliği için yeterli motivasyon ve eğitim göstermediği için düşük ",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 452,
+      "candidate_name": "Mert Karahan",
+      "position_id": 7791,
+      "position_name": "Mekanik Tesisat Teknik Modelleyici",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 19.04,
+      "strengths": [],
+      "weaknesses": [
+        "Hiçbir teknik çizim/modelleme deneyimi",
+        "Mekanik tesisat bilgisi yok",
+        "P&ID ve Revit tecrübesi bulunmuyor"
+      ],
+      "overall_assessment": "Adayın kariyer geçmişi ve teknik becerileri tamamen satış ve pazarlama odaklı. Mekanik tesisat teknik modelleyici pozisyonu için hiçbir uygunluk yok. Eleme kararı verilmesi gerekir.",
+      "elimination_reason": "Tamamen farklı kariyer yolu (Satış ve Pazarlama → Mekanik Tesisat Teknik Modelleyici)"
+    },
+    {
+      "candidate_id": 383,
+      "candidate_name": "SAMET KAYA",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 17.49,
+      "strengths": [],
+      "weaknesses": [
+        "Kariyer ve eğitim tamamen farklı alan",
+        "Teknik beceriler uyumsuz",
+        "Lokasyon uyumsuzluğu"
+      ],
+      "overall_assessment": "Adayın kariyer ve eğitim geçmişi tamamen inşaat mühendisliği ve denetim sektöründe olup, Elektrik Mühendisliği odaklı Gas Groups System Integration Specialist pozisyonu için uygun olmadığı değerlendir",
+      "elimination_reason": "Tamamen farklı kariyer yolu (İnşaat Mühendisliği → Elektrik Mühendisliği odaklı Gas Groups System Integration Specialist)"
+    },
+    {
+      "candidate_id": 385,
+      "candidate_name": "Kaya Yılmaz",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 39.0,
+      "strengths": [],
+      "weaknesses": [
+        "Elektrik mühendisliği deneyimi eksik",
+        "Teknik beceriler uyuşmuyor",
+        "Lokasyon uyumsuz"
+      ],
+      "overall_assessment": "Adayın kariyer ve eğitim geçmişi tamamen farklı bir alana yoğunlaştığı için pozisyonla uyumlu bulunmamaktadır. Elektrik mühendisliği deneyimi ve teknik becerilere sahip olmadığından değerlendirme dışı",
+      "elimination_reason": "Tamamen farklı kariyer yolu (Makina Mühendisliği → Elektrik Mühendisliği odaklı pozisyon)"
+    },
+    {
+      "candidate_id": 388,
+      "candidate_name": "Taner Baransel",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 40.07,
+      "strengths": [],
+      "weaknesses": [
+        "Elektrik mühendisliği eğitimi ve deneyimi eksik",
+        "Teknik beceriler uyumsuz",
+        "Lokasyon uyumsuzluğu"
+      ],
+      "overall_assessment": "Aday, pozisyonun temel gereksinimlerini karşılamamaktadır. Elektrik mühendisliği eğitimi ve deneyimi bulunmamakta, gerekli teknik becerilere sahip değil ve lokasyon uyumsuzluğu mevcuttur. Başvuru doğr",
+      "elimination_reason": "Tamamen farklı kariyer yolu (İnşaat Mühendisliği → Elektrik Mühendisliği odaklı sistem entegrasyon uzmanı)"
+    },
+    {
+      "candidate_id": 389,
+      "candidate_name": "Mertcan KÖK",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 75,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 40.51,
+      "strengths": [
+        "Elektrik Mühendisliği lisans mezunu",
+        "8 yıllık sektör deneyimi",
+        "AutoCAD ve ofis uygulamaları bilgisi"
+      ],
+      "weaknesses": [
+        "Kritik teknik beceriler eksik (SCADA, E-PLAN, SolidWorks)",
+        "Doğrudan sistem entegrasyon deneyimi az",
+        "Lokasyon uyumsuzluğu"
+      ],
+      "overall_assessment": "Elektrik Mühendisliği mezunu aday, sektörde deneyimli ancak pozisyonun özel teknik gerekliliklerine tam uyumlu değil. Kritik otomasyon ve güç sistemleri araçlarında eksik becerileri var. Lokasyon uyum",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 392,
+      "candidate_name": "Boubekeur Bouakkaz",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 16.99,
+      "strengths": [],
+      "weaknesses": [
+        "Tamamen farklı kariyer ve eğitim alanı",
+        "Teknik beceriler pozisyonla alakasız"
+      ],
+      "overall_assessment": "Adayın kariyer ve eğitim geçmişi tamamen farklı bir alana (hidrolik mühendisliği ve maliyet kontrolü) odaklıdır. Pozisyonun gerektirdiği elektrik, otomasyon ve gaz sistemleri entegrasyonu alanındaki t",
+      "elimination_reason": "Tamamen farklı kariyer yolu (Hidrolik Mühendisliği → Elektrik Mühendisliği odaklı Gas Systems Integration Specialist)"
+    },
+    {
+      "candidate_id": 394,
+      "candidate_name": "Abdullah Deniz ESENYER",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 17.66,
+      "strengths": [],
+      "weaknesses": [
+        "Elektrik mühendisliği eğitimi ve deneyimi eksik",
+        "Teknik beceriler uyumsuz",
+        "Lokasyon uyumsuzluğu"
+      ],
+      "overall_assessment": "Aday, pozisyonun temel gerekliliklerini karşılamamaktadır. Elektrik mühendisliği eğitimi ve deneyimi bulunmamakta, aranan teknik becerilere (SCADA, E-PLAN, SolidWorks vb.) sahip değildir. Başvuru doğr",
+      "elimination_reason": "Tamamen farklı kariyer yolu (İnşaat Mühendisliği → Elektrik Mühendisliği odaklı sistem entegrasyon)"
+    },
+    {
+      "candidate_id": 397,
+      "candidate_name": "Ali Ahmad",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 65,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 38.71,
+      "strengths": [
+        "10 yıllık elektrik mühendisliği deneyimi",
+        "PLC ve inverter operasyonları bilgisi",
+        "Proje yönetimi ve problem çözme becerileri"
+      ],
+      "weaknesses": [
+        "Gaz sistem entegrasyon ve otomasyon deneyimi eksik",
+        "Özel CAD ve güç sistemleri simülasyon araçları bilgisi yetersiz",
+        "Lokasyon uyumsuzluğu"
+      ],
+      "overall_assessment": "Ali Ahmad, elektrik mühendisliği alanında deneyimli ve temel teknik becerilere sahip bir aday. Ancak, pozisyonun özel gereksinimleri olan gaz sistem entegrasyonu, SCADA ve CAD araçları konusunda yeter",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 403,
+      "candidate_name": "Çağdaş Ozan Pamuk",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 78,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 39.42,
+      "strengths": [
+        "Yüksek lisans mezunu ve Elektrik Mühendisliği mezunu",
+        "10 yıllık deneyime sahip",
+        "PMP sertifikası ve çoklu dil bilgisi"
+      ],
+      "weaknesses": [
+        "SCADA ve güç sistemleri araçlarında (ETAP, PSS-E, Sincal) deneyim eksikliği",
+        "Gaz jeneratör tasarımı konusunda tecrübesiz",
+        "Lokasyon uyumsuzluğu"
+      ],
+      "overall_assessment": "Çağdaş Ozan Pamuk, Elektrik ve Elektronik Mühendisliği yüksek lisans mezunu ve 10 yıllık deneyime sahip yetenekli bir aday. Proje yönetimi ve CAD becerileri güçlü ancak pozisyonun özel gereksinimleri ",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 426,
+      "candidate_name": "Gülhan Türedi",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 50,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 17.21,
+      "strengths": [
+        "Yüksek lisans mezunu",
+        "AutoCAD ve MS Project bilgisi",
+        "Proje planlama deneyimi"
+      ],
+      "weaknesses": [
+        "Elektrik mühendisliği deneyimi eksik",
+        "Gerekli teknik becerilere sahip değil",
+        "Deneyim süresi yetersiz"
+      ],
+      "overall_assessment": "Aday, eğitim düzeyi ve genel proje yönetimi becerileriyle olumlu yönler gösterse de, pozisyonun gerektirdiği elektrik mühendisliği ve otomasyon sistemleri alanındaki teknik becerilere ve deneyime sahi",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 429,
+      "candidate_name": "Erkan Akdoğan",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 28,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 17.64,
+      "strengths": [
+        "Proje yönetimi ve planlama deneyimi",
+        "Yabancı dil bilgisi ve sertifikalar",
+        "MS Project bilgisi"
+      ],
+      "weaknesses": [
+        "Elektrik mühendisliği eğitimi eksikliği",
+        "Teknik beceri eksikliği (SCADA, CAD, E-PLAN)",
+        "Lokasyon uyumsuzluğu"
+      ],
+      "overall_assessment": "Adayın proje yönetimi ve planlama deneyimi güçlü olsa da, pozisyonun elektrik mühendisliği ve otomasyon sistemlerine yönelik teknik gerekliliklerine uymaması nedeniyle düşük puan aldı. Elektrik mühend",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 432,
+      "candidate_name": "Fayaash Mohammad",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 18.1,
+      "strengths": [],
+      "weaknesses": [
+        "Tamamen farklı kariyer ve eğitim alanı",
+        "Teknik beceriler uyumsuz",
+        "Deneyim yılı yetersiz"
+      ],
+      "overall_assessment": "Adayın kariyer ve eğitim alanı tamamen farklıdır ve pozisyonun gerektirdiği Elektrik Mühendisliği/System Integration alanına uygun değildir. Başvuru reddedilmelidir.",
+      "elimination_reason": "Tamamen farklı kariyer yolu (İnşaat Mühendisliği → Elektrik Mühendisliği/System Integration)"
+    },
+    {
+      "candidate_id": 438,
+      "candidate_name": "Aysun Cezmi",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 55,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 37.68,
+      "strengths": [
+        "Yüksek lisans eğitimi",
+        "AutoCAD ve MS Project deneyimi",
+        "Proje yönetimi becerileri"
+      ],
+      "weaknesses": [
+        "Enerji/güç sistemleri deneyimi eksikliği",
+        "Elektrik Mühendisliği diploması olmaması",
+        "Minimum deneyim süresini karşılamama"
+      ],
+      "overall_assessment": "Aysun Cezmi, inşaat sektöründe teknik ofis mühendisi olarak 2 yıllık deneyime sahip bir yüksek lisans mezunu. AutoCAD ve MS Project gibi temel teknik becerilere hakim. Ancak, pozisyonun Elektrik Mühen",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 442,
+      "candidate_name": "Alican Tarık Bozok",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 80,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 38.46,
+      "strengths": [
+        "Enerji otomasyonu ve SCADA deneyimi",
+        "Büyük şirket deneyimi (Siemens)",
+        "Teknik proje yönetimi becerileri"
+      ],
+      "weaknesses": [
+        "Elektrik Mühendisliği mezunu değil",
+        "E-PLAN, ETAP, PSS-E vb. spesifik araçlar eksik",
+        "İngilizce bilgisi belirtilmemiş"
+      ],
+      "overall_assessment": "Aday, enerji otomasyonu ve SCADA alanındaki deneyimi ve Siemens gibi büyük bir şirkette çalışmış olmasıyla pozisyon için güçlü bir aday. Ancak Elektrik Mühendisliği mezunu olmaması ve bazı spesifik te",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 443,
+      "candidate_name": "Serkan Demir",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 90,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 38.55,
+      "strengths": [
+        "Elektronik Mühendisliği Doktora derecesi",
+        "SCADA ve ETAP deneyimi",
+        "Proje yönetimi ve tasarım becerileri"
+      ],
+      "weaknesses": [
+        "E-PLAN ve PSS-E deneyimi eksik",
+        "Lokasyon İstanbul (Tekirdağ/İstanbul batı tercih ediliyor)"
+      ],
+      "overall_assessment": "Serkan Demir, pozisyonun teknik ve eğitim gerekliliklerini büyük ölçüde karşılamaktadır. SCADA, ETAP ve CAD becerileri ile tasarım deneyimi çok güçlüdür. Doktora derecesi ve İngilizce bilgisi artı değ",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 444,
+      "candidate_name": "Emir Kaan Yıldız",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 95,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 37.53,
+      "strengths": [
+        "Yüksek lisans derecesi",
+        "Uygun lokasyon",
+        "Relevant teknik beceriler"
+      ],
+      "weaknesses": [
+        "Bazı tercih edilen teknik beceriler eksik",
+        "Sertifika yok"
+      ],
+      "overall_assessment": "Emir Kaan Yıldız, Gas Groups System Integration Specialist pozisyonu için çok uygun bir aday. Elektrik ve Elektronik Mühendisliği Yüksek Lisansı ve 10 yıllık deneyimi ile teknik ve eğitim gereksinimle",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 445,
+      "candidate_name": "Ali Can Bozok",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 90,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 40.1,
+      "strengths": [
+        "12 yıllık sektör deneyimi",
+        "SCADA ve PLC programlama bilgisi",
+        "Siemens gibi büyük şirket deneyimi"
+      ],
+      "weaknesses": [
+        "ETAP, PSS-E, Sincal gibi güç sistemi araçlarında deneyim eksikliği",
+        "Lokasyon uyumsuzluğu (İstanbul-Tekirdağ)"
+      ],
+      "overall_assessment": "Ali Can Bozok, pozisyonun teknik ve deneyim gerekliliklerine büyük ölçüde uyumlu bir aday. 12 yıllık sektör deneyimi, SCADA ve PLC programlama bilgisi, Siemens deneyimi ve CAD becerileri ile güçlü bir",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 446,
+      "candidate_name": "Serkan Demir",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 85,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 38.82,
+      "strengths": [
+        "Elektronik Mühendisliği Doktora derecesi",
+        "PLC/SCADA ve ETAP deneyimi",
+        "Mükemmel İngilizce bilgisi"
+      ],
+      "weaknesses": [
+        "E-PLAN, Sincal, PSS-E gibi bazı spesifik yazılım deneyimi eksik",
+        "Tekirdağ lokasyonuna göre İstanbul'da ikamet ediyor"
+      ],
+      "overall_assessment": "Serkan Demir, pozisyonun teknik ve eğitim gerekliliklerini büyük ölçüde karşılayan güçlü bir aday. Elektronik Mühendisliği Doktora derecesi ve PLC/SCADA, ETAP deneyimi önemli artılar. E-PLAN ve Sincal",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 447,
+      "candidate_name": "Serdar Demirci",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 85,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 38.09,
+      "strengths": [
+        "Yüksek eğitim seviyesi",
+        "İlgili teknik becerilere sahip",
+        "Proje ve sistem tasarımı deneyimi"
+      ],
+      "weaknesses": [
+        "Elektrik Mühendisliği mezunu değil",
+        "Bazı spesifik yazılım deneyimi eksik",
+        "Askerlik durumu belirsiz"
+      ],
+      "overall_assessment": "Elektronik Mühendisliği mezunu olmasına rağmen ilgili teknik becerilere ve deneyime sahip güçlü bir aday. Elektrik Mühendisliği mezunu olmaması ve bazı spesifik yazılım araçlarında eksik deneyimi deza",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 448,
+      "candidate_name": "Semih Demirci",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 83,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 39.52,
+      "strengths": [
+        "Elektrik Mühendisliği Yüksek Lisansı",
+        "SCADA ve ETAP deneyimi",
+        "SolidWorks ve AutoCAD bilgisi"
+      ],
+      "weaknesses": [
+        "Belirtilen spesifik yazılım araçlarında deneyim eksikliği (E-PLAN, Sincal vb.)",
+        "Sektör deneyimi yetersiz",
+        "Askerlik durumu net değil"
+      ],
+      "overall_assessment": "Aday, pozisyonun teknik ve eğitim gerekliliklerinin büyük kısmını karşılıyor. Elektrik Mühendisliği Yüksek Lisansı ve SCADA/ETAP deneyimi önemli artılar. Ancak bazı spesifik yazılım araçlarında eksikl",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 449,
+      "candidate_name": "Semih Demir",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 88,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 37.06,
+      "strengths": [
+        "Elektrik Mühendisliği yüksek lisans mezunu",
+        "SCADA ve CAD becerileri",
+        "5 yıllık deneyim"
+      ],
+      "weaknesses": [
+        "E-PLAN ve Sincal bilgisi eksik",
+        "Tekirdağ/İstanbul batı lokasyonunda ikamet etmiyor"
+      ],
+      "overall_assessment": "Aday, pozisyonun temel teknik ve eğitim gerekliliklerini karşılıyor. SCADA ve CAD becerileri, Elektrik Mühendisliği yüksek lisans derecesi ve 5 yıllık deneyimi ile güçlü bir aday. Eksik olan E-PLAN ve",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 450,
+      "candidate_name": "Semih Aydın Demir",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 95,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 37.84,
+      "strengths": [
+        "Tam eğitim uyumu",
+        "Tüm teknik becerilere hakimiyet",
+        "5 yıllık ilgili deneyim"
+      ],
+      "weaknesses": [
+        "Sincal deneyimi eksik"
+      ],
+      "overall_assessment": "Aday, pozisyonun teknik ve eğitim gerekliliklerini tam olarak karşılamaktadır. 5 yıllık deneyimi, İstanbul lokasyonu ve mükemmel İngilizce bilgisi ile çok güçlü bir adaydır. Sadece Sincal deneyimi eks",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 451,
+      "candidate_name": "Can Berk Arslan",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 75,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 39.39,
+      "strengths": [
+        "Sistem entegrasyon deneyimi",
+        "3D/2D modelleme becerileri",
+        "Elektrik Mühendisliği eğitimi"
+      ],
+      "weaknesses": [
+        "Gaz jeneratörü sektöründe deneyimsiz",
+        "Özel teknik beceriler eksik (SCADA, E-PLAN vb.)",
+        "Lokasyon uyumsuzluğu (Ankara vs Tekirdağ)"
+      ],
+      "overall_assessment": "Aday, sistem entegrasyon ve elektrik mühendisliği alanında temel yetkinliklere sahip ancak pozisyonun özel teknik gereksinimlerinin çoğunu karşılamıyor. Lokasyon ve sektörel deneyim eksiklikleri öneml",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 462,
+      "candidate_name": "Büsra Aymaz",
+      "position_id": 7807,
+      "position_name": "Gas Groups System Integration Specialist",
+      "score": 45,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 18.43,
+      "strengths": [
+        "10 yıllık inşaat sektörü deneyimi",
+        "Proje yönetimi sertifikası",
+        "MS Project ve AutoCAD bilgisi"
+      ],
+      "weaknesses": [
+        "Elektrik/otomasyon teknik becerileri eksik",
+        "Elektrik Mühendisliği mezunu değil",
+        "İngilizce bilgisi belirsiz"
+      ],
+      "overall_assessment": "Aday inşaat sektöründe deneyimli ve proje yönetimi becerilerine sahip ancak pozisyonun elektrik/otomasyon odaklı teknik gereksinimlerini karşılamıyor. Kariyer değişikliği için motivasyonu ve öğrenme i",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 427,
+      "candidate_name": "Ekrem Kuloğlu",
+      "position_id": 7808,
+      "position_name": "Test Teknikeri",
+      "score": 75,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 39.42,
+      "strengths": [
+        "18 yıllık teknik deneyim",
+        "SCADA ve otomasyon bilgisi",
+        "Kalite yönetim sistemleri sertifikaları"
+      ],
+      "weaknesses": [
+        "Batarya testi ve BMS teknik bilgisi eksik",
+        "B sınıfı ehliyet yok"
+      ],
+      "overall_assessment": "Elektrik-Elektronik geçmişine ve SCADA deneyimine sahip deneyimli aday. Batarya testi teknik bilgisi eksik olsa da transfer edilebilir beceriler ve sertifikalar var. Ehliyet ve batarya eğitimi desteği",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 398,
+      "candidate_name": "Ali Özdemir",
+      "position_id": 7811,
+      "position_name": "Bütçe Analiz ve Raporlama Uzmanı",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 17.2,
+      "strengths": [],
+      "weaknesses": [],
+      "overall_assessment": "Adayın eğitim düzeyi pozisyonun gerektirdiği lisans seviyesini karşılamamaktadır. Bu sebeple eleme kriterlerini sağlamadığı için değerlendirme durdurulmuştur.",
+      "elimination_reason": "Eğitim seviyesi yetersiz (pozisyon lisans istiyorsa ön lisans mezunu)"
+    },
+    {
+      "candidate_id": 411,
+      "candidate_name": "Selçuk ÇANKAYA",
+      "position_id": 7811,
+      "position_name": "Bütçe Analiz ve Raporlama Uzmanı",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 38.13,
+      "strengths": [],
+      "weaknesses": [
+        "Kariyer yolu tamamen farklı",
+        "Eğitim alanı uyumsuz",
+        "Gerekli teknik becerilere sahip değil"
+      ],
+      "overall_assessment": "Adayın kariyer geçmişi ve eğitimi, Bütçe Analiz ve Raporlama Uzmanı pozisyonunun gereklilikleriyle tamamen uyumsuz. Güvenlik sektöründe 32 yıllık deneyime sahip olmasına rağmen muhasebe, bütçe ve rapo",
+      "elimination_reason": "Tamamen farklı kariyer yolu (Güvenlik Şefi → Bütçe Analiz ve Raporlama Uzmanı)"
+    },
+    {
+      "candidate_id": 414,
+      "candidate_name": "Shabeeh Ahmad Khan",
+      "position_id": 7811,
+      "position_name": "Bütçe Analiz ve Raporlama Uzmanı",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 17.69,
+      "strengths": [],
+      "weaknesses": [
+        "Kariyer ve eğitim alanı tamamen uyumsuz",
+        "Teknik beceriler pozisyonla alakasız"
+      ],
+      "overall_assessment": "Aday, pozisyonun gerektirdiği muhasebe, bütçe ve finans alanındaki deneyim ve eğitimden tamamen yoksundur. Kariyer geçmişi ve teknik becerileri HSE/Sağlık ve Güvenlik yönetimi odaklıdır. Bu nedenle po",
+      "elimination_reason": "Tamamen farklı kariyer yolu (HSE Manager → Bütçe Analiz ve Raporlama Uzmanı)"
+    },
+    {
+      "candidate_id": 425,
+      "candidate_name": "Cemil Çetin",
+      "position_id": 7811,
+      "position_name": "Bütçe Analiz ve Raporlama Uzmanı",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 17.3,
+      "strengths": [],
+      "weaknesses": [
+        "Kariyer ve pozisyon tamamen uyuşmuyor",
+        "Muhasebe ve finans alanında hiçbir deneyim yok",
+        "Tüm teknik beceriler alakasız"
+      ],
+      "overall_assessment": "Adayın kariyer geçmişi ve teknik becerileri tamamen farklı bir alanda (geomatik mühendisliği ve arazi survey işleri) yoğunlaşmış durumda. Muhasebe, bütçe analizi ve raporlama pozisyonu için hiçbir uyg",
+      "elimination_reason": "Tamamen farklı kariyer yolu (Geomatik Mühendisliği ve arazi survey işleri → Muhasebe ve bütçe analizi)"
+    },
+    {
+      "candidate_id": 455,
+      "candidate_name": "Ali Demir",
+      "position_id": 7811,
+      "position_name": "Bütçe Analiz ve Raporlama Uzmanı",
+      "score": 0,
+      "eligible": false,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 39.22,
+      "strengths": [],
+      "weaknesses": [
+        "Hiçbir muhasebe/finans deneyimi",
+        "Gerekli teknik becerilere sahip değil",
+        "Pozisyonla ilgisi olmayan pazarlama geçmişine sahip"
+      ],
+      "overall_assessment": "Aday, Bütçe Analiz ve Raporlama Uzmanı pozisyonu için tamamen uygun değil. Kariyer geçmişi pazarlama odaklı ve muhasebe/finans deneyimi bulunmamakta. Eleme kriterlerini karşılamadığı için değerlendirm",
+      "elimination_reason": "Tamamen farklı kariyer yolu (Marketing Specialist → Bütçe Analiz ve Raporlama Uzmanı)"
+    },
+    {
+      "candidate_id": 465,
+      "candidate_name": "Çağrı Rıfat Kale",
+      "position_id": 7811,
+      "position_name": "Bütçe Analiz ve Raporlama Uzmanı",
+      "score": 95,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 37.89,
+      "strengths": [
+        "20 yıllık deneyimli aday",
+        "SAP ve genel muhasebe bilgisi mevcut",
+        "İyi İngilizce ve CIPS sertifikası"
+      ],
+      "weaknesses": [
+        "Bütçe ve konsolidasyon deneyimi eksik",
+        "Lokasyon uyumsuzluğu (Bursa)",
+        "Excel ileri düzey bilgisi belirsiz"
+      ],
+      "overall_assessment": "Deneyimli ve eğitimli aday, ancak pozisyonun bütçe ve konsolidasyon odaklı teknik gereksinimlerini tam karşılamıyor. SAP ve genel muhasebe yetkinlikleri güçlü, ancak kilit becerilerde eksiklikler var.",
+      "elimination_reason": null
+    },
+    {
+      "candidate_id": 466,
+      "candidate_name": "Müge Murat",
+      "position_id": 7814,
+      "position_name": "Dijital Pazarlama Uzmanı",
+      "score": 88,
+      "eligible": true,
+      "gemini_score": 0,
+      "hermes_score": 0,
+      "score_difference": 0,
+      "claude_used": false,
+      "consensus_method": "single_model",
+      "success": true,
+      "error_message": null,
+      "response_time": 36.04,
+      "strengths": [
+        "28 yıllık deneyim ve müdür seviyesi tecrübe",
+        "Güçlü dijital pazarlama ve reklam becerileri",
+        "Proje yönetimi ve CRM deneyimi"
+      ],
+      "weaknesses": [
+        "İş makineleri sektöründe doğrudan deneyim eksikliği",
+        "Teknik ve sektörel becerilerde eksiklikler"
+      ],
+      "overall_assessment": "Müge Murat, dijital pazarlama ve proje yönetimi alanlarında deneyimli bir aday, ancak iş makineleri sektörüne özgü bilgi ve deneyim eksikliği önemli bir handikap. Güçlü teknik becerileri ve deneyimiyl",
+      "elimination_reason": null
+    }
+  ],
+  "report": "\n+-------------------------------------------------------------------------------------+\n| SCORING V3 - TUM ESLESTMELER TESTI (DEMO)                                           |\n+-------------------------------------------------------------------------------------+\n| Test Tarihi: 2026-03-11 01:08:08                                                    |\n| Toplam Test: 34    | Basarili: 34  | Basarisiz: 0                                     |\n| Toplam Sure: 1062.6 saniye (~17.7 dakika)                                           |\n| Tahmini Maliyet: ~$0.07                                                         |\n+-------------------------------------------------------------------------------------+\n| OZET                                                                                |\n+-------------------------------------------------------------------------------------+\n| Ortalama Skor: 46.9/100                                                              |\n| En Yuksek: 95 (Emir Kaan Yıldız -> Gas Groups System Integra)               |\n| En Dusuk: 0 (Mert Karahan -> Mekanik Tesisat Teknik Mo)                |\n| Eligible (Uygun): 21 aday                                                         |\n| Not Eligible: 13 aday                                                             |\n+-------------------------------------------------------------------------------------+\n| SKOR DAGILIMI                                                                       |\n+-------------------------------------------------------------------------------------+\n| [YESIL]  80-100 puan:  11 eslestme (mukemmel)                                        |\n| [SARI]   60-79 puan:    5 eslestme (iyi)                                             |\n| [TURUNCU]40-59 puan:    4 eslestme (orta)                                           |\n| [KIRMIZI]0-39 puan:    14 eslestme (dusuk - supheli)                                 |\n+-------------------------------------------------------------------------------------+\n| MODEL UYUMU                                                                         |\n+-------------------------------------------------------------------------------------+\n| Gemini-Hermes fark <= 15:  34 eslestme (uyumlu)                                    |\n| Gemini-Hermes fark > 15:    0 eslestme (Claude devrede)                             |\n| Claude kullanilan:   0 eslestme                                                 |\n+-------------------------------------------------------------------------------------+\n\nDETAYLI SONUCLAR (Skordan dusukten yuksege):\n+----+---------------------------+-----------------------------------+-------+---------+-------+---------+\n| #  | Aday                      | Pozisyon                          | Skor  | Eligible| G-H   | Claude? |\n+----+---------------------------+-----------------------------------+-------+---------+-------+---------+\n|  1 | Mert Karahan              | Mekanik Tesisat Teknik Modelleyic |     0 |   NO    |     0 |  Hayir  |\n|  2 | SAMET KAYA                | Gas Groups System Integration Spe |     0 |   NO    |     0 |  Hayir  |\n|  3 | Kaya Yılmaz               | Gas Groups System Integration Spe |     0 |   NO    |     0 |  Hayir  |\n|  4 | Taner Baransel            | Gas Groups System Integration Spe |     0 |   NO    |     0 |  Hayir  |\n|  5 | Boubekeur Bouakkaz        | Gas Groups System Integration Spe |     0 |   NO    |     0 |  Hayir  |\n|  6 | Abdullah Deniz ESENYER    | Gas Groups System Integration Spe |     0 |   NO    |     0 |  Hayir  |\n|  7 | Fayaash Mohammad          | Gas Groups System Integration Spe |     0 |   NO    |     0 |  Hayir  |\n|  8 | Ali Özdemir               | Bütçe Analiz ve Raporlama Uzmanı  |     0 |   NO    |     0 |  Hayir  |\n|  9 | Selçuk ÇANKAYA            | Bütçe Analiz ve Raporlama Uzmanı  |     0 |   NO    |     0 |  Hayir  |\n| 10 | Shabeeh Ahmad Khan        | Bütçe Analiz ve Raporlama Uzmanı  |     0 |   NO    |     0 |  Hayir  |\n| 11 | Cemil Çetin               | Bütçe Analiz ve Raporlama Uzmanı  |     0 |   NO    |     0 |  Hayir  |\n| 12 | Ali Demir                 | Bütçe Analiz ve Raporlama Uzmanı  |     0 |   NO    |     0 |  Hayir  |\n| 13 | SAMI DEVRIM               | Otomasyon Yazılım Mühendisi       |    25 |   OK    |     0 |  Hayir  |\n| 14 | Erkan Akdoğan             | Gas Groups System Integration Spe |    28 |   OK    |     0 |  Hayir  |\n| 15 | Büsra Aymaz               | Gas Groups System Integration Spe |    45 |   OK    |     0 |  Hayir  |\n| 16 | Mehmet Kaya               | Otomasyon Yazılım Mühendisi       |    50 |   NO    |     0 |  Hayir  |\n| 17 | Gülhan Türedi             | Gas Groups System Integration Spe |    50 |   OK    |     0 |  Hayir  |\n| 18 | Aysun Cezmi               | Gas Groups System Integration Spe |    55 |   OK    |     0 |  Hayir  |\n| 19 | Ali Ahmad                 | Gas Groups System Integration Spe |    65 |   OK    |     0 |  Hayir  |\n| 20 | Mertcan KÖK               | Gas Groups System Integration Spe |    75 |   OK    |     0 |  Hayir  |\n| 21 | Can Berk Arslan           | Gas Groups System Integration Spe |    75 |   OK    |     0 |  Hayir  |\n| 22 | Ekrem Kuloğlu             | Test Teknikeri                    |    75 |   OK    |     0 |  Hayir  |\n| 23 | Çağdaş Ozan Pamuk         | Gas Groups System Integration Spe |    78 |   OK    |     0 |  Hayir  |\n| 24 | Alican Tarık Bozok        | Gas Groups System Integration Spe |    80 |   OK    |     0 |  Hayir  |\n| 25 | Semih Demirci             | Gas Groups System Integration Spe |    83 |   OK    |     0 |  Hayir  |\n| 26 | Serkan Demir              | Gas Groups System Integration Spe |    85 |   OK    |     0 |  Hayir  |\n| 27 | Serdar Demirci            | Gas Groups System Integration Spe |    85 |   OK    |     0 |  Hayir  |\n| 28 | Semih Demir               | Gas Groups System Integration Spe |    88 |   OK    |     0 |  Hayir  |\n| 29 | Müge Murat                | Dijital Pazarlama Uzmanı          |    88 |   OK    |     0 |  Hayir  |\n| 30 | Serkan Demir              | Gas Groups System Integration Spe |    90 |   OK    |     0 |  Hayir  |\n| 31 | Ali Can Bozok             | Gas Groups System Integration Spe |    90 |   OK    |     0 |  Hayir  |\n| 32 | Emir Kaan Yıldız          | Gas Groups System Integration Spe |    95 |   OK    |     0 |  Hayir  |\n| 33 | Semih Aydın Demir         | Gas Groups System Integration Spe |    95 |   OK    |     0 |  Hayir  |\n| 34 | Çağrı Rıfat Kale          | Bütçe Analiz ve Raporlama Uzmanı  |    95 |   OK    |     0 |  Hayir  |\n+----+---------------------------+-----------------------------------+-------+---------+-------+---------+\n\nSUPHELI ESLESTMELER (Skor < 40):\n+---------------------------+-----------------------------------+-------+--------------------------------------------------+\n| Aday                      | Pozisyon                          | Skor  | Sebep                                            |\n+---------------------------+-----------------------------------+-------+--------------------------------------------------+\n| SAMI DEVRIM               | Otomasyon Yazılım Mühendisi       |    25 | Elektronik mühendisliği geçmişine rağmen otom    |\n| Mert Karahan              | Mekanik Tesisat Teknik Modelleyic |     0 | Tamamen farklı kariyer yolu (Satış ve Pazarlama  |\n| SAMET KAYA                | Gas Groups System Integration Spe |     0 | Tamamen farklı kariyer yolu (İnşaat Mühendisliği |\n| Kaya Yılmaz               | Gas Groups System Integration Spe |     0 | Tamamen farklı kariyer yolu (Makina Mühendisliği |\n| Taner Baransel            | Gas Groups System Integration Spe |     0 | Tamamen farklı kariyer yolu (İnşaat Mühendisliği |\n| Boubekeur Bouakkaz        | Gas Groups System Integration Spe |     0 | Tamamen farklı kariyer yolu (Hidrolik Mühendisli |\n| Abdullah Deniz ESENYER    | Gas Groups System Integration Spe |     0 | Tamamen farklı kariyer yolu (İnşaat Mühendisliği |\n| Erkan Akdoğan             | Gas Groups System Integration Spe |    28 | Adayın proje yönetimi ve planlama deneyimi gü    |\n| Fayaash Mohammad          | Gas Groups System Integration Spe |     0 | Tamamen farklı kariyer yolu (İnşaat Mühendisliği |\n| Ali Özdemir               | Bütçe Analiz ve Raporlama Uzmanı  |     0 | Eğitim seviyesi yetersiz (pozisyon lisans istiyo |\n| Selçuk ÇANKAYA            | Bütçe Analiz ve Raporlama Uzmanı  |     0 | Tamamen farklı kariyer yolu (Güvenlik Şefi → Büt |\n| Shabeeh Ahmad Khan        | Bütçe Analiz ve Raporlama Uzmanı  |     0 | Tamamen farklı kariyer yolu (HSE Manager → Bütçe |\n| Cemil Çetin               | Bütçe Analiz ve Raporlama Uzmanı  |     0 | Tamamen farklı kariyer yolu (Geomatik Mühendisli |\n| Ali Demir                 | Bütçe Analiz ve Raporlama Uzmanı  |     0 | Tamamen farklı kariyer yolu (Marketing Specialis |\n+---------------------------+-----------------------------------+-------+--------------------------------------------------+"
+}
