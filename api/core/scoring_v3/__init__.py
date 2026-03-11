@@ -30,6 +30,12 @@ from .evaluate_candidate import (
     evaluate_candidate,
     evaluate_candidate_sync
 )
+from .cv_intelligence import (
+    analyze_candidate_intelligence,
+    analyze_candidates_batch,
+    analyze_sync,
+    IntelligenceResult
+)
 
 __all__ = [
     # Prompt Builder
@@ -47,7 +53,13 @@ __all__ = [
 
     # Convenience Functions
     "evaluate_candidate",
-    "evaluate_candidate_sync"
+    "evaluate_candidate_sync",
+
+    # CV Intelligence
+    "analyze_candidate_intelligence",
+    "analyze_candidates_batch",
+    "analyze_sync",
+    "IntelligenceResult"
 ]
 
 __version__ = "3.0.0"
