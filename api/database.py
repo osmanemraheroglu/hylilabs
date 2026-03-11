@@ -2184,6 +2184,56 @@ def init_database():
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_blacklist_telefon ON blacklisted_candidates(company_id, telefon, is_active)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_blacklist_company ON blacklisted_candidates(company_id, is_active)')
 
+        # Candidate Intelligence tablosu (CV Profil Analizi)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS candidate_intelligence (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                candidate_id INTEGER UNIQUE NOT NULL,
+                company_id INTEGER NOT NULL,
+
+                -- Kariyer Bilgileri
+                career_path TEXT,
+                career_path_alternatives TEXT,
+                specializations TEXT,
+
+                -- Sektör ve Seviye
+                sectors TEXT,
+                level TEXT,
+                experience_years INTEGER,
+
+                -- Eğitim
+                education_level TEXT,
+                education_field TEXT,
+
+                -- Lokasyon
+                current_location TEXT,
+                preferred_locations TEXT,
+                relocation_willing INTEGER DEFAULT 1,
+
+                -- Uygun Pozisyonlar (EN ÖNEMLİ)
+                suitable_positions TEXT,
+                suitable_positions_search TEXT,
+
+                -- Yetkinlikler
+                key_skills TEXT,
+                certifications TEXT,
+                languages TEXT,
+
+                -- Meta
+                analyzed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                analysis_version TEXT DEFAULT 'v1.0',
+                raw_analysis TEXT,
+
+                FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE,
+                FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+            )
+        ''')
+
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_ci_career ON candidate_intelligence(career_path)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_ci_level ON candidate_intelligence(level)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_ci_company ON candidate_intelligence(company_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_ci_search ON candidate_intelligence(suitable_positions_search)')
+
         # Varsayilan email sablonlarini ekle (company_id = 1)
         _init_default_email_templates(cursor)
 
@@ -12970,3 +13020,281 @@ def get_blacklist_info(candidate_id: int, company_id: int) -> dict:
             }
 
         return None
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CANDIDATE INTELLIGENCE FONKSİYONLARI (CV Profil Analizi)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def save_candidate_intelligence(candidate_id: int, company_id: int, intelligence_data: dict) -> bool:
+    """
+    CV Intelligence analiz sonucunu kaydeder (UPSERT).
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        suitable_positions = intelligence_data.get("suitable_positions", [])
+        search_text = ",".join([p.lower() for p in suitable_positions]) if suitable_positions else ""
+
+        cursor.execute("""
+            INSERT INTO candidate_intelligence (
+                candidate_id, company_id, career_path, career_path_alternatives,
+                specializations, sectors, level, experience_years,
+                education_level, education_field, current_location,
+                preferred_locations, relocation_willing, suitable_positions,
+                suitable_positions_search, key_skills, certifications, languages,
+                raw_analysis, analyzed_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(candidate_id) DO UPDATE SET
+                career_path = excluded.career_path,
+                career_path_alternatives = excluded.career_path_alternatives,
+                specializations = excluded.specializations,
+                sectors = excluded.sectors,
+                level = excluded.level,
+                experience_years = excluded.experience_years,
+                education_level = excluded.education_level,
+                education_field = excluded.education_field,
+                current_location = excluded.current_location,
+                preferred_locations = excluded.preferred_locations,
+                relocation_willing = excluded.relocation_willing,
+                suitable_positions = excluded.suitable_positions,
+                suitable_positions_search = excluded.suitable_positions_search,
+                key_skills = excluded.key_skills,
+                certifications = excluded.certifications,
+                languages = excluded.languages,
+                raw_analysis = excluded.raw_analysis,
+                analyzed_at = CURRENT_TIMESTAMP
+        """, (
+            candidate_id,
+            company_id,
+            intelligence_data.get("career_path"),
+            json.dumps(intelligence_data.get("career_path_alternatives", []), ensure_ascii=False),
+            json.dumps(intelligence_data.get("specializations", []), ensure_ascii=False),
+            json.dumps(intelligence_data.get("sectors", []), ensure_ascii=False),
+            intelligence_data.get("level"),
+            intelligence_data.get("experience_years"),
+            intelligence_data.get("education_level"),
+            intelligence_data.get("education_field"),
+            intelligence_data.get("current_location"),
+            json.dumps(intelligence_data.get("preferred_locations", []), ensure_ascii=False),
+            1 if intelligence_data.get("relocation_willing", True) else 0,
+            json.dumps(suitable_positions, ensure_ascii=False),
+            search_text,
+            json.dumps(intelligence_data.get("key_skills", []), ensure_ascii=False),
+            json.dumps(intelligence_data.get("certifications", []), ensure_ascii=False),
+            json.dumps(intelligence_data.get("languages", []), ensure_ascii=False),
+            json.dumps(intelligence_data.get("raw_analysis", {}), ensure_ascii=False)
+        ))
+
+        conn.commit()
+        logger.info(f"Candidate intelligence kaydedildi: candidate_id={candidate_id}")
+        return True
+    except Exception as e:
+        logger.error(f"Candidate intelligence kayıt hatası: {e}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
+
+def get_candidate_intelligence(candidate_id: int):
+    """
+    Adayın intelligence verisini getirir.
+    JSON alanları otomatik parse edilir.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT id, candidate_id, company_id, career_path, career_path_alternatives,
+                   specializations, sectors, level, experience_years, education_level,
+                   education_field, current_location, preferred_locations, relocation_willing,
+                   suitable_positions, suitable_positions_search, key_skills, certifications,
+                   languages, analyzed_at, analysis_version, raw_analysis
+            FROM candidate_intelligence
+            WHERE candidate_id = ?
+        """, (candidate_id,))
+        row = cursor.fetchone()
+
+        if not row:
+            return None
+
+        result = {
+            "id": row[0],
+            "candidate_id": row[1],
+            "company_id": row[2],
+            "career_path": row[3],
+            "career_path_alternatives": row[4],
+            "specializations": row[5],
+            "sectors": row[6],
+            "level": row[7],
+            "experience_years": row[8],
+            "education_level": row[9],
+            "education_field": row[10],
+            "current_location": row[11],
+            "preferred_locations": row[12],
+            "relocation_willing": bool(row[13]),
+            "suitable_positions": row[14],
+            "suitable_positions_search": row[15],
+            "key_skills": row[16],
+            "certifications": row[17],
+            "languages": row[18],
+            "analyzed_at": row[19],
+            "analysis_version": row[20],
+            "raw_analysis": row[21]
+        }
+
+        # JSON alanları parse et
+        json_fields = [
+            "career_path_alternatives", "specializations", "sectors",
+            "preferred_locations", "suitable_positions", "key_skills",
+            "certifications", "languages", "raw_analysis"
+        ]
+        for field in json_fields:
+            if result.get(field):
+                try:
+                    result[field] = json.loads(result[field])
+                except:
+                    result[field] = [] if field != "raw_analysis" else {}
+
+        return result
+    except Exception as e:
+        logger.error(f"Candidate intelligence okuma hatası: {e}")
+        return None
+    finally:
+        conn.close()
+
+
+def find_candidates_for_position(company_id: int, position_title: str, sectors: list = None, level: str = None, location: str = None, limit: int = 100) -> list:
+    """
+    Pozisyona uygun adayları bulur (DB sorgusu - ücretsiz, anında).
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        search_term = position_title.lower().strip()
+
+        query = """
+            SELECT ci.*, c.ad_soyad, c.email, c.telefon, c.mevcut_pozisyon
+            FROM candidate_intelligence ci
+            JOIN candidates c ON ci.candidate_id = c.id
+            WHERE ci.company_id = ?
+            AND (
+                ci.suitable_positions_search LIKE ?
+                OR LOWER(ci.career_path) LIKE ?
+                OR LOWER(ci.career_path_alternatives) LIKE ?
+            )
+        """
+        params = [company_id, f"%{search_term}%", f"%{search_term}%", f"%{search_term}%"]
+
+        if level:
+            query += " AND ci.level = ?"
+            params.append(level)
+
+        if location:
+            query += " AND (LOWER(ci.current_location) LIKE ? OR LOWER(ci.preferred_locations) LIKE ?)"
+            params.extend([f"%{location.lower()}%", f"%{location.lower()}%"])
+
+        if sectors:
+            sector_conditions = " OR ".join(["LOWER(ci.sectors) LIKE ?" for _ in sectors])
+            query += f" AND ({sector_conditions})"
+            params.extend([f"%{s.lower()}%" for s in sectors])
+
+        query += " ORDER BY ci.analyzed_at DESC LIMIT ?"
+        params.append(limit)
+
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+
+        columns = [desc[0] for desc in cursor.description]
+        results = []
+
+        for row in rows:
+            result = dict(zip(columns, row))
+            for field in ["suitable_positions", "specializations", "sectors", "key_skills"]:
+                if result.get(field):
+                    try:
+                        result[field] = json.loads(result[field])
+                    except:
+                        result[field] = []
+            results.append(result)
+
+        logger.info(f"Pozisyon araması: '{position_title}' için {len(results)} aday bulundu")
+        return results
+    except Exception as e:
+        logger.error(f"Pozisyon için aday arama hatası: {e}")
+        return []
+    finally:
+        conn.close()
+
+
+def get_candidates_without_intelligence(company_id: int, limit: int = 100) -> list:
+    """
+    Henüz intelligence analizi yapılmamış adayları getirir.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT c.id, c.ad_soyad, c.email, c.toplam_deneyim_yil,
+                   c.mevcut_pozisyon, c.teknik_beceriler, c.deneyim_detay,
+                   c.egitim, c.universite, c.bolum, c.lokasyon
+            FROM candidates c
+            LEFT JOIN candidate_intelligence ci ON c.id = ci.candidate_id
+            WHERE c.company_id = ?
+            AND ci.id IS NULL
+            ORDER BY c.olusturma_tarihi DESC
+            LIMIT ?
+        """, (company_id, limit))
+
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        results = [dict(zip(columns, row)) for row in rows]
+
+        logger.info(f"Intelligence eksik aday sayısı: {len(results)} (company_id={company_id})")
+        return results
+    except Exception as e:
+        logger.error(f"Intelligence eksik aday listesi hatası: {e}")
+        return []
+    finally:
+        conn.close()
+
+
+def get_intelligence_stats(company_id: int) -> dict:
+    """
+    Şirketin intelligence istatistiklerini döndürür.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT COUNT(*) FROM candidates WHERE company_id = ?", (company_id,))
+        total_candidates = cursor.fetchone()[0]
+
+        cursor.execute("""
+            SELECT COUNT(*) FROM candidate_intelligence ci
+            JOIN candidates c ON ci.candidate_id = c.id
+            WHERE c.company_id = ?
+        """, (company_id,))
+        analyzed_candidates = cursor.fetchone()[0]
+
+        cursor.execute("""
+            SELECT ci.level, COUNT(*) as count
+            FROM candidate_intelligence ci
+            JOIN candidates c ON ci.candidate_id = c.id
+            WHERE c.company_id = ?
+            GROUP BY ci.level
+        """, (company_id,))
+        level_distribution = {row[0]: row[1] for row in cursor.fetchall()}
+
+        return {
+            "total_candidates": total_candidates,
+            "analyzed_candidates": analyzed_candidates,
+            "pending_analysis": total_candidates - analyzed_candidates,
+            "coverage_percent": round((analyzed_candidates / total_candidates * 100) if total_candidates > 0 else 0, 1),
+            "level_distribution": level_distribution
+        }
+    except Exception as e:
+        logger.error(f"Intelligence istatistik hatası: {e}")
+        return {}
+    finally:
+        conn.close()
