@@ -137,9 +137,25 @@ export default function Havuzlar() {
   const [approving, setApproving] = useState(false)
   const [titlesExpanded, setTitlesExpanded] = useState(true)
 
-  // AI Evaluation
+  // AI Evaluation V3
   const [evaluating, setEvaluating] = useState(false)
   const [rescoring, setRescoring] = useState(false)
+  const [v3Evaluation, setV3Evaluation] = useState<Record<number, {
+    total_score: number
+    eligible: boolean
+    gemini_score: number
+    hermes_score: number
+    layer_scores: {
+      technical_skills?: { score: number; reason: string }
+      position_match?: { score: number; reason: string }
+      experience_quality?: { score: number; reason: string }
+      education?: { score: number; reason: string }
+      other?: { score: number; reason: string }
+    }
+    strengths: string[]
+    weaknesses: string[]
+  }>>({})
+  const [v3Loading, setV3Loading] = useState<Record<number, boolean>>({})
 
   // CV Intelligence
   const [intelligenceData, setIntelligenceData] = useState<Record<number, Candidate['intelligence']>>({})
@@ -496,20 +512,31 @@ export default function Havuzlar() {
     })
   }
 
-  // AI Değerlendirme
-  const handleEvaluate = (candidateId: number) => {
+  // AI Değerlendirme V3
+  const handleEvaluate = async (candidateId: number) => {
     if (!selectedPoolId) return
     setEvaluating(true)
-    fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/evaluate`, { method: 'POST', headers: H() })
-      .then(r => r.json())
-      .then(res => {
-        if (res.success) {
-          toast.success('AI değerlendirme tamamlandı')
-          loadDetail(candidateId)
-        } else { toast.error(res.detail || 'Hata') }
+    setV3Loading(prev => ({ ...prev, [candidateId]: true }))
+    try {
+      const res = await fetch(`${API}/api/ai-evaluation/evaluate`, {
+        method: 'POST',
+        headers: H(),
+        body: JSON.stringify({ candidate_id: candidateId, position_id: selectedPoolId })
       })
-      .catch(e => toast.error('Hata: ' + e))
-      .finally(() => setEvaluating(false))
+      const data = await res.json()
+      if (data.success && data.data) {
+        setV3Evaluation(prev => ({ ...prev, [candidateId]: data.data }))
+        toast.success(`AI Değerlendirme tamamlandı: ${data.data.total_score} puan`)
+        loadDetail(candidateId)
+      } else {
+        toast.error(data.detail || 'Değerlendirme hatası')
+      }
+    } catch (e) {
+      toast.error('Değerlendirme hatası: ' + e)
+    } finally {
+      setEvaluating(false)
+      setV3Loading(prev => ({ ...prev, [candidateId]: false }))
+    }
   }
 
 
@@ -934,27 +961,96 @@ export default function Havuzlar() {
                                           <div className="text-xs text-muted-foreground italic">Henüz profil analizi yapılmamış</div>
                                         )}
                                       </div>
-                                      {/* AI Evaluation */}
+                                      {/* AI Evaluation V3 */}
                                       <div className="border rounded p-3 bg-white">
                                         <div className="flex items-center justify-between mb-2">
-                                          <div className="text-xs font-medium flex items-center gap-1"><Brain className="h-3 w-3" />AI Değerlendirme {aie ? `(v2: ${String((aie)?.v2_score || '-')})` : ''}</div>
+                                          <div className="text-xs font-medium flex items-center gap-2">
+                                            <Brain className="h-3 w-3" />
+                                            <span>AI Değerlendirme (V3)</span>
+                                            {v3Evaluation[cd.id] && (
+                                              <>
+                                                <Badge className={v3Evaluation[cd.id].eligible ? 'bg-green-500' : 'bg-red-500'} variant="default">
+                                                  {v3Evaluation[cd.id].total_score} puan
+                                                </Badge>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                  Gemini: {v3Evaluation[cd.id].gemini_score} | Hermes: {v3Evaluation[cd.id].hermes_score}
+                                                </span>
+                                              </>
+                                            )}
+                                          </div>
                                           <div className="flex gap-1">
                                             <Button size="sm" variant="outline" onClick={() => handleViewCV(cd.id)} disabled={!cd?.cv_dosya_adi} className="h-6 text-[10px] px-2" title={cd?.cv_dosya_adi ? 'CV Görüntüle' : 'CV yok'}>
                                               <FileText className="h-3 w-3 mr-1" />CV
                                             </Button>
-                                            <Button size="sm" variant="outline" onClick={() => handleEvaluate(cd.id)} disabled={evaluating} className="h-6 text-[10px] px-2">
-                                              {evaluating ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Brain className="h-3 w-3 mr-1" />}
-                                              {aie ? 'Yeniden Değerlendir' : 'AI Değerlendir'}
+                                            <Button size="sm" variant="outline" onClick={() => handleEvaluate(cd.id)} disabled={evaluating || v3Loading[cd.id]} className="h-6 text-[10px] px-2">
+                                              {(evaluating || v3Loading[cd.id]) ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Brain className="h-3 w-3 mr-1" />}
+                                              {v3Evaluation[cd.id] ? 'Yeniden Değerlendir' : 'AI Değerlendir'}
                                             </Button>
                                             <Button size="sm" variant="outline" onClick={() => handleDownloadReport(cd.id)} disabled={!aie} className="h-6 text-[10px] px-2">
                                               <FileText className="h-3 w-3 mr-1" />Rapor
                                             </Button>
                                           </div>
                                         </div>
-                                        {aie ? (
-                                          <div className="text-xs whitespace-pre-line text-muted-foreground">{String((aie)?.text || '')}</div>
-                                        ) : (
-                                          <div className="text-xs text-muted-foreground italic">Henüz AI değerlendirme yapılmamış</div>
+                                        {v3Evaluation[cd.id] ? (() => {
+                                          const v3 = v3Evaluation[cd.id]
+                                          const layers = [
+                                            { key: 'technical_skills', label: 'Teknik Beceriler', max: 25 },
+                                            { key: 'position_match', label: 'Pozisyon Uyumu', max: 25 },
+                                            { key: 'experience_quality', label: 'Deneyim Kalitesi', max: 25 },
+                                            { key: 'education', label: 'Eğitim', max: 15 },
+                                            { key: 'other', label: 'Diğer', max: 10 }
+                                          ]
+                                          return (
+                                            <div className="space-y-3">
+                                              {/* Uygunluk Badge */}
+                                              <div className="flex items-center gap-2">
+                                                <Badge className={v3.eligible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                                                  {v3.eligible ? '✓ Uygun' : '✗ Uygun Değil'}
+                                                </Badge>
+                                              </div>
+                                              {/* Layer Scores */}
+                                              <div className="space-y-2">
+                                                {layers.map(layer => {
+                                                  const data = v3.layer_scores[layer.key as keyof typeof v3.layer_scores]
+                                                  if (!data) return null
+                                                  const pct = Math.round((data.score / layer.max) * 100)
+                                                  return (
+                                                    <div key={layer.key} className="text-xs">
+                                                      <div className="flex justify-between mb-1">
+                                                        <span className="font-medium">{layer.label}</span>
+                                                        <span>{data.score}/{layer.max}</span>
+                                                      </div>
+                                                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                                        <div className={`h-1.5 rounded-full ${pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }}></div>
+                                                      </div>
+                                                      <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{data.reason?.split('|')[0]?.trim()}</div>
+                                                    </div>
+                                                  )
+                                                })}
+                                              </div>
+                                              {/* Güçlü ve Zayıf Yönler */}
+                                              <div className="grid grid-cols-2 gap-3 text-xs">
+                                                {v3.strengths && v3.strengths.length > 0 && (
+                                                  <div>
+                                                    <div className="font-medium text-green-700 mb-1">💪 Güçlü Yönler</div>
+                                                    <ul className="list-disc list-inside space-y-0.5 text-[10px]">
+                                                      {v3.strengths.slice(0, 3).map((s, i) => <li key={i} className="line-clamp-1">{s}</li>)}
+                                                    </ul>
+                                                  </div>
+                                                )}
+                                                {v3.weaknesses && v3.weaknesses.length > 0 && (
+                                                  <div>
+                                                    <div className="font-medium text-orange-700 mb-1">⚠️ Gelişim Alanları</div>
+                                                    <ul className="list-disc list-inside space-y-0.5 text-[10px]">
+                                                      {v3.weaknesses.slice(0, 3).map((w, i) => <li key={i} className="line-clamp-1">{w}</li>)}
+                                                    </ul>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          )
+                                        })() : (
+                                          <div className="text-xs text-muted-foreground italic">Henüz AI değerlendirme yapılmamış. Değerlendirmek için butona tıklayın.</div>
                                         )}
                                       </div>
                                     </div>
