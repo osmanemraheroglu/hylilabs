@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 # SABİTLER
 # ═══════════════════════════════════════════════════════════════════════════════
 
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent"
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
 API_TIMEOUT = 60  # saniye
 MAX_RETRIES = 2
 RETRY_DELAY = 2  # saniye
