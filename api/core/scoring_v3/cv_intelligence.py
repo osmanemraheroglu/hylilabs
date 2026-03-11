@@ -271,7 +271,7 @@ async def call_gemini_for_intelligence(prompt: str, retry_count: int = 0) -> Opt
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": 0.3,
-            "maxOutputTokens": 2048,
+            "maxOutputTokens": 4096,
             "responseMimeType": "application/json"
         }
     }
