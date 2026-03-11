@@ -16,7 +16,11 @@ from database import (
     verify_department_pool_ownership,
     save_ai_evaluation,
     get_ai_evaluation,
-    check_ai_daily_limit
+    check_ai_daily_limit,
+    save_candidate_intelligence,
+    get_candidate_intelligence,
+    get_candidates_without_intelligence,
+    get_intelligence_stats
 )
 from typing import Optional
 import json
@@ -26,7 +30,13 @@ import traceback
 from datetime import datetime
 
 # Scoring V3 import
-from core.scoring_v3 import evaluate_candidate, CandidateEvaluationResponse
+from core.scoring_v3 import (
+    evaluate_candidate,
+    CandidateEvaluationResponse,
+    analyze_candidate_intelligence,
+    analyze_candidates_batch as analyze_intelligence_batch,
+    IntelligenceResult
+)
 
 router = APIRouter(prefix="/api/ai-evaluation", tags=["AI Evaluation"])
 logger = logging.getLogger(__name__)
@@ -544,3 +554,246 @@ async def get_daily_limit_status(
             status_code=500,
             detail=f"Limit sorgulanırken bir hata oluştu: {str(e)}"
         )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CV INTELLIGENCE ENDPOINT'LERİ
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/intelligence/stats")
+async def get_intelligence_statistics(
+    current_user: dict = Depends(get_current_user)
+):
+    """Şirketin CV intelligence istatistiklerini döndürür."""
+    company_id = current_user["company_id"]
+
+    try:
+        stats = get_intelligence_stats(company_id)
+        return {"success": True, "data": stats}
+    except Exception as e:
+        logger.exception(f"Intelligence istatistik hatası: {e}")
+        raise HTTPException(status_code=500, detail=f"İstatistikler getirilirken hata: {str(e)}")
+
+
+@router.get("/intelligence/pending")
+async def get_pending_intelligence(
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user)
+):
+    """Henüz intelligence analizi yapılmamış adayları listeler."""
+    company_id = current_user["company_id"]
+
+    try:
+        if limit > 100:
+            limit = 100
+        pending = get_candidates_without_intelligence(company_id, limit=limit)
+        return {"success": True, "data": {"candidates": pending, "count": len(pending)}}
+    except Exception as e:
+        logger.exception(f"Pending intelligence hatası: {e}")
+        raise HTTPException(status_code=500, detail=f"Liste getirilirken hata: {str(e)}")
+
+
+@router.get("/intelligence/{candidate_id}")
+async def get_intelligence(
+    candidate_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """Adayın mevcut intelligence verisini getirir."""
+    company_id = current_user["company_id"]
+
+    try:
+        candidate = get_candidate(candidate_id, company_id=company_id)
+        if not candidate:
+            raise HTTPException(status_code=404, detail="Aday bulunamadı veya erişim yetkiniz yok")
+
+        intelligence = get_candidate_intelligence(candidate_id)
+        if not intelligence:
+            return {"success": True, "data": None, "message": "Bu aday için henüz intelligence analizi yapılmamış"}
+        return {"success": True, "data": intelligence}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Intelligence getirme hatası: {e}")
+        raise HTTPException(status_code=500, detail=f"Veri getirilirken hata: {str(e)}")
+
+
+@router.post("/intelligence/analyze")
+async def analyze_single_intelligence(
+    body: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Tek adayın CV'sini analiz eder ve intelligence verisini kaydeder."""
+    start_time = time.time()
+    company_id = current_user["company_id"]
+
+    try:
+        candidate_id = body.get("candidate_id")
+        force_refresh = body.get("force_refresh", False)
+
+        if not candidate_id:
+            raise HTTPException(status_code=400, detail="candidate_id zorunludur")
+
+        candidate = get_candidate(candidate_id, company_id=company_id)
+        if not candidate:
+            raise HTTPException(status_code=404, detail="Aday bulunamadı veya erişim yetkiniz yok")
+
+        # Mevcut intelligence var mı?
+        if not force_refresh:
+            existing = get_candidate_intelligence(candidate_id)
+            if existing:
+                return {"success": True, "data": existing, "from_cache": True, "processing_time": 0}
+
+        # Aday verilerini hazırla
+        candidate_data = {
+            "ad_soyad": candidate.ad_soyad,
+            "mevcut_pozisyon": candidate.mevcut_pozisyon,
+            "mevcut_sirket": candidate.mevcut_sirket,
+            "toplam_deneyim_yil": candidate.toplam_deneyim_yil,
+            "lokasyon": candidate.lokasyon,
+            "egitim": candidate.egitim,
+            "universite": candidate.universite,
+            "bolum": candidate.bolum,
+            "teknik_beceriler": candidate.teknik_beceriler,
+            "sertifikalar": candidate.sertifikalar,
+            "diller": candidate.diller,
+            "deneyim_detay": candidate.deneyim_detay,
+            "deneyim_aciklama": candidate.deneyim_aciklama
+        }
+
+        logger.info(f"CV Intelligence analizi başlıyor: candidate_id={candidate_id}")
+        result = await analyze_candidate_intelligence(candidate_id, company_id, candidate_data)
+        elapsed = time.time() - start_time
+
+        if not result.success:
+            raise HTTPException(status_code=500, detail=f"CV analizi başarısız: {result.error_message}")
+
+        # Veritabanına kaydet
+        saved = save_candidate_intelligence(candidate_id, company_id, result.to_dict())
+        if not saved:
+            logger.error(f"Intelligence kaydetme hatası: candidate_id={candidate_id}")
+
+        return {
+            "success": True,
+            "data": {
+                "candidate_id": candidate_id,
+                "career_path": result.career_path,
+                "level": result.level,
+                "experience_years": result.experience_years,
+                "sectors": result.sectors,
+                "suitable_positions": result.suitable_positions,
+                "education_level": result.education_level,
+                "education_field": result.education_field,
+                "current_location": result.current_location,
+                "key_skills": result.key_skills
+            },
+            "from_cache": False,
+            "processing_time": round(elapsed, 2)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Intelligence analiz hatası: {e}")
+        raise HTTPException(status_code=500, detail=f"Analiz sırasında hata: {str(e)}")
+
+
+@router.post("/intelligence/analyze-batch")
+async def analyze_batch_intelligence(
+    body: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Birden fazla adayın CV'sini analiz eder (max 20)."""
+    start_time = time.time()
+    company_id = current_user["company_id"]
+
+    try:
+        candidate_ids = body.get("candidate_ids", [])
+        force_refresh = body.get("force_refresh", False)
+
+        if not candidate_ids:
+            raise HTTPException(status_code=400, detail="candidate_ids zorunludur")
+
+        if len(candidate_ids) > 20:
+            raise HTTPException(status_code=400, detail="Tek seferde en fazla 20 aday analiz edilebilir")
+
+        results = []
+        candidates_to_analyze = []
+
+        for cid in candidate_ids:
+            candidate = get_candidate(cid, company_id=company_id)
+            if not candidate:
+                results.append({"candidate_id": cid, "success": False, "error": "Aday bulunamadı"})
+                continue
+
+            if not force_refresh:
+                existing = get_candidate_intelligence(cid)
+                if existing:
+                    results.append({
+                        "candidate_id": cid,
+                        "candidate_name": candidate.ad_soyad,
+                        "success": True,
+                        "career_path": existing.get("career_path"),
+                        "level": existing.get("level"),
+                        "from_cache": True
+                    })
+                    continue
+
+            candidates_to_analyze.append({
+                "id": cid,
+                "ad_soyad": candidate.ad_soyad,
+                "mevcut_pozisyon": candidate.mevcut_pozisyon,
+                "mevcut_sirket": candidate.mevcut_sirket,
+                "toplam_deneyim_yil": candidate.toplam_deneyim_yil,
+                "lokasyon": candidate.lokasyon,
+                "egitim": candidate.egitim,
+                "universite": candidate.universite,
+                "bolum": candidate.bolum,
+                "teknik_beceriler": candidate.teknik_beceriler,
+                "sertifikalar": candidate.sertifikalar,
+                "diller": candidate.diller,
+                "deneyim_detay": candidate.deneyim_detay,
+                "deneyim_aciklama": candidate.deneyim_aciklama
+            })
+
+        if candidates_to_analyze:
+            batch_results = await analyze_intelligence_batch(candidates_to_analyze, company_id, max_concurrent=5)
+
+            for result in batch_results:
+                if result.success:
+                    save_candidate_intelligence(result.candidate_id, company_id, result.to_dict())
+                    results.append({
+                        "candidate_id": result.candidate_id,
+                        "success": True,
+                        "career_path": result.career_path,
+                        "level": result.level,
+                        "suitable_positions": result.suitable_positions[:3] if result.suitable_positions else [],
+                        "from_cache": False,
+                        "processing_time": result.processing_time
+                    })
+                else:
+                    results.append({
+                        "candidate_id": result.candidate_id,
+                        "success": False,
+                        "error": result.error_message
+                    })
+
+        elapsed = time.time() - start_time
+        successful = sum(1 for r in results if r.get("success"))
+
+        return {
+            "success": True,
+            "data": {
+                "results": results,
+                "summary": {
+                    "total": len(candidate_ids),
+                    "successful": successful,
+                    "failed": len(candidate_ids) - successful,
+                    "from_cache": sum(1 for r in results if r.get("from_cache")),
+                    "processing_time": round(elapsed, 2)
+                }
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Batch intelligence hatası: {e}")
+        raise HTTPException(status_code=500, detail=f"Toplu analiz sırasında hata: {str(e)}")
