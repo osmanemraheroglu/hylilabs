@@ -16,6 +16,7 @@ Ozellikler:
   - Hermes fallback: 3 deneme basarisiz -> sadece Hermes skoru
   - Resume modu: progress.json ile kaldiqi yerden devam
   - Rapor: Basarili/basarisiz sayisi, ortalama skor
+  - DB retry: database locked -> 3 deneme, UNIQUE -> atla
 """
 
 import sys
@@ -91,7 +92,6 @@ def get_pending_candidates(limit: Optional[int] = None, resume_from_id: Optional
         JOIN department_pools dp ON cp.position_id = dp.id
         LEFT JOIN ai_evaluations ae ON c.id = ae.candidate_id
             AND ae.position_id = cp.position_id
-            AND ae.evaluation_text LIKE '%"version"%'
         WHERE ae.id IS NULL
           AND dp.keywords IS NOT NULL
           AND dp.keywords != ''
@@ -185,12 +185,14 @@ def get_position_data(pool_id: int) -> Optional[Dict]:
     }
 
 
-def save_evaluation(candidate_id: int, position_id: int, result, company_id: int = 1):
-    """Degerlendirmeyi DB'ye kaydeder."""
-    conn = get_connection()
-    cursor = conn.cursor()
+def save_evaluation(candidate_id: int, position_id: int, result, company_id: int = 1) -> bool:
+    """
+    Degerlendirmeyi DB'ye kaydeder.
+    Returns: True=kaydedildi, False=zaten var veya hata
+    """
+    max_retries = 3
+    retry_delay = 2  # saniye
 
-    # FIX: layer_scores yerine mevcut alanlar kullaniliyor
     evaluation_data = {
         "version": "v3",
         "total_score": result.total_score,
@@ -207,13 +209,32 @@ def save_evaluation(candidate_id: int, position_id: int, result, company_id: int
         "overall_assessment": result.overall_assessment
     }
 
-    cursor.execute("""
-        INSERT INTO ai_evaluations (candidate_id, position_id, evaluation_text, v2_score, company_id, created_at)
-        VALUES (?, ?, ?, ?, ?, datetime('now'))
-    """, (candidate_id, position_id, json.dumps(evaluation_data, ensure_ascii=False), result.total_score, company_id))
-
-    conn.commit()
-    conn.close()
+    for attempt in range(max_retries):
+        conn = None
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO ai_evaluations (candidate_id, position_id, evaluation_text, v2_score, company_id, created_at)
+                VALUES (?, ?, ?, ?, ?, datetime('now'))
+            """, (candidate_id, position_id, json.dumps(evaluation_data, ensure_ascii=False), result.total_score, company_id))
+            conn.commit()
+            return True
+        except sqlite3.IntegrityError as e:
+            if "UNIQUE constraint" in str(e):
+                # Zaten var, atla
+                return False
+            raise
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e) and attempt < max_retries - 1:
+                print(f"    DB locked, retry {attempt + 1}/{max_retries}...")
+                time.sleep(retry_delay * (attempt + 1))
+                continue
+            raise
+        finally:
+            if conn:
+                conn.close()
+    return False
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -361,7 +382,8 @@ async def run_batch(args):
         "gemini_503_count": 0,
         "scores": [],
         "eligible_count": 0,
-        "error_list": []
+        "error_list": [],
+        "skipped": 0
     }
 
     start_time = time.time()
@@ -418,7 +440,10 @@ async def run_batch(args):
 
                 # Kaydet (dry-run degilse)
                 if not args.dry_run:
-                    save_evaluation(cid, pid, result)
+                    saved = save_evaluation(cid, pid, result)
+                    if not saved:
+                        print(f"  ATLANDI: Zaten degerlendirilmis")
+                        stats["skipped"] += 1
             else:
                 error_msg = result.error_message if hasattr(result, 'error_message') else "Bilinmeyen hata"
                 print(f"  HATA: {error_msg}")
@@ -474,6 +499,7 @@ async def run_batch(args):
     print(f"Toplam islenen: {stats['processed']}")
     print(f"Basarili: {stats['success']}")
     print(f"Hata: {stats['errors']}")
+    print(f"Atlanan (zaten var): {stats['skipped']}")
     print(f"Gemini 503 hatasi: {stats['gemini_503_count']}")
     print(f"Ortalama skor: {avg_score:.1f}")
     print(f"Eligible: {stats['eligible_count']} ({eligible_pct:.0f}%)")

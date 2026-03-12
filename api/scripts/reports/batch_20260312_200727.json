@@ -1,0 +1,24 @@
+{
+  "completed_at": "2026-03-12T20:07:27.891600",
+  "mode": "real",
+  "stats": {
+    "total": 4,
+    "processed": 4,
+    "success": 4,
+    "errors": 0,
+    "gemini_503_count": 0,
+    "scores": [
+      0,
+      86,
+      0,
+      0
+    ],
+    "eligible_count": 3,
+    "error_list": [],
+    "skipped": 0
+  },
+  "avg_score": 21.5,
+  "eligible_pct": 75.0,
+  "elapsed_seconds": 117.73145842552185,
+  "errors": []
+}
