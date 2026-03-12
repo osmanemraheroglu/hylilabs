@@ -7102,13 +7102,77 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                 except Exception as e:
                     logger.warning(f"matches tablosuna kayıt hatası: {e}")
 
+            # === V3 DEĞERLENDİRME + WEIGHTED AVERAGE (FAZ 10.1) ===
+            v3_evaluated = False
+            final_score = match_score  # Varsayılan olarak V2 skoru kullan
+            if inserted and v2_result:
+                try:
+                    # candidate_dict ve position_dict'i al
+                    candidate_dict = match_data.get('candidate_dict', {})
+                    position_dict = match_data.get('position_dict', {})
+
+                    if candidate_dict and position_dict:
+                        # V3 değerlendirme çağır
+                        from core.scoring_v3 import evaluate_candidate_sync
+                        v3_result = evaluate_candidate_sync(
+                            candidate_id=candidate_id,
+                            position_id=position_pool_id,
+                            candidate_data=candidate_dict,
+                            position_data=position_dict
+                        )
+
+                        if v3_result and v3_result.success:
+                            v3_score = v3_result.total_score
+                            v2_score = v2_result.get('total', 0)
+
+                            # Weighted average: V3 %60 + V2 %40
+                            final_score = int((v3_score * 0.60) + (v2_score * 0.40))
+                            v3_evaluated = True
+
+                            # candidate_positions'da match_score güncelle
+                            cursor.execute("""
+                                UPDATE candidate_positions
+                                SET match_score = ?
+                                WHERE candidate_id = ? AND position_id = ?
+                            """, (final_score, candidate_id, position_pool_id))
+
+                            # matches tablosunda da uyum_puani güncelle
+                            cursor.execute("""
+                                UPDATE matches
+                                SET uyum_puani = ?
+                                WHERE candidate_id = ? AND position_id = ?
+                            """, (final_score, candidate_id, position_pool_id))
+
+                            # V3 sonucunu ai_evaluations'a kaydet
+                            save_v3_evaluation_to_db(candidate_id, position_pool_id, v3_result, company_id)
+
+                            # Eligible değilse (score < 40) adayı pozisyondan çıkar
+                            if final_score < 40:
+                                cursor.execute("""
+                                    DELETE FROM candidate_positions
+                                    WHERE candidate_id = ? AND position_id = ?
+                                """, (candidate_id, position_pool_id))
+                                cursor.execute("""
+                                    DELETE FROM matches
+                                    WHERE candidate_id = ? AND position_id = ?
+                                """, (candidate_id, position_pool_id))
+                                logger.info(f"Aday elendi (V3 final_score < 40): candidate_id={candidate_id}, v2={v2_score}, v3={v3_score}, final={final_score}")
+                                inserted = False  # Aşağıdaki işlemleri atla
+                            else:
+                                logger.info(f"V3 tamamlandı: candidate_id={candidate_id}, v2={v2_score}, v3={v3_score}, final={final_score}")
+                        else:
+                            logger.warning(f"V3 değerlendirme başarısız, V2 skoru kullanılıyor: candidate_id={candidate_id}")
+                except Exception as e:
+                    logger.warning(f"V3 değerlendirme hatası, V2 skoru kullanılıyor: {e}")
+
             # ESKİ SİSTEM: candidate_pool_assignments tablosuna da ekle (uyumluluk için)
             try:
+                match_reason = 'V3 weighted (60%V3+40%V2)' if v3_evaluated else 'Title eşleşmesi (v2)'
                 cursor.execute("""
                     INSERT OR IGNORE INTO candidate_pool_assignments
                     (candidate_id, department_pool_id, assignment_type, match_score, match_reason, assigned_at, company_id)
-                    VALUES (?, ?, 'auto', ?, 'Title eşleşmesi (v2)', datetime('now'))
-                """, (candidate_id, position_pool_id, match_score))
+                    VALUES (?, ?, 'auto', ?, ?, datetime('now'), ?)
+                """, (candidate_id, position_pool_id, final_score, match_reason, company_id))
             except Exception as e:
                 logger.debug(f"[DEBUG] candidate_pool_assignments INSERT hatası: {e}")
 
@@ -12248,6 +12312,53 @@ def get_ai_evaluation(candidate_id: int, position_id: int) -> dict:
     except Exception as e:
         logger.error(f"get_ai_evaluation hatası: {e}")
         return None
+
+
+def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, company_id: int) -> bool:
+    """
+    V3 değerlendirme sonucunu ai_evaluations tablosuna kaydeder.
+
+    Args:
+        candidate_id: Aday ID
+        position_id: Pozisyon ID
+        result: CandidateEvaluationResponse nesnesi
+        company_id: Firma ID
+
+    Returns:
+        bool: Başarılı mı?
+    """
+    try:
+        evaluation_data = {
+            "version": "v3",
+            "total_score": result.total_score,
+            "eligible": result.eligible,
+            "gemini_score": getattr(result, 'gemini_score', 0),
+            "hermes_score": getattr(result, 'hermes_score', 0),
+            "openai_score": getattr(result, 'openai_score', 0),
+            "models_used": getattr(result, 'models_used', []),
+            "consensus_method": getattr(result, 'consensus_method', ''),
+            "scores": getattr(result, 'scores', {}),
+            "strengths": result.strengths if hasattr(result, 'strengths') else [],
+            "weaknesses": result.weaknesses if hasattr(result, 'weaknesses') else [],
+            "notes_for_hr": result.notes_for_hr if hasattr(result, 'notes_for_hr') else [],
+            "overall_assessment": result.overall_assessment if hasattr(result, 'overall_assessment') else ""
+        }
+
+        evaluation_text = json.dumps(evaluation_data, ensure_ascii=False)
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT OR REPLACE INTO ai_evaluations
+                (candidate_id, position_id, evaluation_text, v2_score, eval_prompt, created_at)
+                VALUES (?, ?, ?, ?, 'v3_auto_eval', datetime('now'))
+            """, (candidate_id, position_id, evaluation_text, result.total_score))
+            conn.commit()
+            logger.info(f"V3 değerlendirme kaydedildi: candidate_id={candidate_id}, position_id={position_id}, score={result.total_score}")
+            return True
+    except Exception as e:
+        logger.error(f"save_v3_evaluation_to_db hatası: {e}")
+        return False
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

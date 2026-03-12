@@ -1,14 +1,14 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 12.03.2026
+Son güncelleme: 13.03.2026
 
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 1255f71 (12.03.2026)
+- **Son commit:** bekliyor
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
-- **Puanlama:** 100 puan sistemi v2.1 aktif
+- **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
 
 ## Aktif Kullanıcılar
 
@@ -16,6 +16,20 @@ Son güncelleme: 12.03.2026
 - 3 şirket, ~50 aday, 5 pozisyon
 
 ## Son 72 Saatte Tamamlananlar
+
+### 13.03.2026
+- ✅ **FAZ 10.1: V3 Sync Değerlendirme Entegrasyonu**
+  - pull_matching_candidates_to_position fonksiyonuna V3 eklendi
+  - Weighted average formülü: Final = (V3 × 0.60) + (V2 × 0.40)
+  - save_v3_evaluation_to_db() fonksiyonu eklendi (satır 12317)
+  - V3 değerlendirme sonucu ai_evaluations tablosuna kaydediliyor
+  - final_score < 40 → aday pozisyondan çıkarılıyor
+  - match_reason: "V3 weighted (60%V3+40%V2)" gösteriliyor
+- ✅ **Gemini Maliyet Optimizasyonu** (69c41f6)
+  - gemini-2.5-pro → gemini-2.5-flash değişti
+  - Thinking mode (thinkingConfig) kaldırıldı
+  - Beklenen maliyet düşüşü: %95
+  - ai_evaluator.py ve cv_intelligence.py güncellendi
 
 ### 12.03.2026
 - ✅ **FAZ 6: Demo Test + Dokümantasyon Tamamlandı**
