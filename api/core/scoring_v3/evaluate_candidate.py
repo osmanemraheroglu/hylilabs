@@ -23,7 +23,7 @@ Kullanım:
 import asyncio
 import logging
 import time
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, asdict
 
 from .smart_prompt_builder import SmartPromptBuilder
@@ -95,9 +95,11 @@ class CandidateEvaluationResponse:
     # Meta bilgiler
     gemini_score: int
     hermes_score: int
+    openai_score: int  # YENi: OpenAI skoru (sigorta)
     score_difference: int
     claude_used: bool
     consensus_method: str
+    models_used: List[str]  # YENi: ["Gemini", "Hermes"] vb.
 
     # Durum bilgileri
     success: bool
@@ -113,10 +115,12 @@ class CandidateEvaluationResponse:
             return f"❌ Hata: {self.error_message}"
 
         status = "✅ Uygun" if self.eligible else "❌ Uygun Değil"
+        scores = f"Gemini: {self.gemini_score}, Hermes: {self.hermes_score}"
+        if self.openai_score > 0:
+            scores += f", OpenAI: {self.openai_score}"
         return (
             f"{status} | Puan: {self.total_score}/100 | "
-            f"Gemini: {self.gemini_score}, Hermes: {self.hermes_score} | "
-            f"Method: {self.consensus_method}"
+            f"{scores} | Method: {self.consensus_method}"
         )
 
 
@@ -200,9 +204,11 @@ class CandidateEvaluator:
                 elimination_reason=result.elimination_reason,
                 gemini_score=result.gemini_score,
                 hermes_score=result.hermes_score,
+                openai_score=result.openai_score,
                 score_difference=result.score_difference,
                 claude_used=result.claude_used,
                 consensus_method=result.consensus_method,
+                models_used=result.models_used,
                 success=True,
                 error_message=None
             )
@@ -276,9 +282,11 @@ class CandidateEvaluator:
             elimination_reason=None,
             gemini_score=0,
             hermes_score=0,
+            openai_score=0,
             score_difference=0,
             claude_used=False,
             consensus_method="error",
+            models_used=[],
             success=False,
             error_message=error_message
         )
@@ -383,6 +391,7 @@ if __name__ == "__main__":
     print(f"\n📌 API Key Durumu:")
     print(f"   Gemini:    {'✅' if os.environ.get('GEMINI_API_KEY') else '❌'}")
     print(f"   Hermes:    {'✅' if os.environ.get('HERMES_API_KEY') else '❌'}")
+    print(f"   OpenAI:    {'✅' if os.environ.get('OPENAI_API_KEY') else '⚠️ Sigorta'}")
     print(f"   Anthropic: {'✅' if os.environ.get('ANTHROPIC_API_KEY') else '⚠️ Opsiyonel'}")
 
     print(f"\n📌 Modül yapısı:")
