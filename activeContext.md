@@ -1,11 +1,11 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 10.03.2026
+Son güncelleme: 12.03.2026
 
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** 7ab8e62 (10.03.2026)
+- **Son commit:** 1255f71 (12.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 aktif
@@ -16,6 +16,23 @@ Son güncelleme: 10.03.2026
 - 3 şirket, ~50 aday, 5 pozisyon
 
 ## Son 72 Saatte Tamamlananlar
+
+### 12.03.2026
+- ✅ **FAZ 3: V3 Batch Değerlendirme Tamamlandı**
+  - 28 aday V3 ile değerlendirildi
+  - Mükemmel (85-100): 8, İyi (70-84): 3, Orta (55-69): 2
+  - Zayıf (40-54): 2, Uyumsuz (0-39): 13
+  - Eligible: 20 (%71), Not Eligible: 8 (%29)
+  - Consensus: average (19), claude_decision (9)
+- ✅ **Scoring V3 batch_evaluate.py Fix** (1255f71)
+  - `layer_scores` AttributeError düzeltildi (attribute yok)
+  - `openai_score`, `models_used`, `scores` eklendi (getattr fallback)
+  - Verbose output: consensus_method, claude_used gösteriliyor
+  - Analiz: Sistem doğru çalışıyor (Claude hakim kararı)
+- ✅ **OpenAI Sigorta Sistemi** (6efa98d - 11.03.2026)
+  - Gemini/Hermes başarısız olunca OpenAI fallback
+  - ai_evaluator.py: 3 model paralel + consensus
+  - CandidateEvaluationResponse: openai_score, models_used
 
 ### 10.03.2026
 - ✅ **Havuz Düzenle modal scroll fix** (7ab8e62)
