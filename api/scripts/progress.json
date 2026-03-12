@@ -1,0 +1,15 @@
+{
+  "started_at": "2026-03-12T11:45:04.429629",
+  "last_processed": {
+    "candidate_id": 465,
+    "position_id": 7811,
+    "index": 12
+  },
+  "stats": {
+    "total": 13,
+    "processed": 13,
+    "success": 13,
+    "errors": 8,
+    "gemini_503_count": 0
+  }
+}
