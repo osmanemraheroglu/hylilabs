@@ -18,6 +18,17 @@ Son güncelleme: 12.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 12.03.2026
+- ✅ **FAZ 6: Demo Test + Dokümantasyon Tamamlandı**
+  - Demo raporu oluşturuldu (TOP 10 aday, havuz özeti, V3 istatistikleri)
+  - Frontend erişilebilir (HTTP 200)
+- ✅ **FAZ 5: Production Hazırlık Tamamlandı**
+  - DB backup: backup_pre_demo_20260312_120510.db (77 MB)
+  - Sunucu: 24 gün uptime, %27 disk, 825 MB RAM
+  - PM2 startup: enabled
+- ✅ **FAZ 4: Bug Fix + Polish Tamamlandı**
+  - Error log: Temiz (hata yok)
+  - DB tutarlılık: 81 aday, 28 V3 eval, 0 orphan
+  - API health: OK
 - ✅ **FAZ 3: V3 Batch Değerlendirme Tamamlandı**
   - 28 aday V3 ile değerlendirildi
   - Mükemmel (85-100): 8, İyi (70-84): 3, Orta (55-69): 2

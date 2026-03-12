@@ -600,47 +600,6 @@ export default function Havuzlar() {
 
   const totalCandidates = tree?.total_candidates || 0
 
-  // V2 Detail Renderer
-  const renderV2Detail = (v2: any) => {
-    if (!v2 || !v2.version) return null
-    return (
-      <div className="grid grid-cols-2 gap-3 text-xs mt-2">
-        <div className="space-y-1">
-          <div className="font-medium">Pozisyon Uyumu: <span className="text-blue-600">{String(v2.position_score || 0)}/20</span></div>
-          <div className="text-muted-foreground ml-2">Baslik: {String(v2.title_match_score || 0)} ({String(v2.title_match_level || '-')})</div>
-          <div className="text-muted-foreground ml-2">Sektor: {String(v2.sector_score || 0)} ({String(v2.detected_sector || '-')})</div>
-          <div className="text-muted-foreground ml-2">Kıdem: {String(v2.seniority_score || 0)}</div>
-        </div>
-        <div className="space-y-1">
-          <div className="font-medium">Teknik Yetkinlik: <span className="text-purple-600">{String(v2.technical_score || 0)}/40</span></div>
-          <div className="text-muted-foreground ml-2">Must-have: {String(v2.must_have_score || 0)}</div>
-          <div className="text-muted-foreground ml-2">Kritik: {String(v2.critical_score || 0)}</div>
-          <div className="text-muted-foreground ml-2">Önemli: {String(v2.important_score || 0)}</div>
-        </div>
-        <div className="space-y-1">
-          <div className="font-medium">Genel: <span className="text-green-600">{String(v2.general_score || 0)}/15</span></div>
-          <div className="text-muted-foreground ml-2">Deneyim: {String(v2.experience_score || 0)}</div>
-          <div className="text-muted-foreground ml-2">Eğitim: {String(v2.education_score || 0)}</div>
-        </div>
-        <div className="space-y-1">
-          <div className="font-medium">Görev Eşleşmesi: <span className="text-orange-600">{String(v2.task_score || 0)}/15</span></div>
-          <div className="text-muted-foreground ml-2">{String(v2.task_detail || '')}</div>
-        </div>
-        <div className="space-y-1">
-          <div className="font-medium">Eliminasyon: <span className="text-red-600">{String(v2.elimination_score || 0)}/10</span></div>
-          <div className="text-muted-foreground ml-2">Lokasyon: {String(v2.location_score || 0)}</div>
-        </div>
-        {v2.knockout && <div className="col-span-2 bg-red-50 border border-red-200 rounded p-2 text-red-700 font-medium">KNOCKOUT: {String(v2.knockout_reason || '')}</div>}
-        {Array.isArray(v2.critical_missing) && (v2.critical_missing as string[]).length > 0 && (
-          <div className="col-span-2 whitespace-normal break-words"><span className="font-medium text-red-600">Eksik Kritik:</span> {(v2.critical_missing as string[]).join(', ')}</div>
-        )}
-        {Array.isArray(v2.critical_matched) && (v2.critical_matched as string[]).length > 0 && (
-          <div className="col-span-2 whitespace-normal break-words"><span className="font-medium text-green-600">Eşleşen Kritik:</span> {(v2.critical_matched as any[]).map(x => x.keyword || x).join(', ')}</div>
-        )}
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -840,7 +799,7 @@ export default function Havuzlar() {
                             {expandedCandidate === c.id && (
                               <TableRow key={`detail-${c.id}`}>
                                 <TableCell colSpan={8} className="bg-muted/30 p-4 max-w-0 overflow-hidden">
-                                  {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const v2d = (candidateDetail as any).v2_detail; const aie = (candidateDetail as any).ai_evaluation; return (
+                                  {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const aie = (candidateDetail as any).ai_evaluation; return (
                                     <div className="w-full max-w-6xl space-y-3 overflow-hidden">
                                       {/* Kisisel Bilgiler */}
                                       <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-xs">
@@ -878,13 +837,6 @@ export default function Havuzlar() {
                                       {/* Deneyim Detay */}
                                       {cd?.deneyim_detay && (
                                         <div className="w-full text-xs whitespace-normal break-words"><span className="font-medium">Deneyim:</span> {String(cd?.deneyim_detay)}</div>
-                                      )}
-                                      {/* v2 Score Detail */}
-                                      {v2d && (
-                                        <div className="border rounded p-3 bg-white">
-                                          <div className="text-xs font-medium mb-1 flex items-center gap-1"><FileText className="h-3 w-3" />v2 Skor Detayı (Toplam: {String((v2d)?.uyum_puani || (candidateDetail as any).position_score || '-')})</div>
-                                          {renderV2Detail(v2d)}
-                                        </div>
                                       )}
                                       {/* Blacklist Info */}
                                       {blacklistInfo && (
