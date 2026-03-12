@@ -190,14 +190,17 @@ def save_evaluation(candidate_id: int, position_id: int, result, company_id: int
     conn = get_connection()
     cursor = conn.cursor()
 
+    # FIX: layer_scores yerine mevcut alanlar kullaniliyor
     evaluation_data = {
         "version": "v3",
         "total_score": result.total_score,
         "eligible": result.eligible,
         "gemini_score": result.gemini_score,
         "hermes_score": result.hermes_score,
+        "openai_score": getattr(result, 'openai_score', 0),
+        "models_used": getattr(result, 'models_used', []),
         "consensus_method": result.consensus_method,
-        "layer_scores": result.layer_scores,
+        "scores": getattr(result, 'scores', {}),
         "strengths": result.strengths,
         "weaknesses": result.weaknesses,
         "notes_for_hr": result.notes_for_hr,
@@ -402,7 +405,11 @@ async def run_batch(args):
             if result.success:
                 print(f"  BASARILI: Skor={result.total_score}, Eligible={result.eligible}")
                 if args.verbose:
-                    print(f"    Gemini={result.gemini_score}, Hermes={result.hermes_score}, Retries={retries}")
+                    openai_score = getattr(result, 'openai_score', 0)
+                    models_used = getattr(result, 'models_used', [])
+                    print(f"    Gemini={result.gemini_score}, Hermes={result.hermes_score}, OpenAI={openai_score}")
+                    print(f"    Models: {models_used}, Retries={retries}")
+                    print(f"    Consensus: {result.consensus_method}, Claude used: {result.claude_used}")
 
                 stats["success"] += 1
                 stats["scores"].append(result.total_score)
