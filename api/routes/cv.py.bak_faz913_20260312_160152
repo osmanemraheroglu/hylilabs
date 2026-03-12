@@ -125,17 +125,6 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
         # Başarılı upload'ı rate limit sayacına kaydet
         record_cv_upload(user_id)
 
-
-        # === FAZ 9.1.3: Otomatik pozisyon eşleştirmesi ===
-        try:
-            from database import match_single_candidate_to_positions
-            match_result = match_single_candidate_to_positions(candidate_id, company_id)
-            if match_result.get('transferred', 0) > 0:
-                logger.info(f"CV upload: Aday {candidate_id} otomatik {match_result['transferred']} pozisyona eşleştirildi")
-        except Exception as match_err:
-            logger.warning(f"Otomatik eşleştirme hatası (devam ediliyor): {match_err}")
-        # === FAZ 9.1.3 SONU ===
-
         return {
             "success": True,
             "message": "CV başarıyla yüklendi ve parse edildi",
