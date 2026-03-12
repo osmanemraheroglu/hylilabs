@@ -133,6 +133,10 @@ export default function Havuzlar() {
     eligible: boolean
     gemini_score: number
     hermes_score: number
+    openai_score?: number
+    evaluation_method?: string
+    models_used?: string[]
+    claude_used?: boolean
     layer_scores: {
       technical_skills?: { score: number; reason: string }
       position_match?: { score: number; reason: string }
@@ -950,6 +954,30 @@ export default function Havuzlar() {
                                                 <Badge className={v3.eligible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
                                                   {v3.eligible ? '✓ Uygun' : '✗ Uygun Değil'}
                                                 </Badge>
+                                              </div>
+                                              {/* AI Model Puanları */}
+                                              <div className="p-2 bg-slate-50 rounded border text-xs">
+                                                <div className="font-medium mb-2 flex items-center gap-1">
+                                                  <span>🤖</span> AI Model Puanları
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-2 text-center">
+                                                  <div className="bg-white rounded p-1.5 border">
+                                                    <div className="text-[10px] text-muted-foreground">Gemini</div>
+                                                    <div className="font-bold text-blue-600">{v3.gemini_score}</div>
+                                                  </div>
+                                                  <div className="bg-white rounded p-1.5 border">
+                                                    <div className="text-[10px] text-muted-foreground">Hermes</div>
+                                                    <div className="font-bold text-purple-600">{v3.hermes_score}</div>
+                                                  </div>
+                                                  <div className="bg-white rounded p-1.5 border">
+                                                    <div className="text-[10px] text-muted-foreground">OpenAI</div>
+                                                    <div className="font-bold text-green-600">{v3.openai_score || '-'}</div>
+                                                  </div>
+                                                </div>
+                                                <div className="mt-2 text-[10px] text-muted-foreground">
+                                                  Method: <span className="font-medium">{v3.evaluation_method}</span>
+                                                  {v3.claude_used && <span className="ml-2 text-orange-600">⚖️ Claude Hakem</span>}
+                                                </div>
                                               </div>
                                               {/* Layer Scores */}
                                               <div className="space-y-2">
