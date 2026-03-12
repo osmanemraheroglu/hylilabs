@@ -7777,25 +7777,18 @@ def match_single_candidate_to_positions(candidate_id: int, company_id: int) -> d
         logger.info(f"match_single_candidate: Aday {candidate_id} zaten {current_count} pozisyonda")
         return stats
     
-    # Candidate dict hazırla (V3 için genişletilmiş - FAZ 10.1.1)
+    # Candidate dict hazırla
     candidate_dict = {
         'id': candidate_id,
         'ad_soyad': candidate.ad_soyad or '',
-        'email': getattr(candidate, 'email', '') or '',
-        'telefon': getattr(candidate, 'telefon', '') or '',
         'mevcut_pozisyon': candidate.mevcut_pozisyon or '',
-        'mevcut_sirket': getattr(candidate, 'mevcut_sirket', '') or '',
         'teknik_beceriler': candidate.teknik_beceriler or '',
         'toplam_deneyim_yil': candidate.toplam_deneyim_yil or 0,
         'egitim': candidate.egitim or '',
-        'universite': getattr(candidate, 'universite', '') or '',
-        'bolum': getattr(candidate, 'bolum', '') or '',
         'lokasyon': candidate.lokasyon or '',
+        'cv_raw_text': getattr(candidate, 'cv_raw_text', '') or '',
         'deneyim_detay': candidate.deneyim_detay or '',
-        'deneyim_aciklama': getattr(candidate, 'deneyim_aciklama', '') or '',
-        'diller': getattr(candidate, 'diller', '') or '',
-        'sertifikalar': getattr(candidate, 'sertifikalar', '') or '',
-        'cv_raw_text': getattr(candidate, 'cv_raw_text', '') or ''
+        'mevcut_sirket': getattr(candidate, 'mevcut_sirket', '') or ''
     }
     
     # 2. Firmanın aktif pozisyonlarını al
@@ -7824,78 +7817,38 @@ def match_single_candidate_to_positions(candidate_id: int, company_id: int) -> d
         if not match_found or title_score == 0:
             continue
         
-        # v2 scoring hesapla (V3 için genişletilmiş - FAZ 10.1.1)
+        # v2 scoring hesapla
         position_dict = {
             'id': position_id,
             'name': position_name,
             'keywords': position.get('keywords', ''),
             'gerekli_deneyim_yil': position.get('gerekli_deneyim_yil', 0),
             'gerekli_egitim': position.get('gerekli_egitim', ''),
-            'lokasyon': position.get('lokasyon', ''),
-            'aranan_nitelikler': position.get('aranan_nitelikler', ''),
-            'is_tanimi': position.get('is_tanimi', ''),
-            'gorev_tanimi': position.get('gorev_tanimi', '')
+            'lokasyon': position.get('lokasyon', '')
         }
         
         try:
             v2_result = calculate_match_score_v2(candidate_dict, position_dict)
-            v2_score = v2_result.get('total', title_score) if v2_result else title_score
+            match_score = v2_result.get('total', title_score) if v2_result else title_score
         except Exception as e:
             logger.warning(f"v2 scoring hatası: {e}")
-            v2_score = title_score
-            v2_result = None
-        
-        # === FAZ 10.1.1: V3 Değerlendirme + Weighted Average ===
-        final_score = v2_score  # Varsayılan: sadece V2
-        v3_evaluated = False
-        
-        if v2_result:
-            try:
-                from core.scoring_v3.evaluate_candidate import evaluate_candidate_sync
-                
-                v3_result = evaluate_candidate_sync(
-                    candidate_id=candidate_id,
-                    position_id=position_id,
-                    candidate_data=candidate_dict,
-                    position_data=position_dict
-                )
-                
-                if v3_result and v3_result.success:
-                    v3_score = v3_result.total_score
-                    # Weighted Average: (V3 × 0.60) + (V2 × 0.40)
-                    final_score = int((v3_score * 0.60) + (v2_score * 0.40))
-                    v3_evaluated = True
-                    logger.info(f"[match_single] V3: aday={candidate_id}, V2={v2_score}, V3={v3_score}, Final={final_score}")
-                    
-                    # ai_evaluations tablosuna kaydet
-                    save_v3_evaluation_to_db(candidate_id, position_id, v3_result, company_id)
-                    
-                    # Final < 40 kontrolü - bu pozisyonu atla
-                    if final_score < 40:
-                        logger.info(f"[match_single] Final skor düşük ({final_score}), pozisyon atlanıyor")
-                        continue
-                else:
-                    logger.warning(f"[match_single] V3 başarısız, V2 kullanılıyor: aday={candidate_id}")
-            except Exception as v3_err:
-                logger.warning(f"[match_single] V3 hatası, V2 kullanılıyor: {v3_err}")
-        # === FAZ 10.1.1 SONU ===
+            match_score = title_score
         
         stats['matched'] += 1
         
-        # Pozisyona ekle (final_score ile)
-        result = add_candidate_to_position(candidate_id, position_id, final_score, company_id)
+        # Pozisyona ekle
+        result = add_candidate_to_position(candidate_id, position_id, match_score, company_id)
         
         if result.get('success'):
             stats['transferred'] += 1
             stats['matched_positions'].append({
                 'position_id': position_id,
                 'name': position_name,
-                'score': final_score,
-                'v3_evaluated': v3_evaluated
+                'score': match_score
             })
             
             # Max 1 pozisyon - ilk başarılı eşleşmede dur
-            logger.info(f"match_single_candidate: Aday {candidate_id} -> Pozisyon {position_id} ({position_name}), final_skor={final_score}")
+            logger.info(f"match_single_candidate: Aday {candidate_id} -> Pozisyon {position_id} ({position_name}), skor={match_score}")
             break
     
     return stats
