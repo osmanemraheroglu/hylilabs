@@ -160,8 +160,8 @@ class AIEvaluator:
     Fark > 15 puan veya eligible uyumsuzlugu varsa Claude hakim olur.
     """
 
-    # API Endpoints
-    GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
+    # API Endpoints - FLASH MODEL (maliyet optimizasyonu)
+    GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
     HERMES_API_URL = "https://inference-api.nousresearch.com/v1/chat/completions"
     OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
     CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
@@ -393,14 +393,12 @@ class AIEvaluator:
         system_prompt: str,
         evaluation_prompt: str
     ) -> EvaluationResult:
-        """Gemini API cagrisi (retry destekli, thinkingBudget ile)"""
+        """Gemini API cagrisi (retry destekli, Flash model - thinking KAPALI)"""
         start_time = time.time()
 
         url = f"{self.GEMINI_API_URL}?key={self.gemini_api_key}"
 
-        # Baslangic thinkingBudget: 1024 (Gemini 2.5 Pro thinking mode)
-        current_thinking_budget = 1024
-
+        # Flash model - thinking mode KAPALI (maliyet optimizasyonu)
         payload = {
             "contents": [
                 {
@@ -410,10 +408,7 @@ class AIEvaluator:
             ],
             "generationConfig": {
                 "temperature": 0.3,
-                "maxOutputTokens": 4096,
-                "thinkingConfig": {
-                    "thinkingBudget": current_thinking_budget
-                }
+                "maxOutputTokens": 4096
             }
         }
 
@@ -421,7 +416,7 @@ class AIEvaluator:
 
         for attempt in range(self.MAX_RETRIES + 1):
             try:
-                logger.debug(f"Gemini API cagrisi (deneme {attempt + 1}/{self.MAX_RETRIES + 1}, thinkingBudget={current_thinking_budget})")
+                logger.debug(f"Gemini API cagrisi (deneme {attempt + 1}/{self.MAX_RETRIES + 1})")
 
                 async with session.post(
                     url,
@@ -444,23 +439,13 @@ class AIEvaluator:
 
                     data = await response.json()
 
-                    # parts kontrolu (guvenlik - thinking overflow durumu)
+                    # parts kontrolu
                     candidate = data.get("candidates", [{}])[0]
                     content_data = candidate.get("content", {})
                     parts = content_data.get("parts", [])
 
                     if not parts:
                         finish_reason = candidate.get("finishReason", "")
-                        thinking_tokens = data.get("usageMetadata", {}).get("thoughtsTokenCount", 0)
-
-                        if finish_reason == "MAX_TOKENS" and thinking_tokens > 0 and attempt < self.MAX_RETRIES:
-                            # thinkingBudget artirarak retry
-                            current_thinking_budget = 2048
-                            payload["generationConfig"]["thinkingConfig"]["thinkingBudget"] = current_thinking_budget
-                            logger.warning(f"Gemini thinking overflow ({thinking_tokens} token), retry: thinkingBudget -> 2048")
-                            await asyncio.sleep(self.RETRY_DELAY)
-                            continue
-
                         return self._error_result("Gemini", f"No parts in response: {finish_reason}", elapsed)
 
                     content = parts[0]["text"]
@@ -469,11 +454,10 @@ class AIEvaluator:
                     usage = data.get("usageMetadata", {})
                     tokens = {
                         "input": usage.get("promptTokenCount", 0),
-                        "output": usage.get("candidatesTokenCount", 0),
-                        "thinking": usage.get("thoughtsTokenCount", 0)
+                        "output": usage.get("candidatesTokenCount", 0)
                     }
 
-                    logger.debug(f"Gemini yanit: {elapsed:.2f}s, {tokens['input']}/{tokens['output']} token (thinking: {tokens['thinking']})")
+                    logger.debug(f"Gemini yanit: {elapsed:.2f}s, {tokens['input']}/{tokens['output']} token")
 
                     # JSON parse
                     return self._parse_response("Gemini", content, elapsed, tokens)
@@ -1194,7 +1178,7 @@ if __name__ == "__main__":
     )
 
     print("\n" + "=" * 77)
-    print("AIEvaluator Modul Testi (OpenAI Sigorta Destekli)")
+    print("AIEvaluator Modul Testi (Flash Model - Maliyet Optimize)")
     print("=" * 77)
 
     print(f"\n API Key Durumu:")
@@ -1204,6 +1188,8 @@ if __name__ == "__main__":
     print(f"   Claude API Key:  {'OK' if os.environ.get('ANTHROPIC_API_KEY') else 'YOK (opsiyonel)'}")
 
     print(f"\n Ayarlar:")
+    print(f"   Model: gemini-2.5-flash (maliyet optimize)")
+    print(f"   Thinking Mode: KAPALI")
     print(f"   Score fark esigi: {AIEvaluator.SCORE_DIFFERENCE_THRESHOLD} puan")
     print(f"   Max retry: {AIEvaluator.MAX_RETRIES}")
     print(f"   API timeout: {AIEvaluator.API_TIMEOUT}s")
