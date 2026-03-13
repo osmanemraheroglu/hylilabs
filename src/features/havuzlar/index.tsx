@@ -285,7 +285,29 @@ export default function Havuzlar() {
     if (expandedCandidate === candidateId) { setExpandedCandidate(null); setCandidateDetail(null); setBlacklistInfo(null); return }
     setExpandedCandidate(candidateId); setDetailLoading(true); setCandidateDetail(null); setBlacklistInfo(null)
     fetch(`${API}/api/pools/${selectedPoolId}/candidates/${candidateId}/detail`, { headers: H() })
-      .then(r => r.json()).then(res => { if (res.success) setCandidateDetail(res) })
+      .then(r => r.json()).then(res => {
+        if (res.success) {
+          setCandidateDetail(res)
+          // ai_evaluation verilerini v3Evaluation state'ine aktar
+          if (res.ai_evaluation) {
+            setV3Evaluation(prev => ({
+              ...prev,
+              [candidateId]: {
+                ...prev[candidateId],
+                total_score: res.ai_evaluation.total_score || prev[candidateId]?.total_score || 0,
+                eligible: (res.ai_evaluation.total_score || prev[candidateId]?.total_score || 0) >= 40,
+                gemini_score: res.ai_evaluation.gemini_score || 0,
+                hermes_score: res.ai_evaluation.hermes_score || 0,
+                openai_score: res.ai_evaluation.openai_score || 0,
+                strengths: res.ai_evaluation.strengths || [],
+                weaknesses: res.ai_evaluation.weaknesses || [],
+                layer_scores: prev[candidateId]?.layer_scores || {},
+                evaluation_method: res.ai_evaluation.consensus_method || ""
+              }
+            }))
+          }
+        }
+      })
       .catch(console.error).finally(() => setDetailLoading(false))
     // Blacklist bilgisi çek
     fetch(`${API}/api/candidates/${candidateId}/blacklist`, { headers: H() })
