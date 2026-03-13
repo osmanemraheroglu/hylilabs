@@ -7277,6 +7277,14 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                                         SET havuz = 'genel_havuz', guncelleme_tarihi = datetime('now')
                                         WHERE id = ? AND durum NOT IN ('ise_alindi', 'arsiv', 'mulakat')
                                     """, (candidate_id,))
+
+                                    # FAZ 12.6.1: candidate_pool_assignments'a da ekle (Genel Havuz pool_id=13)
+                                    cursor.execute("""
+                                        INSERT OR IGNORE INTO candidate_pool_assignments
+                                        (candidate_id, department_pool_id, company_id, assignment_type, assigned_at)
+                                        VALUES (?, 13, ?, 'auto', datetime('now'))
+                                    """, (candidate_id, company_id))
+
                                     logger.info(f"Aday V3 ile elendi ve Genel Havuz'a döndürüldü: candidate_id={candidate_id}, final_score={final_score}")
                                 else:
                                     logger.info(f"Aday V3 ile elendi (başka pozisyonu var): candidate_id={candidate_id}, final_score={final_score}")
