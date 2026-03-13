@@ -17,10 +17,19 @@ Son güncelleme: 13.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 13.03.2026 - CV Topla Sekme Birleştirme
+- ✅ **Tekli + Toplu Yükleme birleştirildi** → tek "Manuel CV Yükle" sekmesi
+  - 4 sekme → 3 sekme: "Manuel CV Yükle", "Email'den Topla", "Toplama Geçmişi"
+  - Tek dosya seçildiğinde direkt yükleme (progress UI yok)
+  - Çoklu dosya seçildiğinde toplu akış (dosya listesi, progress bar, özet kartı)
+  - 10+ dosya uyarısı, 20+ dosya engeli aynen korundu
+  - Drag & drop tek zone'da birleşik çalışıyor
+  - `bulkFileInputRef` ve `bulkDragActive` kaldırıldı, ana ref/state kullanılıyor
+
 ### 13.03.2026 - Toplu CV Yükleme (Max 20)
 - ✅ **Toplu CV Yükleme** — tek seferde max 20 CV, sıralı işleme
   - Backend: POST /api/cv/bulk-upload endpoint (api/routes/cv.py)
-  - Frontend: "Toplu Yükle" sekmesi (src/features/cv-collect/index.tsx)
+  - Frontend: "Manuel CV Yükle" sekmesi (src/features/cv-collect/index.tsx)
   - Drag & drop desteği, format validasyonu (PDF/DOCX)
   - Sıralı işleme + progress bar + dosya bazlı durum ikonu
   - İptal butonu, özet kartı, hata devam mekanizması
