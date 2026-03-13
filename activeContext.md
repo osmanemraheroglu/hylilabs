@@ -18,6 +18,10 @@ Son güncelleme: 13.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 13.03.2026 - HyliLabs Landing Page
+- ✅ **Landing Page Logo Entegrasyonu** (tamamlandı)
+  - Navbar: Logo_400x120.png (height: 40px), LogoIcon SVG kaldırıldı
+  - Footer: Logo_600x400.png (height: 60px), LogoIcon SVG kaldırıldı
+  - Logo dosyaları: public/images/Logo_400x120.png, public/images/Logo_600x400.png
 - ✅ **Landing Page Entegrasyonu** (tamamlandı)
   - `/` = Landing page (public), `/sign-in` = Giriş sayfası, `/dashboard` = Dashboard (auth)
   - Landing page bileşeni: `src/features/landing/index.tsx`

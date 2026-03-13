@@ -1,16 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 
-/* ─── Logo SVG inline (PNG dosyası yok) ─── */
-function LogoIcon({ size = 36 }: { size?: number }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
-      <circle cx="12" cy="12" r="10" fill="#1746A2" />
-      <text x="12" y="16" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">H</text>
-    </svg>
-  )
-}
-
 /* ─── İkonlar (inline SVG) ─── */
 const icons = {
   cv: (
@@ -224,9 +214,8 @@ export function LandingPage() {
       >
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 72 }}>
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => scrollTo('#hero')}>
-            <LogoIcon size={36} />
-            <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 22, color: '#1746A2' }}>HyliLabs</span>
+          <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => scrollTo('#hero')}>
+            <img src="/images/Logo_400x120.png" alt="HyliLabs" style={{ height: 40, width: 'auto' }} />
           </div>
 
           {/* Desktop Links */}
@@ -664,9 +653,8 @@ export function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 40, marginBottom: 48 }}>
             {/* Logo + Açıklama */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                <LogoIcon size={32} />
-                <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 20, color: '#fff' }}>HyliLabs</span>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+                <img src="/images/Logo_600x400.png" alt="HyliLabs" style={{ height: 60, width: 'auto' }} />
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0 }}>
                 Yapay zeka destekli işe alım platformu.
