@@ -5,7 +5,7 @@ Son güncelleme: 13.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** bekliyor
+- **Son commit:** dbe06b0 (FAZ 12.6.1: candidate_pool_assignments sync)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -18,6 +18,40 @@ Son güncelleme: 13.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 13.03.2026
+- ✅ **FAZ 12: V3 Puanlama Bug Fix** (tamamlandı)
+  - **FAZ 12.1**: ai_evaluator.py düzeltmeleri
+    - Hermes/model skorları max 100 cap eklendi (satır 873)
+    - Claude 0 fallback koşulu eklendi (satır 1023)
+    - Claude 0 uyarı logu + notes_for_hr eklendi
+  - **FAZ 12.2**: database.py retry mekanizması
+    - save_v3_evaluation_to_db() 3 retry + exponential backoff (0.5s, 1s, 1.5s)
+    - "database is locked" hatası için otomatik yeniden deneme
+  - **FAZ 12.3**: DB hatalı verileri düzeltildi
+    - Hermes > 100 olanlar 100'e cap edildi (1 kayıt)
+    - Aday 447: V3=93, Match=82 hesaplandı (hermes+openai ortalaması)
+    - Aday 397: V3=41, Match=42 hesaplandı (hermes+openai ortalaması)
+  - **FAZ 12.3.1**: V2 skorları düzeltildi (19 kayıt)
+    - Tersine hesaplama: v2 = (match - (v3 × 0.60)) / 0.40
+    - Aday 447: V2=66, Aday 397: V2=44
+    - V2=0 kalan kayıt: 0
+  - **FAZ 12.4**: Frontend match_score gösterimi düzeltildi
+    - Tablo skor kolonu: v3Evaluation.total_score → c.match_score (satır 803)
+    - Kart detay skoru: v3Evaluation.total_score → cd.match_score (satır 947)
+    - v3Evaluation: Sadece AI model detayları için kullanılıyor (Gemini, Hermes, OpenAI)
+    - TypeScript build: OK
+  - **FAZ 12.4.2**: Detail endpoint düzeltildi (pools.py)
+    - SELECT: match_score, v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version
+    - candidate objesine 7 yeni alan eklendi
+    - Aday kartı artık doğru match_score gösteriyor
+  - **FAZ 12.6**: Genel Havuz tutarsızlığı düzeltildi
+    - 17 orphan aday Genel Havuz'a taşındı (V3 < 40 ile elenenler)
+    - 2 adayın durumu pozisyona_atandi yapıldı
+    - database.py:7261-7285 V3 eleme sonrası Genel Havuz sync eklendi
+    - Artık V3 < 40 ile elenen adaylar otomatik Genel Havuz'a dönüyor
+  - **FAZ 12.6.1**: candidate_pool_assignments sync düzeltildi
+    - 18 eksik aday kaydı candidate_pool_assignments tablosuna eklendi
+    - V3 eleme sonrası candidate_pool_assignments INSERT eklendi (database.py:7281)
+    - Frontend Genel Havuz artık 58 aday gösteriyor (40 yerine)
 - ✅ **FAZ 11: V3 Skor Frontend Entegrasyonu**
   - **FAZ 11.1**: candidate_positions tablosuna 6 yeni kolon eklendi
     - v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version
