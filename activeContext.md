@@ -17,6 +17,20 @@ Son güncelleme: 13.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 13.03.2026 - HyliLabs Landing Page
+- ✅ **Landing Page Entegrasyonu** (tamamlandı)
+  - `/` = Landing page (public), `/sign-in` = Giriş sayfası, `/dashboard` = Dashboard (auth)
+  - Landing page bileşeni: `src/features/landing/index.tsx`
+  - Bölümler: Navbar, Hero, Özellikler (6 kart), Nasıl Çalışır (4 adım), Fiyatlandırma (3 plan), İletişim (form), Footer
+  - Route yapısı: `src/routes/index.tsx` (public root), `src/routes/_authenticated/dashboard/index.tsx` (dashboard)
+  - Auth guard güncellendi: `initAuth()` public paths listesi eklendi (/, /sign-in, /sign-up vb.)
+  - Login sonrası redirect: `/` → `/dashboard`
+  - Sidebar dashboard linki: `/` → `/dashboard`
+  - Değişen dosyalar:
+    - YENİ: `src/features/landing/index.tsx`, `src/routes/index.tsx`, `src/routes/_authenticated/dashboard/index.tsx`
+    - SİLİNEN: `src/routes/_authenticated/index.tsx`
+    - GÜNCELLENEN: `auth-store.ts`, `user-auth-form.tsx`, `sidebar-data.ts`, `otp-form.tsx`, 4 error sayfası
+
 ### 13.03.2026
 - ✅ **FAZ 12: V3 Puanlama Bug Fix** (tamamlandı)
   - **FAZ 12.1**: ai_evaluator.py düzeltmeleri

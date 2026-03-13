@@ -15,7 +15,7 @@ import { type SidebarData } from '../types'
 
 // Menü öğeleri tanımları
 const MENU_ITEMS: Record<string, { title: string; url: string; icon: React.ElementType }> = {
-  dashboard: { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  dashboard: { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   cvTopla: { title: 'CV Topla', url: '/cv-collect', icon: FileUp },
   adaylar: { title: 'Adaylar', url: '/candidates', icon: Users },
   havuzlar: { title: 'Havuzlar', url: '/havuzlar', icon: FolderTree },

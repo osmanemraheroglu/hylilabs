@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
@@ -37,6 +37,7 @@ import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedHavuzlarIndexRouteImport } from './routes/_authenticated/havuzlar/index'
 import { Route as AuthenticatedFirmaYonetimiIndexRouteImport } from './routes/_authenticated/firma-yonetimi/index'
 import { Route as AuthenticatedEmailHesaplariIndexRouteImport } from './routes/_authenticated/email-hesaplari/index'
+import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedCvCollectIndexRouteImport } from './routes/_authenticated/cv-collect/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedCandidatesIndexRouteImport } from './routes/_authenticated/candidates/index'
@@ -58,10 +59,10 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const errors503Route = errors503RouteImport.update({
   id: '/(errors)/503',
@@ -197,6 +198,12 @@ const AuthenticatedEmailHesaplariIndexRoute =
     path: '/email-hesaplari/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDashboardIndexRoute =
+  AuthenticatedDashboardIndexRouteImport.update({
+    id: '/dashboard/',
+    path: '/dashboard/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCvCollectIndexRoute =
   AuthenticatedCvCollectIndexRouteImport.update({
     id: '/cv-collect/',
@@ -261,6 +268,7 @@ const AuthenticatedErrorsErrorRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
@@ -273,7 +281,6 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
-  '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/advanced': typeof AuthenticatedSettingsAdvancedRoute
   '/settings/theme': typeof AuthenticatedSettingsThemeRoute
@@ -285,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/candidates': typeof AuthenticatedCandidatesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/cv-collect': typeof AuthenticatedCvCollectIndexRoute
+  '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/email-hesaplari': typeof AuthenticatedEmailHesaplariIndexRoute
   '/firma-yonetimi': typeof AuthenticatedFirmaYonetimiIndexRoute
   '/havuzlar': typeof AuthenticatedHavuzlarIndexRoute
@@ -299,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -310,7 +319,6 @@ export interface FileRoutesByTo {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
-  '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/advanced': typeof AuthenticatedSettingsAdvancedRoute
   '/settings/theme': typeof AuthenticatedSettingsThemeRoute
@@ -322,6 +330,7 @@ export interface FileRoutesByTo {
   '/candidates': typeof AuthenticatedCandidatesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/cv-collect': typeof AuthenticatedCvCollectIndexRoute
+  '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/email-hesaplari': typeof AuthenticatedEmailHesaplariIndexRoute
   '/firma-yonetimi': typeof AuthenticatedFirmaYonetimiIndexRoute
   '/havuzlar': typeof AuthenticatedHavuzlarIndexRoute
@@ -337,6 +346,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/clerk': typeof ClerkRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
@@ -352,7 +362,6 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
-  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/settings/advanced': typeof AuthenticatedSettingsAdvancedRoute
   '/_authenticated/settings/theme': typeof AuthenticatedSettingsThemeRoute
@@ -364,6 +373,7 @@ export interface FileRoutesById {
   '/_authenticated/candidates/': typeof AuthenticatedCandidatesIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/cv-collect/': typeof AuthenticatedCvCollectIndexRoute
+  '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/email-hesaplari/': typeof AuthenticatedEmailHesaplariIndexRoute
   '/_authenticated/firma-yonetimi/': typeof AuthenticatedFirmaYonetimiIndexRoute
   '/_authenticated/havuzlar/': typeof AuthenticatedHavuzlarIndexRoute
@@ -380,6 +390,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/clerk'
     | '/settings'
     | '/forgot-password'
@@ -392,7 +403,6 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
-    | '/'
     | '/errors/$error'
     | '/settings/advanced'
     | '/settings/theme'
@@ -404,6 +414,7 @@ export interface FileRouteTypes {
     | '/candidates'
     | '/chats'
     | '/cv-collect'
+    | '/dashboard'
     | '/email-hesaplari'
     | '/firma-yonetimi'
     | '/havuzlar'
@@ -418,6 +429,7 @@ export interface FileRouteTypes {
     | '/users'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/clerk'
     | '/forgot-password'
     | '/otp'
@@ -429,7 +441,6 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
-    | '/'
     | '/errors/$error'
     | '/settings/advanced'
     | '/settings/theme'
@@ -441,6 +452,7 @@ export interface FileRouteTypes {
     | '/candidates'
     | '/chats'
     | '/cv-collect'
+    | '/dashboard'
     | '/email-hesaplari'
     | '/firma-yonetimi'
     | '/havuzlar'
@@ -455,6 +467,7 @@ export interface FileRouteTypes {
     | '/users'
   id:
     | '__root__'
+    | '/'
     | '/_authenticated'
     | '/clerk'
     | '/_authenticated/settings'
@@ -470,7 +483,6 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
-    | '/_authenticated/'
     | '/_authenticated/errors/$error'
     | '/_authenticated/settings/advanced'
     | '/_authenticated/settings/theme'
@@ -482,6 +494,7 @@ export interface FileRouteTypes {
     | '/_authenticated/candidates/'
     | '/_authenticated/chats/'
     | '/_authenticated/cv-collect/'
+    | '/_authenticated/dashboard/'
     | '/_authenticated/email-hesaplari/'
     | '/_authenticated/firma-yonetimi/'
     | '/_authenticated/havuzlar/'
@@ -497,6 +510,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
@@ -527,12 +541,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/(errors)/503': {
       id: '/(errors)/503'
@@ -709,6 +723,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEmailHesaplariIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard/': {
+      id: '/_authenticated/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cv-collect/': {
       id: '/_authenticated/cv-collect/'
       path: '/cv-collect'
@@ -809,13 +830,13 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedAdminPanelIndexRoute: typeof AuthenticatedAdminPanelIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedCandidatesIndexRoute: typeof AuthenticatedCandidatesIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedCvCollectIndexRoute: typeof AuthenticatedCvCollectIndexRoute
+  AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedEmailHesaplariIndexRoute: typeof AuthenticatedEmailHesaplariIndexRoute
   AuthenticatedFirmaYonetimiIndexRoute: typeof AuthenticatedFirmaYonetimiIndexRoute
   AuthenticatedHavuzlarIndexRoute: typeof AuthenticatedHavuzlarIndexRoute
@@ -831,13 +852,13 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedAdminPanelIndexRoute: AuthenticatedAdminPanelIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedCandidatesIndexRoute: AuthenticatedCandidatesIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedCvCollectIndexRoute: AuthenticatedCvCollectIndexRoute,
+  AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedEmailHesaplariIndexRoute: AuthenticatedEmailHesaplariIndexRoute,
   AuthenticatedFirmaYonetimiIndexRoute: AuthenticatedFirmaYonetimiIndexRoute,
   AuthenticatedHavuzlarIndexRoute: AuthenticatedHavuzlarIndexRoute,
@@ -898,6 +919,7 @@ const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ClerkRouteRoute: ClerkRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
