@@ -782,3 +782,44 @@ Commit: 0c97746, 733651b
 - Satır 1079
 
 Bu düzeltmeler KİLİTLİDİR. Puanlama sistemi UI'ı değiştirilemez.
+
+---
+
+## ═══════════════════════════════════════════════════════════════
+## FAZ 13 - LAYER SCORES SİSTEMİ (TÜMÜ KİLİTLİ - DEĞİŞTİRİLEMEZ)
+## ═══════════════════════════════════════════════════════════════
+Tarih: 2026-03-14
+Commitler: 9858e41, 7c2897f, b3212f5, 66c3151, ade16ee, 0c97746, 733651b, 78ddab0
+
+### TAMAMLANAN FAZLAR:
+| FAZ | Açıklama | Dosya |
+|-----|----------|-------|
+| 13.1 | Analiz | - |
+| 13.2 | Prompt ZORUNLU vurgusu | smart_prompt_builder.py |
+| 13.3 | Scores validation + fallback | ai_evaluator.py |
+| 13.4 | Backend scores→layer_scores | routes/pools.py |
+| 13.5 | Backend V2/V3 scoring_info | routes/pools.py |
+| 13.6 | Frontend skor detayı | havuzlar/index.tsx |
+| 13.7 | Badge match_score fix | havuzlar/index.tsx |
+| 13.7.1 | CSS açıklama fix | havuzlar/index.tsx |
+| 13.8-13.9 | Analiz (fallback aktif) | - |
+
+### KİLİTLİ DOSYALAR:
+1. api/core/scoring_v3/smart_prompt_builder.py - ZORUNLU talimatlar
+2. api/core/scoring_v3/ai_evaluator.py - scores validation + fallback
+3. api/routes/pools.py - scoring_info + layer_scores
+4. web/src/features/havuzlar/index.tsx - UI gösterimi
+
+### KİLİTLİ ÖZELLİKLER:
+- V2+V3 weighted average formülü: (V3×0.60)+(V2×0.40)
+- 5 kategori: position_match(25), experience_quality(25), technical_skills(25), education(15), other(10)
+- Fallback: AI scores boş bırakırsa total_score'dan orantılı hesapla
+- Badge: match_score gösterir (v3_score değil)
+
+### DEĞİŞTİRİLEMEZ KURALLAR:
+- Prompt'taki ZORUNLU vurguları kaldırma
+- Validation/fallback mekanizmasını devre dışı bırakma
+- Kategori max puanlarını değiştirme
+- Badge'in match_score yerine başka skor göstermesi
+
+Bu sistem %100 tamamlandı ve KİLİTLİDİR.
