@@ -17,6 +17,16 @@ Son güncelleme: 13.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 13.03.2026 - Toplu CV Yükleme (Max 20)
+- ✅ **Toplu CV Yükleme** — tek seferde max 20 CV, sıralı işleme
+  - Backend: POST /api/cv/bulk-upload endpoint (api/routes/cv.py)
+  - Frontend: "Toplu Yükle" sekmesi (src/features/cv-collect/index.tsx)
+  - Drag & drop desteği, format validasyonu (PDF/DOCX)
+  - Sıralı işleme + progress bar + dosya bazlı durum ikonu
+  - İptal butonu, özet kartı, hata devam mekanizması
+  - KVKK audit log aktif
+  - CLAUDE.md kural #36 eklendi
+
 ### 13.03.2026 - Landing Page
 - ✅ **Neden HyliLabs? bölümü** (Fiyatlandırma kaldırıldı, yerine eklendi)
   - 6 kart: Zaman Tasarrufu, KVKK Uyumlu, Akıllı Eşleştirme, Türkçe Dil Desteği, Otomatik Süreç, Multi-Tenant Güvenlik

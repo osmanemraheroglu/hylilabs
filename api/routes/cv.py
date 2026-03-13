@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 import json
 import sys
@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/cv", tags=["cv"])
 
 ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.doc', '.png', '.jpg', '.jpeg'}
+BULK_ALLOWED_EXTENSIONS = {'.pdf', '.docx'}
+BULK_MAX_FILES = 20
 
 
 class ScanEmailsRequest(BaseModel):
@@ -155,6 +157,178 @@ async def upload_cv(file: UploadFile = File(...), current_user: dict = Depends(g
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/bulk-upload")
+async def bulk_upload_cv(files: List[UploadFile] = File(...), current_user: dict = Depends(get_current_user)):
+    """Toplu CV yükleme — tek seferde max 20 CV, sıralı işleme (13.03.2026)"""
+    company_id = current_user["company_id"]
+    user_id = str(current_user.get("id", "unknown"))
+
+    if not company_id:
+        raise HTTPException(status_code=400, detail="Firma seçilmeli")
+
+    # Max dosya sayısı kontrolü
+    if len(files) > BULK_MAX_FILES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"En fazla {BULK_MAX_FILES} CV yükleyebilirsiniz. {len(files)} dosya seçildi."
+        )
+
+    if len(files) == 0:
+        raise HTTPException(status_code=400, detail="Dosya seçilmedi")
+
+    # Rate limit kontrolü
+    allowed, msg = check_cv_upload_limit(user_id)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Saatlik CV yükleme limitine ulaştınız (20 dosya/saat). Lütfen daha sonra tekrar deneyin."
+        )
+
+    # Firma aday limitini ön kontrol
+    max_aday_limit = -1
+    current_candidate_count = 0
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT max_aday FROM companies WHERE id = ?", (company_id,))
+        company_row = cursor.fetchone()
+        if company_row:
+            max_aday_limit = company_row['max_aday']
+
+        cursor.execute("SELECT COUNT(*) FROM candidates WHERE company_id = ?", (company_id,))
+        current_candidate_count = cursor.fetchone()[0]
+
+    # KVKK audit log
+    logger.info(f"[KVKK-AUDIT] Toplu CV yükleme başlatıldı: user_id={user_id}, company_id={company_id}, dosya_sayisi={len(files)}")
+
+    results = []
+    success_count = 0
+    error_count = 0
+    duplicate_count = 0
+    blacklist_count = 0
+
+    for file in files:
+        filename = file.filename or "bilinmeyen_dosya"
+        file_result = {
+            "filename": filename,
+            "status": "error",
+            "message": "",
+            "candidate_id": None
+        }
+
+        try:
+            # Format kontrolü (toplu yüklemede sadece PDF ve DOCX)
+            ext = '.' + filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+            if ext not in BULK_ALLOWED_EXTENSIONS:
+                file_result["message"] = f"Desteklenmeyen dosya tipi: {ext}. Toplu yüklemede sadece PDF ve DOCX desteklenir."
+                error_count += 1
+                results.append(file_result)
+                continue
+
+            # Dosya içeriğini oku
+            content = await file.read()
+            if not content:
+                file_result["message"] = "Dosya boş"
+                error_count += 1
+                results.append(file_result)
+                continue
+
+            # Aday limiti kontrolü (her dosya için güncel kontrol)
+            if max_aday_limit != -1 and (current_candidate_count + success_count) >= max_aday_limit:
+                file_result["message"] = f"Aday limitine ulaşıldı ({max_aday_limit}). Kalan CV'ler işlenemedi."
+                file_result["status"] = "limit"
+                error_count += 1
+                results.append(file_result)
+                continue
+
+            # CV parse et (KİLİTLİ — dokunulmadı)
+            result = parse_cv(content, filename, user_id)
+
+            if not result.basarili or not result.candidate:
+                file_result["message"] = result.hata_mesaji or "CV parse edilemedi"
+                error_count += 1
+                results.append(file_result)
+                continue
+
+            # CV dosyasını kaydet (KİLİTLİ — dokunulmadı)
+            cv_path = save_cv_file(content, filename, company_id, result.candidate.email)
+            if cv_path:
+                result.candidate.cv_dosya_yolu = cv_path
+                result.candidate.cv_dosya_adi = filename
+
+            # Adayı veritabanına kaydet (KİLİTLİ — dokunulmadı, duplicate kontrolü dahil)
+            candidate_result = create_candidate(result.candidate, company_id)
+
+            # Duplicate kontrolü
+            if isinstance(candidate_result, dict) and candidate_result.get("duplicate"):
+                file_result["status"] = "duplicate"
+                file_result["message"] = candidate_result["message"]
+                file_result["candidate_id"] = candidate_result.get("candidate_id")
+                duplicate_count += 1
+                results.append(file_result)
+                continue
+
+            # Blacklist kontrolü
+            if isinstance(candidate_result, dict) and candidate_result.get("blacklisted"):
+                file_result["status"] = "blacklisted"
+                file_result["message"] = candidate_result["message"]
+                blacklist_count += 1
+                results.append(file_result)
+                continue
+
+            candidate_id = candidate_result
+
+            # Application kaydı
+            try:
+                app = Application(candidate_id=candidate_id, kaynak="toplu_cv_yukleme")
+                create_application(app, company_id)
+            except Exception as e:
+                logger.warning(f"Toplu yükleme application kaydı hatası: {e}")
+
+            # Rate limit kaydı
+            record_cv_upload(user_id)
+
+            # Otomatik pozisyon eşleştirmesi
+            try:
+                from database import match_single_candidate_to_positions
+                match_result = match_single_candidate_to_positions(candidate_id, company_id)
+                if match_result.get('transferred', 0) > 0:
+                    logger.info(f"Toplu CV: Aday {candidate_id} otomatik {match_result['transferred']} pozisyona eşleştirildi")
+            except Exception as match_err:
+                logger.warning(f"Toplu yükleme eşleştirme hatası (devam ediliyor): {match_err}")
+
+            file_result["status"] = "success"
+            file_result["message"] = "CV başarıyla yüklendi"
+            file_result["candidate_id"] = candidate_id
+            success_count += 1
+
+        except Exception as e:
+            file_result["message"] = str(e)
+            error_count += 1
+            logger.error(f"Toplu CV yükleme hatası ({filename}): {e}")
+
+        results.append(file_result)
+
+    # KVKK audit log - sonuç
+    logger.info(
+        f"[KVKK-AUDIT] Toplu CV yükleme tamamlandı: user_id={user_id}, company_id={company_id}, "
+        f"toplam={len(files)}, basarili={success_count}, hata={error_count}, "
+        f"duplicate={duplicate_count}, kara_liste={blacklist_count}"
+    )
+
+    return {
+        "success": True,
+        "message": f"Toplu yükleme tamamlandı: {success_count} başarılı, {duplicate_count} mevcut, {error_count} hata",
+        "data": {
+            "total": len(files),
+            "success": success_count,
+            "error": error_count,
+            "duplicate": duplicate_count,
+            "blacklisted": blacklist_count,
+            "results": results
+        }
+    }
 
 
 @router.get("/stats")
