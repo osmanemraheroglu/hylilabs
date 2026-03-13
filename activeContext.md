@@ -1,11 +1,11 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 13.03.2026
+Son güncelleme: 14.03.2026
 
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** FAZ 12.8 (ai_evaluations kozmetik düzeltme)
+- **Son commit:** FAZ 13.7 (ScoreBadge match_score fix)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -16,6 +16,21 @@ Son güncelleme: 13.03.2026
 - 3 şirket, ~50 aday, 5 pozisyon
 
 ## Son 72 Saatte Tamamlananlar
+
+### 14.03.2026 - FAZ 13 Layer Scores Sistemi
+- ✅ **FAZ 13.1-13.6**: Layer scores analizi + backend + frontend entegrasyonu
+  - FAZ 13.1: AI analizi (scores boş kalıyor sorunu)
+  - FAZ 13.2: smart_prompt_builder.py ZORUNLU vurgusu
+  - FAZ 13.3: ai_evaluator.py scores validation + fallback
+  - FAZ 13.4: pools.py scores + layer_scores alias
+  - FAZ 13.5: pools.py scoring_info (v2/v3 ağırlıkları)
+  - FAZ 13.6: havuzlar/index.tsx loadDetail + Skor Detayı kartı
+- ✅ **FAZ 13.7: ScoreBadge match_score Bug Fix**
+  - Sorun: "Uyum Değerlendirmesi" badge V3 skoru (92) gösteriyordu, match_score (68) göstermeli
+  - Çözüm: v3Evaluation.total_score → c.match_score (tablo), cd.match_score (kart)
+  - Dosya: src/features/havuzlar/index.tsx
+  - Satır 825 (tablo): score={c.match_score || 0}
+  - Satır 979 (kart): score={cd.match_score || 0}
 
 ### 13.03.2026 - CV Topla Sekme Birleştirme
 - ✅ **Tekli + Toplu Yükleme birleştirildi** → tek "Manuel CV Yükle" sekmesi

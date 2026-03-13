@@ -822,7 +822,7 @@ export default function Havuzlar() {
                               <TableCell className="text-sm max-w-[200px] overflow-hidden"><LocationBadge status={c.location_status?.status || 'gray'} candidateLocation={c.location_status?.candidate_location || c.lokasyon || '-'} positionLocation={c.location_status?.position_location || '-'} matchType={c.location_status?.match_type || 'Veri yok'} /></TableCell>
                               <TableCell>
                                 {v3Evaluation[c.id] ? (
-                                  <ScoreBadge score={v3Evaluation[c.id].total_score} size="sm" />
+                                  <ScoreBadge score={c.match_score || 0} size="sm" />
                                 ) : (
                                   <Button
                                     variant="outline"
@@ -976,7 +976,7 @@ export default function Havuzlar() {
                                             <Brain className="h-3 w-3" />
                                             <span>Uyum Değerlendirmesi</span>
                                             {v3Evaluation[cd.id] && (
-                                              <ScoreBadge score={v3Evaluation[cd.id].total_score} size="md" />
+                                              <ScoreBadge score={cd.match_score || 0} size="md" />
                                             )}
                                           </div>
                                           <div className="flex gap-1">
