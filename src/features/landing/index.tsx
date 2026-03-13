@@ -468,7 +468,6 @@ export function LandingPage() {
                 { src: '/images/claude.png', alt: 'Claude' },
                 { src: '/images/gemini.png', alt: 'Gemini' },
                 { src: '/images/google.png', alt: 'Google' },
-                { src: '/images/hetzner.png', alt: 'Hetzner' },
               ].map((partner, i) => (
                 <img
                   key={i}
