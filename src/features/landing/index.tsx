@@ -42,6 +42,15 @@ const icons = {
   location: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
   ),
+  lock: (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+  ),
+  globe: (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+  ),
+  clock: (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  ),
 }
 
 /* ─── Veri ─── */
@@ -61,35 +70,20 @@ const steps = [
   { num: '04', title: 'İşe Alım', desc: 'En uygun adayı seçin, işe alım sürecini tamamlayın. Tüm geçmiş veriler arşivde korunur.' },
 ]
 
-const plans = [
-  {
-    name: 'Başlangıç',
-    price: 'Yakında',
-    desc: 'Küçük ekipler için ideal',
-    features: ['10 aktif pozisyon', '500 aday kapasitesi', 'AI CV analizi', 'Email entegrasyonu', 'Temel raporlama'],
-    highlight: false,
-  },
-  {
-    name: 'Profesyonel',
-    price: 'Yakında',
-    desc: 'Büyüyen şirketler için',
-    features: ['Sınırsız pozisyon', '5.000 aday kapasitesi', 'Çoklu AI değerlendirme', 'Mülakat yönetimi', 'Gelişmiş raporlama', 'Öncelikli destek'],
-    highlight: true,
-  },
-  {
-    name: 'Kurumsal',
-    price: 'Yakında',
-    desc: 'Büyük organizasyonlar için',
-    features: ['Sınırsız her şey', 'Özel AI modeli eğitimi', 'API erişimi', 'Çoklu firma desteği', 'SLA garantisi', '7/24 destek'],
-    highlight: false,
-  },
+const whyReasons = [
+  { icon: icons.clock, highlight: '%85', title: 'Zaman Tasarrufu', desc: 'Manuel CV taraması yerine AI destekli otomatik eşleştirme ile saatlerinizi geri kazanın.' },
+  { icon: icons.shield, highlight: '%100', title: 'KVKK Tam Uyumlu', desc: 'Immutable audit trail, aydınlatma metni ve açık rıza yönetimi ile yasal güvence.' },
+  { icon: icons.match, highlight: '95+', title: 'Akıllı Eşleştirme', desc: 'Fuzzy matching, AI synonym ve semantik analiz ile en uygun adayları bulun.' },
+  { icon: icons.globe, highlight: 'TR', title: 'Türkçe Dil Desteği', desc: 'Türkçe karakter duyarlı arama, Türkçe UI ve hata mesajları.' },
+  { icon: icons.calendar, highlight: '7/24', title: 'Otomatik Süreç Yönetimi', desc: 'Mülakat davetleri, hatırlatmalar, otomatik iptal ve arşivleme.' },
+  { icon: icons.lock, highlight: '100%', title: 'Multi-Tenant Güvenlik', desc: 'Her şirketin verisi izole, rol bazlı erişim, JWT güvenliği.' },
 ]
 
 const navLinks = [
   { label: 'Ana Sayfa', href: '#hero' },
   { label: 'Özellikler', href: '#ozellikler' },
   { label: 'Nasıl Çalışır?', href: '#nasil-calisir' },
-  { label: 'Fiyatlandırma', href: '#fiyatlandirma' },
+  { label: 'Neden HyliLabs?', href: '#neden-hylilabs' },
   { label: 'İletişim', href: '#iletisim' },
 ]
 
@@ -485,70 +479,51 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════ FİYATLANDIRMA ═══════════ */}
-      <section id="fiyatlandirma" style={{ padding: '100px 24px', background: '#f8fafc' }}>
+      {/* ═══════════ NEDEN HYLILABS ═══════════ */}
+      <section id="neden-hylilabs" style={{ padding: '100px 24px', background: '#f8fafc' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <RevealSection>
             <div style={{ textAlign: 'center', marginBottom: 64 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1746A2', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>FİYATLANDIRMA</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1746A2', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>NEDEN HYLILABS?</div>
               <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 700, marginBottom: 16 }}>
-                Her Ölçeğe <span className="landing-gradient-text">Uygun Plan</span>
+                İşe Alım Sürecinizi <span className="landing-gradient-text">Dönüştürmeniz</span> İçin 6 Neden
               </h2>
               <p style={{ fontSize: 17, color: '#5A6B82', maxWidth: 560, margin: '0 auto' }}>
-                İhtiyacınıza göre esnek fiyatlandırma
+                Rakamlarla HyliLabs farkı
               </p>
             </div>
           </RevealSection>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, maxWidth: 1000, margin: '0 auto' }}>
-            {plans.map((p, i) => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 28, maxWidth: 1100, margin: '0 auto' }}>
+            {whyReasons.map((r, i) => (
               <RevealSection key={i}>
                 <div
                   className="landing-card-hover"
                   style={{
-                    background: p.highlight ? 'linear-gradient(135deg, #1746A2, #2563EB)' : '#fff',
-                    borderRadius: 20, padding: 36,
-                    border: p.highlight ? 'none' : '1px solid #e2e8f0',
-                    color: p.highlight ? '#fff' : '#0B1222',
-                    position: 'relative',
-                    boxShadow: p.highlight ? '0 20px 40px rgba(23,70,162,0.25)' : 'none',
+                    background: '#fff', borderRadius: 20, padding: '36px 32px',
+                    border: '1px solid #e2e8f0',
+                    display: 'flex', gap: 20, alignItems: 'flex-start',
                   }}
                 >
-                  {p.highlight && (
-                    <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#f59e0b', color: '#fff', fontSize: 12, fontWeight: 700, padding: '4px 16px', borderRadius: 100, letterSpacing: '0.04em' }}>
-                      EN POPÜLER
+                  <div style={{ flexShrink: 0 }}>
+                    <div style={{
+                      width: 72, height: 72, borderRadius: 16,
+                      background: 'linear-gradient(135deg, rgba(23,70,162,0.08), rgba(37,99,235,0.12))',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      gap: 2,
+                    }}>
+                      <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 22, fontWeight: 800, lineHeight: 1 }} className="landing-gradient-text">
+                        {r.highlight}
+                      </div>
                     </div>
-                  )}
-                  <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: 22, fontWeight: 600, marginBottom: 4 }}>{p.name}</h3>
-                  <p style={{ fontSize: 14, opacity: 0.7, marginBottom: 20, margin: '0 0 20px' }}>{p.desc}</p>
-                  <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 36, fontWeight: 800, marginBottom: 24 }}>{p.price}</div>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {p.features.map((feat, fi) => (
-                      <li key={fi} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15 }}>
-                        <span style={{ color: p.highlight ? '#86efac' : '#22c55e', flexShrink: 0 }}>{icons.check}</span>
-                        {feat}
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    onClick={() => scrollTo('#iletisim')}
-                    style={{
-                      width: '100%', padding: '12px 0', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                      background: p.highlight ? '#fff' : 'transparent',
-                      color: p.highlight ? '#1746A2' : '#1746A2',
-                      border: p.highlight ? 'none' : '1.5px solid #1746A2',
-                    }}
-                    onMouseEnter={e => {
-                      if (!p.highlight) { e.currentTarget.style.background = '#1746A2'; e.currentTarget.style.color = '#fff' }
-                      else { e.currentTarget.style.background = '#f0f4ff' }
-                    }}
-                    onMouseLeave={e => {
-                      if (!p.highlight) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#1746A2' }
-                      else { e.currentTarget.style.background = '#fff' }
-                    }}
-                  >
-                    Demo Talep Et
-                  </button>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                      <span style={{ color: '#1746A2' }}>{r.icon}</span>
+                      <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: 19, fontWeight: 600, margin: 0 }}>{r.title}</h3>
+                    </div>
+                    <p style={{ fontSize: 15, color: '#5A6B82', lineHeight: 1.6, margin: 0 }}>{r.desc}</p>
+                  </div>
                 </div>
               </RevealSection>
             ))}
@@ -705,7 +680,7 @@ export function LandingPage() {
             <div>
               <h4 style={{ color: '#fff', fontSize: 15, fontWeight: 600, marginBottom: 16, fontFamily: "'Outfit', sans-serif" }}>Platform</h4>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[{ label: 'Özellikler', href: '#ozellikler' }, { label: 'Nasıl Çalışır?', href: '#nasil-calisir' }, { label: 'Fiyatlandırma', href: '#fiyatlandirma' }, { label: 'Demo Talep Et', href: '#iletisim' }].map(l => (
+                {[{ label: 'Özellikler', href: '#ozellikler' }, { label: 'Nasıl Çalışır?', href: '#nasil-calisir' }, { label: 'Neden HyliLabs?', href: '#neden-hylilabs' }, { label: 'Demo Talep Et', href: '#iletisim' }].map(l => (
                   <li key={l.href}>
                     <button
                       onClick={() => scrollTo(l.href)}

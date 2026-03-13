@@ -17,6 +17,16 @@ Son güncelleme: 13.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 13.03.2026 - Landing Page
+- ✅ **Neden HyliLabs? bölümü** (Fiyatlandırma kaldırıldı, yerine eklendi)
+  - 6 kart: Zaman Tasarrufu, KVKK Uyumlu, Akıllı Eşleştirme, Türkçe Dil Desteği, Otomatik Süreç, Multi-Tenant Güvenlik
+  - Büyük rakam/yüzde vurgusu ile özellikler bölümünden farklı tasarım
+  - Navbar + Footer linkleri güncellendi
+  - plans array kaldırıldı, whyReasons array eklendi
+  - 3 yeni ikon: lock, globe, clock
+- ✅ **Çözüm Ortaklarımız bölümü** + partner logo güncellemeleri
+- ✅ **Landing Page Entegrasyonu** (route yapısı, auth guard, logo entegrasyonu)
+
 ### 13.03.2026
 - ✅ **FAZ 12: V3 Puanlama Bug Fix** (tamamlandı)
   - **FAZ 12.1**: ai_evaluator.py düzeltmeleri
