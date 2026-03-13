@@ -782,7 +782,6 @@ export default function Havuzlar() {
                         <TableHead className="w-[80px]">Deneyim</TableHead>
                         <TableHead className="w-[120px]">Lokasyon</TableHead>
                         <TableHead className="w-[100px]">Uyum Skoru</TableHead>
-                        <TableHead className="w-[70px]">Seviye</TableHead>
                         <TableHead className="w-[80px] text-center">Kara Liste</TableHead>
                         <TableHead className="w-20"></TableHead>
                       </TableRow>
@@ -815,9 +814,6 @@ export default function Havuzlar() {
                                   </Button>
                                 )}
                               </TableCell>
-                              <TableCell>
-                                <LevelBadge level={c.intelligence?.level || intelligenceData[c.id]?.level} />
-                              </TableCell>
                               <TableCell className="text-center">
                                 {c.is_blacklisted === 1 || c.durum === 'blacklist' ? (
                                   <Badge className="bg-gray-900 text-white text-[10px]">Kara Listede</Badge>
@@ -838,7 +834,7 @@ export default function Havuzlar() {
                             {/* Expanded Detail Row */}
                             {expandedCandidate === c.id && (
                               <TableRow key={`detail-${c.id}`}>
-                                <TableCell colSpan={8} className="bg-muted/30 p-4 max-w-0 overflow-hidden">
+                                <TableCell colSpan={7} className="bg-muted/30 p-4 max-w-0 overflow-hidden">
                                   {detailLoading ? <div className="text-center py-4"><RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Yükleniyor...</div> : candidateDetail ? (() => { const cd = candidateDetail.candidate as any; const aie = (candidateDetail as any).ai_evaluation; return (
                                     <div className="w-full max-w-6xl space-y-3 overflow-hidden">
                                       {/* Kisisel Bilgiler */}
