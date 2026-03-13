@@ -73,7 +73,7 @@ const steps = [
 const whyReasons = [
   { icon: icons.clock, highlight: '%85', title: 'Zaman Tasarrufu', desc: 'Manuel CV taraması yerine AI destekli otomatik eşleştirme ile saatlerinizi geri kazanın.' },
   { icon: icons.shield, highlight: '%100', title: 'KVKK Tam Uyumlu', desc: 'Immutable audit trail, aydınlatma metni ve açık rıza yönetimi ile yasal güvence.' },
-  { icon: icons.match, highlight: '95+', title: 'Akıllı Eşleştirme', desc: 'Fuzzy matching, AI synonym ve semantik analiz ile en uygun adayları bulun.' },
+  { icon: icons.match, highlight: '95+', title: 'Akıllı Eşleştirme', desc: 'AI algoritmaları adayları pozisyon gereksinimlerine göre analiz eder ve en uygun adayları önerir.' },
   { icon: icons.globe, highlight: 'TR', title: 'Türkçe Dil Desteği', desc: 'Türkçe karakter duyarlı arama, Türkçe UI ve hata mesajları.' },
   { icon: icons.calendar, highlight: '7/24', title: 'Otomatik Süreç Yönetimi', desc: 'Mülakat davetleri, hatırlatmalar, otomatik iptal ve arşivleme.' },
   { icon: icons.lock, highlight: '100%', title: 'Multi-Tenant Güvenlik', desc: 'Her şirketin verisi izole, rol bazlı erişim, JWT güvenliği.' },
@@ -445,12 +445,12 @@ export function LandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <RevealSection>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1746A2', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>ÇÖZÜM ORTAKLARIMIZ</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1746A2', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>TEKNOLOJİ ORTAKLARI</div>
               <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 700, marginBottom: 16 }}>
-                Güvenilir <span className="landing-gradient-text">Teknoloji Ortaklarımız</span>
+                Güçlü <span className="landing-gradient-text">Yapay Zeka Teknolojileri</span> ile Çalışıyoruz
               </h2>
               <p style={{ fontSize: 17, color: '#5A6B82', maxWidth: 560, margin: '0 auto' }}>
-                Güvenilir teknoloji ortaklarımız ile birlikte çalışıyoruz
+                Sektörün öncü AI altyapılarını kullanıyoruz
               </p>
             </div>
           </RevealSection>
