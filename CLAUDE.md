@@ -764,3 +764,50 @@ Commit: e02992c — DEGISTIRME
 34. Email Check Schedule (09.03.2026): Email CV toplama scheduler.py'de, saat başı çalışır (hour='0-23', minute=0). email_worker.py sadece fonksiyonları içerir (check_all_emails, check_emails_for_account), schedule döngüsü İÇERMEZ. APScheduler CronTrigger ile yönetilir. Bu yapı DEĞİŞTİRİLEMEZ.
 35. Landing Page (13.03.2026): / = public landing page, /sign-in = giriş, /dashboard = dashboard (auth). src/features/landing/index.tsx bileşeni. src/routes/index.tsx public root route. src/routes/_authenticated/dashboard/index.tsx dashboard route. initAuth() PUBLIC_PATHS listesi: ['/', '/sign-in', '/sign-up', '/otp', '/forgot-password', '/sign-in-2']. Login sonrası redirect /dashboard'a. Route yapısı DEĞİŞMEZ.
 36. Toplu CV Yükleme (13.03.2026): Max 20 CV, sıralı işleme, progress UI. Frontend: src/features/cv-collect/index.tsx "Toplu Yükle" sekmesi. Backend: POST /api/cv/bulk-upload endpoint. Mevcut tekli upload endpoint korunuyor. save_cv_file ve parse_cv DEĞİŞMEZ. Format: sadece PDF/DOCX. KVKK audit log aktif. DEĞİŞMEZ.
+
+---
+
+## FAZ 13.1 - LAYER SCORES ANALİZ (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+Tarih: 2026-03-14
+Commit öncesi analiz
+
+### BULGULAR:
+1. JSON_SCHEMA doğru tanımlı (5 kategori, 100 puan)
+2. EvaluationResult.scores alanı mevcut
+3. AI modelleri BAZEN scores döndürüyor, BAZEN boş
+4. Promptta ZORUNLU vurgusu YOK
+5. Validation mekanizması YOK
+
+### DOSYALAR:
+- core/scoring_v3/smart_prompt_builder.py (JSON_SCHEMA satır 114-148)
+- core/scoring_v3/ai_evaluator.py (_parse_response satır 838-905)
+
+### KÖK NEDEN:
+AI modelleri scores alanını zorunlu görmüyor, kısa CVlerde atlıyor.
+
+### ÇÖZÜM PLANI:
+1. Prompt güçlendirme (ZORUNLU vurgusu)
+2. Validation + Retry
+3. Fallback mekanizması
+
+Bu analiz KİLİTLİDİR. Puanlama sistemi için değiştirilemez.
+
+---
+
+## FAZ 13.2 - PROMPT GÜÇLENDIRME (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+Tarih: 2026-03-14
+
+### DEĞİŞİKLİKLER:
+1. JSON_SCHEMA'ya ZORUNLU vurgusu eklendi (satır 149-153)
+2. EVALUATION_TEMPLATE'e KRİTİK talimat eklendi (satır 246-251)
+
+### EKLENEN TALİMATLAR:
+- "scores" alanı MUTLAKA doldurulmalı
+- 5 kategorinin hepsi için score ve reason yazılmalı
+- scores BOŞ bırakılamaz, yanıt GEÇERSİZ sayılır
+- total_score = 5 kategori toplamı
+
+### DOSYA:
+- core/scoring_v3/smart_prompt_builder.py
+
+Bu değişiklik KİLİTLİDİR. Puanlama sistemi promptu değiştirilemez.

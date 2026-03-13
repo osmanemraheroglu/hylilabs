@@ -144,13 +144,7 @@ JSON_SCHEMA = """{
   "weaknesses": ["Zayıf yön 1", "Zayıf yön 2"],
   "notes_for_hr": ["İK için not 1", "İK için not 2"],
   "interview_questions": ["Mülakatta sorulacak soru 1", "Soru 2"],
-  "overall_assessment": "2-3 cümlelik genel değerlendirme",
-
-  "⚠️ ZORUNLU ALANLAR": {
-    "scores": "MUTLAKA doldurulmalı - 5 kategorinin hepsi (position_match, experience_quality, technical_skills, education, other) için score ve reason yazılmalı",
-    "total_score": "scores içindeki 5 kategorinin toplamı olmalı (max 100)",
-    "uyari": "scores alanı BOŞ bırakılamaz, aksi halde değerlendirme GEÇERSİZ sayılır"
-  }
+  "overall_assessment": "2-3 cümlelik genel değerlendirme"
 }"""
 
 
@@ -242,12 +236,6 @@ DEĞERLENDİRME TALİMATI
 3. Pozisyon başlıkları uyumunu değerlendir (exact > related > yok)
 4. Puanlama matrisine göre 0-100 puan ver
 5. SADECE JSON formatında yanıt ver, başka hiçbir şey yazma
-
-⚠️ KRİTİK TALİMAT:
-Aşağıdaki JSON şemasına TAMAMEN uymalısın. "scores" alanı ZORUNLUDUR.
-Her kategori için puan (score) ve gerekçe (reason) MUTLAKA yazılmalı.
-scores alanını BOŞ bırakma, aksi halde değerlendirme geçersiz sayılır.
-total_score = position_match + experience_quality + technical_skills + education + other toplamı olmalıdır.
 
 {json_schema}
 """
