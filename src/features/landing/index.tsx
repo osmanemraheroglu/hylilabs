@@ -446,6 +446,51 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ═══════════ ÇÖZÜM ORTAKLARI ═══════════ */}
+      <section id="cozum-ortaklari" style={{ padding: '80px 24px', background: '#fff' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <RevealSection>
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1746A2', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>ÇÖZÜM ORTAKLARIMIZ</div>
+              <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 700, marginBottom: 16 }}>
+                Güvenilir <span className="landing-gradient-text">Teknoloji Ortaklarımız</span>
+              </h2>
+              <p style={{ fontSize: 17, color: '#5A6B82', maxWidth: 560, margin: '0 auto' }}>
+                Güvenilir teknoloji ortaklarımız ile birlikte çalışıyoruz
+              </p>
+            </div>
+          </RevealSection>
+
+          <RevealSection>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(32px, 5vw, 64px)', flexWrap: 'wrap' }}>
+              {[
+                { src: '/images/anthropic.png', alt: 'Anthropic' },
+                { src: '/images/claude.png', alt: 'Claude' },
+                { src: '/images/gemini.png', alt: 'Gemini' },
+                { src: '/images/google.png', alt: 'Google' },
+                { src: '/images/hetzner.png', alt: 'Hetzner' },
+              ].map((partner, i) => (
+                <img
+                  key={i}
+                  src={partner.src}
+                  alt={partner.alt}
+                  style={{
+                    height: 40,
+                    width: 'auto',
+                    filter: 'grayscale(100%)',
+                    opacity: 0.6,
+                    transition: 'filter 0.3s ease, opacity 0.3s ease',
+                    cursor: 'default',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.filter = 'grayscale(0%)'; e.currentTarget.style.opacity = '1' }}
+                  onMouseLeave={e => { e.currentTarget.style.filter = 'grayscale(100%)'; e.currentTarget.style.opacity = '0.6' }}
+                />
+              ))}
+            </div>
+          </RevealSection>
+        </div>
+      </section>
+
       {/* ═══════════ FİYATLANDIRMA ═══════════ */}
       <section id="fiyatlandirma" style={{ padding: '100px 24px', background: '#f8fafc' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>

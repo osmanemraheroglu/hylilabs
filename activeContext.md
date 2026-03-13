@@ -18,9 +18,14 @@ Son güncelleme: 13.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 13.03.2026 - HyliLabs Landing Page
+- ✅ **Çözüm Ortaklarımız Bölümü** (tamamlandı)
+  - "Nasıl Çalışır" ile "Fiyatlandırma" arasına eklendi
+  - 5 logo: Anthropic, Claude, Gemini, Google, Hetzner
+  - Grayscale + opacity efekti, hover'da renkli
+  - RevealSection scroll animasyonu
 - ✅ **Landing Page Logo Entegrasyonu** (tamamlandı)
-  - Navbar: Logo_400x120.png (height: 40px), LogoIcon SVG kaldırıldı
-  - Footer: footer_logo_600x400.png (beyaz yazılı, koyu arka plan, height: 60px)
+  - Navbar: Logo_400x120.png (height: 56px)
+  - Footer: footer_logo_600x400.png (beyaz yazılı, koyu arka plan, height: 80px)
   - Logo dosyaları: public/images/Logo_400x120.png, public/images/Logo_600x400.png
 - ✅ **Landing Page Entegrasyonu** (tamamlandı)
   - `/` = Landing page (public), `/sign-in` = Giriş sayfası, `/dashboard` = Dashboard (auth)
