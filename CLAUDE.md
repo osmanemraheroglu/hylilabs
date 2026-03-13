@@ -765,3 +765,20 @@ Commit: e02992c — DEGISTIRME
 35. Landing Page (13.03.2026): / = public landing page, /sign-in = giriş, /dashboard = dashboard (auth). src/features/landing/index.tsx bileşeni. src/routes/index.tsx public root route. src/routes/_authenticated/dashboard/index.tsx dashboard route. initAuth() PUBLIC_PATHS listesi: ['/', '/sign-in', '/sign-up', '/otp', '/forgot-password', '/sign-in-2']. Login sonrası redirect /dashboard'a. Route yapısı DEĞİŞMEZ.
 36. Toplu CV Yükleme (13.03.2026): Max 20 CV, sıralı işleme, progress UI. Frontend: src/features/cv-collect/index.tsx "Toplu Yükle" sekmesi. Backend: POST /api/cv/bulk-upload endpoint. Mevcut tekli upload endpoint korunuyor. save_cv_file ve parse_cv DEĞİŞMEZ. Format: sadece PDF/DOCX. KVKK audit log aktif. DEĞİŞMEZ.
 37. FAZ 13 Layer Scores Sistemi (14.03.2026): V3 AI skorlama layer_scores/scores gösterimi. FAZ 13.1: AI analizi (scores boş kalıyor, AI ZORUNLU görmüyor). FAZ 13.2: smart_prompt_builder.py ZORUNLU vurgusu eklendi. FAZ 13.3: ai_evaluator.py scores validation + fallback (total_score'dan orantılı hesaplama). FAZ 13.4: pools.py scores + layer_scores alias. FAZ 13.5: pools.py scoring_info (v2_weight:0.40, v3_weight:0.60, formula). FAZ 13.6: havuzlar/index.tsx loadDetail layer_scores + Skor Detayı kartı. FAZ 13.7: ScoreBadge match_score göstermeli (v3.total_score DEĞİL). Satır 825 (tablo): score={c.match_score || 0}. Satır 979 (kart): score={cd.match_score || 0}. DEĞİŞMEZ.
+
+---
+
+## FAZ 13.7 + 13.7.1 - BADGE VE CSS FIX (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+Tarih: 2026-03-14
+Commit: 0c97746, 733651b
+
+### FAZ 13.7 - BADGE BUG FIX:
+- ScoreBadge: v3.total_score → match_score
+- Satır 825 (tablo) ve 979 (kart)
+
+### FAZ 13.7.1 - CSS FIX:
+- Kategori açıklamaları: line-clamp-2 → break-words whitespace-normal
+- Tooltip eklendi (title attribute)
+- Satır 1079
+
+Bu düzeltmeler KİLİTLİDİR. Puanlama sistemi UI'ı değiştirilemez.
