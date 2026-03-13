@@ -636,10 +636,29 @@ def get_candidate_detail(pool_id: int, candidate_id: int, current_user: dict = D
                 v2_detail["uyum_puani"] = match_row[1]
 
             cursor.execute("""
-                SELECT match_score, status FROM candidate_positions
+                SELECT match_score, status, v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version
+                FROM candidate_positions
                 WHERE candidate_id = ? AND position_id = ?
             """, (candidate_id, pool_id))
             cp_row = cursor.fetchone()
+
+            # Candidate objesine skor bilgilerini ekle
+            if cp_row:
+                candidate['match_score'] = cp_row[0] or 0
+                candidate['v2_score'] = cp_row[2] or 0
+                candidate['v3_score'] = cp_row[3] or 0
+                candidate['gemini_score'] = cp_row[4] or 0
+                candidate['hermes_score'] = cp_row[5] or 0
+                candidate['openai_score'] = cp_row[6] or 0
+                candidate['score_version'] = cp_row[7] or 'v2'
+            else:
+                candidate['match_score'] = 0
+                candidate['v2_score'] = 0
+                candidate['v3_score'] = 0
+                candidate['gemini_score'] = 0
+                candidate['hermes_score'] = 0
+                candidate['openai_score'] = 0
+                candidate['score_version'] = 'v2' 
 
             cursor.execute("""
                 SELECT evaluation_text, v2_score, created_at FROM ai_evaluations

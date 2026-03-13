@@ -48,7 +48,7 @@ export function OtpForm({ className, ...props }: OtpFormProps) {
 
     setTimeout(() => {
       setIsLoading(false)
-      navigate({ to: '/' })
+      navigate({ to: '/dashboard' })
     }, 1000)
   }
 

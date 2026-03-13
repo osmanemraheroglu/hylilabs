@@ -799,20 +799,7 @@ export default function Havuzlar() {
                               <TableCell className="text-sm">{c.toplam_deneyim_yil ? `${c.toplam_deneyim_yil} yıl` : '-'}</TableCell>
                               <TableCell className="text-sm max-w-[200px] overflow-hidden"><LocationBadge status={c.location_status?.status || 'gray'} candidateLocation={c.location_status?.candidate_location || c.lokasyon || '-'} positionLocation={c.location_status?.position_location || '-'} matchType={c.location_status?.match_type || 'Veri yok'} /></TableCell>
                               <TableCell>
-                                {v3Evaluation[c.id] ? (
-                                  <ScoreBadge score={v3Evaluation[c.id].total_score} size="sm" />
-                                ) : (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-6 text-[10px] px-2"
-                                    onClick={(e) => { e.stopPropagation(); handleEvaluate(c.id) }}
-                                    disabled={evaluating || v3Loading[c.id]}
-                                  >
-                                    {(evaluating || v3Loading[c.id]) ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3 mr-1" />}
-                                    Değerlendir
-                                  </Button>
-                                )}
+                                <ScoreBadge score={c.match_score || 0} size="sm" />
                               </TableCell>
                               <TableCell className="text-center">
                                 {c.is_blacklisted === 1 || c.durum === 'blacklist' ? (
@@ -953,9 +940,7 @@ export default function Havuzlar() {
                                           <div className="text-xs font-medium flex items-center gap-2">
                                             <Brain className="h-3 w-3" />
                                             <span>Uyum Değerlendirmesi</span>
-                                            {v3Evaluation[cd.id] && (
-                                              <ScoreBadge score={v3Evaluation[cd.id].total_score} size="md" />
-                                            )}
+                                            <ScoreBadge score={cd.match_score || 0} size="md" />
                                           </div>
                                           <div className="flex gap-1">
                                             <Button size="sm" variant="outline" onClick={() => handleViewCV(cd.id)} disabled={!cd?.cv_dosya_adi} className="h-6 text-[10px] px-2" title={cd?.cv_dosya_adi ? 'CV Görüntüle' : 'CV yok'}>

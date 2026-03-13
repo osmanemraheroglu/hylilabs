@@ -870,7 +870,7 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
             return EvaluationResult(
                 model_name=model_name,
                 eligible=data.get("eligible", False),
-                total_score=int(data.get("total_score", 0)),
+                total_score=min(100, max(0, int(data.get("total_score", 0)))),
                 scores=data.get("scores", {}),
                 strengths=data.get("strengths", []),
                 weaknesses=data.get("weaknesses", []),
@@ -1019,8 +1019,9 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
             total_tokens["input"] += openai_result.tokens_used.get("input", 0)
             total_tokens["output"] += openai_result.tokens_used.get("output", 0)
 
-        if claude_result and claude_result.error is None:
-            # Claude hakim karari
+        # FAZ 12.1: Claude 0 fallback - Claude 0 dönerse average fallback kullan
+        if claude_result and claude_result.error is None and claude_result.total_score > 0:
+            # Claude hakim karari (skor > 0)
             total_tokens["input"] += claude_result.tokens_used.get("input", 0)
             total_tokens["output"] += claude_result.tokens_used.get("output", 0)
 
@@ -1052,6 +1053,10 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
                 claude_result=claude_result
             )
 
+        # FAZ 12.1: Claude 0 döndü uyarısı
+        if claude_result and claude_result.error is None and claude_result.total_score == 0:
+            logger.warning(f"Claude 0 döndü, average fallback kullanılıyor. Model skorları: {result1.model_name}={result1.total_score}, {result2.model_name}={result2.total_score}")
+
         # Ortalama al (2 basarili model)
         avg_score = (result1.total_score + result2.total_score) // 2
 
@@ -1075,6 +1080,9 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
             final_notes.append(f"eligible uyumsuzlugu: {result1.model_name}={result1.eligible}, {result2.model_name}={result2.eligible}")
         if (score_diff > self.SCORE_DIFFERENCE_THRESHOLD or eligible_disagreement) and not self.claude_api_key:
             final_notes.append("Claude API key olmadigi icin ortalama alindi")
+        # FAZ 12.1: Claude 0 döndüğünde not ekle
+        if claude_result and claude_result.error is None and claude_result.total_score == 0:
+            final_notes.append("Claude 0 döndüğü için ortalama alındı")
 
         # Interview questions birlestir
         final_questions = list(dict.fromkeys(result1.interview_questions + result2.interview_questions))[:5]

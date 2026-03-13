@@ -88,7 +88,7 @@ export function UserAuthForm({
       toast.success(`Hoş geldiniz, ${result.user.ad_soyad}!`)
 
       // Dashboard'a yönlendir
-      const targetPath = redirectTo || '/'
+      const targetPath = redirectTo || '/dashboard'
       navigate({ to: targetPath, replace: true })
 
     } catch (error) {

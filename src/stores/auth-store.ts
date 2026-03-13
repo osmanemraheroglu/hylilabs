@@ -64,12 +64,19 @@ export const useAuthStore = create<AuthState>()((set) => {
  * 401: Kullanici bulunamadi veya pasif
  * 403: Firma pasif
  */
+// Landing page ve auth sayfaları public — token olmadan erişilebilir
+const PUBLIC_PATHS = ['/', '/sign-in', '/sign-up', '/otp', '/forgot-password', '/sign-in-2']
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.includes(pathname)
+}
+
 export async function initAuth(): Promise<boolean> {
   const token = localStorage.getItem('access_token')
 
   if (!token) {
-    // Token yoksa login sayfasina yonlendir
-    if (window.location.pathname !== '/sign-in') {
+    // Token yoksa ve public sayfadaysa → dokunma (landing page, login vb.)
+    if (!isPublicPath(window.location.pathname)) {
       window.location.href = '/sign-in'
     }
     return false
@@ -107,9 +114,9 @@ export async function initAuth(): Promise<boolean> {
 
     useAuthStore.getState().auth.setUser(user)
 
-    // Basarili giris ve sign-in sayfasindaysa dashboard'a yonlendir
-    if (window.location.pathname === '/sign-in') {
-      window.location.href = '/'
+    // Basarili giris ve sign-in veya landing sayfasindaysa dashboard'a yonlendir
+    if (window.location.pathname === '/sign-in' || window.location.pathname === '/') {
+      window.location.href = '/dashboard'
     }
 
     return true
