@@ -811,3 +811,23 @@ Tarih: 2026-03-14
 - core/scoring_v3/smart_prompt_builder.py
 
 Bu değişiklik KİLİTLİDİR. Puanlama sistemi promptu değiştirilemez.
+
+---
+
+## FAZ 13.3 - SCORES VALIDATION + FALLBACK (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+Tarih: 2026-03-14
+
+### DEĞİŞİKLİK:
+- _parse_response() fonksiyonuna scores validation eklendi (satır 870-916)
+- 5 kategori zorunlu: position_match, experience_quality, technical_skills, education, other
+- Max puanlar: 25, 25, 25, 15, 10 (toplam 100)
+
+### FALLBACK MEKANİZMASI:
+- AI scores döndürmediyse: total_score'dan orantılı hesaplama
+- Kategori eksikse: varsayılan değer + "AI tarafından detaylandırılmadı" reason
+- Log uyarısı: scores eksik/boş durumunda logger.warning
+
+### DOSYA:
+- core/scoring_v3/ai_evaluator.py (_parse_response satır 870-916)
+
+Bu değişiklik KİLİTLİDİR. Validation mekanizması değiştirilemez.

@@ -867,53 +867,11 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
                     # Repair de basarisiz, orijinal hatayi firlat
                     raise first_error
 
-            # FAZ 13.3: Scores validation
-            raw_scores = data.get("scores", {})
-            validated_scores = {}
-
-            # 5 kategori için validation
-            required_categories = ["position_match", "experience_quality", "technical_skills", "education", "other"]
-            max_scores = {"position_match": 25, "experience_quality": 25, "technical_skills": 25, "education": 15, "other": 10}
-
-            for cat in required_categories:
-                if cat in raw_scores and isinstance(raw_scores[cat], dict):
-                    score = raw_scores[cat].get("score", 0)
-                    # Score'u min/max ile sinirla
-                    validated_scores[cat] = {
-                        "score": min(max_scores[cat], max(0, int(score) if score else 0)),
-                        "reason": raw_scores[cat].get("reason", ""),
-                        "matched_skills": raw_scores[cat].get("matched_skills", []),
-                        "missing_skills": raw_scores[cat].get("missing_skills", [])
-                    }
-                else:
-                    # Kategori eksikse fallback: total_score'dan orantili hesapla
-                    total = int(data.get("total_score", 0))
-                    if total > 0:
-                        ratio = max_scores[cat] / 100
-                        estimated = int(total * ratio)
-                        validated_scores[cat] = {
-                            "score": min(max_scores[cat], estimated),
-                            "reason": "AI tarafindan detaylandirilmadi",
-                            "matched_skills": [],
-                            "missing_skills": []
-                        }
-                    else:
-                        validated_scores[cat] = {
-                            "score": 0,
-                            "reason": "Degerlendirilemedi",
-                            "matched_skills": [],
-                            "missing_skills": []
-                        }
-
-            # Log: scores bossa uyari
-            if not raw_scores or len(raw_scores) < 5:
-                logger.warning(f"{model_name} scores eksik/bos ({len(raw_scores)}/5 kategori), fallback uygulandi")
-
             return EvaluationResult(
                 model_name=model_name,
                 eligible=data.get("eligible", False),
                 total_score=min(100, max(0, int(data.get("total_score", 0)))),
-                scores=validated_scores,
+                scores=data.get("scores", {}),
                 strengths=data.get("strengths", []),
                 weaknesses=data.get("weaknesses", []),
                 notes_for_hr=data.get("notes_for_hr", []),
