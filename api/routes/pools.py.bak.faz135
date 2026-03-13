@@ -692,24 +692,13 @@ def get_candidate_detail(pool_id: int, candidate_id: int, current_user: dict = D
                 except json.JSONDecodeError:
                     ai_eval = {"text": ai_row[0], "v2_score": ai_row[1], "date": ai_row[2]}
 
-        # FAZ 13.5: V2/V3 ayri gosterim icin agirlik bilgisi
-        scoring_info = {
-            "v2_score": candidate.get("v2_score", 0),
-            "v3_score": candidate.get("v3_score", 0),
-            "match_score": candidate.get("match_score", 0),
-            "v2_weight": 0.40,
-            "v3_weight": 0.60,
-            "formula": "match_score = (v3_score x 0.60) + (v2_score x 0.40)"
-        }
-
         return {
             "success": True,
             "candidate": candidate,
             "position_score": cp_row[0] if cp_row else None,
             "position_status": cp_row[1] if cp_row else None,
             "v2_detail": v2_detail,
-            "ai_evaluation": ai_eval,
-            "scoring_info": scoring_info
+            "ai_evaluation": ai_eval
         }
     except HTTPException:
         raise

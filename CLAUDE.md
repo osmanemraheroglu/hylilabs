@@ -851,3 +851,28 @@ Tarih: 2026-03-14
 - Her ikisi de aynı veriyi döndürür
 
 Bu değişiklik KİLİTLİDİR. Mapping değiştirilemez.
+
+---
+
+## FAZ 13.5 - BACKEND V2/V3 AYRI GÖSTERİM (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+Tarih: 2026-03-14
+
+### DEĞİŞİKLİK:
+- Detail endpoint response'a scoring_info dict eklendi (satır 695-712)
+
+### scoring_info YAPISI:
+```json
+{
+  "v2_score": 66,
+  "v3_score": 85,
+  "match_score": 77,
+  "v2_weight": 0.40,
+  "v3_weight": 0.60,
+  "formula": "match_score = (v3_score x 0.60) + (v2_score x 0.40)"
+}
+```
+
+### DOSYA:
+- routes/pools.py (detail endpoint, satır 695-712)
+
+Bu değişiklik KİLİTLİDİR. Ağırlık formülü değiştirilemez.
