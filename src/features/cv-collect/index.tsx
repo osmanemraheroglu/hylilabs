@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
-import { RefreshCw, Upload, FileText, CheckCircle, XCircle, HardDrive, BarChart3, Mail, FolderOpen, AlertCircle } from 'lucide-react'
+import { RefreshCw, Upload, FileText, CheckCircle, XCircle, HardDrive, BarChart3, Mail, FolderOpen, AlertCircle, Clock, Ban, Files } from 'lucide-react'
 
 const API_URL = 'http://***REMOVED***:8000'
+const BULK_MAX_FILES = 20
+const BULK_ALLOWED_EXTENSIONS = ['.pdf', '.docx']
 
 function getHeaders() {
   const token = localStorage.getItem('access_token')
@@ -80,6 +82,13 @@ interface ScanResult {
   errors: { file: string; error: string }[]
 }
 
+interface BulkFileResult {
+  filename: string
+  status: 'success' | 'error' | 'duplicate' | 'blacklisted' | 'limit' | 'pending' | 'processing'
+  message: string
+  candidate_id: number | null
+}
+
 const getDurumLabel = (durum: string) => {
   const labels: Record<string, string> = {
     'tamamlandi': 'Tamamlandı',
@@ -89,6 +98,11 @@ const getDurumLabel = (durum: string) => {
     'devam_ediyor': 'Devam Ediyor'
   }
   return labels[durum] || durum
+}
+
+function getFileExtension(filename: string): string {
+  const idx = filename.lastIndexOf('.')
+  return idx >= 0 ? filename.substring(idx).toLowerCase() : ''
 }
 
 export default function CvCollect() {
@@ -116,12 +130,21 @@ export default function CvCollect() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null)
   const [scanProgress, setScanProgress] = useState(0)
 
-  // Progress tracking state
+  // Processing tracking state
   const [processingStatus, setProcessingStatus] = useState<{
     active: any[];
     recent: any[];
     has_active: boolean;
   } | null>(null)
+
+  // === TOPLU YÜKLEME STATE'LERİ ===
+  const [bulkFiles, setBulkFiles] = useState<File[]>([])
+  const [bulkUploading, setBulkUploading] = useState(false)
+  const [bulkResults, setBulkResults] = useState<BulkFileResult[]>([])
+  const [bulkCurrentIndex, setBulkCurrentIndex] = useState(-1)
+  const bulkCancelledRef = useRef(false)
+  const [bulkDone, setBulkDone] = useState(false)
+  const [bulkValidationError, setBulkValidationError] = useState('')
 
   const loadData = useCallback(() => {
     Promise.all([
@@ -182,7 +205,8 @@ export default function CvCollect() {
     setTimeout(() => setMessage(''), 5000)
   }
 
-  const handleUpload = async (file: File) => {
+  // === TEKLİ YÜKLEME (1 dosya seçildiğinde direkt çalışır) ===
+  const handleSingleUpload = async (file: File) => {
     setUploading(true)
     setParseResult(null)
     setParseError('')
@@ -219,21 +243,205 @@ export default function CvCollect() {
     }
   }
 
+  // === DOSYA SEÇİMİ (tek veya çoklu) ===
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) handleUpload(file)
+    if (!e.target.files || e.target.files.length === 0) return
+
+    const files = Array.from(e.target.files)
+
+    if (files.length === 1) {
+      // Tek dosya — direkt yükle
+      handleSingleUpload(files[0])
+    } else {
+      // Çoklu dosya — toplu yükleme akışına geç
+      handleMultipleFiles(files)
+    }
+
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  // === SÜRÜKLE-BIRAK (tek veya çoklu) ===
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragActive(false)
-    const file = e.dataTransfer.files?.[0]
-    if (file) handleUpload(file)
+
+    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return
+
+    const files = Array.from(e.dataTransfer.files)
+
+    if (files.length === 1) {
+      handleSingleUpload(files[0])
+    } else {
+      handleMultipleFiles(files)
+    }
   }
 
   const onDragOver = (e: React.DragEvent) => { e.preventDefault(); setDragActive(true) }
   const onDragLeave = () => setDragActive(false)
+
+  // === ÇOKLU DOSYA İŞLEME ===
+  const handleMultipleFiles = (files: File[]) => {
+    setBulkValidationError('')
+    setParseResult(null)
+    setParseError('')
+
+    // Max dosya sayısı kontrolü
+    if (files.length > BULK_MAX_FILES) {
+      setBulkValidationError(`En fazla ${BULK_MAX_FILES} CV yükleyebilirsiniz. ${files.length} dosya seçildi.`)
+      return
+    }
+
+    // Format kontrolü
+    const invalidFiles = files.filter(f => !BULK_ALLOWED_EXTENSIONS.includes(getFileExtension(f.name)))
+    if (invalidFiles.length > 0) {
+      const invalidNames = invalidFiles.map(f => f.name).join(', ')
+      setBulkValidationError(`Desteklenmeyen dosya formatı: ${invalidNames}. Çoklu yüklemede sadece PDF ve DOCX desteklenir.`)
+      return
+    }
+
+    // Boş dosya kontrolü
+    const emptyFiles = files.filter(f => f.size === 0)
+    if (emptyFiles.length > 0) {
+      setBulkValidationError(`Boş dosya tespit edildi: ${emptyFiles.map(f => f.name).join(', ')}`)
+      return
+    }
+
+    setBulkFiles(files)
+    setBulkResults([])
+    setBulkDone(false)
+    setBulkCurrentIndex(-1)
+  }
+
+  // === TOPLU YÜKLEME BAŞLAT ===
+  const startBulkUpload = async () => {
+    if (bulkFiles.length === 0) return
+
+    setBulkUploading(true)
+    setBulkDone(false)
+    bulkCancelledRef.current = false
+
+    // İlk durumları ayarla
+    const initialResults: BulkFileResult[] = bulkFiles.map(f => ({
+      filename: f.name,
+      status: 'pending',
+      message: '',
+      candidate_id: null
+    }))
+    setBulkResults(initialResults)
+
+    const updatedResults = [...initialResults]
+
+    for (let i = 0; i < bulkFiles.length; i++) {
+      // İptal kontrolü
+      if (bulkCancelledRef.current) {
+        for (let j = i; j < bulkFiles.length; j++) {
+          updatedResults[j] = { ...updatedResults[j], status: 'error', message: 'İptal edildi' }
+        }
+        setBulkResults([...updatedResults])
+        break
+      }
+
+      setBulkCurrentIndex(i)
+      updatedResults[i] = { ...updatedResults[i], status: 'processing', message: 'İşleniyor...' }
+      setBulkResults([...updatedResults])
+
+      try {
+        const formData = new FormData()
+        formData.append('file', bulkFiles[i])
+
+        const res = await fetch(`${API_URL}/api/cv/upload`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: formData
+        })
+        const data = await res.json()
+
+        if (res.status === 403) {
+          updatedResults[i] = {
+            ...updatedResults[i],
+            status: 'limit',
+            message: data.detail || 'Aday limitine ulaşıldı'
+          }
+        } else if (res.status === 429) {
+          updatedResults[i] = {
+            ...updatedResults[i],
+            status: 'error',
+            message: data.detail || 'Rate limit aşıldı'
+          }
+        } else if (data.success) {
+          updatedResults[i] = {
+            ...updatedResults[i],
+            status: 'success',
+            message: `${data.data?.ad_soyad || 'Aday'} eklendi`,
+            candidate_id: data.data?.candidate_id || null
+          }
+        } else {
+          // Duplicate veya diğer hatalar
+          const isDuplicate = (data.message || '').toLowerCase().includes('mevcut') ||
+                              (data.message || '').toLowerCase().includes('duplicate') ||
+                              (data.data?.existing_id)
+          const isBlacklisted = data.data?.blacklisted === true
+
+          if (isBlacklisted) {
+            updatedResults[i] = {
+              ...updatedResults[i],
+              status: 'blacklisted',
+              message: data.message || 'Kara listede'
+            }
+          } else if (isDuplicate) {
+            updatedResults[i] = {
+              ...updatedResults[i],
+              status: 'duplicate',
+              message: data.message || 'Mevcut aday',
+              candidate_id: data.data?.existing_id || null
+            }
+          } else {
+            updatedResults[i] = {
+              ...updatedResults[i],
+              status: 'error',
+              message: data.message || data.detail || 'İşlenemedi'
+            }
+          }
+        }
+      } catch (err) {
+        updatedResults[i] = {
+          ...updatedResults[i],
+          status: 'error',
+          message: 'Bağlantı hatası'
+        }
+      }
+
+      setBulkResults([...updatedResults])
+    }
+
+    setBulkCurrentIndex(-1)
+    setBulkUploading(false)
+    setBulkDone(true)
+    loadData() // İstatistikleri güncelle
+  }
+
+  const cancelBulkUpload = () => {
+    bulkCancelledRef.current = true
+  }
+
+  const resetBulkUpload = () => {
+    setBulkFiles([])
+    setBulkResults([])
+    setBulkCurrentIndex(-1)
+    setBulkDone(false)
+    setBulkUploading(false)
+    setBulkValidationError('')
+    bulkCancelledRef.current = false
+  }
+
+  // Toplu yükleme özet hesaplama
+  const bulkSummary = {
+    total: bulkResults.length,
+    success: bulkResults.filter(r => r.status === 'success').length,
+    error: bulkResults.filter(r => r.status === 'error' || r.status === 'limit').length,
+    duplicate: bulkResults.filter(r => r.status === 'duplicate').length,
+    blacklisted: bulkResults.filter(r => r.status === 'blacklisted').length,
+  }
 
   // Email klasorlerini yukle
   const loadFolders = async () => {
@@ -279,7 +487,7 @@ export default function CvCollect() {
       setScanProgress(90)
       const data = await res.json()
       setScanProgress(100)
-      
+
       if (data.success) {
         setScanResult(data.data)
         showMsg(data.message)
@@ -301,6 +509,19 @@ export default function CvCollect() {
         <RefreshCw className='h-8 w-8 animate-spin text-muted-foreground' />
       </div>
     )
+  }
+
+  const statusIcon = (status: BulkFileResult['status']) => {
+    switch (status) {
+      case 'success': return <CheckCircle className='h-4 w-4 text-green-500 flex-shrink-0' />
+      case 'error': return <XCircle className='h-4 w-4 text-red-500 flex-shrink-0' />
+      case 'limit': return <AlertCircle className='h-4 w-4 text-orange-500 flex-shrink-0' />
+      case 'duplicate': return <Files className='h-4 w-4 text-blue-500 flex-shrink-0' />
+      case 'blacklisted': return <Ban className='h-4 w-4 text-red-500 flex-shrink-0' />
+      case 'processing': return <RefreshCw className='h-4 w-4 text-primary animate-spin flex-shrink-0' />
+      case 'pending': return <Clock className='h-4 w-4 text-muted-foreground flex-shrink-0' />
+      default: return <Clock className='h-4 w-4 text-muted-foreground flex-shrink-0' />
+    }
   }
 
   return (
@@ -374,52 +595,172 @@ export default function CvCollect() {
         </Card>
       </div>
 
-      {/* 3 Sekmeli Yapi */}
+      {/* 3 Sekmeli Yapı */}
       <Tabs defaultValue='manuel' className='w-full'>
         <TabsList className='grid w-full grid-cols-3'>
-          <TabsTrigger value='manuel'>Manuel Yükle</TabsTrigger>
+          <TabsTrigger value='manuel'>Manuel CV Yükle</TabsTrigger>
           <TabsTrigger value='email'>Email'den Topla</TabsTrigger>
           <TabsTrigger value='gecmis'>Toplama Geçmişi</TabsTrigger>
         </TabsList>
 
-        {/* Tab 1: Manuel Yukle */}
+        {/* Tab 1: Manuel CV Yükle (tek veya çoklu) */}
         <TabsContent value='manuel' className='space-y-4'>
           <Card>
             <CardHeader>
               <CardTitle className='text-base'>CV Yükle</CardTitle>
-              <CardDescription>PDF, DOCX, DOC, PNG, JPG dosyaları desteklenir</CardDescription>
+              <CardDescription>Tek veya birden fazla CV seçebilirsiniz. PDF, DOCX desteklenir. (Maks {BULK_MAX_FILES} dosya)</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
-                onClick={() => fileInputRef.current?.click()}
-                onDrop={onDrop}
-                onDragOver={onDragOver}
-                onDragLeave={onDragLeave}
-              >
-                <input
-                  ref={fileInputRef}
-                  type='file'
-                  accept='.pdf,.docx,.doc,.png,.jpg,.jpeg'
-                  onChange={onFileSelect}
-                  className='hidden'
-                />
-                {uploading ? (
+            <CardContent className='space-y-4'>
+              {/* Dosya Seçme / Sürükle-Bırak Alanı */}
+              {!bulkUploading && !bulkDone && !uploading && (
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'}`}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDrop={onDrop}
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type='file'
+                    accept='.pdf,.docx,.doc,.png,.jpg,.jpeg'
+                    multiple
+                    onChange={onFileSelect}
+                    className='hidden'
+                  />
+                  <div className='flex flex-col items-center gap-2'>
+                    <Upload className='h-8 w-8 text-muted-foreground' />
+                    <p className='text-sm font-medium'>Dosya seçmek için tıklayın veya sürükleyin</p>
+                    <p className='text-xs text-muted-foreground'>PDF, DOCX, DOC, PNG, JPG — Tek veya birden fazla dosya seçebilirsiniz</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Tekli yükleme sırasında spinner */}
+              {uploading && (
+                <div className='border-2 border-dashed rounded-lg p-8 text-center border-primary/30 bg-primary/5'>
                   <div className='flex flex-col items-center gap-2'>
                     <RefreshCw className='h-8 w-8 animate-spin text-primary' />
                     <p className='text-sm text-muted-foreground'>CV parse ediliyor...</p>
                   </div>
-                ) : (
-                  <div className='flex flex-col items-center gap-2'>
-                    <Upload className='h-8 w-8 text-muted-foreground' />
-                    <p className='text-sm font-medium'>Dosya seçmek için tıklayın veya sürükleyin</p>
-                    <p className='text-xs text-muted-foreground'>PDF, DOCX, DOC, PNG, JPG (Maks 10MB)</p>
+                </div>
+              )}
+
+              {/* Doğrulama Hatası */}
+              {bulkValidationError && (
+                <div className='rounded-md bg-red-50 p-3 text-sm text-red-800 border border-red-200 flex items-center gap-2'>
+                  <AlertCircle className='h-4 w-4 flex-shrink-0' />
+                  {bulkValidationError}
+                </div>
+              )}
+
+              {/* Seçilen Dosyalar Listesi (yükleme başlamadan) */}
+              {bulkFiles.length > 0 && !bulkUploading && !bulkDone && (
+                <div className='space-y-3'>
+                  <div className='flex items-center justify-between'>
+                    <p className='text-sm font-medium'>{bulkFiles.length} dosya seçildi</p>
+                    <div className='flex gap-2'>
+                      <Button variant='outline' size='sm' onClick={resetBulkUpload}>
+                        Temizle
+                      </Button>
+                      <Button size='sm' onClick={startBulkUpload}>
+                        <Upload className='h-4 w-4 mr-2' />
+                        Yüklemeyi Başlat
+                      </Button>
+                    </div>
                   </div>
-                )}
-              </div>
+                  <div className='border rounded-lg divide-y max-h-60 overflow-y-auto'>
+                    {bulkFiles.map((f, i) => (
+                      <div key={i} className='flex items-center gap-3 px-3 py-2 text-sm'>
+                        <FileText className='h-4 w-4 text-muted-foreground flex-shrink-0' />
+                        <span className='truncate flex-1'>{f.name}</span>
+                        <span className='text-muted-foreground text-xs'>{(f.size / 1024).toFixed(0)} KB</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Yükleme İlerlemesi */}
+              {(bulkUploading || bulkDone) && bulkResults.length > 0 && (
+                <div className='space-y-4'>
+                  {/* Progress Bar */}
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between text-sm'>
+                      <span className='font-medium'>
+                        {bulkUploading
+                          ? `${bulkCurrentIndex + 1}/${bulkResults.length} CV işleniyor...`
+                          : 'Tamamlandı'
+                        }
+                      </span>
+                      {bulkUploading && (
+                        <Button variant='destructive' size='sm' onClick={cancelBulkUpload}>
+                          İptal Et
+                        </Button>
+                      )}
+                      {bulkDone && (
+                        <Button variant='outline' size='sm' onClick={resetBulkUpload}>
+                          Yeni Yükleme
+                        </Button>
+                      )}
+                    </div>
+                    <Progress
+                      value={bulkDone
+                        ? 100
+                        : bulkCurrentIndex >= 0
+                          ? ((bulkCurrentIndex + 1) / bulkResults.length) * 100
+                          : 0
+                      }
+                      className='w-full h-2'
+                    />
+                  </div>
+
+                  {/* Özet Kartı (tamamlandığında) */}
+                  {bulkDone && (
+                    <div className='grid grid-cols-4 gap-3'>
+                      <div className='text-center p-3 bg-green-50 rounded-lg border border-green-200'>
+                        <div className='text-xl font-bold text-green-600'>{bulkSummary.success}</div>
+                        <div className='text-xs text-green-700'>Başarılı</div>
+                      </div>
+                      <div className='text-center p-3 bg-red-50 rounded-lg border border-red-200'>
+                        <div className='text-xl font-bold text-red-600'>{bulkSummary.error}</div>
+                        <div className='text-xs text-red-700'>Hata</div>
+                      </div>
+                      <div className='text-center p-3 bg-blue-50 rounded-lg border border-blue-200'>
+                        <div className='text-xl font-bold text-blue-600'>{bulkSummary.duplicate}</div>
+                        <div className='text-xs text-blue-700'>Mevcut</div>
+                      </div>
+                      <div className='text-center p-3 bg-gray-50 rounded-lg border border-gray-200'>
+                        <div className='text-xl font-bold text-gray-600'>{bulkSummary.blacklisted}</div>
+                        <div className='text-xs text-gray-700'>Kara Liste</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dosya Listesi + Durumlar */}
+                  <div className='border rounded-lg divide-y max-h-80 overflow-y-auto'>
+                    {bulkResults.map((r, i) => (
+                      <div key={i} className={`flex items-center gap-3 px-3 py-2 text-sm ${r.status === 'processing' ? 'bg-blue-50' : ''}`}>
+                        {statusIcon(r.status)}
+                        <span className='truncate flex-1 font-medium'>{r.filename}</span>
+                        <span className={`text-xs truncate max-w-[200px] ${
+                          r.status === 'success' ? 'text-green-600' :
+                          r.status === 'error' || r.status === 'limit' ? 'text-red-600' :
+                          r.status === 'duplicate' ? 'text-blue-600' :
+                          r.status === 'blacklisted' ? 'text-red-600' :
+                          'text-muted-foreground'
+                        }`}>
+                          {r.message || (r.status === 'pending' ? 'Bekliyor' : '')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
+          {/* Tekli yükleme hata mesajı */}
           {parseError && (
             <div className='rounded-md bg-red-50 p-4 text-sm text-red-800 border border-red-200 flex items-center gap-2'>
               <XCircle className='h-4 w-4' />
@@ -427,6 +768,7 @@ export default function CvCollect() {
             </div>
           )}
 
+          {/* Tekli yükleme parse sonucu */}
           {parseResult && (
             <Card>
               <CardHeader>
@@ -572,9 +914,9 @@ export default function CvCollect() {
                 </CardHeader>
                 <CardContent className='space-y-4'>
                   <div className='flex items-center space-x-2'>
-                    <Checkbox 
-                      id='unseen' 
-                      checked={unseenOnly} 
+                    <Checkbox
+                      id='unseen'
+                      checked={unseenOnly}
                       onCheckedChange={(checked) => setUnseenOnly(checked === true)}
                     />
                     <label htmlFor='unseen' className='text-sm font-medium leading-none cursor-pointer'>
@@ -586,8 +928,8 @@ export default function CvCollect() {
               </Card>
 
               {/* Tarama Butonu */}
-              <Button 
-                onClick={startScan} 
+              <Button
+                onClick={startScan}
                 disabled={scanning || !selectedAccountId}
                 className='w-full'
                 size='lg'
@@ -635,7 +977,7 @@ export default function CvCollect() {
                         <div className='text-xs text-muted-foreground'>Hata</div>
                       </div>
                     </div>
-                    
+
                     {scanResult.candidates.length > 0 && (
                       <div className='mt-4'>
                         <p className='text-sm font-medium mb-2'>Eklenen Adaylar:</p>
@@ -649,7 +991,7 @@ export default function CvCollect() {
                         </div>
                       </div>
                     )}
-                    
+
                     {scanResult.errors.length > 0 && (
                       <div className='mt-4'>
                         <p className='text-sm font-medium mb-2 text-red-600'>Hatalar:</p>
