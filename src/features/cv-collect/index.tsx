@@ -145,7 +145,6 @@ export default function CvCollect() {
   const bulkCancelledRef = useRef(false)
   const [bulkDone, setBulkDone] = useState(false)
   const [bulkValidationError, setBulkValidationError] = useState('')
-  const [bulkWarning, setBulkWarning] = useState('')
 
   const loadData = useCallback(() => {
     Promise.all([
@@ -283,7 +282,6 @@ export default function CvCollect() {
   // === ÇOKLU DOSYA İŞLEME ===
   const handleMultipleFiles = (files: File[]) => {
     setBulkValidationError('')
-    setBulkWarning('')
     setParseResult(null)
     setParseError('')
 
@@ -306,11 +304,6 @@ export default function CvCollect() {
     if (emptyFiles.length > 0) {
       setBulkValidationError(`Boş dosya tespit edildi: ${emptyFiles.map(f => f.name).join(', ')}`)
       return
-    }
-
-    // 10+ dosya uyarısı
-    if (files.length > 10) {
-      setBulkWarning(`${files.length} CV seçtiniz. İşlem uzun sürebilir.`)
     }
 
     setBulkFiles(files)
@@ -438,7 +431,6 @@ export default function CvCollect() {
     setBulkDone(false)
     setBulkUploading(false)
     setBulkValidationError('')
-    setBulkWarning('')
     bulkCancelledRef.current = false
   }
 
@@ -659,14 +651,6 @@ export default function CvCollect() {
                 <div className='rounded-md bg-red-50 p-3 text-sm text-red-800 border border-red-200 flex items-center gap-2'>
                   <AlertCircle className='h-4 w-4 flex-shrink-0' />
                   {bulkValidationError}
-                </div>
-              )}
-
-              {/* 10+ dosya uyarısı */}
-              {bulkWarning && (
-                <div className='rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 border border-yellow-200 flex items-center gap-2'>
-                  <AlertCircle className='h-4 w-4 flex-shrink-0' />
-                  {bulkWarning}
                 </div>
               )}
 

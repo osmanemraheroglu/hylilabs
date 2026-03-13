@@ -22,9 +22,8 @@ Son güncelleme: 13.03.2026
   - 4 sekme → 3 sekme: "Manuel CV Yükle", "Email'den Topla", "Toplama Geçmişi"
   - Tek dosya seçildiğinde direkt yükleme (progress UI yok)
   - Çoklu dosya seçildiğinde toplu akış (dosya listesi, progress bar, özet kartı)
-  - 10+ dosya uyarısı, 20+ dosya engeli aynen korundu
+  - 20+ dosya engeli korundu, 10+ uyarı kaldırıldı (bulkWarning state silindi)
   - Drag & drop tek zone'da birleşik çalışıyor
-  - `bulkFileInputRef` ve `bulkDragActive` kaldırıldı, ana ref/state kullanılıyor
 
 ### 13.03.2026 - Toplu CV Yükleme (Max 20)
 - ✅ **Toplu CV Yükleme** — tek seferde max 20 CV, sıralı işleme
