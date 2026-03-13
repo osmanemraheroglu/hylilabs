@@ -465,8 +465,8 @@ export function LandingPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(32px, 5vw, 64px)', flexWrap: 'wrap' }}>
               {[
                 { src: '/images/anthropic.png', alt: 'Anthropic' },
-                { src: '/images/claude.png', alt: 'Claude' },
-                { src: '/images/gemini.png', alt: 'Gemini' },
+                { src: '/images/openai.png', alt: 'OpenAI' },
+                { src: '/images/nous.png', alt: 'Nous Research' },
                 { src: '/images/google.png', alt: 'Google' },
               ].map((partner, i) => (
                 <img
