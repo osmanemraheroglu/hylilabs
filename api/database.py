@@ -12126,7 +12126,13 @@ def get_position_candidates(position_id: int) -> list[dict]:
                    'auto' as assignment_type,
                    cp.match_score,
                    'Pozisyon eşleşmesi' as match_reason,
-                   cp.created_at as assigned_at
+                   cp.created_at as assigned_at,
+                   cp.v2_score,
+                   cp.v3_score,
+                   cp.gemini_score,
+                   cp.hermes_score,
+                   cp.openai_score,
+                   cp.score_version
             FROM candidate_positions cp
             JOIN candidates c ON cp.candidate_id = c.id
             WHERE cp.position_id = ? AND cp.status = 'aktif'

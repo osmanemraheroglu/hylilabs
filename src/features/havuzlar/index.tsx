@@ -175,7 +175,43 @@ export default function Havuzlar() {
   const loadCandidates = useCallback((poolId: number) => {
     setCandidatesLoading(true); setExpandedCandidate(null); setCandidateDetail(null)
     fetch(`${API}/api/pools/${poolId}/candidates`, { headers: H() })
-      .then(r => r.json()).then(res => { if (res.success) { setCandidates(res.data); setPoolInfo(res.pool) } })
+      .then(r => r.json()).then(res => {
+        if (res.success) {
+          setCandidates(res.data)
+          setPoolInfo(res.pool)
+          // V3 skorları varsa v3Evaluation state'ini güncelle
+          const v3Data: Record<number, {
+            total_score: number
+            eligible: boolean
+            gemini_score: number
+            hermes_score: number
+            openai_score?: number
+            evaluation_method?: string
+            models_used?: string[]
+            claude_used?: boolean
+            layer_scores: Record<string, { score: number; reason: string }>
+            strengths: string[]
+            weaknesses: string[]
+          }> = {}
+          res.data.forEach((c: { id: number; v3_score?: number; gemini_score?: number; hermes_score?: number; openai_score?: number; score_version?: string }) => {
+            if (c.score_version === 'v3_weighted' || c.score_version === 'v3') {
+              v3Data[c.id] = {
+                total_score: c.v3_score || 0,
+                eligible: (c.v3_score || 0) >= 40,
+                gemini_score: c.gemini_score || 0,
+                hermes_score: c.hermes_score || 0,
+                openai_score: c.openai_score || 0,
+                layer_scores: {},
+                strengths: [],
+                weaknesses: []
+              }
+            }
+          })
+          if (Object.keys(v3Data).length > 0) {
+            setV3Evaluation(prev => ({ ...prev, ...v3Data }))
+          }
+        }
+      })
       .catch(console.error).finally(() => setCandidatesLoading(false))
   }, [])
 

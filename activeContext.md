@@ -18,6 +18,18 @@ Son güncelleme: 13.03.2026
 ## Son 72 Saatte Tamamlananlar
 
 ### 13.03.2026
+- ✅ **FAZ 11: V3 Skor Frontend Entegrasyonu**
+  - **FAZ 11.1**: candidate_positions tablosuna 6 yeni kolon eklendi
+    - v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version
+  - **FAZ 11.2**: Mevcut V3 veriler ai_evaluations'dan migrate edildi (19 kayıt)
+  - **FAZ 11.2.1**: match_score weighted average güncellendi (17 kayıt v3_weighted)
+  - **FAZ 11.3**: add_candidate_to_position() ve ilgili fonksiyonlar güncellendi
+    - Yeni parametreler: v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version
+    - match_single_candidate_to_positions() V3 skorları ile çağırıyor
+    - pull_matching_candidates_to_position() UPDATE V3 skorları ekliyor
+  - **FAZ 11.4**: get_position_candidates() V3 kolonları döndürüyor
+  - **FAZ 11.5**: Frontend loadCandidates() v3Evaluation state'ini otomatik dolduruyor
+  - V3 skorları artık sayfa yüklendiğinde görünür (Değerlendir tıklamaya gerek yok)
 - ✅ **FAZ 10.1: V3 Sync Değerlendirme Entegrasyonu**
   - pull_matching_candidates_to_position fonksiyonuna V3 eklendi
   - Weighted average formülü: Final = (V3 × 0.60) + (V2 × 0.40)
