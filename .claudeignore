@@ -53,3 +53,18 @@ Thumbs.db
 *.tmp
 *.temp
 *.bak
+
+# Backup klasörler ve dosyalar
+src.bak_*/
+*.bak_*
+frontend/
+
+# Eski/kullanılmayan
+*.backup
+*.old
+*.orig
+
+# Python cache (ek)
+*.pyo
+.pytest_cache/
+.mypy_cache/
