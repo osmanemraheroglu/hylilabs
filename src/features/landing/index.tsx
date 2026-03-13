@@ -474,15 +474,10 @@ export function LandingPage() {
                   src={partner.src}
                   alt={partner.alt}
                   style={{
-                    height: 40,
+                    height: 120,
                     width: 'auto',
-                    filter: 'grayscale(100%)',
-                    opacity: 0.6,
-                    transition: 'filter 0.3s ease, opacity 0.3s ease',
                     cursor: 'default',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.filter = 'grayscale(0%)'; e.currentTarget.style.opacity = '1' }}
-                  onMouseLeave={e => { e.currentTarget.style.filter = 'grayscale(100%)'; e.currentTarget.style.opacity = '0.6' }}
                 />
               ))}
             </div>
