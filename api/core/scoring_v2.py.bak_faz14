@@ -778,33 +778,11 @@ def calculate_elimination_score(
     
     elimination_score = location_score + requirements_score
     
-    # FAZ 14: location_status hesaplama
-    # green (5 puan): Tam eşleşme
-    # yellow (3 puan): Yakın lokasyon  
-    # red (0 puan): Uyumsuz lokasyon
-    # gray: CV'de veya ilanda lokasyon yok
-    if location_score >= 5:
-        loc_status = 'green'
-    elif location_score >= 3:
-        loc_status = 'yellow'
-    elif not cand_location or not pos_location:
-        loc_status = 'gray'
-    else:
-        loc_status = 'red'
-    
-    location_status = {
-        'status': loc_status,
-        'candidate_location': cand_location or '-',
-        'position_location': pos_location or '-',
-        'match_type': location_detail
-    }
-    
     return {
         'elimination_score': int(elimination_score),
         'location_score': int(location_score),
         'location_detail': location_detail,
-        'requirements_score': int(requirements_score),
-        'location_status': location_status  # FAZ 14: Eklendi
+        'requirements_score': int(requirements_score)
     }
 
 

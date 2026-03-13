@@ -823,3 +823,38 @@ Commitler: 9858e41, 7c2897f, b3212f5, 66c3151, ade16ee, 0c97746, 733651b, 78ddab
 - Badge'in match_score yerine başka skor göstermesi
 
 Bu sistem %100 tamamlandı ve KİLİTLİDİR.
+
+---
+
+## ═══════════════════════════════════════════════════════════════
+## FAZ 14 - LOKASYON BADGE SİSTEMİ (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+## ═══════════════════════════════════════════════════════════════
+Tarih: 2026-03-14
+
+### RENK MANTIĞI:
+| Renk | Puan | Açıklama |
+|------|------|----------|
+| green | 5 | Tam eşleşme (aynı şehir) |
+| yellow | 3 | Yakın lokasyon / Komşu şehir / İstanbul ilçeleri |
+| red | 0 | Farklı lokasyon |
+| gray | - | CV veya ilanda lokasyon yok |
+
+### DOSYALAR:
+1. api/core/scoring_v2.py - calculate_elimination_score → location_status (satır 781-807)
+2. api/routes/pools.py - get_location_status_fallback() fonksiyonu (satır 329-400)
+
+### ÇALIŞMA PRENSİBİ:
+1. Yeni değerlendirme: scoring_v2.py → matches.detayli_analiz'e kaydet
+2. Eski veri: pools.py → dinamik fallback hesapla (matches'ta yoksa)
+3. Frontend: LocationBadge component → renkli gösterim
+
+### İSTANBUL ÖZEL DURUMU:
+- İstanbul ilçeleri birbirine "yakın" sayılır (yellow badge)
+- 38 ilçe tanımlı: Kadıköy, Beşiktaş, Şişli, Üsküdar, Ataşehir, Maltepe, Kartal, Pendik, Bakırköy, Bahçelievler, Bağcılar, Esenyurt, Beylikdüzü, Avcılar, Küçükçekmece, Büyükçekmece, Başakşehir, Sarıyer, Beykoz, Fatih, Beyoğlu, Zeytinburnu, Güngören, Esenler, Gaziosmanpaşa, Sultangazi, Eyüp, Kağıthane, Tuzla, Sultanbeyli, Sancaktepe, Çekmeköy, Arnavutköy, Silivri, Çatalca, Şile, Adalar
+
+### KİLİTLİ KURALLAR:
+- location_status her zaman {status, candidate_location, position_location, match_type} döndürmeli
+- Fallback mekanizması kaldırılamaz
+- İstanbul ilçe listesi değiştirilemez
+
+Bu sistem KİLİTLİDİR. Değiştirilemez.

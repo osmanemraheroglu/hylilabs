@@ -316,68 +316,6 @@ def get_pool_candidates(pool_id: int, current_user: dict = Depends(get_current_u
                 from database import get_connection
                 import json as json_lib
                 import logging
-                
-                # FAZ 14: Pozisyon lokasyonunu al
-                pos_location = ""
-                with get_connection() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT lokasyon FROM department_pools WHERE id = ?", (pool_id,))
-                    pos_row = cursor.fetchone()
-                    if pos_row:
-                        pos_location = pos_row["lokasyon"] or ""
-                
-                # FAZ 14: location_status fallback fonksiyonu
-                def get_location_status_fallback(cand_loc: str, pos_loc: str) -> dict:
-                    if not cand_loc or not pos_loc:
-                        return {
-                            'status': 'gray',
-                            'candidate_location': cand_loc or '-',
-                            'position_location': pos_loc or '-',
-                            'match_type': 'Veri yok'
-                        }
-                    
-                    cand_lower = cand_loc.lower().strip()
-                    pos_lower = pos_loc.lower().strip()
-                    
-                    # Tam eşleşme
-                    if cand_lower == pos_lower:
-                        return {
-                            'status': 'green',
-                            'candidate_location': cand_loc,
-                            'position_location': pos_loc,
-                            'match_type': 'Aynı şehir'
-                        }
-                    
-                    # Kısmi eşleşme (biri diğerini içeriyor)
-                    if cand_lower in pos_lower or pos_lower in cand_lower:
-                        return {
-                            'status': 'yellow',
-                            'candidate_location': cand_loc,
-                            'position_location': pos_loc,
-                            'match_type': 'Yakın lokasyon'
-                        }
-                    
-                    # İstanbul özel durumu
-                    istanbul_ilceler = ['kadıköy', 'beşiktaş', 'şişli', 'üsküdar', 'ataşehir', 'maltepe', 'kartal', 'pendik', 'bakırköy', 'bahçelievler', 'bağcılar', 'esenyurt', 'beylikdüzü', 'avcılar', 'küçükçekmece', 'büyükçekmece', 'başakşehir', 'sarıyer', 'beykoz', 'fatih', 'beyoğlu', 'zeytinburnu', 'güngören', 'esenler', 'gaziosmanpaşa', 'sultangazi', 'eyüp', 'kağıthane', 'tuzla', 'sultanbeyli', 'sancaktepe', 'çekmeköy', 'arnavutköy', 'silivri', 'çatalca', 'şile', 'adalar']
-                    cand_istanbul = 'istanbul' in cand_lower or any(ilce in cand_lower for ilce in istanbul_ilceler)
-                    pos_istanbul = 'istanbul' in pos_lower or any(ilce in pos_lower for ilce in istanbul_ilceler)
-                    
-                    if cand_istanbul and pos_istanbul:
-                        return {
-                            'status': 'yellow',
-                            'candidate_location': cand_loc,
-                            'position_location': pos_loc,
-                            'match_type': 'Aynı şehir (İstanbul)'
-                        }
-                    
-                    # Farklı lokasyon
-                    return {
-                        'status': 'red',
-                        'candidate_location': cand_loc,
-                        'position_location': pos_loc,
-                        'match_type': 'Farklı lokasyon'
-                    }
-                
                 with get_connection() as conn:
                     cursor = conn.cursor()
                     for c in candidates:
@@ -388,18 +326,9 @@ def get_pool_candidates(pool_id: int, current_user: dict = Depends(get_current_u
                                 WHERE candidate_id = ? AND position_id = ?
                             """, (cid, pool_id))
                             match_row = cursor.fetchone()
-                            
-                            location_status = None
                             if match_row and match_row["detayli_analiz"]:
                                 detail = json_lib.loads(match_row["detayli_analiz"])
-                                location_status = detail.get("location_status")
-                            
-                            # FAZ 14: Fallback - matches'ta yoksa dinamik hesapla
-                            if not location_status or not location_status.get("status"):
-                                cand_loc = c.get("lokasyon", "") or ""
-                                location_status = get_location_status_fallback(cand_loc, pos_location)
-                            
-                            c["location_status"] = location_status
+                                c["location_status"] = detail.get("location_status", {})
                         except Exception as e:
                             logging.error(f"location_status enrichment error: candidate_id={c.get('id')}, pool_id={pool_id}, error={e}")
         else:
