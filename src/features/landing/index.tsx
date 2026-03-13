@@ -215,7 +215,7 @@ export function LandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 72 }}>
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => scrollTo('#hero')}>
-            <img src="/images/Logo_400x120.png" alt="HyliLabs" style={{ height: 40, width: 'auto' }} />
+            <img src="/images/Logo_400x120.png" alt="HyliLabs" style={{ height: 56, width: 'auto' }} />
           </div>
 
           {/* Desktop Links */}
@@ -654,7 +654,7 @@ export function LandingPage() {
             {/* Logo + Açıklama */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-                <img src="/images/footer_logo_600x400.png" alt="HyliLabs" style={{ height: 60, width: 'auto' }} />
+                <img src="/images/footer_logo_600x400.png" alt="HyliLabs" style={{ height: 80, width: 'auto' }} />
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0 }}>
                 Yapay zeka destekli işe alım platformu.
