@@ -654,7 +654,7 @@ export function LandingPage() {
             {/* Logo + Açıklama */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-                <img src="/images/Logo_600x400.png" alt="HyliLabs" style={{ height: 60, width: 'auto' }} />
+                <img src="/images/footer_logo_600x400.png" alt="HyliLabs" style={{ height: 60, width: 'auto' }} />
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0 }}>
                 Yapay zeka destekli işe alım platformu.
