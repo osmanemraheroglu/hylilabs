@@ -5,7 +5,7 @@ Son güncelleme: 13.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** dbe06b0 (FAZ 12.6.1: candidate_pool_assignments sync)
+- **Son commit:** FAZ 12.8 (ai_evaluations kozmetik düzeltme)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -16,29 +16,6 @@ Son güncelleme: 13.03.2026
 - 3 şirket, ~50 aday, 5 pozisyon
 
 ## Son 72 Saatte Tamamlananlar
-
-### 13.03.2026 - HyliLabs Landing Page
-- ✅ **Çözüm Ortaklarımız Bölümü** (tamamlandı)
-  - "Nasıl Çalışır" ile "Fiyatlandırma" arasına eklendi
-  - 5 logo: Anthropic, Claude, Gemini, Google, Hetzner
-  - Grayscale + opacity efekti, hover'da renkli
-  - RevealSection scroll animasyonu
-- ✅ **Landing Page Logo Entegrasyonu** (tamamlandı)
-  - Navbar: Logo_400x120.png (height: 56px)
-  - Footer: footer_logo_600x400.png (beyaz yazılı, koyu arka plan, height: 80px)
-  - Logo dosyaları: public/images/Logo_400x120.png, public/images/Logo_600x400.png
-- ✅ **Landing Page Entegrasyonu** (tamamlandı)
-  - `/` = Landing page (public), `/sign-in` = Giriş sayfası, `/dashboard` = Dashboard (auth)
-  - Landing page bileşeni: `src/features/landing/index.tsx`
-  - Bölümler: Navbar, Hero, Özellikler (6 kart), Nasıl Çalışır (4 adım), Fiyatlandırma (3 plan), İletişim (form), Footer
-  - Route yapısı: `src/routes/index.tsx` (public root), `src/routes/_authenticated/dashboard/index.tsx` (dashboard)
-  - Auth guard güncellendi: `initAuth()` public paths listesi eklendi (/, /sign-in, /sign-up vb.)
-  - Login sonrası redirect: `/` → `/dashboard`
-  - Sidebar dashboard linki: `/` → `/dashboard`
-  - Değişen dosyalar:
-    - YENİ: `src/features/landing/index.tsx`, `src/routes/index.tsx`, `src/routes/_authenticated/dashboard/index.tsx`
-    - SİLİNEN: `src/routes/_authenticated/index.tsx`
-    - GÜNCELLENEN: `auth-store.ts`, `user-auth-form.tsx`, `sidebar-data.ts`, `otp-form.tsx`, 4 error sayfası
 
 ### 13.03.2026
 - ✅ **FAZ 12: V3 Puanlama Bug Fix** (tamamlandı)
@@ -75,6 +52,11 @@ Son güncelleme: 13.03.2026
     - 18 eksik aday kaydı candidate_pool_assignments tablosuna eklendi
     - V3 eleme sonrası candidate_pool_assignments INSERT eklendi (database.py:7281)
     - Frontend Genel Havuz artık 58 aday gösteriyor (40 yerine)
+  - **FAZ 12.8**: ai_evaluations kozmetik düzeltme
+    - 15 kayıt düzeltildi (consensus_method='claude_decision' + total_score=0)
+    - 5 kayıt: average_fallback (Hermes+OpenAI ortalaması)
+    - 10 kayıt: single_model_fallback (sadece Hermes)
+    - 2 tek model aday analizi: OpenAI sigorta öncesi değerlendirme (beklenen davranış)
 - ✅ **FAZ 11: V3 Skor Frontend Entegrasyonu**
   - **FAZ 11.1**: candidate_positions tablosuna 6 yeni kolon eklendi
     - v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version
