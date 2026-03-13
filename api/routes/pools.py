@@ -668,7 +668,25 @@ def get_candidate_detail(pool_id: int, candidate_id: int, current_user: dict = D
             ai_row = cursor.fetchone()
             ai_eval = None
             if ai_row:
-                ai_eval = {"text": ai_row[0], "v2_score": ai_row[1], "date": ai_row[2]}
+                try:
+                    eval_data = json.loads(ai_row[0]) if ai_row[0] else {}
+                    ai_eval = {
+                        "text": ai_row[0],
+                        "v2_score": ai_row[1],
+                        "date": ai_row[2],
+                        "strengths": eval_data.get("strengths", []),
+                        "weaknesses": eval_data.get("weaknesses", []),
+                        "notes_for_hr": eval_data.get("notes_for_hr", []),
+                        "overall_assessment": eval_data.get("overall_assessment", ""),
+                        "total_score": eval_data.get("total_score", 0),
+                        "gemini_score": eval_data.get("gemini_score", 0),
+                        "hermes_score": eval_data.get("hermes_score", 0),
+                        "openai_score": eval_data.get("openai_score", 0),
+                        "consensus_method": eval_data.get("consensus_method", ""),
+                        "models_used": eval_data.get("models_used", [])
+                    }
+                except json.JSONDecodeError:
+                    ai_eval = {"text": ai_row[0], "v2_score": ai_row[1], "date": ai_row[2]}
 
         return {
             "success": True,
