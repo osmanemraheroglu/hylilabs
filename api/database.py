@@ -12643,7 +12643,8 @@ def get_ai_evaluation(candidate_id: int, position_id: int) -> dict:
 
 def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, company_id: int) -> bool:
     """
-    V3 değerlendirme sonucunu ai_evaluations tablosuna kaydeder.
+    V3 degerlendirme sonucunu ai_evaluations tablosuna kaydeder.
+    FAZ 12.2: Retry mekanizmasi eklendi (database locked hatasi icin).
 
     Args:
         candidate_id: Aday ID
@@ -12652,45 +12653,55 @@ def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, compan
         company_id: Firma ID
 
     Returns:
-        bool: Başarılı mı?
+        bool: Basarili mi?
     """
-    try:
-        evaluation_data = {
-            "version": "v3",
-            "total_score": result.total_score,
-            "eligible": result.eligible,
-            "gemini_score": getattr(result, 'gemini_score', 0),
-            "hermes_score": getattr(result, 'hermes_score', 0),
-            "openai_score": getattr(result, 'openai_score', 0),
-            "models_used": getattr(result, 'models_used', []),
-            "consensus_method": getattr(result, 'consensus_method', ''),
-            "scores": getattr(result, 'scores', {}),
-            "strengths": result.strengths if hasattr(result, 'strengths') else [],
-            "weaknesses": result.weaknesses if hasattr(result, 'weaknesses') else [],
-            "notes_for_hr": result.notes_for_hr if hasattr(result, 'notes_for_hr') else [],
-            "overall_assessment": result.overall_assessment if hasattr(result, 'overall_assessment') else ""
-        }
+    import time as _time
+    
+    evaluation_data = {
+        "version": "v3",
+        "total_score": result.total_score,
+        "eligible": result.eligible,
+        "gemini_score": getattr(result, 'gemini_score', 0),
+        "hermes_score": getattr(result, 'hermes_score', 0),
+        "openai_score": getattr(result, 'openai_score', 0),
+        "models_used": getattr(result, 'models_used', []),
+        "consensus_method": getattr(result, 'consensus_method', ''),
+        "scores": getattr(result, 'scores', {}),
+        "strengths": result.strengths if hasattr(result, 'strengths') else [],
+        "weaknesses": result.weaknesses if hasattr(result, 'weaknesses') else [],
+        "notes_for_hr": result.notes_for_hr if hasattr(result, 'notes_for_hr') else [],
+        "overall_assessment": result.overall_assessment if hasattr(result, 'overall_assessment') else ""
+    }
 
-        evaluation_text = json.dumps(evaluation_data, ensure_ascii=False)
+    evaluation_text = json.dumps(evaluation_data, ensure_ascii=False)
+    
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT OR REPLACE INTO ai_evaluations
+                    (candidate_id, position_id, evaluation_text, v2_score, eval_prompt, created_at)
+                    VALUES (?, ?, ?, ?, 'v3_auto_eval', datetime('now'))
+                """, (candidate_id, position_id, evaluation_text, result.total_score))
+                conn.commit()
+                logger.info(f"V3 degerlendirme kaydedildi: candidate_id={candidate_id}, position_id={position_id}, score={result.total_score}")
+                return True
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e) and attempt < max_retries - 1:
+                wait_time = 0.5 * (attempt + 1)  # 0.5s, 1s, 1.5s exponential backoff
+                logger.warning(f"Database locked, retry {attempt + 1}/{max_retries}, bekleniyor: {wait_time}s")
+                _time.sleep(wait_time)
+                continue
+            logger.error(f"save_v3_evaluation_to_db hatasi (retry sonrasi): {e}")
+            return False
+        except Exception as e:
+            logger.error(f"save_v3_evaluation_to_db hatasi: {e}")
+            return False
+    
+    return False
 
-        with get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT OR REPLACE INTO ai_evaluations
-                (candidate_id, position_id, evaluation_text, v2_score, eval_prompt, created_at)
-                VALUES (?, ?, ?, ?, 'v3_auto_eval', datetime('now'))
-            """, (candidate_id, position_id, evaluation_text, result.total_score))
-            conn.commit()
-            logger.info(f"V3 değerlendirme kaydedildi: candidate_id={candidate_id}, position_id={position_id}, score={result.total_score}")
-            return True
-    except Exception as e:
-        logger.error(f"save_v3_evaluation_to_db hatası: {e}")
-        return False
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# AI GÜNLÜK KULLANIM LİMİTİ FONKSİYONLARI (27.02.2026)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def get_company_daily_ai_limit(company_id: int) -> int:
     """Şirketin plan bazlı günlük AI limitini döndür (-1 = sınırsız)"""
