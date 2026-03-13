@@ -876,3 +876,28 @@ Tarih: 2026-03-14
 - routes/pools.py (detail endpoint, satır 695-712)
 
 Bu değişiklik KİLİTLİDİR. Ağırlık formülü değiştirilemez.
+
+---
+
+## FAZ 13.6 - FRONTEND SKOR DETAYI (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+Tarih: 2026-03-14
+
+### DEĞİŞİKLİKLER:
+1. loadDetail() layer_scores aktarımı düzeltildi (satır 291-307)
+   - Eski: layer_scores: prev[candidateId]?.layer_scores || {} (YANLIŞ)
+   - Yeni: layer_scores: res.ai_evaluation.layer_scores || res.ai_evaluation.scores || ... (DOĞRU)
+
+2. Skor Detayı bölümü eklendi (satır 1036-1062)
+   - V2 (Keyword) skoru + ağırlık (x0.40)
+   - V3 (AI) skoru + ağırlık (x0.60)
+   - Final skor (match_score)
+   - Formül açıklaması
+
+### DOSYA:
+- src/features/havuzlar/index.tsx
+
+### MEVCUT ÖZELLİKLER (zaten vardı):
+- Layer Scores progress bar (satır 1063-1081)
+- Güçlü/Zayıf Yönler (satır 1082-1099)
+
+Bu değişiklik KİLİTLİDİR. Frontend skor gösterimi değiştirilemez.
