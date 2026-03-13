@@ -4414,58 +4414,91 @@ def _init_email_collection_table():
         # Eski tablo yanlış foreign key'e sahip olabilir (position_id → positions yerine department_pools olmalı)
         # SQLite'da ALTER TABLE ile FK değiştirilemez, tabloyu yeniden oluşturmalıyız
         try:
-            # Mevcut veriyi yedekle
-            cursor.execute("SELECT COUNT(*) FROM candidate_positions")
-            row_count = cursor.fetchone()[0]
-            
-            if row_count > 0:
-                # Veriyi geçici tabloya kopyala
+            # Önce V3 kolonları var mı kontrol et - varsa migration zaten yapılmış demektir
+            cursor.execute("PRAGMA table_info(candidate_positions)")
+            existing_cols = [col[1] for col in cursor.fetchall()]
+            if 'v3_score' in existing_cols and 'score_version' in existing_cols:
+                # Migration zaten yapılmış, atla
+                logger.debug("candidate_positions V3 kolonları mevcut, migration atlanıyor")
+            else:
+                # V3 kolonları yok, migration gerekli
+                logger.info("candidate_positions V3 migration başlıyor...")
+
+                # Mevcut veriyi yedekle
+                cursor.execute("SELECT COUNT(*) FROM candidate_positions")
+                row_count = cursor.fetchone()[0]
+
+                if row_count > 0:
+                    # Veriyi geçici tabloya kopyala
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS candidate_positions_backup AS
+                        SELECT * FROM candidate_positions
+                    """)
+                    logger.info(f"candidate_positions tablosu yedeklendi: {row_count} kayıt")
+
+                # Eski tabloyu sil
+                cursor.execute("DROP TABLE IF EXISTS candidate_positions")
+                logger.info("Eski candidate_positions tablosu silindi")
+
+                # Yeni tabloyu doğru foreign key'lerle oluştur (V3 skorlar dahil)
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS candidate_positions_backup AS
-                    SELECT * FROM candidate_positions
+                    CREATE TABLE candidate_positions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        candidate_id INTEGER NOT NULL,
+                        position_id INTEGER NOT NULL,
+                        match_score INTEGER DEFAULT 0,
+                        status TEXT DEFAULT 'aktif',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        v2_score INTEGER DEFAULT 0,
+                        v3_score INTEGER DEFAULT 0,
+                        gemini_score INTEGER DEFAULT 0,
+                        hermes_score INTEGER DEFAULT 0,
+                        openai_score INTEGER DEFAULT 0,
+                        score_version TEXT DEFAULT 'v2',
+                        FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE,
+                        FOREIGN KEY (position_id) REFERENCES department_pools(id) ON DELETE CASCADE,
+                        UNIQUE(candidate_id, position_id)
+                    )
                 """)
-                logger.info(f"candidate_positions tablosu yedeklendi: {row_count} kayıt")
-            
-            # Eski tabloyu sil
-            cursor.execute("DROP TABLE IF EXISTS candidate_positions")
-            logger.info("Eski candidate_positions tablosu silindi")
-            
-            # Yeni tabloyu doğru foreign key'lerle oluştur
-            cursor.execute("""
-                CREATE TABLE candidate_positions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    candidate_id INTEGER NOT NULL,
-                    position_id INTEGER NOT NULL,
-                    match_score INTEGER DEFAULT 0,
-                    status TEXT DEFAULT 'aktif',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE,
-                    FOREIGN KEY (position_id) REFERENCES department_pools(id) ON DELETE CASCADE,
-                    UNIQUE(candidate_id, position_id)
-                )
-            """)
-            logger.info("Yeni candidate_positions tablosu oluşturuldu (doğru FK'lerle)")
-            
-            # Index'leri yeniden oluştur
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_candidate_positions_candidate ON candidate_positions(candidate_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_candidate_positions_position ON candidate_positions(position_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_candidate_positions_score ON candidate_positions(position_id, match_score DESC)")
-            
-            # Yedekten veriyi geri yükle (sadece geçerli foreign key'leri olanlar)
-            if row_count > 0:
-                cursor.execute("""
-                    INSERT INTO candidate_positions (candidate_id, position_id, match_score, status, created_at)
-                    SELECT cp.candidate_id, cp.position_id, cp.match_score, cp.status, cp.created_at
-                    FROM candidate_positions_backup cp
-                    WHERE EXISTS (SELECT 1 FROM candidates c WHERE c.id = cp.candidate_id)
-                      AND EXISTS (SELECT 1 FROM department_pools dp WHERE dp.id = cp.position_id)
-                """)
-                restored_count = cursor.rowcount
-                logger.info(f"Veri geri yüklendi: {restored_count}/{row_count} kayıt")
-                
-                # Yedek tabloyu sil
-                cursor.execute("DROP TABLE IF EXISTS candidate_positions_backup")
-                logger.info("Yedek tablo silindi")
+                logger.info("Yeni candidate_positions tablosu oluşturuldu (doğru FK'lerle)")
+
+                # Index'leri yeniden oluştur
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_candidate_positions_candidate ON candidate_positions(candidate_id)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_candidate_positions_position ON candidate_positions(position_id)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_candidate_positions_score ON candidate_positions(position_id, match_score DESC)")
+
+                # Yedekten veriyi geri yükle (sadece geçerli foreign key'leri olanlar)
+                if row_count > 0:
+                    # V3 kolonları backup'ta var mı kontrol et
+                    cursor.execute("PRAGMA table_info(candidate_positions_backup)")
+                    backup_cols = [col[1] for col in cursor.fetchall()]
+                    has_v3 = 'v3_score' in backup_cols
+
+                    if has_v3:
+                        cursor.execute("""
+                            INSERT INTO candidate_positions (candidate_id, position_id, match_score, status, created_at,
+                                v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version)
+                            SELECT cp.candidate_id, cp.position_id, cp.match_score, cp.status, cp.created_at,
+                                IFNULL(cp.v2_score, 0), IFNULL(cp.v3_score, 0), IFNULL(cp.gemini_score, 0),
+                                IFNULL(cp.hermes_score, 0), IFNULL(cp.openai_score, 0), IFNULL(cp.score_version, 'v2')
+                            FROM candidate_positions_backup cp
+                            WHERE EXISTS (SELECT 1 FROM candidates c WHERE c.id = cp.candidate_id)
+                              AND EXISTS (SELECT 1 FROM department_pools dp WHERE dp.id = cp.position_id)
+                        """)
+                    else:
+                        cursor.execute("""
+                            INSERT INTO candidate_positions (candidate_id, position_id, match_score, status, created_at)
+                            SELECT cp.candidate_id, cp.position_id, cp.match_score, cp.status, cp.created_at
+                            FROM candidate_positions_backup cp
+                            WHERE EXISTS (SELECT 1 FROM candidates c WHERE c.id = cp.candidate_id)
+                              AND EXISTS (SELECT 1 FROM department_pools dp WHERE dp.id = cp.position_id)
+                        """)
+                    restored_count = cursor.rowcount
+                    logger.info(f"Veri geri yüklendi: {restored_count}/{row_count} kayıt")
+
+                    # Yedek tabloyu sil
+                    cursor.execute("DROP TABLE IF EXISTS candidate_positions_backup")
+                    logger.info("Yedek tablo silindi")
         except Exception as e:
             logger.error(f"candidate_positions migration hatası: {e}", exc_info=True)
             # Hata durumunda yedekten geri yükle
