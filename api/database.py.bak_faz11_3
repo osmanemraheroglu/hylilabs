@@ -7200,19 +7200,12 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                             final_score = int((v3_score * 0.60) + (v2_score * 0.40))
                             v3_evaluated = True
 
-                            # V3 skorlarını al
-                            v3_gemini = getattr(v3_result, 'gemini_score', 0) or 0
-                            v3_hermes = getattr(v3_result, 'hermes_score', 0) or 0
-                            v3_openai = getattr(v3_result, 'openai_score', 0) or 0
-                            
-                            # candidate_positions'da match_score ve V3 skorları güncelle
+                            # candidate_positions'da match_score güncelle
                             cursor.execute("""
                                 UPDATE candidate_positions
-                                SET match_score = ?, v2_score = ?, v3_score = ?,
-                                    gemini_score = ?, hermes_score = ?, openai_score = ?,
-                                    score_version = 'v3_weighted'
+                                SET match_score = ?
                                 WHERE candidate_id = ? AND position_id = ?
-                            """, (final_score, v2_score, v3_score, v3_gemini, v3_hermes, v3_openai, candidate_id, position_pool_id))
+                            """, (final_score, candidate_id, position_pool_id))
 
                             # matches tablosunda da uyum_puani güncelle
                             cursor.execute("""
@@ -7889,33 +7882,8 @@ def match_single_candidate_to_positions(candidate_id: int, company_id: int) -> d
         
         stats['matched'] += 1
         
-        # V3 sonuçlarını hazırla
-        v3_gemini = 0
-        v3_hermes = 0
-        v3_openai = 0
-        v3_total = 0
-        version = 'v2'
-        
-        if v3_evaluated and 'v3_result' in dir() and v3_result and v3_result.success:
-            v3_total = v3_result.total_score
-            v3_gemini = getattr(v3_result, 'gemini_score', 0) or 0
-            v3_hermes = getattr(v3_result, 'hermes_score', 0) or 0
-            v3_openai = getattr(v3_result, 'openai_score', 0) or 0
-            version = 'v3_weighted'
-        
-        # Pozisyona ekle (final_score ve V3 skorları ile)
-        result = add_candidate_to_position(
-            candidate_id=candidate_id,
-            position_id=position_id,
-            match_score=final_score,
-            company_id=company_id,
-            v2_score=v2_score,
-            v3_score=v3_total,
-            gemini_score=v3_gemini,
-            hermes_score=v3_hermes,
-            openai_score=v3_openai,
-            score_version=version
-        )
+        # Pozisyona ekle (final_score ile)
+        result = add_candidate_to_position(candidate_id, position_id, final_score, company_id)
         
         if result.get('success'):
             stats['transferred'] += 1
@@ -12050,18 +12018,7 @@ def seed_default_department_templates(company_id: int):
 
 # ============ CANDIDATE_POSITIONS CRUD ============
 
-def add_candidate_to_position(
-    candidate_id: int,
-    position_id: int,
-    match_score: int = 0,
-    company_id: int = None,
-    v2_score: int = 0,
-    v3_score: int = 0,
-    gemini_score: int = 0,
-    hermes_score: int = 0,
-    openai_score: int = 0,
-    score_version: str = 'v2'
-) -> dict:
+def add_candidate_to_position(candidate_id: int, position_id: int, match_score: int = 0, company_id: int = None) -> dict:
     """Adayı pozisyona ekle (manuel atama için)
 
     CLAUDE.md Pool Assignments Kuralları:
@@ -12090,13 +12047,9 @@ def add_candidate_to_position(
         try:
             # 4. candidate_positions'a INSERT
             cursor.execute("""
-                INSERT INTO candidate_positions (
-                    candidate_id, position_id, match_score,
-                    v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (candidate_id, position_id, match_score,
-                  v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version))
+                INSERT INTO candidate_positions (candidate_id, position_id, match_score)
+                VALUES (?, ?, ?)
+            """, (candidate_id, position_id, match_score))
 
             # 5. candidates.durum ve havuz güncelle
             cursor.execute("""
@@ -12220,13 +12173,7 @@ def get_position_candidates(position_id: int) -> list[dict]:
                    'auto' as assignment_type,
                    cp.match_score,
                    'Pozisyon eşleşmesi' as match_reason,
-                   cp.created_at as assigned_at,
-                   cp.v2_score,
-                   cp.v3_score,
-                   cp.gemini_score,
-                   cp.hermes_score,
-                   cp.openai_score,
-                   cp.score_version
+                   cp.created_at as assigned_at
             FROM candidate_positions cp
             JOIN candidates c ON cp.candidate_id = c.id
             WHERE cp.position_id = ? AND cp.status = 'aktif'

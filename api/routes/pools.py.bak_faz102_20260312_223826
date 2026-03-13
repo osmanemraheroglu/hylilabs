@@ -221,20 +221,7 @@ def create_pool(body: dict, current_user: dict = Depends(get_current_user)):
             aranan_nitelikler=body.get("aranan_nitelikler"),
             is_tanimi=body.get("is_tanimi"),
         )
-        # === FAZ 10.2: Pozisyon oluşturulunca otomatik V3 eşleştirme ===
-        transferred = 0
-        if pool_type == "position" and new_id:
-            try:
-                from database import pull_matching_candidates_to_position
-                result = pull_matching_candidates_to_position(new_id, company_id)
-                transferred = result.get("transferred", 0)
-                if transferred > 0:
-                    print(f"[create_pool] Pozisyon {new_id} oluşturuldu, {transferred} aday otomatik eşleştirildi")
-            except Exception as pull_err:
-                print(f"[create_pool] pull_matching hatası (devam ediliyor): {pull_err}")
-        # === FAZ 10.2 SONU ===
-
-        return {"success": True, "id": new_id, "transferred": transferred, "message": f"Pozisyon oluşturuldu, {transferred} aday eşleşti"}
+        return {"success": True, "id": new_id, "message": "Havuz oluşturuldu"}
     except HTTPException:
         raise
     except Exception as e:
