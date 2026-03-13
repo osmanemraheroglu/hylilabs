@@ -831,3 +831,23 @@ Tarih: 2026-03-14
 - core/scoring_v3/ai_evaluator.py (_parse_response satır 870-916)
 
 Bu değişiklik KİLİTLİDİR. Validation mekanizması değiştirilemez.
+
+---
+
+## FAZ 13.4 - SCORES → LAYER_SCORES MAPPING (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+Tarih: 2026-03-14
+
+### DEĞİŞİKLİK:
+- Detail endpoint'te hem scores hem layer_scores döndürülüyor (satır 673-690)
+- layer_scores = scores (alias, aynı veri)
+- Frontend her iki alan adını da kullanabilir
+
+### DOSYA:
+- routes/pools.py (detail endpoint, satır 673-690)
+
+### GERİYE DÖNÜK UYUMLULUK:
+- Eski frontend: scores kullanır ✅
+- Yeni frontend: layer_scores kullanır ✅
+- Her ikisi de aynı veriyi döndürür
+
+Bu değişiklik KİLİTLİDİR. Mapping değiştirilemez.
