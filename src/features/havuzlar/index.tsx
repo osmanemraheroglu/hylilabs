@@ -1076,7 +1076,7 @@ export default function Havuzlar() {
                                                       <div className="w-full bg-gray-200 rounded-full h-1.5">
                                                         <div className={`h-1.5 rounded-full ${pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }}></div>
                                                       </div>
-                                                      <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{data.reason?.split('|')[0]?.trim()}</div>
+                                                      <div className="text-[10px] text-gray-500 mt-0.5 break-words whitespace-normal leading-relaxed" title={data.reason}>{data.reason?.split('|')[0]?.trim()}</div>
                                                     </div>
                                                   )
                                                 })}
