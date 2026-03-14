@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
 const ACCESS_TOKEN = 'hylilabs_token'
-const API_URL = 'http://***REMOVED***:8000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 interface AuthUser {
   accountNo: string

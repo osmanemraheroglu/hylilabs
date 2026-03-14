@@ -10,7 +10,7 @@ import { Main } from '@/components/layout/main'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import { Users, Briefcase, FileText, Clock, Calendar, UserCheck } from 'lucide-react'
 
-const API_URL = 'http://***REMOVED***:8000'
+const API_URL = import.meta.env.VITE_API_URL || ""
 
 function getRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()

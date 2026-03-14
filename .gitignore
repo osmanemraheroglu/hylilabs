@@ -30,3 +30,4 @@ api/.env.save
 *.sw?
 api/data/
 __pycache__/
+backups/

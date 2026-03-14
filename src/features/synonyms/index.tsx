@@ -36,7 +36,7 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 // API config
-const API = 'http://***REMOVED***:8000'
+const API = import.meta.env.VITE_API_URL || ""
 const H = () => ({
   'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
   'Content-Type': 'application/json'

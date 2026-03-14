@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
 
-const API_URL = 'http://***REMOVED***:8000'
+const API_URL = import.meta.env.VITE_API_URL || ""
 
 function getRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Users, UserPlus, Shield, UserX, RefreshCw, Pencil, Trash2, ToggleLeft, KeyRound } from 'lucide-react'
 
-const API_URL = 'http://***REMOVED***:8000'
+const API_URL = import.meta.env.VITE_API_URL || ""
 
 function getHeaders() {
   const token = localStorage.getItem('access_token')

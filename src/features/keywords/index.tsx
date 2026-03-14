@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { BarChart3, Tags, TrendingUp, RefreshCw, Briefcase, AlertTriangle, CheckCircle } from 'lucide-react'
 
-const API_URL = 'http://***REMOVED***:8000'
+const API_URL = import.meta.env.VITE_API_URL || ""
 
 function getHeaders() {
   const token = localStorage.getItem('access_token')

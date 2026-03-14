@@ -19,7 +19,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 
-const API_URL = 'http://***REMOVED***:8000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 const formSchema = z.object({
   email: z.string().email('Geçerli bir email adresi girin'),

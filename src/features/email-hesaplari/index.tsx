@@ -13,7 +13,7 @@ import {
   Eye, EyeOff, Star, Server, Shield
 } from 'lucide-react'
 
-const API_URL = 'http://***REMOVED***:8000'
+const API_URL = import.meta.env.VITE_API_URL || ""
 
 function getHeaders() {
   const token = localStorage.getItem('access_token')

@@ -13,7 +13,7 @@ type TeamSwitcherProps = {
   }[]
 }
 
-export function TeamSwitcher({ teams }: TeamSwitcherProps) {
+export function TeamSwitcher({ teams: _teams }: TeamSwitcherProps) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>

@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { ContentSection } from '../components/content-section'
 
-const API = 'http://***REMOVED***:8000'
+const API = import.meta.env.VITE_API_URL || ""
 
 interface ResetDialogState {
   open: boolean

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Building2, Plus, Pencil, Trash2, ToggleLeft, ToggleRight, RefreshCw, ChevronDown, ChevronUp, Users, Target, FileText } from 'lucide-react'
 
-const API = 'http://***REMOVED***:8000'
+const API = import.meta.env.VITE_API_URL || ""
 const H = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('access_token')}` })
 
 interface Company {

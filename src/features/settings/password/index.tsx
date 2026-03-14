@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/form'
 import { ContentSection } from '../components/content-section'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 const passwordFormSchema = z.object({
   currentPassword: z.string().min(1, 'Mevcut şifre gerekli'),

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { RefreshCw, Upload, FileText, CheckCircle, XCircle, HardDrive, BarChart3, Mail, FolderOpen, AlertCircle, Clock, Ban, Files } from 'lucide-react'
 
-const API_URL = 'http://***REMOVED***:8000'
+const API_URL = import.meta.env.VITE_API_URL || ""
 const BULK_MAX_FILES = 20
 const BULK_ALLOWED_EXTENSIONS = ['.pdf', '.docx']
 

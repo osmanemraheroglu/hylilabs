@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Settings, Building2, Users, FileText, Target, RefreshCw, ToggleLeft, ToggleRight, Search } from 'lucide-react'
 
-const API = 'http://***REMOVED***:8000'
+const API = import.meta.env.VITE_API_URL || ""
 const H = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('access_token')}` })
 
 interface SystemStats {

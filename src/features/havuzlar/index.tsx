@@ -22,7 +22,7 @@ import { LocationBadge } from '@/components/ui/location-badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScoreBadge } from '@/components/ui/score-badge'
 
-const API = 'http://***REMOVED***:8000'
+const API = import.meta.env.VITE_API_URL || ""
 const H = () => ({ 'Authorization': `Bearer ${localStorage.getItem('access_token')}`, 'Content-Type': 'application/json' })
 
 interface Pool { id: number; name: string; icon: string; pool_type: string; is_system: number; keywords: string|null; description: string|null }
