@@ -42,7 +42,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
                 <ProfileDropdown />
               </div>
             </Header>
-            {children ?? <Outlet />}
+            <div className='pl-4'>
+              {children ?? <Outlet />}
+            </div>
           </SidebarInset>
         </SidebarProvider>
       </LayoutProvider>

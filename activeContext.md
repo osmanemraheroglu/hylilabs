@@ -18,6 +18,11 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 14.03.2026 - Content Sol Padding
+- ✅ **Sidebar-content arası boşluk düzeltmesi**
+  - authenticated-layout.tsx: SidebarInset içine `pl-4` wrapper div eklendi
+  - Tüm sayfalar için tutarlı sol boşluk sağlandı
+
 ### 14.03.2026 - FAZ 15 Nginx + SSL Kurulumu
 - ✅ **Nginx reverse proxy + SSL** — hylilabs.com domain aktif
   - Nginx 1.24.0 kuruldu
