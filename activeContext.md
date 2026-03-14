@@ -17,6 +17,14 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 14.03.2026 - Sidebar Toggle Tüm Sayfalarda
+- ✅ **Sidebar tüm sayfalarda açılır/kapanır**
+  - Global Header: authenticated-layout.tsx'e SidebarTrigger + ThemeSwitch + ProfileDropdown eklendi
+  - 6 sayfadan sayfa bazlı Header kaldırıldı (dashboard, settings, tasks, users, apps, chats)
+  - Sidebar durumu sayfalar arası cookie ile korunuyor (sidebar_state)
+  - Değişen dosyalar: authenticated-layout.tsx, dashboard/index.tsx, settings/index.tsx, tasks/index.tsx, users/index.tsx, apps/index.tsx, chats/index.tsx
+  - CLAUDE.md kural #38 eklendi
+
 ### 14.03.2026 - Logo PNG Güncellemesi
 - ✅ **Login + Sidebar logoları PNG ile güncellendi**
   - src/assets/logo.tsx: SVG+text → img PNG (Logo_400x120.png)
