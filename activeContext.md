@@ -18,6 +18,12 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 14.03.2026 - Favicon + Branding
+- ✅ **HyliLabs favicon** — Logo_600x400.png'den oluşturuldu
+  - favicon.png (32x32), favicon_light.png, favicon_16.png
+  - index.html title + meta tags HyliLabs olarak güncellendi
+  - SVG referansları kaldırıldı, sadece PNG kullanılıyor
+
 ### 14.03.2026 - Sayfa Başlık İkonları Kaldırıldı
 - ✅ **4 sayfadan başlık ikonu kaldırıldı** (tutarlılık için)
   - havuzlar: FolderTree ikonu kaldırıldı
