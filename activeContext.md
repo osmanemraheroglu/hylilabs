@@ -17,6 +17,12 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 14.03.2026 - Logo PNG Güncellemesi
+- ✅ **Login + Sidebar logoları PNG ile güncellendi**
+  - src/assets/logo.tsx: SVG+text → img PNG (Logo_400x120.png)
+  - src/features/auth/auth-layout.tsx: Çift logo (Logo+h1) → tek PNG logo
+  - src/components/layout/team-switcher.tsx: Logo kutusu PNG uyumlu
+
 ### 14.03.2026 - FAZ 13 Layer Scores Sistemi
 - ✅ **FAZ 13.1-13.6**: Layer scores analizi + backend + frontend entegrasyonu
   - FAZ 13.1: AI analizi (scores boş kalıyor sorunu)

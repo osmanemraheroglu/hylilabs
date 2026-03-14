@@ -20,8 +20,8 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
     <SidebarMenu>
       <SidebarMenuItem>
         <div className='flex items-center gap-2 px-2 py-2'>
-          <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-white overflow-hidden'>
-            <Logo size='sm' className='h-6 w-6' />
+          <div className='flex items-center justify-center rounded-lg overflow-hidden'>
+            <Logo size='sm' />
           </div>
           <div className='grid flex-1 text-start text-sm leading-tight'>
             <span className='truncate font-semibold'>
