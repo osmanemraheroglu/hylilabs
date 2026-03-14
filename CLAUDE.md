@@ -147,6 +147,7 @@ HyliLabs: AI destekli HR recruitment platformu. React + FastAPI + SQLite. Turkiy
 
 ## Sunucular
 - Production: ***REMOVED*** (React:3000, FastAPI:8000)
+- Domain: hylilabs.com (Nginx reverse proxy + SSL, 14.03.2026)
 - Eski TalentFlow: ***REMOVED*** (Streamlit, artik guncellenmeyecek)
 
 ## Roller
@@ -857,5 +858,51 @@ Tarih: 2026-03-14
 - location_status her zaman {status, candidate_location, position_location, match_type} döndürmeli
 - Fallback mekanizması kaldırılamaz
 - İstanbul ilçe listesi değiştirilemez
+
+Bu sistem KİLİTLİDİR. Değiştirilemez.
+
+---
+
+## ═══════════════════════════════════════════════════════════════
+## FAZ 15 - NGİNX + SSL KURULUMU (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+## ═══════════════════════════════════════════════════════════════
+Tarih: 2026-03-14
+
+### KURULUM DETAYLARI:
+- Domain: hylilabs.com + www.hylilabs.com
+- SSL: Let's Encrypt (Certbot)
+- Sertifika süresi: 12 Haziran 2026
+- Otomatik yenileme: Certbot timer aktif
+
+### DOSYALAR:
+1. /etc/nginx/sites-available/hylilabs - Nginx reverse proxy config
+2. /etc/letsencrypt/live/hylilabs.com/ - SSL sertifikaları
+3. vite.config.ts - preview.allowedHosts eklendi
+
+### NGINX CONFIG ÖZETİ:
+```nginx
+server {
+    listen 443 ssl;
+    server_name hylilabs.com www.hylilabs.com;
+
+    location /api {
+        proxy_pass http://127.0.0.1:8000;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+    }
+}
+```
+
+### ÇALIŞMA PRENSİBİ:
+- HTTP 80 → HTTPS 443 redirect (otomatik)
+- /api/* → FastAPI backend (8000)
+- /* → Vite frontend (3000)
+
+### KİLİTLİ KURALLAR:
+- Nginx config'i değiştirme (reverse proxy ayarları)
+- SSL sertifika yollarını değiştirme
+- vite.config.ts allowedHosts listesini silme
 
 Bu sistem KİLİTLİDİR. Değiştirilemez.

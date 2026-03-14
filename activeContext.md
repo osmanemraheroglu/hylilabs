@@ -5,7 +5,8 @@ Son güncelleme: 14.03.2026
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
-- **Son commit:** FAZ 13.7 (ScoreBadge match_score fix)
+- **Domain:** https://hylilabs.com (Nginx + SSL aktif, 14.03.2026)
+- **Son commit:** CORS + DB Backup
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -17,28 +18,28 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
-### 14.03.2026 - Header SidebarTrigger Kaldırıldı
-- ✅ **Header'dan SidebarTrigger ve Separator kaldırıldı**
-  - header.tsx: SidebarTrigger + Separator import ve kullanımı silindi
-  - Sidebar toggle sadece sidebar'ın kendi içinden (app-sidebar.tsx) çalışıyor
+### 14.03.2026 - FAZ 15 Nginx + SSL Kurulumu
+- ✅ **Nginx reverse proxy + SSL** — hylilabs.com domain aktif
+  - Nginx 1.24.0 kuruldu
+  - Certbot ile Let's Encrypt SSL sertifikası alındı
+  - HTTP → HTTPS otomatik redirect
+  - /api/* → FastAPI (8000), /* → Vite (3000)
+  - vite.config.ts allowedHosts eklendi (403 fix)
+  - Sertifika geçerliliği: 12 Haziran 2026
+  - CLAUDE.md FAZ 15 olarak eklendi
+- ✅ **CORS ayarları güncellendi** — api/main.py
+  - https://hylilabs.com eklendi
+  - https://www.hylilabs.com eklendi
+- ✅ **Günlük DB Yedekleme** kuruldu
+  - /var/www/hylilabs/backup.sh (cron 03:00)
+  - 7 günden eski yedekler otomatik siliniyor
 
-### 14.03.2026 - Sidebar İç Toggle Butonu
-- ✅ **Sidebar'ın içinde toggle butonu eklendi**
-  - app-sidebar.tsx: SidebarHeader içinde TeamSwitcher yanına SidebarTrigger eklendi
-
-### 14.03.2026 - Sidebar Toggle Tüm Sayfalarda
+### 14.03.2026 - Sidebar Toggle + Logo
 - ✅ **Sidebar tüm sayfalarda açılır/kapanır**
-  - Global Header: authenticated-layout.tsx'e SidebarTrigger + ThemeSwitch + ProfileDropdown eklendi
-  - 6 sayfadan sayfa bazlı Header kaldırıldı (dashboard, settings, tasks, users, apps, chats)
-  - Sidebar durumu sayfalar arası cookie ile korunuyor (sidebar_state)
-  - Değişen dosyalar: authenticated-layout.tsx, dashboard/index.tsx, settings/index.tsx, tasks/index.tsx, users/index.tsx, apps/index.tsx, chats/index.tsx
+  - Global Header: authenticated-layout.tsx
+  - Sidebar durumu cookie ile korunuyor
   - CLAUDE.md kural #38 eklendi
-
-### 14.03.2026 - Logo PNG Güncellemesi
 - ✅ **Login + Sidebar logoları PNG ile güncellendi**
-  - src/assets/logo.tsx: SVG+text → img PNG (Logo_400x120.png)
-  - src/features/auth/auth-layout.tsx: Çift logo (Logo+h1) → tek PNG logo
-  - src/components/layout/team-switcher.tsx: Logo kutusu PNG uyumlu
 
 ### 14.03.2026 - FAZ 13 Layer Scores Sistemi
 - ✅ **FAZ 13.1-13.6**: Layer scores analizi + backend + frontend entegrasyonu
