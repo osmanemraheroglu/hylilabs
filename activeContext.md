@@ -17,10 +17,14 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 14.03.2026 - Header SidebarTrigger Kaldırıldı
+- ✅ **Header'dan SidebarTrigger ve Separator kaldırıldı**
+  - header.tsx: SidebarTrigger + Separator import ve kullanımı silindi
+  - Sidebar toggle sadece sidebar'ın kendi içinden (app-sidebar.tsx) çalışıyor
+
 ### 14.03.2026 - Sidebar İç Toggle Butonu
-- ✅ **Sidebar'ın içinde de toggle butonu eklendi**
+- ✅ **Sidebar'ın içinde toggle butonu eklendi**
   - app-sidebar.tsx: SidebarHeader içinde TeamSwitcher yanına SidebarTrigger eklendi
-  - Header'daki toggle butonu da korunuyor (çift erişim noktası)
 
 ### 14.03.2026 - Sidebar Toggle Tüm Sayfalarda
 - ✅ **Sidebar tüm sayfalarda açılır/kapanır**
