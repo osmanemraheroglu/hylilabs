@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Loader2, Languages, Plus, Sparkles, CheckCircle, XCircle, Search, Trash2, History } from 'lucide-react'
+import { Loader2, Plus, Sparkles, CheckCircle, XCircle, Search, Trash2, History } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -705,10 +705,7 @@ export default function Synonyms() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Languages className="h-6 w-6" />
-            Eş Anlamlılar Yönetimi
-          </h1>
+          <h1 className="text-2xl font-bold">Eş Anlamlılar Yönetimi</h1>
           <p className="text-muted-foreground">
             Keyword eş anlamlılarını yönetin, AI ile yeni öneriler oluşturun
           </p>

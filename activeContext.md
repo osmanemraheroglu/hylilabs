@@ -18,6 +18,14 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 14.03.2026 - Sayfa Başlık İkonları Kaldırıldı
+- ✅ **4 sayfadan başlık ikonu kaldırıldı** (tutarlılık için)
+  - havuzlar: FolderTree ikonu kaldırıldı
+  - mulakat-takvimi: CalendarClock ikonu kaldırıldı
+  - email-hesaplari: Mail ikonu kaldırıldı (listede Mail ikonu korundu)
+  - synonyms: Languages ikonu kaldırıldı
+  - Diğer 5 sayfa zaten ikonsuzdu (adaylar, cv-collect, dashboard, settings, user-management)
+
 ### 14.03.2026 - Content Sol Padding
 - ✅ **Sidebar-content arası boşluk düzeltmesi**
   - authenticated-layout.tsx: SidebarInset içine `pl-4` wrapper div eklendi

@@ -205,9 +205,7 @@ export default function EmailHesaplari() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Mail className="h-6 w-6" /> Email Hesapları
-          </h2>
+          <h2 className="text-2xl font-bold tracking-tight">Email Hesapları</h2>
           <p className="text-muted-foreground text-sm">CV toplama ve iletişim için email hesaplarını yönetin</p>
         </div>
         <div className="flex gap-2">

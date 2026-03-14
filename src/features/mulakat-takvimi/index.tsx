@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
-  CalendarClock, Plus, Edit, Trash2, RefreshCw, ChevronLeft, ChevronRight,
+  Plus, Edit, Trash2, RefreshCw, ChevronLeft, ChevronRight,
   Clock, MapPin, List, CalendarDays, Info, Mail, Send, Loader2, XCircle, ClipboardCheck,
   ShieldCheck, Eye, Search
 } from 'lucide-react'
@@ -561,9 +561,7 @@ export default function MulakatTakvimi() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <CalendarClock className="h-6 w-6" /> Mülakat Takvimi
-          </h2>
+          <h2 className="text-2xl font-bold tracking-tight">Mülakat Takvimi</h2>
           <p className="text-muted-foreground text-sm">Mülakatları planlayın ve takip edin</p>
         </div>
         <div className="flex gap-2">
