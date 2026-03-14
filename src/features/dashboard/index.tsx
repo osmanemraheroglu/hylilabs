@@ -62,7 +62,7 @@ interface RecentActivity {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
 
 const DURUM_LABELS: Record<string, string> = {
-  'yeni': 'Yeni',
+  'yeni': 'Genel Havuzda',
   'pozisyona_atandi': 'Pozisyon Havuzunda',
   'mulakatta': 'Mülakata Çağrıldı',
   'arsiv': 'Arşiv',

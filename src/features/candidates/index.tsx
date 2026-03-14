@@ -180,7 +180,7 @@ export default function Candidates() {
 
   const durumLabel = (d: string) => {
     const map: Record<string, string> = {
-      yeni: 'Yeni',
+      yeni: 'Genel Havuzda',
       degerlendirmede: 'Değerlendirmede',
       pozisyona_atandi: 'Pozisyon Havuzunda',
       mulakat: 'Mülakat',
@@ -247,7 +247,7 @@ export default function Candidates() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='all'>Tüm Durumlar</SelectItem>
-                <SelectItem value='yeni'>Yeni</SelectItem>
+                <SelectItem value='yeni'>Genel Havuzda</SelectItem>
                 <SelectItem value='pozisyona_atandi'>Pozisyon Havuzunda</SelectItem>
                 <SelectItem value='mulakat'>Mülakat</SelectItem>
                 <SelectItem value='ise_alindi'>İşe Alındı</SelectItem>

@@ -18,6 +18,12 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 14.03.2026 - Durum Label "Yeni" → "Genel Havuzda"
+- ✅ **UI'da 'yeni' durum label'ı "Genel Havuzda" olarak güncellendi**
+  - dashboard/index.tsx: DURUM_LABELS mapping güncellendi
+  - candidates/index.tsx: durumLabel() mapping + filtre dropdown güncellendi
+  - Backend 'yeni' değeri DEĞİŞMEDİ (sadece frontend label)
+
 ### 14.03.2026 - Favicon + Branding
 - ✅ **HyliLabs favicon** — Logo_600x400.png'den oluşturuldu
   - favicon.png (32x32), favicon_light.png, favicon_16.png
