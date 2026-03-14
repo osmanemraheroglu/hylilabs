@@ -6,7 +6,7 @@ Son güncelleme: 14.03.2026
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
 - **Domain:** https://hylilabs.com (Nginx + SSL aktif, 14.03.2026)
-- **Son commit:** CORS + DB Backup
+- **Son commit:** fcb86fd (Favicon + branding)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -325,6 +325,33 @@ Son güncelleme: 14.03.2026
 
 ## Tamamlanan Büyük Özellikler
 
+### FAZ 15 - Production Deployment ✅ (14.03.2026)
+
+**Tamamlanan İşler:**
+- [x] Domain: hylilabs.com DNS ayarları (A kayıtları ***REMOVED***)
+- [x] Nginx 1.24.0 kurulumu + reverse proxy (3000→frontend, 8000→backend)
+- [x] SSL: Let's Encrypt sertifikası (12 Haziran 2026'ya kadar geçerli)
+- [x] HTTP → HTTPS redirect (301)
+- [x] CORS: hylilabs.com + www.hylilabs.com eklendi
+- [x] Frontend API URL: .env.production (VITE_API_URL=https://hylilabs.com)
+- [x] 16 dosyada hardcoded URL → import.meta.env.VITE_API_URL
+- [x] Branding: Title, meta tags, favicon (HyliLabs)
+- [x] Vite allowedHosts fix
+
+**Commitler:**
+- a58d11f: Nginx + SSL kurulumu
+- 61888c7: CORS güncelleme
+- fcb86fd: Favicon + branding
+
+**Konfigürasyon Dosyaları:**
+- /etc/nginx/sites-available/hylilabs
+- /var/www/hylilabs/.env.production
+- /var/www/hylilabs/.env.development
+
+**Erişim:**
+- Production: https://hylilabs.com
+- Development: http://***REMOVED***:3000
+
 ### Pozisyon Sil→Aday Kaybı Fix ✅ (09.03.2026)
 - [x] CV Çek sadece durum='yeni' tarıyor (f872d62)
 - [x] Pozisyon silinince TÜM adaylar Genel Havuz'a (53d2419)
@@ -346,6 +373,6 @@ Son güncelleme: 14.03.2026
 
 ## Notlar
 
-- CLAUDE.md'de tüm kalıcı kurallar mevcut (763 satır, 3-katmanlı mimari eklendi)
+- CLAUDE.md'de tüm kalıcı kurallar mevcut (909 satır, FAZ 15 eklendi)
 - progress.md güncellenmeli (17 gün eski)
 - .claudeignore aktif (~2.6 GB filtreleniyor)
