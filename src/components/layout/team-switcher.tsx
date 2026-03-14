@@ -14,20 +14,11 @@ type TeamSwitcherProps = {
 }
 
 export function TeamSwitcher({ teams }: TeamSwitcherProps) {
-  const activeTeam = teams[0]
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <div className='flex items-center gap-2 px-2 py-2'>
-          <div className='flex items-center justify-center rounded-lg overflow-hidden'>
-            <Logo size='sm' />
-          </div>
-          <div className='grid flex-1 text-start text-sm leading-tight'>
-            <span className='truncate font-semibold'>
-              {activeTeam.name}
-            </span>
-          </div>
+        <div className='flex items-center justify-center px-2 py-2'>
+          <Logo size='sm' />
         </div>
       </SidebarMenuItem>
     </SidebarMenu>
