@@ -30,6 +30,7 @@ Son güncelleme: 14.03.2026
 - ✅ **CORS ayarları güncellendi** — api/main.py
   - https://hylilabs.com eklendi
   - https://www.hylilabs.com eklendi
+  - Development origin korundu
 - ✅ **Günlük DB Yedekleme** kuruldu
   - /var/www/hylilabs/backup.sh (cron 03:00)
   - 7 günden eski yedekler otomatik siliniyor

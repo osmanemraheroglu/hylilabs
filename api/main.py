@@ -53,7 +53,11 @@ app = FastAPI(
 # CORS ayarları
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://***REMOVED***:3000"],
+    allow_origins=[
+        "http://***REMOVED***:3000",      # Development (mevcut)
+        "https://hylilabs.com",             # Production
+        "https://www.hylilabs.com",         # Production (www)
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
