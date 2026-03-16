@@ -710,6 +710,7 @@ def calculate_elimination_score(
     KATMAN 4: Eleme (10 puan)
     - Lokasyon: 5 puan
     - Diğer gereksinimler: 5 puan
+    - FAZ 17: Sertifika eksikliği puan kırma
     """
     # Lokasyon puanı (5 puan)
     cand_location = safe_get(candidate, 'lokasyon', '') or ''
@@ -776,7 +777,25 @@ def calculate_elimination_score(
         except Exception as e:
             logger.error(f"calculate_elimination_score requirements hatası: {e}")
     
-    elimination_score = location_score + requirements_score
+    # FAZ 17: Sertifika kontrolü (puan kırma)
+    certificate_penalty = 0
+    missing_certificates = []
+    try:
+        from database import calculate_certificate_penalty
+        position_name = safe_get(position, 'name', '') or safe_get(position, 'pozisyon_adi', '')
+        cv_text = safe_get(candidate, 'cv_raw_text', '') or ''
+        
+        if position_name and cv_text:
+            cert_penalty, missing_certs = calculate_certificate_penalty(position_name, cv_text)
+            if cert_penalty > 0:
+                certificate_penalty = min(cert_penalty, 10)
+                missing_certificates = missing_certs
+    except Exception as e:
+        logger.warning(f"calculate_elimination_score sertifika kontrolü hatası: {e}")
+    
+    # Toplam elimination score (FAZ 17: sertifika cezası eklendi)
+    elimination_score = location_score + requirements_score - certificate_penalty
+    elimination_score = max(0, elimination_score)
     
     # FAZ 14: location_status hesaplama
     # green (5 puan): Tam eşleşme
@@ -804,7 +823,9 @@ def calculate_elimination_score(
         'location_score': int(location_score),
         'location_detail': location_detail,
         'requirements_score': int(requirements_score),
-        'location_status': location_status  # FAZ 14: Eklendi
+        'location_status': location_status,
+        'certificate_penalty': int(certificate_penalty),
+        'missing_certificates': missing_certificates
     }
 
 

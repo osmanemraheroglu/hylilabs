@@ -95,8 +95,28 @@ EXCLUSIVE_KEYWORD_GROUPS = {
               'mevzuat', 'regulation', 'compliance'},
     'medical': {'doktor', 'doctor', 'hemşire', 'nurse', 'tıp', 'medical', 
                 'sağlık', 'health', 'hastane', 'hospital', 'klinik', 'clinic'},
-    'construction': {'inşaat', 'construction', 'şantiye', 'site', 'yapı', 
-                     'building', 'mimar', 'architect', 'statik', 'structural'}
+    # FAZ 17: İnşaat sektörü alt grupları
+    'construction_management': {'şantiye', 'saha', 'inşaat', 'yapı', 'construction', 'site',
+                                'şantiye şefi', 'saha şefi', 'proje müdürü', 'inşaat müdürü'},
+    'construction_concrete': {'beton', 'betonarme', 'kalıp', 'donatı', 'concrete', 'formwork',
+                              'kalıpçı', 'demir ustası', 'beton ustası', 'demirci'},
+    'construction_finishing': {'sıva', 'boya', 'alçı', 'fayans', 'seramik', 'duvar',
+                               'sıvacı', 'boyacı', 'duvarcı', 'seramikçi', 'fayansçı'},
+    'construction_electrical': {'elektrik', 'tesisat', 'pano', 'kablo', 'aydınlatma',
+                                'elektrikçi', 'elektrik mühendisi', 'pano teknisyeni'},
+    'construction_mechanical': {'mekanik', 'makine', 'hvac', 'tesisat', 'klima', 'havalandırma',
+                                'sıhhi', 'doğalgaz', 'kazan', 'asansör',
+                                'makine mühendisi', 'tesisatçı', 'hvac teknisyeni'},
+    'construction_equipment': {'vinç', 'kule vinç', 'mobil vinç', 'forklift', 'iş makinesi',
+                               'crane', 'operator', 'operatör'},
+    'construction_surveying': {'harita', 'jeodezi', 'topograf', 'ölçüm', 'aplikasyon',
+                               'surveyor', 'geomatics'},
+    'construction_cost': {'maliyet', 'metraj', 'keşif', 'hakediş', 'quantity',
+                          'cost engineer', 'estimator', 'qs'},
+    'construction_safety': {'isg', 'iş güvenliği', 'iş sağlığı', 'hse', 'safety',
+                            'güvenlik uzmanı', 'safety officer'},
+    'construction_welding': {'kaynak', 'kaynakçı', 'tig', 'mig', 'mag', 'welder',
+                             'boru kaynakçısı', 'paslanmaz kaynakçı'}
 }
 
 
@@ -115,9 +135,11 @@ def get_keyword_domain(text: str) -> str:
 def semantic_domain_compatible(candidate_text: str, position_title: str) -> bool:
     """
     FAZ 16: Semantic domain uyumluluğunu kontrol et
+    FAZ 17: İnşaat alt grupları arası uyumluluk eklendi
     
     HR Manager <-> Project Manager gibi yanlış eşleşmeleri engeller.
     Her iki metin de aynı domain'de veya en az biri domain dışındaysa uyumlu.
+    İnşaat alt grupları (construction_*) kendi aralarında uyumlu.
     
     Returns:
         True: Uyumlu (eşleşme devam edebilir)
@@ -137,8 +159,622 @@ def semantic_domain_compatible(candidate_text: str, position_title: str) -> bool
     if candidate_domain == position_domain:
         return True
     
+    # FAZ 17: İnşaat alt grupları arası uyumluluk
+    construction_groups = {
+        'construction_management', 'construction_concrete', 'construction_finishing',
+        'construction_electrical', 'construction_mechanical', 'construction_equipment',
+        'construction_surveying', 'construction_cost', 'construction_safety',
+        'construction_welding'
+    }
+    
+    if candidate_domain in construction_groups and position_domain in construction_groups:
+        return True  # İnşaat alt grupları kendi içinde uyumlu
+    
     # Farklı domain → uyumsuz
     return False
+
+
+
+
+# ============================================================
+# FAZ 17: İNŞAAT SEKTÖRÜ KANONİK FORM MAPPING (16.03.2026)
+# Tüm varyasyonlar → Standart kanonik form
+# ============================================================
+
+CONSTRUCTION_CANONICAL_MAPPING = {
+    # ===== YAPI & BETONARME =====
+    "şantiye şefi": {
+        "kanonik": "şantiye şefi",
+        "türkçe": ["saha şefi", "proje şefi", "inşaat şefi", "yapı şefi", "saha müdürü", "şef mühendis"],
+        "ingilizce": ["site manager", "construction manager", "site supervisor", "field manager"],
+        "kısaltma": ["SŞ"],
+        "sektör": "inşaat"
+    },
+    "proje mühendisi": {
+        "kanonik": "proje mühendisi",
+        "türkçe": ["saha mühendisi", "inşaat mühendisi", "yapı mühendisi", "şantiye mühendisi"],
+        "ingilizce": ["project engineer", "site engineer", "construction engineer", "field engineer"],
+        "kısaltma": ["PM", "PE"],
+        "sektör": "inşaat"
+    },
+    "kalıpçı": {
+        "kanonik": "kalıpçı",
+        "türkçe": ["kalıp ustası", "beton kalıpçı", "ahşap kalıpçı", "alüminyum kalıpçı", "tünel kalıp ustası"],
+        "ingilizce": ["formwork carpenter", "shuttering carpenter", "concrete formworker"],
+        "kısaltma": [],
+        "sektör": "inşaat"
+    },
+    "demir ustası": {
+        "kanonik": "demir ustası",
+        "türkçe": ["demirci", "demir bükücü", "nervürlü çelik ustası", "donatı ustası", "inşaat demircisi"],
+        "ingilizce": ["rebar fixer", "steel fixer", "ironworker", "reinforcement worker"],
+        "kısaltma": [],
+        "sektör": "inşaat"
+    },
+    "beton ustası": {
+        "kanonik": "beton ustası",
+        "türkçe": ["betoncu", "beton dökücü", "beton finişçi", "şap ustası", "zemin betoncusu"],
+        "ingilizce": ["concrete finisher", "concrete layer", "concrete worker", "concreter"],
+        "kısaltma": [],
+        "sektör": "inşaat"
+    },
+    "sıvacı": {
+        "kanonik": "sıvacı",
+        "türkçe": ["sıva ustası", "alçı ustası", "alçıcı", "badanacı", "iç sıva ustası", "dış cephe sıvacısı"],
+        "ingilizce": ["plasterer", "renderer", "skimmer"],
+        "kısaltma": [],
+        "sektör": "inşaat"
+    },
+    "boyacı": {
+        "kanonik": "boyacı",
+        "türkçe": ["boya ustası", "iç boyacı", "dış cephe boyacısı", "astar boyacısı", "vernikçi"],
+        "ingilizce": ["painter", "decorator", "interior painter", "exterior painter"],
+        "kısaltma": [],
+        "sektör": "inşaat"
+    },
+    "duvarcı": {
+        "kanonik": "duvarcı",
+        "türkçe": ["duvar ustası", "briket ustası", "tuğlacı", "blok ustası", "taş ustası"],
+        "ingilizce": ["bricklayer", "mason", "blockwork mason", "stonemason"],
+        "kısaltma": [],
+        "sektör": "inşaat"
+    },
+    "seramikçi": {
+        "kanonik": "seramikçi",
+        "türkçe": ["fayansçı", "fayans ustası", "karo ustası", "zemin döşemeci", "mermerci"],
+        "ingilizce": ["tiler", "floor layer", "ceramic tiler", "marble fixer"],
+        "kısaltma": [],
+        "sektör": "inşaat"
+    },
+    "vinç operatörü": {
+        "kanonik": "vinç operatörü",
+        "türkçe": ["vinççi", "kule vinç operatörü", "mobil vinç operatörü", "forklift operatörü", "iş makinesi operatörü"],
+        "ingilizce": ["crane operator", "tower crane operator", "mobile crane operator", "forklift driver"],
+        "kısaltma": ["VO"],
+        "sektör": "inşaat",
+        "sertifika_zorunlu": "Vinç Operatörü Lisansı"
+    },
+    "kalfa": {
+        "kanonik": "kalfa",
+        "türkçe": ["inşaat kalfası", "saha kalfası", "usta yardımcısı", "çırak", "yardımcı işçi"],
+        "ingilizce": ["construction labourer", "helper", "assistant worker", "handyman"],
+        "kısaltma": [],
+        "sektör": "inşaat"
+    },
+    "harita mühendisi": {
+        "kanonik": "harita mühendisi",
+        "türkçe": ["jeodezi mühendisi", "aplikasyon mühendisi", "topograf", "ölçüm mühendisi"],
+        "ingilizce": ["surveyor", "land surveyor", "geomatics engineer", "topographic engineer"],
+        "kısaltma": [],
+        "sektör": "inşaat"
+    },
+    "maliyet mühendisi": {
+        "kanonik": "maliyet mühendisi",
+        "türkçe": ["metraj mühendisi", "keşif mühendisi", "hakediş mühendisi", "quantity surveyor"],
+        "ingilizce": ["quantity surveyor", "cost engineer", "estimator", "QS"],
+        "kısaltma": ["QS"],
+        "sektör": "inşaat"
+    },
+    "proje müdürü": {
+        "kanonik": "proje müdürü",
+        "türkçe": ["inşaat proje müdürü", "yapı proje müdürü", "baş mühendis"],
+        "ingilizce": ["project manager", "construction PM", "project director"],
+        "kısaltma": ["PM"],
+        "sektör": "inşaat"
+    },
+    # ===== ELEKTRİK TESİSATI =====
+    "elektrik mühendisi": {
+        "kanonik": "elektrik mühendisi",
+        "türkçe": ["elektrik proje mühendisi", "elektrik saha mühendisi", "güç sistemi mühendisi"],
+        "ingilizce": ["electrical engineer", "EE", "power engineer", "site electrical engineer"],
+        "kısaltma": ["EE", "EM"],
+        "sektör": "elektrik"
+    },
+    "elektrikçi": {
+        "kanonik": "elektrikçi",
+        "türkçe": ["elektrik ustası", "tesisat ustası", "kablo çekici", "pano montajcısı", "elektrik teknisyeni"],
+        "ingilizce": ["electrician", "electrical fitter", "cable installer", "panel installer"],
+        "kısaltma": ["ELK"],
+        "sektör": "elektrik",
+        "sertifika_zorunlu": "Elektrik Tehlike Sertifikası"
+    },
+    "pano teknisyeni": {
+        "kanonik": "pano teknisyeni",
+        "türkçe": ["pano montajcısı", "elektrik panosu uzmanı", "MCC teknisyeni", "kumanda panosu uzmanı", "otomasyon teknisyeni"],
+        "ingilizce": ["panel technician", "MCC technician", "switchboard technician", "control panel engineer"],
+        "kısaltma": ["MCC"],
+        "sektör": "elektrik",
+        "sertifika_zorunlu": "Elektrik Tehlike Sertifikası"
+    },
+    "SCADA operatörü": {
+        "kanonik": "SCADA operatörü",
+        "türkçe": ["otomasyon teknisyeni", "PLC programcısı", "DCS operatörü", "kontrol sistemi uzmanı"],
+        "ingilizce": ["SCADA operator", "PLC programmer", "automation technician", "DCS engineer"],
+        "kısaltma": ["SCADA", "PLC", "DCS"],
+        "sektör": "elektrik"
+    },
+    # ===== MEKANİK TESİSAT =====
+    "makine mühendisi": {
+        "kanonik": "makine mühendisi",
+        "türkçe": ["mekanik mühendis", "makine saha mühendisi", "tesisat mühendisi", "HVAC mühendisi"],
+        "ingilizce": ["mechanical engineer", "MEP engineer", "HVAC engineer", "site mechanical engineer"],
+        "kısaltma": ["ME", "MAK"],
+        "sektör": "mekanik"
+    },
+    "sıhhi tesisatçı": {
+        "kanonik": "sıhhi tesisatçı",
+        "türkçe": ["tesisatçı", "su tesisatçısı", "pis su tesisatçısı", "boru döşemeci", "sıhhi tesisat ustası"],
+        "ingilizce": ["plumber", "pipe fitter", "sanitary plumber", "drainage installer"],
+        "kısaltma": [],
+        "sektör": "mekanik"
+    },
+    "doğalgaz tesisatçısı": {
+        "kanonik": "doğalgaz tesisatçısı",
+        "türkçe": ["gaz tesisatçısı", "gaz bağlantı ustası", "iç tesisat uzmanı", "gaz sayaç montajcısı"],
+        "ingilizce": ["gas fitter", "gas plumber", "gas installer", "gas technician"],
+        "kısaltma": [],
+        "sektör": "mekanik",
+        "sertifika_zorunlu": "Doğalgaz Tesisat Lisansı"
+    },
+    "HVAC teknisyeni": {
+        "kanonik": "HVAC teknisyeni",
+        "türkçe": ["iklimlendirme teknisyeni", "klima teknisyeni", "havalandırma ustası", "soğutma teknisyeni", "VRF teknisyeni"],
+        "ingilizce": ["HVAC technician", "air conditioning technician", "ventilation engineer", "refrigeration engineer", "VRF engineer"],
+        "kısaltma": ["HVAC", "AC", "VRF"],
+        "sektör": "mekanik"
+    },
+    "boru kaynakçısı": {
+        "kanonik": "boru kaynakçısı",
+        "türkçe": ["paslanmaz kaynakçı", "TIG kaynakçı boru", "basınçlı kap kaynakçısı", "endüstriyel kaynakçı"],
+        "ingilizce": ["pipe welder", "TIG welder", "pressure vessel welder", "industrial welder"],
+        "kısaltma": ["TIG"],
+        "sektör": "mekanik",
+        "sertifika_zorunlu": "Kaynak Sertifikası"
+    },
+    "kazan teknisyeni": {
+        "kanonik": "kazan teknisyeni",
+        "türkçe": ["kazan operatörü", "buhar kazancısı", "ısıtma sistemi teknisyeni", "merkezi ısıtma uzmanı"],
+        "ingilizce": ["boiler technician", "boiler operator", "heating engineer", "steam engineer"],
+        "kısaltma": [],
+        "sektör": "mekanik",
+        "sertifika_zorunlu": "Kazan İşletme Belgesi"
+    },
+    "asansör teknisyeni": {
+        "kanonik": "asansör teknisyeni",
+        "türkçe": ["asansör montajcısı", "asansör bakımcısı", "yürüyen merdiven teknisyeni", "lift teknisyeni"],
+        "ingilizce": ["elevator technician", "lift engineer", "escalator technician", "elevator installer"],
+        "kısaltma": [],
+        "sektör": "mekanik",
+        "sertifika_zorunlu": "Asansör Yetki Belgesi"
+    },
+    # ===== İDARİ & DESTEK =====
+    "İSG uzmanı": {
+        "kanonik": "İSG uzmanı",
+        "türkçe": ["iş güvenliği uzmanı", "iş sağlığı uzmanı", "güvenlik görevlisi", "HSE uzmanı", "safety officer"],
+        "ingilizce": ["HSE officer", "safety engineer", "health and safety officer", "EHS specialist"],
+        "kısaltma": ["İSG", "HSE", "EHS"],
+        "sektör": "idari",
+        "sertifika_zorunlu": "İSG Çalışan Sertifikası"
+    },
+    "satın alma uzmanı": {
+        "kanonik": "satın alma uzmanı",
+        "türkçe": ["tedarik uzmanı", "ihale uzmanı", "satın alma mühendisi", "procurement uzmanı"],
+        "ingilizce": ["procurement specialist", "purchasing officer", "buyer", "supply chain specialist"],
+        "kısaltma": [],
+        "sektör": "idari"
+    }
+}
+
+
+# ============================================================
+# FAZ 17: İNŞAAT SEKTÖRÜ KARA LİSTE - YANLIŞ EŞLEŞME ENGELLEMESİ
+# Bu eşleşmeler KESİNLİKLE yapılmamalı (HARD-BLOCK)
+# ============================================================
+
+CONSTRUCTION_BLACKLIST = {
+    "şantiye şefi": {
+        "engelli_terimler": ["aşçı şefi", "servis şefi", "mutfak şefi", "kasiyer şefi"],
+        "engel_nedeni": "'Şef' kelimesi ortak ama farklı sektör",
+        "bağlam_kontrolü": ["inşaat", "şantiye", "yapı", "saha", "proje"]
+    },
+    "proje mühendisi": {
+        "engelli_terimler": ["yazılım mühendisi", "bilgisayar mühendisi"],
+        "engel_nedeni": "'Mühendis' unvanı ortak",
+        "bağlam_kontrolü": ["inşaat", "şantiye", "yapı", "saha", "betonarme"]
+    },
+    "kalıpçı": {
+        "engelli_terimler": ["marangoz", "mobilyacı", "doğramacı"],
+        "engel_nedeni": "Ahşap işçiliği ortak",
+        "bağlam_kontrolü": ["beton", "kalıp", "şantiye", "betonarme", "tünel"]
+    },
+    "demir ustası": {
+        "engelli_terimler": ["çilingir", "kilitçi", "kapı demircisi"],
+        "engel_nedeni": "'Demir' kelimesi ortak",
+        "bağlam_kontrolü": ["donatı", "nervür", "beton", "inşaat", "şantiye", "betonarme"]
+    },
+    "boyacı": {
+        "engelli_terimler": ["ressam", "fotoğrafçı", "grafiker"],
+        "engel_nedeni": "Farklı meslek",
+        "bağlam_kontrolü": ["boya", "astar", "vernik", "cephe", "inşaat"]
+    },
+    "vinç operatörü": {
+        "engelli_terimler": ["kamyon şoförü", "taksi şoförü", "otobüs şoförü"],
+        "engel_nedeni": "Araç kullanımı ortak",
+        "bağlam_kontrolü": ["vinç", "kule", "mobil", "forklift", "şantiye"]
+    },
+    "proje müdürü": {
+        "engelli_terimler": ["yazılım proje müdürü", "IT proje müdürü", "dijital proje müdürü"],
+        "engel_nedeni": "'Proje müdürü' unvanı ortak",
+        "bağlam_kontrolü": ["inşaat", "yapı", "şantiye", "müteahhit"]
+    },
+    "elektrik mühendisi": {
+        "engelli_terimler": ["elektronik mühendisi", "bilgisayar mühendisi", "yazılım mühendisi"],
+        "engel_nedeni": "'Elektrik' kök ortak",
+        "bağlam_kontrolü": ["güç", "tesisat", "pano", "enerji", "şantiye"]
+    },
+    "elektrikçi": {
+        "engelli_terimler": ["elektronikçi", "bilgisayar tamircisi", "telefon tamircisi"],
+        "engel_nedeni": "'Elektrik' kök ortak",
+        "bağlam_kontrolü": ["tesisat", "pano", "kablo", "şantiye", "bina"]
+    },
+    "makine mühendisi": {
+        "engelli_terimler": ["üretim mühendisi", "endüstri mühendisi", "otomotiv mühendisi"],
+        "engel_nedeni": "'Mühendis' unvanı ortak",
+        "bağlam_kontrolü": ["saha", "tesisat", "HVAC", "mekanik", "şantiye"]
+    },
+    "satın alma uzmanı": {
+        "engelli_terimler": ["perakende satın alma", "gıda satın alma", "moda satın alma"],
+        "engel_nedeni": "'Satın alma' unvanı ortak",
+        "bağlam_kontrolü": ["inşaat", "malzeme", "tedarik", "müteahhit", "ihale"]
+    }
+}
+
+
+# ============================================================
+# FAZ 17: İNŞAAT SEKTÖRÜ ZORUNLU SERTİFİKA & BELGE SÖZLÜĞÜ
+# ============================================================
+
+CONSTRUCTION_CERTIFICATES = {
+    "İSG Çalışan Sertifikası": {
+        "kanonik": "İSG Çalışan Sertifikası",
+        "varyasyonlar": [
+            "iş güvenliği belgesi", "İSG sertifikası", 
+            "iş sağlığı ve güvenliği belgesi", "6331 belgesi",
+            "OHSAS 18001", "ISO 45001"
+        ],
+        "kısaltma": "İSG",
+        "geçerlilik_yıl": 3,
+        "zorunlu_pozisyonlar": ["*"],
+        "puan_kırma": 15,
+        "notlar": "Tüm saha personeli için zorunlu"
+    },
+    "Yüksekte Çalışma Belgesi": {
+        "kanonik": "Yüksekte Çalışma Belgesi",
+        "varyasyonlar": [
+            "yükseklik belgesi", "iskele belgesi", "çatı çalışma belgesi",
+            "working at height certificate", "fall protection certificate"
+        ],
+        "kısaltma": None,
+        "geçerlilik_yıl": 3,
+        "zorunlu_pozisyonlar": ["kalıpçı", "demir ustası", "sıvacı", "boyacı", "duvarcı", "kalfa"],
+        "puan_kırma": 20,
+        "notlar": "3 metre üzeri çalışmalar için zorunlu"
+    },
+    "Elektrik Tehlike Sertifikası": {
+        "kanonik": "Elektrik Tehlike Sertifikası",
+        "varyasyonlar": [
+            "elektrik yetki belgesi", "TS EN 50110 belgesi", 
+            "elektriksel güvenlik sertifikası",
+            "electrical safety certificate", "TS EN 50110"
+        ],
+        "kısaltma": None,
+        "geçerlilik_yıl": 3,
+        "zorunlu_pozisyonlar": ["elektrikçi", "pano teknisyeni", "elektrik mühendisi"],
+        "puan_kırma": 25,
+        "notlar": "Elektrikçi ve pano teknisyeni için zorunlu"
+    },
+    "Vinç Operatörü Lisansı": {
+        "kanonik": "Vinç Operatörü Lisansı",
+        "varyasyonlar": [
+            "kule vinç belgesi", "mobil vinç belgesi", "vinç ehliyeti",
+            "crane operator licence", "tower crane certificate"
+        ],
+        "kısaltma": "VO",
+        "geçerlilik_yıl": None,
+        "zorunlu_pozisyonlar": ["vinç operatörü"],
+        "puan_kırma": 30,
+        "notlar": "Kule ve mobil için ayrı lisans gerekir"
+    },
+    "Kaynak Sertifikası": {
+        "kanonik": "Kaynak Sertifikası",
+        "varyasyonlar": [
+            "MIG/MAG sertifikası", "TIG sertifikası", 
+            "elektrik kaynağı belgesi", "EN ISO 9606",
+            "welding certificate", "AWS certification"
+        ],
+        "kısaltma": None,
+        "geçerlilik_yıl": None,
+        "zorunlu_pozisyonlar": ["boru kaynakçısı"],
+        "puan_kırma": 20,
+        "notlar": "Tip ve malzemeye göre alt kategoriler var"
+    },
+    "Doğalgaz Tesisat Lisansı": {
+        "kanonik": "Doğalgaz Tesisat Lisansı",
+        "varyasyonlar": [
+            "gaz tesisatçı belgesi", "EPDK lisansı", "iç tesisat belgesi",
+            "gas installation licence", "EPDK certificate"
+        ],
+        "kısaltma": "EPDK",
+        "geçerlilik_yıl": None,
+        "zorunlu_pozisyonlar": ["doğalgaz tesisatçısı"],
+        "puan_kırma": 30,
+        "notlar": "EPDK tarafından verilir; yasal zorunluluk"
+    },
+    "Asansör Yetki Belgesi": {
+        "kanonik": "Asansör Yetki Belgesi",
+        "varyasyonlar": [
+            "asansör montaj belgesi", "asansör bakım yetki belgesi", 
+            "mesleki yeterlilik",
+            "elevator installation certificate", "lift competency certificate"
+        ],
+        "kısaltma": None,
+        "geçerlilik_yıl": None,
+        "zorunlu_pozisyonlar": ["asansör teknisyeni"],
+        "puan_kırma": 25,
+        "notlar": "Sanayi Bakanlığı onaylı"
+    },
+    "Kazan İşletme Belgesi": {
+        "kanonik": "Kazan İşletme Belgesi",
+        "varyasyonlar": [
+            "buhar kazanı belgesi", "kazan operatörü sertifikası", 
+            "basınçlı kap belgesi",
+            "boiler operation certificate", "pressure vessel certificate"
+        ],
+        "kısaltma": None,
+        "geçerlilik_yıl": None,
+        "zorunlu_pozisyonlar": ["kazan teknisyeni"],
+        "puan_kırma": 25,
+        "notlar": "Kazan teknisyeni için zorunlu"
+    }
+}
+
+
+# ============================================================
+# FAZ 17: KANONİK FORM VE KARA LİSTE FONKSİYONLARI
+# ============================================================
+
+def normalize_to_canonical(title: str) -> tuple:
+    """
+    FAZ 17: CV'deki pozisyon başlığını kanonik forma dönüştürür.
+    
+    Args:
+        title: CV'den gelen pozisyon başlığı (örn: "site manager", "saha şefi")
+    
+    Returns:
+        tuple: (kanonik_form, sektör) veya (None, None) eşleşme yoksa
+    
+    Örnek:
+        normalize_to_canonical("site manager") → ("şantiye şefi", "inşaat")
+        normalize_to_canonical("PLC programcısı") → ("SCADA operatörü", "elektrik")
+    """
+    if not title:
+        return None, None
+    
+    title_lower = title.lower().strip()
+    
+    for kanonik, data in CONSTRUCTION_CANONICAL_MAPPING.items():
+        # 1. Kanonik form ile direkt eşleşme
+        if title_lower == kanonik.lower():
+            return kanonik, data.get("sektör", "inşaat")
+        
+        # 2. Türkçe varyasyonlarda ara
+        for varyasyon in data.get("türkçe", []):
+            if title_lower == varyasyon.lower():
+                return kanonik, data.get("sektör", "inşaat")
+        
+        # 3. İngilizce karşılıklarda ara
+        for ing in data.get("ingilizce", []):
+            if title_lower == ing.lower():
+                return kanonik, data.get("sektör", "inşaat")
+        
+        # 4. Kısaltmalarda ara
+        for kisaltma in data.get("kısaltma", []):
+            if title_lower == kisaltma.lower():
+                return kanonik, data.get("sektör", "inşaat")
+    
+    return None, None
+
+
+def get_all_variations_for_canonical(kanonik: str) -> list:
+    """
+    FAZ 17: Bir kanonik form için tüm varyasyonları döndürür.
+    
+    Args:
+        kanonik: Kanonik form (örn: "şantiye şefi")
+    
+    Returns:
+        list: Tüm varyasyonlar listesi
+    """
+    if kanonik not in CONSTRUCTION_CANONICAL_MAPPING:
+        return []
+    
+    data = CONSTRUCTION_CANONICAL_MAPPING[kanonik]
+    variations = [kanonik]
+    variations.extend(data.get("türkçe", []))
+    variations.extend(data.get("ingilizce", []))
+    variations.extend(data.get("kısaltma", []))
+    
+    return variations
+
+
+def is_blacklisted_match(hedef_pozisyon: str, aday_pozisyonu: str, cv_text: str = "") -> tuple:
+    """
+    FAZ 17: Bir eşleşmenin kara listede olup olmadığını kontrol eder.
+    
+    Args:
+        hedef_pozisyon: Açık pozisyon (örn: "şantiye şefi")
+        aday_pozisyonu: CV'deki pozisyon (örn: "aşçı şefi")
+        cv_text: CV tam metni (bağlam kontrolü için)
+    
+    Returns:
+        tuple: (engellendi_mi: bool, engel_nedeni: str)
+    
+    Örnek:
+        is_blacklisted_match("şantiye şefi", "aşçı şefi") → (True, "'Şef' kelimesi ortak ama farklı sektör")
+    """
+    # Önce hedef pozisyonu kanonik forma dönüştür
+    kanonik_hedef, _ = normalize_to_canonical(hedef_pozisyon)
+    if not kanonik_hedef:
+        kanonik_hedef = hedef_pozisyon.lower().strip()
+    
+    # Kara listede var mı kontrol et
+    if kanonik_hedef not in CONSTRUCTION_BLACKLIST:
+        return False, ""
+    
+    blacklist_data = CONSTRUCTION_BLACKLIST[kanonik_hedef]
+    aday_lower = aday_pozisyonu.lower().strip()
+    
+    # Engelli terimlerde ara
+    for engelli in blacklist_data["engelli_terimler"]:
+        if engelli.lower() in aday_lower or aday_lower in engelli.lower():
+            # Bağlam kontrolü yap (CV'de inşaat terimleri var mı?)
+            if cv_text:
+                cv_lower = cv_text.lower()
+                baglam_terimleri = blacklist_data.get("bağlam_kontrolü", [])
+                baglam_bulundu = any(terim in cv_lower for terim in baglam_terimleri)
+                
+                # Bağlam terimleri varsa aday inşaat sektöründen olabilir, engelleme
+                if baglam_bulundu:
+                    return False, ""  # Bağlam uygun, engelleme
+            
+            # Bağlam yok veya uygun değil, ENGELLE
+            return True, blacklist_data["engel_nedeni"]
+    
+    return False, ""
+
+
+def check_certificate_in_cv(cv_text: str, certificate_name: str) -> bool:
+    """
+    FAZ 17: CV metninde belirli bir sertifikanın var olup olmadığını kontrol eder.
+    
+    Args:
+        cv_text: CV tam metni
+        certificate_name: Sertifika kanonik adı
+    
+    Returns:
+        bool: Sertifika bulundu mu?
+    """
+    import re as regex_module
+    
+    if not cv_text or certificate_name not in CONSTRUCTION_CERTIFICATES:
+        return False
+    
+    cv_lower = cv_text.lower()
+    cert_data = CONSTRUCTION_CERTIFICATES[certificate_name]
+    
+    # Kanonik isimde ara
+    if cert_data["kanonik"].lower() in cv_lower:
+        return True
+    
+    # Varyasyonlarda ara
+    for varyasyon in cert_data["varyasyonlar"]:
+        if varyasyon.lower() in cv_lower:
+            return True
+    
+    # Kısaltmada ara (tam kelime eşleşmesi)
+    if cert_data.get("kısaltma"):
+        pattern = r'' + regex_module.escape(cert_data["kısaltma"]) + r''
+        if regex_module.search(pattern, cv_text, regex_module.IGNORECASE):
+            return True
+    
+    return False
+
+
+def get_required_certificates_for_position(position_title: str) -> list:
+    """
+    FAZ 17: Bir pozisyon için zorunlu sertifikaları döndürür.
+    
+    Args:
+        position_title: Pozisyon başlığı
+    
+    Returns:
+        list: Zorunlu sertifika bilgileri listesi
+    """
+    # Önce kanonik forma dönüştür
+    kanonik, _ = normalize_to_canonical(position_title)
+    if not kanonik:
+        kanonik = position_title.lower().strip()
+    
+    required = []
+    
+    for cert_name, cert_data in CONSTRUCTION_CERTIFICATES.items():
+        zorunlu_poz = cert_data["zorunlu_pozisyonlar"]
+        
+        # "*" = tüm pozisyonlar için zorunlu
+        if "*" in zorunlu_poz:
+            required.append({
+                "sertifika": cert_name,
+                "puan_kırma": cert_data["puan_kırma"],
+                "notlar": cert_data["notlar"]
+            })
+        elif kanonik in zorunlu_poz:
+            required.append({
+                "sertifika": cert_name,
+                "puan_kırma": cert_data["puan_kırma"],
+                "notlar": cert_data["notlar"]
+            })
+    
+    return required
+
+
+def calculate_certificate_penalty(position_title: str, cv_text: str) -> tuple:
+    """
+    FAZ 17: Eksik sertifikalar için puan cezası hesaplar.
+    
+    Args:
+        position_title: Açık pozisyon
+        cv_text: CV tam metni
+    
+    Returns:
+        tuple: (toplam_puan_kırma, eksik_sertifikalar_listesi)
+    
+    Örnek:
+        calculate_certificate_penalty("vinç operatörü", cv_text) 
+        → (45, ["İSG Çalışan Sertifikası", "Vinç Operatörü Lisansı"])
+    """
+    required_certs = get_required_certificates_for_position(position_title)
+    
+    total_penalty = 0
+    missing_certs = []
+    
+    for cert in required_certs:
+        cert_name = cert["sertifika"]
+        if not check_certificate_in_cv(cv_text, cert_name):
+            total_penalty += cert["puan_kırma"]
+            missing_certs.append(cert_name)
+    
+    return total_penalty, missing_certs
+
 
 
 # ============ OPENAI CLIENT (FAZ 10.2) ============
@@ -6904,9 +7540,13 @@ def get_candidates_expiring_soon(company_id: int, days: int = 7) -> list[dict]:
 
 
 
-def check_title_match(candidate_dict: dict, title_mappings: dict) -> tuple:
+def check_title_match(candidate_dict: dict, title_mappings: dict, cv_text: str = "") -> tuple:
     """
     Adayın pozisyon başlıklarıyla eşleşip eşleşmediğini kontrol eder.
+    
+    FAZ 17 Güncellemesi:
+    - Kara liste kontrolü (HARD-BLOCK)
+    - Kanonik form normalizasyonu
     
     Email worker ile aynı yaklaşım: birleşik metin + partial_ratio.
     
@@ -6937,15 +7577,29 @@ def check_title_match(candidate_dict: dict, title_mappings: dict) -> tuple:
     if not all_titles:
         return (False, 0)
     
+    # FAZ 17: Adayın pozisyonunu kanonik forma dönüştür
+    candidate_canonical, candidate_sector = normalize_to_canonical(candidate_position_text)
+    
     best_ratio = 0
     for title in all_titles:
         title_lower = turkish_lower(title)
         if not title_lower:
             continue
         
+        # FAZ 17: Kara liste kontrolü (HARD-BLOCK)
+        is_blocked, block_reason = is_blacklisted_match(title, candidate_position_text, cv_text)
+        if is_blocked:
+            continue  # Bu eşleşme kara listede, atla
+        
         # FAZ 16: Semantic domain uyumluluk kontrolü
         if not semantic_domain_compatible(candidate_position_text, title_lower):
             continue  # Farklı domain, bu eşleşmeyi atla
+        
+        # FAZ 17: Kanonik form eşleşmesi (öncelikli)
+        title_canonical, title_sector = normalize_to_canonical(title)
+        if candidate_canonical and title_canonical:
+            if candidate_canonical == title_canonical:
+                return (True, 23)  # Kanonik eşleşme = exact match skoru
         
         # partial_ratio: Birleşik metinde kısmi eşleşme arar (email worker gibi)
         ratio = fuzz.partial_ratio(candidate_position_text, title_lower)
