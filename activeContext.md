@@ -18,6 +18,14 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 16.03.2026 - Havuzlar Değerlendirme Durumu Filtresi
+- ✅ **"Tüm Durum" filtresi "Değerlendirme Durumu" ile değiştirildi**
+  - STATUS_MAP: 7 eski durum → 6 yeni durum (Mülakat Değerlendirmesi ile uyumlu)
+  - DB Migration: candidate_positions.status 'aktif' → 'beklemede' (52 kayıt)
+  - Backend: get_position_candidates cp.status SELECT'e eklendi, 'aktif' filtresi kaldırıldı
+  - Tüm 'aktif' referansları güncellendi (database.py, interviews.py, scheduler.py)
+  - Yeni INSERT'lerde default status='beklemede'
+
 ### 16.03.2026 - Mülakat Değerlendirme Durumu Aksiyonları
 - ✅ **Değerlendirme durumuna göre aday otomatik taşıma**
   - Frontend: "Sonuç Kararı" → "Değerlendirme Durumu", 6 seçenek (Beklemede, Değerlendirilecek, Genel Havuz, Arşiv, Kara Liste, İşe Alındı)

@@ -33,13 +33,12 @@ interface TreeData { system_pools: SysPool[]; departments: Dept[]; total_candida
 interface Candidate { id: number; ad_soyad: string; email: string|null; telefon: string|null; mevcut_pozisyon: string|null; toplam_deneyim_yil: number|null; lokasyon: string|null; location_status?: { status: "green" | "yellow" | "red" | "gray"; candidate_location: string; position_location: string; match_type: string }; match_score?: number; match_reason?: string; remaining_days?: number; assignment_type?: string; status?: string; is_blacklisted?: number; durum?: string; intelligence?: { career_path?: string; level?: string; experience_years?: number; sectors?: string[]; suitable_positions?: string[]; key_skills?: string[]; education_level?: string; education_field?: string; analyzed_at?: string } }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  aktif: { label: 'Aktif', color: 'bg-blue-100 text-blue-800' },
-  beklemede: { label: 'Beklemede', color: 'bg-yellow-100 text-yellow-800' },
-  inceleniyor: { label: 'İnceleniyor', color: 'bg-purple-100 text-purple-800' },
-  mulakat: { label: 'Mülakat', color: 'bg-cyan-100 text-cyan-800' },
-  teklif: { label: 'Teklif', color: 'bg-green-100 text-green-800' },
-  red: { label: 'Red', color: 'bg-red-100 text-red-800' },
-  blacklist: { label: 'Kara Liste', color: 'bg-gray-900 text-white' },
+  beklemede: { label: 'Beklemede', color: 'bg-amber-100 text-amber-800' },
+  degerlendirilecek: { label: 'Değerlendirilecek', color: 'bg-blue-100 text-blue-800' },
+  genel_havuz: { label: 'Genel Havuz', color: 'bg-slate-100 text-slate-800' },
+  arsiv: { label: 'Arşiv', color: 'bg-gray-100 text-gray-800' },
+  kara_liste: { label: 'Kara Liste', color: 'bg-gray-900 text-white' },
+  ise_alindi: { label: 'İşe Alındı', color: 'bg-emerald-100 text-emerald-800' },
 }
 
 // Level Badge Komponenti
@@ -766,7 +765,7 @@ export default function Havuzlar() {
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tüm Durum</SelectItem>
+                    <SelectItem value="all">Değerlendirme Durumu</SelectItem>
                     {Object.entries(STATUS_MAP).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
                   </SelectContent>
                 </Select>

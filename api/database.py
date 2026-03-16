@@ -9,6 +9,7 @@ import json
 import re
 import logging
 import time
+import threading
 from datetime import datetime, timedelta
 from typing import Optional
 from contextlib import contextmanager
@@ -25,17 +26,120 @@ try:
     from sklearn.model_selection import train_test_split
     from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
     SKLEARN_AVAILABLE = True
-except ImportError:
+except (ImportError, ValueError, Exception):
     SKLEARN_AVAILABLE = False
     print('Warning: scikit-learn not installed, ML features disabled')
 
 from config import CACHE_TTL
 
+
+
+# ============ ATOMIC WRITE TRANSACTION (FAZ 16) ============
+WRITE_LOCK = threading.Lock()
+
+@contextmanager
+def atomic_write_transaction(db_path=None):
+    """
+    FAZ 16: Thread-safe atomic write transaction
+    
+    Kullanım:
+        with atomic_write_transaction() as conn:
+            cursor = conn.cursor()
+            cursor.execute(...)
+            # commit otomatik yapılır
+    
+    - WRITE_LOCK ile aynı anda tek writer
+    - Exception durumunda rollback
+    - Başarılı durumda commit
+    """
+    from config import DATABASE_PATH
+    if db_path is None:
+        db_path = DATABASE_PATH
+    
+    WRITE_LOCK.acquire()
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path, timeout=30.0)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("PRAGMA foreign_keys=ON")
+        yield conn
+        conn.commit()
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise e
+    finally:
+        if conn:
+            conn.close()
+        WRITE_LOCK.release()
 logger = logging.getLogger(__name__)
 
 # ============ PULL MATCH THRESHOLDS (G1) ============
 PULL_MATCH_CLOSE_THRESHOLD = 75    # Close title match (was 85)
 PULL_MATCH_PARTIAL_THRESHOLD = 60  # Partial title match (was 70)
+
+# ============ EXCLUSIVE KEYWORD GROUPS (FAZ 16) ============
+# Bu gruplar birbirinden tamamen farklı alanları temsil eder.
+# Bir gruptaki keyword diğer grubun title'ıyla eşleşemez.
+EXCLUSIVE_KEYWORD_GROUPS = {
+    'hr': {'insan kaynakları', 'human resources', 'hr', 'ik', 'personel', 'işe alım', 
+           'recruitment', 'bordro', 'payroll', 'özlük', 'talent acquisition'},
+    'sales': {'satış', 'sales', 'pazarlama', 'marketing', 'ticaret', 'commerce', 
+              'müşteri ilişkileri', 'crm', 'business development', 'iş geliştirme'},
+    'engineering': {'mühendis', 'engineer', 'yazılım', 'software', 'geliştirici', 
+                    'developer', 'backend', 'frontend', 'fullstack', 'devops', 'mlops'},
+    'finance': {'muhasebe', 'accounting', 'finans', 'finance', 'mali', 'bütçe', 
+                'budget', 'denetim', 'audit', 'vergi', 'tax'},
+    'legal': {'hukuk', 'legal', 'avukat', 'lawyer', 'sözleşme', 'contract', 
+              'mevzuat', 'regulation', 'compliance'},
+    'medical': {'doktor', 'doctor', 'hemşire', 'nurse', 'tıp', 'medical', 
+                'sağlık', 'health', 'hastane', 'hospital', 'klinik', 'clinic'},
+    'construction': {'inşaat', 'construction', 'şantiye', 'site', 'yapı', 
+                     'building', 'mimar', 'architect', 'statik', 'structural'}
+}
+
+
+def get_keyword_domain(text: str) -> str:
+    """Metindeki kelimelere göre domain belirle"""
+    if not text:
+        return None
+    text_lower = text.lower()
+    for domain, keywords in EXCLUSIVE_KEYWORD_GROUPS.items():
+        for kw in keywords:
+            if kw in text_lower:
+                return domain
+    return None
+
+
+def semantic_domain_compatible(candidate_text: str, position_title: str) -> bool:
+    """
+    FAZ 16: Semantic domain uyumluluğunu kontrol et
+    
+    HR Manager <-> Project Manager gibi yanlış eşleşmeleri engeller.
+    Her iki metin de aynı domain'de veya en az biri domain dışındaysa uyumlu.
+    
+    Returns:
+        True: Uyumlu (eşleşme devam edebilir)
+        False: Uyumsuz (eşleşme engellenmeli)
+    """
+    if not candidate_text or not position_title:
+        return True  # Metin yoksa engelleme
+    
+    candidate_domain = get_keyword_domain(candidate_text)
+    position_domain = get_keyword_domain(position_title)
+    
+    # Her iki metin de domain dışında → uyumlu
+    if candidate_domain is None or position_domain is None:
+        return True
+    
+    # Aynı domain → uyumlu
+    if candidate_domain == position_domain:
+        return True
+    
+    # Farklı domain → uyumsuz
+    return False
+
 
 # ============ OPENAI CLIENT (FAZ 10.2) ============
 
@@ -1049,7 +1153,7 @@ def invalidate_cache(key_prefix: str = None):
 
 try:
     import streamlit as st
-except ImportError:
+except (ImportError, ValueError, Exception):
     # Streamlit yoksa (test ortamı gibi) st = None
     st = None
 
@@ -1063,10 +1167,6 @@ def ensure_data_dir():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def turkish_lower(text: str) -> str:
-    """Türkçe karakterleri doğru şekilde küçük harfe çevir.
-    Python'da 'İ'.lower() → 'i̇' (combining dot) sorunu var, bu fonksiyon düzeltir."""
-    return text.replace('İ', 'i').replace('I', 'ı').lower()
 
 
 # FAZ 9.1: Gelismis synonym tip sistemi - 6 tip
@@ -1145,6 +1245,26 @@ def turkish_lower(text) -> str:
     text = str(text)
     text = text.replace('İ', 'i').replace('I', 'ı')
     return text.lower()
+
+
+def get_candidate_position_text(candidate_dict: dict) -> str:
+    """
+    Adayın tüm pozisyon bilgilerini birleştirir.
+    Email worker ile aynı yaklaşım - tutarlılık için.
+    
+    Args:
+        candidate_dict: Aday bilgilerini içeren dictionary
+            - mevcut_pozisyon: str veya None
+            - deneyim_detay: str veya None (format: "Poz1 @ Şirket1 | Poz2 @ Şirket2")
+    
+    Returns:
+        str: Tüm pozisyon bilgileri birleşik ve lowercase
+        Örnek: "inşaat mühendisi yapı a.ş. senior auditor cns"
+    """
+    mevcut_pos = candidate_dict.get("mevcut_pozisyon") or ""
+    deneyim = candidate_dict.get("deneyim_detay") or ""
+    combined = mevcut_pos + " " + deneyim
+    return turkish_lower(combined.strip())
 
 
 @contextmanager
@@ -1327,33 +1447,6 @@ def init_database():
                 FOREIGN KEY (position_id) REFERENCES positions(id)
             )
         """)
-
-        # Puan Senkronizasyon Trigger'ları (matches → candidate_positions)
-        # matches.uyum_puani değiştiğinde candidate_positions.match_score otomatik güncellenir
-        cursor.execute("DROP TRIGGER IF EXISTS sync_match_score_update")
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS sync_match_score_update
-            AFTER UPDATE OF uyum_puani ON matches
-            BEGIN
-                UPDATE candidate_positions
-                SET match_score = CAST(ROUND(NEW.uyum_puani) AS INTEGER)
-                WHERE candidate_id = NEW.candidate_id
-                AND position_id = NEW.position_id;
-            END
-        """)
-        cursor.execute("DROP TRIGGER IF EXISTS sync_match_score_insert")
-        cursor.execute("""
-            CREATE TRIGGER IF NOT EXISTS sync_match_score_insert
-            AFTER INSERT ON matches
-            BEGIN
-                UPDATE candidate_positions
-                SET match_score = CAST(ROUND(NEW.uyum_puani) AS INTEGER)
-                WHERE candidate_id = NEW.candidate_id
-                AND position_id = NEW.position_id;
-            END
-        """)
-
-        # Email loglari tablosu
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS email_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -5597,13 +5690,13 @@ def get_all_candidates(
                     SELECT cp.candidate_id FROM candidate_positions cp
                     JOIN department_pools pos ON cp.position_id = pos.id
                     JOIN department_pools dept ON pos.parent_id = dept.id
-                    WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0 AND cp.status = 'aktif'
+                    WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0 AND cp.status IS NOT NULL
                 )"""
             elif havuz == "pozisyon_havuzu":
                 # Pozisyona atanmis adaylar (candidate_positions tablosundan)
                 query += """ AND candidates.id IN (
                     SELECT cp.candidate_id FROM candidate_positions cp
-                    WHERE cp.status = 'aktif'
+                    WHERE cp.status IS NOT NULL
                 )"""
             elif havuz == "arsiv":
                 query += """ AND candidates.id IN (
@@ -5675,13 +5768,13 @@ def get_candidates_count(
                     SELECT cp.candidate_id FROM candidate_positions cp
                     JOIN department_pools pos ON cp.position_id = pos.id
                     JOIN department_pools dept ON pos.parent_id = dept.id
-                    WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0 AND cp.status = 'aktif'
+                    WHERE pos.pool_type = 'position' AND dept.pool_type = 'department' AND dept.is_system = 0 AND cp.status IS NOT NULL
                 )"""
             elif havuz == "pozisyon_havuzu":
                 # Pozisyona atanmis adaylar (candidate_positions tablosundan)
                 query += """ AND candidates.id IN (
                     SELECT cp.candidate_id FROM candidate_positions cp
-                    WHERE cp.status = 'aktif'
+                    WHERE cp.status IS NOT NULL
                 )"""
             elif havuz == "arsiv":
                 query += """ AND candidates.id IN (
@@ -6814,71 +6907,60 @@ def get_candidates_expiring_soon(company_id: int, days: int = 7) -> list[dict]:
 def check_title_match(candidate_dict: dict, title_mappings: dict) -> tuple:
     """
     Adayın pozisyon başlıklarıyla eşleşip eşleşmediğini kontrol eder.
-    CV upload sonrası otomatik eşleştirme için kullanılır.
     
-    Args:
-        candidate_dict: Aday bilgileri (mevcut_pozisyon, deneyim_detay)
-        title_mappings: {'exact': [...], 'close': [...], 'partial': [...]}
+    Email worker ile aynı yaklaşım: birleşik metin + partial_ratio.
     
     Returns:
         (match_found: bool, match_score: int)
-        Skorlar: exact=23, close=14, partial=7, no_match=0
+        Skorlar: exact=23 (ratio>=90), close=14 (ratio>=75), partial=7 (ratio>=70), no_match=0
     """
-    from scoring_v2 import turkish_lower
     try:
         from thefuzz import fuzz
-    except ImportError:
+    except (ImportError, ValueError, Exception):
         fuzz = None
-    import re
     
-    # 1. Adayın pozisyon başlıklarını topla
-    candidate_titles = []
-    current_pos = candidate_dict.get('mevcut_pozisyon') or ''
-    experience = candidate_dict.get('deneyim_detay') or ''
-    
-    if current_pos:
-        candidate_titles.append(current_pos)
-    
-    if experience:
-        pos_patterns = re.findall(r'(?:Pozisyon|Unvan|Görev)[:\s]+([^,\n]+)', experience, re.IGNORECASE)
-        candidate_titles.extend(pos_patterns)
-    
-    if not candidate_titles:
+    # 1. Adayın tüm pozisyon metnini al (FAZ 16.1 helper)
+    candidate_position_text = get_candidate_position_text(candidate_dict)
+    if not candidate_position_text:
         return (False, 0)
     
-    # 2. Her başlık için eşleştirme
-    for title in candidate_titles:
-        title_normalized = turkish_lower(title.strip())
-        if not title_normalized:
+    # 2. fuzz yoksa eşleşme yapamayız
+    if not fuzz:
+        return (False, 0)
+    
+    # 3. Tüm onaylı başlıkları birleştir ve en iyi eşleşmeyi bul
+    all_titles = []
+    all_titles.extend(title_mappings.get('exact', []))
+    all_titles.extend(title_mappings.get('close', []))
+    all_titles.extend(title_mappings.get('partial', []))
+    
+    if not all_titles:
+        return (False, 0)
+    
+    best_ratio = 0
+    for title in all_titles:
+        title_lower = turkish_lower(title)
+        if not title_lower:
             continue
         
-        # Exact match (skor: 23)
-        for exact_title in title_mappings.get('exact', []):
-            if turkish_lower(exact_title) == title_normalized:
-                return (True, 23)
+        # FAZ 16: Semantic domain uyumluluk kontrolü
+        if not semantic_domain_compatible(candidate_position_text, title_lower):
+            continue  # Farklı domain, bu eşleşmeyi atla
         
-        # Close match (fuzzy >= 75, skor: 14)
-        if fuzz:
-            for close_title in title_mappings.get('close', []):
-                ratio = fuzz.ratio(title_normalized, turkish_lower(close_title))
-                if ratio >= PULL_MATCH_CLOSE_THRESHOLD:
-                    return (True, 14)
-        
-        # Partial match (fuzzy >= 60, skor: 7)
-        if fuzz:
-            for partial_title in title_mappings.get('partial', []):
-                ratio = fuzz.ratio(title_normalized, turkish_lower(partial_title))
-                if ratio >= PULL_MATCH_PARTIAL_THRESHOLD:
-                    return (True, 7)
-        
-        # G1 Fallback: close title'ları partial threshold ile kontrol et
-        if fuzz:
-            for close_title in title_mappings.get('close', []):
-                ratio = fuzz.ratio(title_normalized, turkish_lower(close_title))
-                if ratio >= PULL_MATCH_PARTIAL_THRESHOLD:
-                    return (True, 7)
+        # partial_ratio: Birleşik metinde kısmi eşleşme arar (email worker gibi)
+        ratio = fuzz.partial_ratio(candidate_position_text, title_lower)
+        if ratio > best_ratio:
+            best_ratio = ratio
     
-    return (False, 0)
+    # 4. Skor kategorisi belirle (mevcut değerleri koru)
+    if best_ratio >= 90:
+        return (True, 23)  # exact match skoru
+    elif best_ratio >= 75:
+        return (True, 14)  # close match skoru
+    elif best_ratio >= 70:
+        return (True, 7)   # partial match skoru (email worker threshold)
+    else:
+        return (False, 0)
 
 
 def pull_matching_candidates_to_position(position_pool_id: int, company_id: int, limit: int = 50) -> dict:
@@ -6918,7 +7000,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
     from scoring_v2 import get_title_mappings, turkish_lower
     try:
         from thefuzz import fuzz
-    except ImportError:
+    except (ImportError, ValueError, Exception):
         fuzz = None
     
     title_mappings = get_title_mappings(position_pool_id)
@@ -6996,71 +7078,9 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                 location = cand['lokasyon'] or ''
                 company = cand['mevcut_sirket'] or ''
 
-                # Adayın pozisyon başlıklarını bul
-                candidate_titles = []
-                if current_pos:
-                    candidate_titles.append(current_pos)
-
-                # deneyim_detay'dan pozisyon başlıkları çıkar
-                import re
-                if experience:
-                    pos_patterns = re.findall(r'(?:Pozisyon|Unvan|Görev)[:\s]+([^,\n]+)', experience, re.IGNORECASE)
-                    candidate_titles.extend(pos_patterns)
-
-                # Title eşleşmesi kontrolü
-                title_match_found = False
-                title_match_score = 0
-
-                for title in candidate_titles:
-                    title_normalized = turkish_lower(title.strip())
-                    if not title_normalized:
-                        continue
-
-                    # Exact match
-                    for exact_title in title_mappings.get('exact', []):
-                        if turkish_lower(exact_title) == title_normalized:
-                            title_match_found = True
-                            title_match_score = 23
-                            break
-
-                    if title_match_found:
-                        break
-
-                    # Close match (fuzzy >= PULL_MATCH_CLOSE_THRESHOLD)
-                    if fuzz:
-                        for close_title in title_mappings.get('close', []):
-                            ratio = fuzz.ratio(title_normalized, turkish_lower(close_title))
-                            if ratio >= PULL_MATCH_CLOSE_THRESHOLD:
-                                if title_match_score < 14:
-                                    title_match_score = 14
-                                    title_match_found = True
-                                    break
-
-                    if title_match_found and title_match_score >= 14:
-                        break
-
-                    # Partial match (fuzzy >= PULL_MATCH_PARTIAL_THRESHOLD)
-                    if fuzz:
-                        for partial_title in title_mappings.get('partial', []):
-                            ratio = fuzz.ratio(title_normalized, turkish_lower(partial_title))
-                            if ratio >= PULL_MATCH_PARTIAL_THRESHOLD:
-                                if title_match_score < 7:
-                                    title_match_score = 7
-                                    title_match_found = True
-                                    break
-
-                    # G1 Fallback: partial listesi boşsa veya eşleşme yoksa,
-                    # close title'ları partial threshold ile kontrol et
-                    if not title_match_found and fuzz:
-                        for close_title in title_mappings.get('close', []):
-                            ratio = fuzz.ratio(title_normalized, turkish_lower(close_title))
-                            if ratio >= PULL_MATCH_PARTIAL_THRESHOLD:
-                                if title_match_score < 7:
-                                    title_match_score = 7
-                                    title_match_found = True
-                                    break
-
-                # title_match_score == 0 ise skip et (pozisyon başlığı eşleşmesi yok)
+                # Title eşleşmesi kontrolü (FAZ 16.3: check_title_match kullan)
+                mini_dict = {"mevcut_pozisyon": current_pos, "deneyim_detay": experience}
+                title_match_found, title_match_score = check_title_match(mini_dict, title_mappings)
                 if not title_match_found or title_match_score == 0:
                     continue
 
@@ -7172,7 +7192,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                 cursor.execute("""
                     INSERT OR IGNORE INTO candidate_positions
                     (candidate_id, position_id, match_score, status, created_at)
-                    VALUES (?, ?, ?, 'aktif', datetime('now'))
+                    VALUES (?, ?, ?, 'beklemede', datetime('now'))
                 """, (candidate_id, position_pool_id, match_score))
                 inserted = cursor.rowcount > 0
                 if not inserted:
@@ -7365,7 +7385,7 @@ def move_candidate_to_pool(candidate_id: int, from_position_id: int, to_position
 
         if old_pool:
             match_score = old_pool[0] or 0
-            status = old_pool[1] or 'aktif'
+            status = old_pool[1] or 'beklemede'
             
             # Yeni havuza ekle (candidate_positions)
             cursor.execute("""
@@ -11212,7 +11232,7 @@ def find_candidates_by_position_titles(company_id: int, title_list: list, pool_t
     from scoring_v2 import turkish_lower
     try:
         from thefuzz import fuzz
-    except ImportError:
+    except (ImportError, ValueError, Exception):
         fuzz = None
         logger.warning("thefuzz modülü bulunamadı, basit substring matching kullanılacak")
     
@@ -12145,10 +12165,10 @@ def add_candidate_to_position(
             # 4. candidate_positions'a INSERT
             cursor.execute("""
                 INSERT INTO candidate_positions (
-                    candidate_id, position_id, match_score,
+                    candidate_id, position_id, match_score, status,
                     v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, 'beklemede', ?, ?, ?, ?, ?, ?)
             """, (candidate_id, position_id, match_score,
                   v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version))
 
@@ -12280,10 +12300,11 @@ def get_position_candidates(position_id: int) -> list[dict]:
                    cp.gemini_score,
                    cp.hermes_score,
                    cp.openai_score,
-                   cp.score_version
+                   cp.score_version,
+                   cp.status
             FROM candidate_positions cp
             JOIN candidates c ON cp.candidate_id = c.id
-            WHERE cp.position_id = ? AND cp.status = 'aktif'
+            WHERE cp.position_id = ?
             ORDER BY cp.match_score DESC, cp.created_at DESC
         """, (position_id,))
         return [dict(row) for row in cursor.fetchall()]
@@ -12314,7 +12335,7 @@ def get_candidate_position_count(candidate_id: int, conn=None) -> int:
         cursor.execute("""
             SELECT COUNT(*) FROM candidate_positions cp
             JOIN department_pools dp ON dp.id = cp.position_id
-            WHERE cp.candidate_id = ? AND cp.status = 'aktif'
+            WHERE cp.candidate_id = ? AND cp.status IS NOT NULL
         """, (candidate_id,))
         return cursor.fetchone()[0]
     finally:
@@ -12928,7 +12949,7 @@ def _get_synonym_blacklist():
         try:
             from routes.synonyms import SYNONYM_BLACKLIST
             _SYNONYM_BLACKLIST = set(SYNONYM_BLACKLIST)
-        except ImportError:
+        except (ImportError, ValueError, Exception):
             _SYNONYM_BLACKLIST = set()
     return _SYNONYM_BLACKLIST
 
@@ -13756,3 +13777,131 @@ def get_intelligence_stats(company_id: int) -> dict:
     except Exception as e:
         logger.error(f"Intelligence istatistik hatası: {e}")
         return {}
+
+
+# ============ SKOR SENKRONİZASYON FONKSİYONLARI (FAZ 16) ============
+
+def sync_scores_to_all_tables(candidate_id: int, position_id: int, final_score: int, v2_score: int = None, v3_score: int = None) -> bool:
+    """
+    FAZ 16: Merkezi skor senkronizasyonu
+    
+    Tek bir aday+pozisyon için:
+    - matches.uyum_puani
+    - candidate_positions.match_score + v2_score + v3_score
+    
+    Weighted formula: final_score = int((v3_score * 0.60) + (v2_score * 0.40))
+    """
+    try:
+        with atomic_write_transaction() as conn:
+            cursor = conn.cursor()
+            
+            # 1. matches tablosunu güncelle
+            cursor.execute("""
+                UPDATE matches 
+                SET uyum_puani = ?
+                WHERE candidate_id = ? AND position_id = ?
+            """, (final_score, candidate_id, position_id))
+            
+            # 2. candidate_positions tablosunu güncelle (v2/v3 skorları dahil)
+            if v2_score is not None and v3_score is not None:
+                cursor.execute("""
+                    UPDATE candidate_positions 
+                    SET match_score = ?, v2_score = ?, v3_score = ?
+                    WHERE candidate_id = ? AND position_id = ?
+                """, (final_score, v2_score, v3_score, candidate_id, position_id))
+            else:
+                cursor.execute("""
+                    UPDATE candidate_positions 
+                    SET match_score = ?
+                    WHERE candidate_id = ? AND position_id = ?
+                """, (final_score, candidate_id, position_id))
+            
+            logger.info(f"Skorlar senkronize edildi: candidate={candidate_id}, position={position_id}, final={final_score}")
+            return True
+    except Exception as e:
+        logger.error(f"Skor senkronizasyon hatası: {e}")
+        return False
+
+
+def fix_score_inconsistencies() -> dict:
+    """
+    FAZ 16: Tüm skor tutarsızlıklarını düzelt
+    
+    Düzeltilen durumlar:
+    1. Weighted formula uyumsuzluğu: v2_score ve v3_score varsa doğru weighted hesapla
+    2. CP vs matches farkı: candidate_positions.match_score != matches.uyum_puani
+    
+    Returns:
+        {"weighted_fixed": int, "cp_fixed": int, "errors": int}
+    """
+    stats = {"weighted_fixed": 0, "cp_fixed": 0, "errors": 0}
+    
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # 1. Weighted formula tutarsızlıklarını bul (candidate_positions tablosundan)
+            cursor.execute("""
+                SELECT 
+                    cp.candidate_id, 
+                    cp.position_id, 
+                    cp.match_score,
+                    cp.v2_score, 
+                    cp.v3_score
+                FROM candidate_positions cp
+                WHERE cp.v2_score IS NOT NULL AND cp.v2_score > 0 
+                  AND cp.v3_score IS NOT NULL AND cp.v3_score > 0
+            """)
+            rows = cursor.fetchall()
+            
+        for candidate_id, position_id, current_score, v2_score, v3_score in rows:
+            # Doğru weighted hesapla
+            correct_score = int((v3_score * 0.60) + (v2_score * 0.40))
+            
+            if current_score != correct_score:
+                try:
+                    if sync_scores_to_all_tables(candidate_id, position_id, correct_score, v2_score, v3_score):
+                        stats["weighted_fixed"] += 1
+                        logger.info(f"Weighted düzeltildi: candidate={candidate_id}, position={position_id}, {current_score}->{correct_score}")
+                except Exception as e:
+                    stats["errors"] += 1
+                    logger.error(f"Weighted düzeltme hatası: {e}")
+        
+        # 2. CP vs matches tutarsızlıklarını bul ve düzelt
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 
+                    cp.candidate_id, 
+                    cp.position_id, 
+                    cp.match_score AS cp_score,
+                    m.uyum_puani AS match_score
+                FROM candidate_positions cp
+                JOIN matches m ON cp.candidate_id = m.candidate_id AND cp.position_id = m.position_id
+                WHERE cp.match_score != CAST(ROUND(m.uyum_puani) AS INTEGER)
+            """)
+            cp_rows = cursor.fetchall()
+        
+        for candidate_id, position_id, cp_score, match_score in cp_rows:
+            try:
+                # matches tablosundaki değeri doğru kabul et
+                correct_score = int(round(match_score))
+                with atomic_write_transaction() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        UPDATE candidate_positions 
+                        SET match_score = ?
+                        WHERE candidate_id = ? AND position_id = ?
+                    """, (correct_score, candidate_id, position_id))
+                stats["cp_fixed"] += 1
+                logger.info(f"CP düzeltildi: candidate={candidate_id}, position={position_id}, {cp_score}->{correct_score}")
+            except Exception as e:
+                stats["errors"] += 1
+                logger.error(f"CP düzeltme hatası: {e}")
+        
+        logger.info(f"Skor tutarsızlık düzeltme tamamlandı: {stats}")
+        return stats
+    except Exception as e:
+        logger.error(f"fix_score_inconsistencies hatası: {e}")
+        stats["errors"] += 1
+        return stats

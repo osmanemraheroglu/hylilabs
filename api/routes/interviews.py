@@ -61,7 +61,7 @@ def dropdown_data(current_user: dict = Depends(get_current_user)):
                     """SELECT c.id, c.ad_soyad, c.email
                        FROM candidates c
                        JOIN candidate_positions cp ON cp.candidate_id = c.id
-                       WHERE cp.position_id = ? AND c.company_id = ? AND cp.status = 'aktif'
+                       WHERE cp.position_id = ? AND c.company_id = ? AND cp.status IS NOT NULL
                        ORDER BY c.ad_soyad""",
                     (pos["id"], company_id)
                 )
@@ -335,7 +335,7 @@ def update_existing_interview(
                     else:
                         # Adayın gerçek durumunu belirle
                         cursor.execute(
-                            "SELECT COUNT(*) as cnt FROM candidate_positions WHERE candidate_id = ? AND status = 'aktif'",
+                            "SELECT COUNT(*) as cnt FROM candidate_positions WHERE candidate_id = ? AND status IS NOT NULL",
                             (candidate_id,)
                         )
                         pos_count = cursor.fetchone()['cnt']
@@ -416,7 +416,7 @@ def delete_existing_interview(
                     else:
                         # Adayın gerçek durumunu belirle
                         cursor.execute(
-                            "SELECT COUNT(*) as cnt FROM candidate_positions WHERE candidate_id = ? AND status = 'aktif'",
+                            "SELECT COUNT(*) as cnt FROM candidate_positions WHERE candidate_id = ? AND status IS NOT NULL",
                             (candidate_id,)
                         )
                         pos_count = cursor.fetchone()['cnt']

@@ -379,7 +379,7 @@ def auto_cancel_expired_interviews():
 
                     # Adayin gercek durumunu belirle
                     cursor.execute(
-                        "SELECT COUNT(*) as cnt FROM candidate_positions WHERE candidate_id = ? AND status = 'aktif'",
+                        "SELECT COUNT(*) as cnt FROM candidate_positions WHERE candidate_id = ? AND status IS NOT NULL",
                         (candidate_id,)
                     )
                     pos_count = cursor.fetchone()['cnt']

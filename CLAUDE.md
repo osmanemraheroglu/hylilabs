@@ -775,6 +775,7 @@ Commit: e02992c — DEGISTIRME
 44. CV Topla Birleşik Sekme (14.03.2026) — Tekli+toplu birleştirildi, tek Manuel CV Yükle sekmesi. Max 20 dosya. DEĞİŞMEZ.
 45. Durum Label Yeni→Genel Havuzda (14.03.2026) — Backend 'yeni' değişmez, sadece UI label 'Genel Havuzda'. DEĞİŞMEZ.
 46. Mülakat Değerlendirme Durumu Aksiyonları (16.03.2026) — Değerlendirme durumuna göre aday otomatik taşınır: genel_havuz→Genel Havuz, arsiv→Arşiv, kara_liste→Arşiv+not, ise_alindi→İşe Alındı. beklemede/degerlendirilecek→sadece kayıt. interviews.py PUT endpoint içinde. candidates.py elen/arsivle/ise_al endpoint'leri DEĞİŞMEZ. DEĞİŞMEZ.
+47. candidate_positions Status Sistemi (16.03.2026) — candidate_positions.status artık 'aktif' değil, Mülakat Değerlendirmesi ile uyumlu: beklemede(default), degerlendirilecek, genel_havuz, arsiv, kara_liste, ise_alindi. Yeni INSERT'lerde status='beklemede'. get_position_candidates cp.status döndürüyor. Eski 'aktif' filtreleri kaldırıldı. DEĞİŞMEZ.
 
 ---
 
