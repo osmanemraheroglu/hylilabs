@@ -1,12 +1,12 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 14.03.2026
+Son güncelleme: 16.03.2026
 
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
 - **Domain:** https://hylilabs.com (Nginx + SSL aktif, 14.03.2026)
-- **Son commit:** fcb86fd (Favicon + branding)
+- **Son commit:** 1a0f60c (FAZ 17 - İnşaat sektörü ATS zekası)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -17,6 +17,31 @@ Son güncelleme: 14.03.2026
 - 3 şirket, ~50 aday, 5 pozisyon
 
 ## Son 72 Saatte Tamamlananlar
+
+### 16.03.2026 - FAZ 17: İnşaat Sektörü ATS Zekası
+- ✅ **Kanonik Form Normalizasyonu** — database.py
+  - CONSTRUCTION_CANONICAL_MAPPING: 28 kanonik form, 150+ varyasyon
+  - normalize_to_canonical(): "site manager" → "şantiye şefi" dönüşümü
+  - get_all_variations_for_canonical(): Kanonik için tüm varyasyonlar
+- ✅ **Kara Liste (Hard-Block)** — database.py
+  - CONSTRUCTION_BLACKLIST: 11 hedef pozisyon, 30+ engelli terim
+  - is_blacklisted_match(): "şantiye şefi" ↔ "aşçı şefi" ENGELLENİYOR
+  - Bağlam kontrolü: CV'de inşaat terimleri varsa engelleme atlanıyor
+- ✅ **Sertifika Kontrolü** — database.py + scoring_v2.py
+  - CONSTRUCTION_CERTIFICATES: 8 sertifika tipi (İSG, Vinç, Elektrik, Kaynak vb.)
+  - check_certificate_in_cv(): CV'de sertifika arama
+  - get_required_certificates_for_position(): Pozisyon için zorunlu sertifikalar
+  - calculate_certificate_penalty(): Puan cezası hesaplama
+  - calculate_elimination_score(): Sertifika puan kırma (max 10 puan)
+- ✅ **Keyword Grupları Genişletme** — database.py
+  - EXCLUSIVE_KEYWORD_GROUPS: +10 inşaat alt grubu
+  - semantic_domain_compatible(): İnşaat grupları arası uyumluluk
+- ✅ **check_title_match() Güncelleme** — database.py
+  - Kara liste kontrolü (önce)
+  - Kanonik form eşleşmesi (öncelikli)
+  - cv_text parametresi eklendi
+- ✅ **Test:** 6/6 PASSED
+- ✅ **Commit:** 1a0f60c
 
 ### 16.03.2026 - Aday Detay Modal Aksiyon Butonları
 - ✅ **İşe Al/Arşivle/Elen → Arşiv/Kara Liste/Genel Havuz**

@@ -919,3 +919,55 @@ server {
 - vite.config.ts allowedHosts listesini silme
 
 Bu sistem KİLİTLİDİR. Değiştirilemez.
+
+---
+
+## ═══════════════════════════════════════════════════════════════
+## FAZ 17 - İNŞAAT SEKTÖRÜ ATS ZEKASI (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+## ═══════════════════════════════════════════════════════════════
+Tarih: 2026-03-16
+Commit: 1a0f60c
+
+### VERİ YAPILARI (database.py):
+1. **CONSTRUCTION_CANONICAL_MAPPING** - 28 kanonik form, 150+ varyasyon
+   - "site manager" → "şantiye şefi" dönüşümü
+   - Türkçe, İngilizce, kısaltma varyasyonları
+   - Sektör bilgisi (inşaat, elektrik, mekanik, idari)
+
+2. **CONSTRUCTION_BLACKLIST** - 11 hedef pozisyon, 30+ engelli terim
+   - "şantiye şefi" ↔ "aşçı şefi" ENGELLENİYOR
+   - Bağlam kontrolü: CV'de inşaat terimleri varsa engelleme atlanıyor
+
+3. **CONSTRUCTION_CERTIFICATES** - 8 sertifika tipi
+   - İSG Çalışan Sertifikası (tüm pozisyonlar, 15 puan)
+   - Yüksekte Çalışma Belgesi (kalıpçı, demir ustası vb., 20 puan)
+   - Elektrik Tehlike Sertifikası (elektrikçi, pano teknisyeni, 25 puan)
+   - Vinç Operatörü Lisansı (vinç operatörü, 30 puan)
+   - Kaynak Sertifikası (boru kaynakçısı, 20 puan)
+   - Doğalgaz Tesisat Lisansı (doğalgaz tesisatçısı, 30 puan)
+   - Asansör Yetki Belgesi (asansör teknisyeni, 25 puan)
+   - Kazan İşletme Belgesi (kazan teknisyeni, 25 puan)
+
+### FONKSİYONLAR (database.py):
+1. normalize_to_canonical(title) → (kanonik, sektör)
+2. get_all_variations_for_canonical(kanonik) → [varyasyonlar]
+3. is_blacklisted_match(hedef, aday, cv_text) → (bool, neden)
+4. check_certificate_in_cv(cv_text, cert_name) → bool
+5. get_required_certificates_for_position(title) → [{sertifika, puan}]
+6. calculate_certificate_penalty(title, cv_text) → (toplam_ceza, [eksik])
+
+### GÜNCELLEMELER:
+- EXCLUSIVE_KEYWORD_GROUPS: +10 inşaat alt grubu (construction_*)
+- semantic_domain_compatible(): İnşaat grupları arası uyumluluk
+- check_title_match(): Kara liste + kanonik form kontrolü
+- calculate_elimination_score() (scoring_v2.py): Sertifika puan kırma (max 10)
+
+### KİLİTLİ KURALLAR:
+- CONSTRUCTION_CANONICAL_MAPPING değiştirilemez (varyasyon eklenebilir)
+- CONSTRUCTION_BLACKLIST değiştirilemez (terim eklenebilir)
+- CONSTRUCTION_CERTIFICATES puan değerleri değiştirilemez
+- normalize_to_canonical() dönüş formatı: (str, str) tuple
+- is_blacklisted_match() bağlam kontrolü mantığı değiştirilemez
+- calculate_certificate_penalty() max 10 puan limiti değiştirilemez
+
+Bu sistem KİLİTLİDİR. Değiştirilemez.
