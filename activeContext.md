@@ -18,6 +18,16 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 16.03.2026 - Mülakat Değerlendirme Durumu Aksiyonları
+- ✅ **Değerlendirme durumuna göre aday otomatik taşıma**
+  - Frontend: "Sonuç Kararı" → "Değerlendirme Durumu", 6 seçenek (Beklemede, Değerlendirilecek, Genel Havuz, Arşiv, Kara Liste, İşe Alındı)
+  - Backend: interviews.py PUT endpoint'e aday taşıma aksiyonu eklendi
+  - Genel Havuz: durum='yeni', Genel Havuz'a taşı
+  - Arşiv/Kara Liste: durum='arsiv', Arşiv'e taşı
+  - İşe Alındı: durum='ise_alindi', tüm havuzlardan çıkar + update_hired_stats
+  - Beklemede/Değerlendirilecek: sadece değerlendirme kaydedilir
+  - Code Review: company_id izolasyonu, parametrize SQL, guncelleme_tarihi ✅
+
 ### 16.03.2026 - Mülakat Takvimi İşlemler Sütunu Sadeleştirildi
 - ✅ **Liste görünümü işlem butonları güncellendi**
   - Düzenleme (kalem) ikonu artık openEval() çağırıyor (Değerlendirme penceresi açar)

@@ -221,6 +221,94 @@ def update_existing_interview(
         if not success:
             raise HTTPException(status_code=404, detail="Mülakat bulunamadı veya değişiklik yok")
 
+        # Değerlendirme durumuna göre aday taşıma aksiyonu
+        sonuc_karari = body.get("sonuc_karari")
+        if sonuc_karari in ("genel_havuz", "arsiv", "kara_liste", "ise_alindi") and candidate_id:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                # company_id ile aday sahiplik kontrolü
+                cursor.execute(
+                    "SELECT id, durum FROM candidates WHERE id = ? AND company_id = ?",
+                    (candidate_id, company_id)
+                )
+                cand_check = cursor.fetchone()
+                if cand_check:
+                    if sonuc_karari == "genel_havuz":
+                        # Pozisyon atamasını sil
+                        cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
+                        # Eski havuz atamasını sil
+                        cursor.execute(
+                            "DELETE FROM candidate_pool_assignments WHERE candidate_id = ? AND company_id = ?",
+                            (candidate_id, company_id)
+                        )
+                        # Genel Havuz'a ekle
+                        cursor.execute(
+                            "SELECT id FROM department_pools WHERE company_id = ? AND name = 'Genel Havuz' AND is_system = 1",
+                            (company_id,)
+                        )
+                        genel_pool = cursor.fetchone()
+                        if genel_pool:
+                            cursor.execute(
+                                "INSERT OR IGNORE INTO candidate_pool_assignments (candidate_id, department_pool_id, company_id) VALUES (?, ?, ?)",
+                                (candidate_id, genel_pool["id"], company_id)
+                            )
+                        cursor.execute(
+                            "UPDATE candidates SET durum = 'yeni', havuz = 'genel_havuz', guncelleme_tarihi = datetime('now') WHERE id = ? AND company_id = ?",
+                            (candidate_id, company_id)
+                        )
+                        logger.info(f"Değerlendirme: candidate_id={candidate_id} Genel Havuz'a taşındı (company_id={company_id})")
+
+                    elif sonuc_karari in ("arsiv", "kara_liste"):
+                        # Pozisyon atamasını sil
+                        cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
+                        # Eski havuz atamasını sil
+                        cursor.execute("DELETE FROM candidate_pool_assignments WHERE candidate_id = ?", (candidate_id,))
+                        # Arşiv havuzuna ekle
+                        cursor.execute(
+                            "SELECT id FROM department_pools WHERE company_id = ? AND name = 'Arşiv' AND is_system = 1",
+                            (company_id,)
+                        )
+                        arsiv_pool = cursor.fetchone()
+                        if arsiv_pool:
+                            cursor.execute(
+                                "INSERT INTO candidate_pool_assignments (candidate_id, department_pool_id, company_id) VALUES (?, ?, ?)",
+                                (candidate_id, arsiv_pool["id"], company_id)
+                            )
+                        cursor.execute(
+                            "UPDATE candidates SET durum = 'arsiv', havuz = 'arsiv', guncelleme_tarihi = datetime('now') WHERE id = ? AND company_id = ?",
+                            (candidate_id, company_id)
+                        )
+                        log_msg = "Arşiv'e" if sonuc_karari == "arsiv" else "Arşiv'e (Kara Liste)"
+                        logger.info(f"Değerlendirme: candidate_id={candidate_id} {log_msg} taşındı (company_id={company_id})")
+
+                    elif sonuc_karari == "ise_alindi":
+                        # FAZ 10.1: Pozisyon ID'lerini al ÖNCE silmeden
+                        try:
+                            from database import update_hired_stats
+                            cursor.execute(
+                                "SELECT position_id FROM candidate_positions WHERE candidate_id = ?",
+                                (candidate_id,)
+                            )
+                            position_ids = [row[0] for row in cursor.fetchall()]
+                            for position_id in position_ids:
+                                update_hired_stats(candidate_id, position_id)
+                        except Exception as e:
+                            logger.warning(f"update_hired_stats hatası: {e}")
+                        # Pozisyon atamasını sil
+                        cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
+                        # Havuz atamasını sil
+                        cursor.execute(
+                            "DELETE FROM candidate_pool_assignments WHERE candidate_id = ? AND company_id = ?",
+                            (candidate_id, company_id)
+                        )
+                        cursor.execute(
+                            "UPDATE candidates SET durum = 'ise_alindi', havuz = NULL, guncelleme_tarihi = datetime('now') WHERE id = ? AND company_id = ?",
+                            (candidate_id, company_id)
+                        )
+                        logger.info(f"Değerlendirme: candidate_id={candidate_id} İşe Alındı (company_id={company_id})")
+
+                conn.commit()
+
         # Eger mulakat iptal edildiyse ve baska aktif mulakat yoksa, aday durumunu geri al
         if body.get("durum") == "iptal" and candidate_id:
             with get_connection() as conn:

@@ -105,15 +105,21 @@ const TUR_LABEL: Record<string, string> = {
 }
 
 const SONUC_BADGE: Record<string, string> = {
-  olumlu: 'bg-emerald-100 text-emerald-800',
-  olumsuz: 'bg-red-100 text-red-800',
   beklemede: 'bg-amber-100 text-amber-800',
+  degerlendirilecek: 'bg-blue-100 text-blue-800',
+  genel_havuz: 'bg-slate-100 text-slate-800',
+  arsiv: 'bg-gray-100 text-gray-800',
+  kara_liste: 'bg-gray-900 text-white',
+  ise_alindi: 'bg-emerald-100 text-emerald-800',
 }
 
 const SONUC_LABEL: Record<string, string> = {
-  olumlu: 'Olumlu',
-  olumsuz: 'Olumsuz',
   beklemede: 'Beklemede',
+  degerlendirilecek: 'Değerlendirilecek',
+  genel_havuz: 'Genel Havuz',
+  arsiv: 'Arşiv',
+  kara_liste: 'Kara Liste',
+  ise_alindi: 'İşe Alındı',
 }
 
 // Onay durumu badge'i
@@ -421,7 +427,7 @@ export default function MulakatTakvimi() {
       durum: 'tamamlandi',
       degerlendirme: evalForm.degerlendirme || null,
       puan: evalForm.puan && Number(evalForm.puan) > 0 ? Number(evalForm.puan) : null,
-      sonuc_karari: evalForm.sonuc_karari && evalForm.sonuc_karari !== 'none' ? evalForm.sonuc_karari : null,
+      sonuc_karari: evalForm.sonuc_karari || 'beklemede',
       degerlendiren: evalForm.degerlendiren || null,
     }
     try {
@@ -432,7 +438,13 @@ export default function MulakatTakvimi() {
       if (data.success) {
         setEvalDialogOpen(false)
         setEvalTarget(null)
-        toast.success('Değerlendirme kaydedildi')
+        const actionMessages: Record<string, string> = {
+          genel_havuz: 'Değerlendirme kaydedildi, aday Genel Havuz\'a taşındı',
+          arsiv: 'Değerlendirme kaydedildi, aday Arşiv\'e taşındı',
+          kara_liste: 'Değerlendirme kaydedildi, aday Arşiv\'e taşındı (Kara Liste notu)',
+          ise_alindi: 'Değerlendirme kaydedildi, aday İşe Alındı olarak işaretlendi',
+        }
+        toast.success(actionMessages[evalForm.sonuc_karari] || 'Değerlendirme kaydedildi')
         loadInterviews()
       } else {
         toast.error(data.detail || 'Değerlendirme kaydedilemedi')
@@ -864,14 +876,16 @@ export default function MulakatTakvimi() {
                 <div className="text-xs text-muted-foreground mt-1">{formatDate(evalTarget.tarih)} - {formatTime(evalTarget.tarih)}</div>
               </div>
               <div>
-                <Label className="text-sm">Sonuç Kararı</Label>
-                <Select value={evalForm.sonuc_karari || 'none'} onValueChange={v => setEvalForm({...evalForm, sonuc_karari: v === 'none' ? '' : v})}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Karar seçin" /></SelectTrigger>
+                <Label className="text-sm">Değerlendirme Durumu</Label>
+                <Select value={evalForm.sonuc_karari || 'beklemede'} onValueChange={v => setEvalForm({...evalForm, sonuc_karari: v})}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Durum seçin" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Seçilmedi</SelectItem>
-                    <SelectItem value="olumlu">Olumlu</SelectItem>
-                    <SelectItem value="olumsuz">Olumsuz</SelectItem>
                     <SelectItem value="beklemede">Beklemede</SelectItem>
+                    <SelectItem value="degerlendirilecek">Değerlendirilecek</SelectItem>
+                    <SelectItem value="genel_havuz">Genel Havuz</SelectItem>
+                    <SelectItem value="arsiv">Arşiv</SelectItem>
+                    <SelectItem value="kara_liste">Kara Liste</SelectItem>
+                    <SelectItem value="ise_alindi">İşe Alındı</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

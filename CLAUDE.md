@@ -774,6 +774,7 @@ Commit: e02992c — DEGISTIRME
 43. Neden HyliLabs Bölümü (14.03.2026) — Fiyatlandırma kaldırıldı, yerine Neden HyliLabs 6 kart. DEĞİŞMEZ.
 44. CV Topla Birleşik Sekme (14.03.2026) — Tekli+toplu birleştirildi, tek Manuel CV Yükle sekmesi. Max 20 dosya. DEĞİŞMEZ.
 45. Durum Label Yeni→Genel Havuzda (14.03.2026) — Backend 'yeni' değişmez, sadece UI label 'Genel Havuzda'. DEĞİŞMEZ.
+46. Mülakat Değerlendirme Durumu Aksiyonları (16.03.2026) — Değerlendirme durumuna göre aday otomatik taşınır: genel_havuz→Genel Havuz, arsiv→Arşiv, kara_liste→Arşiv+not, ise_alindi→İşe Alındı. beklemede/degerlendirilecek→sadece kayıt. interviews.py PUT endpoint içinde. candidates.py elen/arsivle/ise_al endpoint'leri DEĞİŞMEZ. DEĞİŞMEZ.
 
 ---
 
