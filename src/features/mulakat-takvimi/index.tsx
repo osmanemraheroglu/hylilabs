@@ -684,16 +684,7 @@ export default function MulakatTakvimi() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        {iv.durum === 'planlanmis' && (
-                          <>
-                            <Button variant="ghost" size="sm" onClick={() => openEval(iv)} title="Değerlendir"><ClipboardCheck className="h-3.5 w-3.5" /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => setCancelConfirm(iv.id)} className="text-red-500 hover:text-red-700" title="İptal Et"><XCircle className="h-3.5 w-3.5" /></Button>
-                          </>
-                        )}
-                        {iv.durum === 'tamamlandi' && (
-                          <Button variant="ghost" size="sm" onClick={() => openEval(iv)} title="Değerlendirmeyi Düzenle"><ClipboardCheck className="h-3.5 w-3.5 text-emerald-600" /></Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(iv)}><Edit className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEval(iv)} title="Değerlendir"><Edit className="h-3.5 w-3.5" /></Button>
                         <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(iv.id)} className="text-red-500 hover:text-red-700"><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </TableCell>

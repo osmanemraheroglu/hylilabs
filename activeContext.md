@@ -18,6 +18,14 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 16.03.2026 - Mülakat Takvimi İşlemler Sütunu Sadeleştirildi
+- ✅ **Liste görünümü işlem butonları güncellendi**
+  - Düzenleme (kalem) ikonu artık openEval() çağırıyor (Değerlendirme penceresi açar)
+  - ClipboardCheck (Değerlendir) butonu kaldırıldı
+  - XCircle (İptal Et) butonu kaldırıldı
+  - Kalan: Edit (değerlendirme açar) + Trash2 (sil)
+  - Dosya: mulakat-takvimi/index.tsx
+
 ### 14.03.2026 - Durum Label "Yeni" → "Genel Havuzda"
 - ✅ **UI'da 'yeni' durum label'ı "Genel Havuzda" olarak güncellendi**
   - dashboard/index.tsx: DURUM_LABELS mapping güncellendi
