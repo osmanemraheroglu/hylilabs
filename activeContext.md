@@ -18,6 +18,18 @@ Son güncelleme: 14.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
+### 16.03.2026 - Aday Detay Modal Aksiyon Butonları
+- ✅ **İşe Al/Arşivle/Elen → Arşiv/Kara Liste/Genel Havuz**
+  - Durum bazlı koşullu görünürlük:
+    - yeni: Arşivle + Kara Liste
+    - pozisyona_atandi/mulakat: Arşivle + Kara Liste + Genel Havuza Taşı
+    - arsiv: Genel Havuza Taşı
+    - ise_alindi/blacklist: buton yok
+  - Kara Liste: neden dialogu (min 5 karakter), POST /api/candidates/{id}/blacklist
+  - Genel Havuza Taşı: mevcut elen endpoint kullanıyor
+  - Arşivle: mevcut arsivle endpoint kullanıyor
+  - Dosya: src/features/candidates/index.tsx
+
 ### 16.03.2026 - Havuzlar Değerlendirme Durumu Filtresi
 - ✅ **"Tüm Durum" filtresi "Değerlendirme Durumu" ile değiştirildi**
   - STATUS_MAP: 7 eski durum → 6 yeni durum (Mülakat Değerlendirmesi ile uyumlu)

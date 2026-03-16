@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { RefreshCw, Search, Users, ChevronLeft, ChevronRight, Eye, X, Download, Archive, CheckCircle, XCircle, Ban } from 'lucide-react'
+import { RefreshCw, Search, Users, ChevronLeft, ChevronRight, Eye, X, Download, Archive, CheckCircle, Ban } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
@@ -64,6 +64,9 @@ export default function Candidates() {
   const [removeBlacklistDialogOpen, setRemoveBlacklistDialogOpen] = useState(false)
   const [removeBlacklistReason, setRemoveBlacklistReason] = useState('')
   const [removeBlacklistLoading, setRemoveBlacklistLoading] = useState(false)
+  const [blacklistDialogOpen, setBlacklistDialogOpen] = useState(false)
+  const [blacklistReason, setBlacklistReason] = useState('')
+  const [blacklistLoading, setBlacklistLoading] = useState(false)
   const limit = 20
 
   const { auth } = useAuthStore()
@@ -172,6 +175,36 @@ export default function Candidates() {
     } catch (err) {
       toast.error('Bir hata oluştu')
       console.error('Status change error:', err)
+    }
+  }
+
+  const handleBlacklist = async () => {
+    if (!selectedCandidate?.id) return
+    if (blacklistReason.trim().length < 5) {
+      toast.error('Kara liste nedeni en az 5 karakter olmalıdır')
+      return
+    }
+    setBlacklistLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/candidates/${selectedCandidate.id}/blacklist`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ reason: blacklistReason.trim() })
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Aday kara listeye eklendi')
+        setBlacklistDialogOpen(false)
+        setBlacklistReason('')
+        setSelectedCandidate(null)
+        loadCandidates()
+      } else {
+        toast.error(data.detail || 'Kara listeye ekleme başarısız')
+      }
+    } catch (err) {
+      toast.error('Bir hata oluştu')
+    } finally {
+      setBlacklistLoading(false)
     }
   }
 
@@ -418,39 +451,46 @@ export default function Candidates() {
                 )}
 
                 {/* Durum Değiştirme Butonları */}
-                {detailData.durum !== 'ise_alindi' && detailData.durum !== 'arsiv' && detailData.durum !== 'blacklist' && detailData.is_blacklisted !== 1 && (
+                {detailData.durum !== 'ise_alindi' && detailData.durum !== 'blacklist' && detailData.is_blacklisted !== 1 && (
                   <div className='border-t pt-4 mt-4'>
-                    <p className='text-sm text-muted-foreground mb-3'>Durum Değiştir:</p>
+                    <p className='text-sm text-muted-foreground mb-3'>İşlemler:</p>
                     <div className='flex flex-wrap gap-2'>
-                      {(detailData.durum === 'mulakat' || detailData.durum === 'pozisyona_atandi') && (
+                      {/* Arşiv butonu: yeni, pozisyona_atandi, mulakat durumlarında */}
+                      {(detailData.durum === 'yeni' || detailData.durum === 'pozisyona_atandi' || detailData.durum === 'mulakat') && (
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => handleStatusChange(selectedCandidate!.id, 'arsivle')}
+                          className='text-gray-600 hover:text-gray-700 hover:bg-gray-50'
+                        >
+                          <Archive className='h-4 w-4 mr-1' />
+                          Arşivle
+                        </Button>
+                      )}
+                      {/* Kara Liste butonu: yeni, pozisyona_atandi, mulakat durumlarında */}
+                      {(detailData.durum === 'yeni' || detailData.durum === 'pozisyona_atandi' || detailData.durum === 'mulakat') && (
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => setBlacklistDialogOpen(true)}
+                          className='text-red-600 hover:text-red-700 hover:bg-red-50'
+                        >
+                          <Ban className='h-4 w-4 mr-1' />
+                          Kara Liste
+                        </Button>
+                      )}
+                      {/* Genel Havuz butonu: pozisyona_atandi, mulakat, arsiv durumlarında */}
+                      {(detailData.durum === 'pozisyona_atandi' || detailData.durum === 'mulakat' || detailData.durum === 'arsiv') && (
                         <Button
                           variant='outline'
                           size='sm'
                           onClick={() => handleStatusChange(selectedCandidate!.id, 'elen')}
-                          className='text-orange-600 hover:text-orange-700 hover:bg-orange-50'
+                          className='text-blue-600 hover:text-blue-700 hover:bg-blue-50'
                         >
-                          <XCircle className='h-4 w-4 mr-1' />
-                          Elen
+                          <Users className='h-4 w-4 mr-1' />
+                          Genel Havuza Taşı
                         </Button>
                       )}
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        onClick={() => handleStatusChange(selectedCandidate!.id, 'ise-al')}
-                        className='text-green-600 hover:text-green-700 hover:bg-green-50'
-                      >
-                        <CheckCircle className='h-4 w-4 mr-1' />
-                        İşe Al
-                      </Button>
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        onClick={() => handleStatusChange(selectedCandidate!.id, 'arsivle')}
-                        className='text-gray-600 hover:text-gray-700 hover:bg-gray-50'
-                      >
-                        <Archive className='h-4 w-4 mr-1' />
-                        Arşivle
-                      </Button>
                     </div>
                   </div>
                 )}
@@ -461,6 +501,47 @@ export default function Candidates() {
           </div>
         </div>
       )}
+
+      {/* Kara Listeye Ekle Dialog */}
+      <Dialog open={blacklistDialogOpen} onOpenChange={(o) => { setBlacklistDialogOpen(o); if (!o) setBlacklistReason(''); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ban className="h-5 w-5 text-red-600" />
+              Kara Listeye Ekle
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800">
+                <strong>{selectedCandidate?.ad_soyad}</strong> kara listeye eklenecektir. Bu işlem adayı tüm havuzlardan çıkarır.
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Kara Liste Nedeni <span className="text-red-500">*</span></label>
+              <textarea
+                className="w-full mt-1 p-2 border rounded-md text-sm min-h-[80px]"
+                placeholder="Neden kara listeye ekleniyor? (En az 5 karakter)"
+                value={blacklistReason}
+                onChange={(e) => setBlacklistReason(e.target.value)}
+              />
+              {blacklistReason.trim().length > 0 && blacklistReason.trim().length < 5 && (
+                <p className="text-xs text-red-500 mt-1">En az 5 karakter gerekli</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlacklistDialogOpen(false)}>İptal</Button>
+            <Button
+              variant="destructive"
+              onClick={handleBlacklist}
+              disabled={blacklistLoading || blacklistReason.trim().length < 5}
+            >
+              {blacklistLoading ? 'İşleniyor...' : 'Kara Listeye Ekle'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Kara Listeden Çıkar Dialog */}
       <Dialog open={removeBlacklistDialogOpen} onOpenChange={(o) => { setRemoveBlacklistDialogOpen(o); if (!o) setRemoveBlacklistReason(''); }}>
