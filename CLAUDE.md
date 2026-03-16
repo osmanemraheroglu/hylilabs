@@ -776,6 +776,10 @@ Commit: e02992c — DEGISTIRME
 45. Durum Label Yeni→Genel Havuzda (14.03.2026) — Backend 'yeni' değişmez, sadece UI label 'Genel Havuzda'. DEĞİŞMEZ.
 46. Mülakat Değerlendirme Durumu Aksiyonları (16.03.2026) — Değerlendirme durumuna göre aday otomatik taşınır: genel_havuz→Genel Havuz, arsiv→Arşiv, kara_liste→Arşiv+not, ise_alindi→İşe Alındı. beklemede/degerlendirilecek→sadece kayıt. interviews.py PUT endpoint içinde. candidates.py elen/arsivle/ise_al endpoint'leri DEĞİŞMEZ. DEĞİŞMEZ.
 47. candidate_positions Status Sistemi (16.03.2026) — candidate_positions.status artık 'aktif' değil, Mülakat Değerlendirmesi ile uyumlu: beklemede(default), degerlendirilecek, genel_havuz, arsiv, kara_liste, ise_alindi. Yeni INSERT'lerde status='beklemede'. get_position_candidates cp.status döndürüyor. Eski 'aktif' filtreleri kaldırıldı. DEĞİŞMEZ.
+48. Mülakat Takvimi İşlemler Sadeleştirme (16.03.2026) — Liste görünümünde sadece 2 ikon: düzenleme (değerlendirme açar) + silme. Değerlendirme ve iptal ikonları kaldırıldı. DEĞİŞMEZ.
+49. Mülakat Değerlendirme Durumu Dropdown (16.03.2026) — Sonuç Kararı → Değerlendirme Durumu. Seçenekler: Beklemede, Değerlendirilecek, Genel Havuz, Arşiv, Kara Liste, İşe Alındı. DEĞİŞMEZ.
+50. Havuzlar Değerlendirme Durumu Filtresi (16.03.2026) — Tüm Durum → Değerlendirme Durumu. STATUS_MAP: beklemede, degerlendirilecek, genel_havuz, arsiv, kara_liste, ise_alindi. candidate_positions.status aktif→beklemede migrate edildi. DEĞİŞMEZ.
+51. Aday Detay Modal Butonları (16.03.2026) — Duruma göre: yeni→Arşiv+Kara Liste, pozisyona_atandi/mulakat→Arşiv+Kara Liste+Genel Havuz, arsiv→Genel Havuz, ise_alindi/blacklist→buton yok. DEĞİŞMEZ.
 
 ---
 
