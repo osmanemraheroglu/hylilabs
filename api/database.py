@@ -3754,6 +3754,7 @@ def log_synonym_usage(
 ) -> bool:
     """
     FAZ 10.1: Synonym kullanımını logla (eşleşme anında).
+    Database lock koruması: 5 retry, exponential backoff (1,2,4,8,16 saniye).
 
     Args:
         keyword: Aranan anahtar kelime
@@ -3763,29 +3764,43 @@ def log_synonym_usage(
 
     Returns: True başarılı, False hata
     """
-    try:
-        keyword_lower = turkish_lower(keyword.strip())
-        synonym_lower = turkish_lower(synonym.strip())
+    import time as _time
 
-        with get_connection() as conn:
-            cursor = conn.cursor()
+    keyword_lower = turkish_lower(keyword.strip())
+    synonym_lower = turkish_lower(synonym.strip())
 
-            # UPSERT: Varsa güncelle, yoksa ekle
-            cursor.execute("""
-                INSERT INTO synonym_usage_stats
-                    (keyword, synonym, match_count, last_used_at, company_id)
-                VALUES (?, ?, 1, CURRENT_TIMESTAMP, ?)
-                ON CONFLICT(keyword, synonym, company_id) DO UPDATE SET
-                    match_count = match_count + 1,
-                    last_used_at = CURRENT_TIMESTAMP
-            """, (keyword_lower, synonym_lower, company_id))
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
 
-            conn.commit()
-            return True
+                # UPSERT: Varsa güncelle, yoksa ekle
+                cursor.execute("""
+                    INSERT INTO synonym_usage_stats
+                        (keyword, synonym, match_count, last_used_at, company_id)
+                    VALUES (?, ?, 1, CURRENT_TIMESTAMP, ?)
+                    ON CONFLICT(keyword, synonym, company_id) DO UPDATE SET
+                        match_count = match_count + 1,
+                        last_used_at = CURRENT_TIMESTAMP
+                """, (keyword_lower, synonym_lower, company_id))
 
-    except Exception as e:
-        logger.error(f"log_synonym_usage hatası: {e}")
-        return False
+                conn.commit()
+                return True
+
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e) and attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 saniye
+                logger.warning(f"log_synonym_usage: Database locked, retry {attempt + 1}/{max_retries}, bekleniyor: {wait_time}s")
+                _time.sleep(wait_time)
+                continue
+            logger.error(f"log_synonym_usage hatası (retry sonrası): {e}")
+            return False
+        except Exception as e:
+            logger.error(f"log_synonym_usage hatası: {e}")
+            return False
+
+    return False
 
 
 def save_match_details(
@@ -3799,6 +3814,7 @@ def save_match_details(
 ) -> bool:
     """
     FAZ 10.1: Eşleşme detayını kaydet (analiz için).
+    Database lock koruması: 5 retry, exponential backoff (1,2,4,8,16 saniye).
 
     Args:
         candidate_id: Aday ID
@@ -3811,30 +3827,47 @@ def save_match_details(
 
     Returns: True başarılı, False hata
     """
-    try:
-        with get_connection() as conn:
-            cursor = conn.cursor()
+    import time as _time
 
-            cursor.execute("""
-                INSERT INTO synonym_match_history
-                    (candidate_id, position_id, keyword, matched_term, match_method, weight, company_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                candidate_id,
-                position_id,
-                turkish_lower(keyword.strip()),
-                turkish_lower(matched_term.strip()),
-                method,
-                weight,
-                company_id
-            ))
+    keyword_lower = turkish_lower(keyword.strip())
+    matched_lower = turkish_lower(matched_term.strip())
 
-            conn.commit()
-            return True
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
 
-    except Exception as e:
-        logger.error(f"save_match_details hatası: {e}")
-        return False
+                cursor.execute("""
+                    INSERT INTO synonym_match_history
+                        (candidate_id, position_id, keyword, matched_term, match_method, weight, company_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    candidate_id,
+                    position_id,
+                    keyword_lower,
+                    matched_lower,
+                    method,
+                    weight,
+                    company_id
+                ))
+
+                conn.commit()
+                return True
+
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e) and attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 saniye
+                logger.warning(f"save_match_details: Database locked, retry {attempt + 1}/{max_retries}, bekleniyor: {wait_time}s")
+                _time.sleep(wait_time)
+                continue
+            logger.error(f"save_match_details hatası (retry sonrası): {e}")
+            return False
+        except Exception as e:
+            logger.error(f"save_match_details hatası: {e}")
+            return False
+
+    return False
 
 
 def update_hired_stats(candidate_id: int, position_id: int) -> int:

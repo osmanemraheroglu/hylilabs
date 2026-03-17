@@ -1267,14 +1267,20 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
             print(f"pull_matching hatasi (devam ediliyor): {pull_err}")
 
         # G8: Mevcut adayları rescore et (yeni başlıklar position_score'u değiştirir)
+        # 3 AŞAMALI REFACTOR: Database lock önleme (18.03.2026)
         rescore_count = 0
         try:
             from database import get_connection as get_rescore_conn
             from scoring_v2 import calculate_match_score_v2
             import json as json_rescore
 
-            with get_rescore_conn() as rescore_conn:
-                rc = rescore_conn.cursor()
+            # ==================== AŞAMA 1: VERİ TOPLAMA (READ) ====================
+            # Connection açılır, veri okunur, connection KAPANIR
+            position_dict = None
+            existing_candidates = []
+
+            with get_rescore_conn() as conn_read:
+                rc = conn_read.cursor()
 
                 # Pozisyon bilgilerini al
                 rc.execute("""
@@ -1284,11 +1290,10 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
                 pos = rc.fetchone()
 
                 if pos:
-                    # Pozisyon dict oluştur
                     position_dict = {
                         'id': pool_id,
                         'baslik': pos[0] or '',
-                        'name': pos[0] or '',  # Uyumluluk için her ikisi de
+                        'name': pos[0] or '',
                         'gerekli_deneyim_yil': pos[1] or 0,
                         'gerekli_egitim': pos[2] or '',
                         'lokasyon': pos[3] or '',
@@ -1301,46 +1306,90 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
                         WHERE position_id = ?
                     """, (pool_id,))
                     existing_candidates = [r[0] for r in rc.fetchall()]
+            # ← CONNECTION KAPANDI
 
-                    for cid in existing_candidates:
-                        rc.execute("""
-                            SELECT id, ad_soyad, teknik_beceriler, mevcut_pozisyon,
-                                   deneyim_detay, toplam_deneyim_yil, egitim, lokasyon,
-                                   mevcut_sirket, cv_raw_text
-                            FROM candidates WHERE id = ? AND company_id = ?
-                        """, (cid, company_id))
-                        r = rc.fetchone()
-                        if not r:
+            if not position_dict:
+                print(f"[approve-titles] G8 rescore: Pozisyon bulunamadı (pool_id={pool_id})")
+            elif not existing_candidates:
+                print(f"[approve-titles] G8 rescore: Eşleşmiş aday yok (pool_id={pool_id})")
+            else:
+                # ==================== AŞAMA 2: HESAPLAMA ====================
+                # Her aday için AYRI connection açılır, veri okunur, KAPANIR
+                # Sonra calculate_match_score_v2() çağrılır (içinde save_match_details kendi conn'unu açar)
+                # ANA CONNECTION KAPALI OLDUĞU İÇİN LOCK YOK!
+                rescore_results = []
+
+                for cid in existing_candidates:
+                    try:
+                        # Aday bilgisini al (ayrı connection, hemen kapanır)
+                        candidate_dict = None
+                        with get_rescore_conn() as conn_cand:
+                            rc2 = conn_cand.cursor()
+                            rc2.execute("""
+                                SELECT id, ad_soyad, teknik_beceriler, mevcut_pozisyon,
+                                       deneyim_detay, toplam_deneyim_yil, egitim, lokasyon,
+                                       mevcut_sirket, cv_raw_text
+                                FROM candidates WHERE id = ? AND company_id = ?
+                            """, (cid, company_id))
+                            r = rc2.fetchone()
+                            if r:
+                                candidate_dict = {
+                                    'id': r[0],
+                                    'ad_soyad': r[1] or '',
+                                    'teknik_beceriler': r[2] or '',
+                                    'mevcut_pozisyon': r[3] or '',
+                                    'deneyim_detay': r[4] or '',
+                                    'toplam_deneyim_yil': r[5] or 0,
+                                    'egitim': r[6] or '',
+                                    'lokasyon': r[7] or '',
+                                    'mevcut_sirket': r[8] or '',
+                                    'cv_raw_text': r[9] or '',
+                                    'company_id': company_id
+                                }
+                        # ← CONNECTION KAPANDI
+
+                        if not candidate_dict:
                             continue
 
-                        candidate_dict = {
-                            'id': r[0],
-                            'ad_soyad': r[1] or '',
-                            'teknik_beceriler': r[2] or '',
-                            'mevcut_pozisyon': r[3] or '',
-                            'deneyim_detay': r[4] or '',
-                            'toplam_deneyim_yil': r[5] or 0,
-                            'egitim': r[6] or '',
-                            'lokasyon': r[7] or '',
-                            'mevcut_sirket': r[8] or '',
-                            'cv_raw_text': r[9] or '',
-                            'company_id': company_id
-                        }
-
+                        # Hesaplama (save_match_details içinde kendi connection'ını açar)
                         v2_result = calculate_match_score_v2(candidate_dict, position_dict)
+
                         if v2_result:
-                            new_score = v2_result.get('total', 0)
-                            rc.execute("""
+                            rescore_results.append({
+                                'cid': cid,
+                                'score': v2_result.get('total', 0),
+                                'analysis': json_rescore.dumps(v2_result, ensure_ascii=False)
+                            })
+
+                    except Exception as calc_err:
+                        print(f"[approve-titles] G8 hesaplama hatası (cid={cid}): {calc_err}")
+                        continue
+
+                # ==================== AŞAMA 3: TOPLU UPDATE ====================
+                # Tek connection ile tüm UPDATE'ler yapılır
+                if rescore_results:
+                    with get_rescore_conn() as conn_update:
+                        rc3 = conn_update.cursor()
+
+                        for item in rescore_results:
+                            cid = item['cid']
+                            new_score = item['score']
+                            analysis = item['analysis']
+
+                            rc3.execute("""
                                 UPDATE matches SET uyum_puani = ?, detayli_analiz = ?
                                 WHERE candidate_id = ? AND position_id = ?
-                            """, (new_score, json_rescore.dumps(v2_result, ensure_ascii=False), cid, pool_id))
-                            rc.execute("""
+                            """, (new_score, analysis, cid, pool_id))
+
+                            rc3.execute("""
                                 UPDATE candidate_positions SET match_score = ?
                                 WHERE candidate_id = ? AND position_id = ?
                             """, (new_score, cid, pool_id))
+
                             rescore_count += 1
 
-                    rescore_conn.commit()
+                        conn_update.commit()
+                    # ← CONNECTION KAPANDI
 
             print(f"[approve-titles] G8 rescore: {rescore_count} aday güncellendi")
         except Exception as rescore_err:

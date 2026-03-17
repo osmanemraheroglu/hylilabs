@@ -18,15 +18,22 @@ Son güncelleme: 18.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
-### 18.03.2026 - Database Locked Hatası Kalıcı Çözüm
-- ✅ **count_active_positions_for_candidate() PRAGMA düzeltmesi** — database.py
-  - PRAGMA journal_mode=WAL eklendi (satır 12984)
-  - PRAGMA busy_timeout=30000 eklendi (satır 12985)
-- ✅ **on_position_delete() PRAGMA düzeltmesi** — database.py
-  - timeout=30 eklendi (satır 13044)
-  - PRAGMA journal_mode=WAL eklendi (satır 13046)
-  - PRAGMA busy_timeout=30000 eklendi (satır 13047)
-- **Etki:** Akıllı Havuz Başlıkları ve Eş Anlamlılar sayfalarında "database is locked" hatası önlendi
+### 18.03.2026 - Database Locked Hatası Kalıcı Çözüm (Çözüm D)
+- ✅ **log_synonym_usage() retry mekanizması** — database.py (satır 3772-3803)
+  - 5 retry, exponential backoff (1,2,4,8,16 saniye)
+  - Toplam maksimum bekleme: 31 saniye
+- ✅ **save_match_details() retry mekanizması** — database.py (satır 3835-3870)
+  - 5 retry, exponential backoff (1,2,4,8,16 saniye)
+  - Toplam maksimum bekleme: 31 saniye
+- ✅ **approve_titles() rescore döngüsü 3 aşamalı refactor** — pools.py (satır 1269-1396)
+  - AŞAMA 1: Veri toplama (READ, connection hemen kapanır)
+  - AŞAMA 2: Hesaplama (her aday için ayrı connection, lock yok)
+  - AŞAMA 3: Toplu UPDATE (tek connection)
+- ✅ **Önceki düzeltmeler:**
+  - count_active_positions_for_candidate() PRAGMA düzeltmesi (satır 12984-12985)
+  - on_position_delete() PRAGMA düzeltmesi (satır 13044-13047)
+- **Kök Neden:** Nested write transactions (ana connection açıkken save_match_details yeni connection açıyordu)
+- **Etki:** Akıllı Havuz Başlıkları ve Eş Anlamlılar sayfalarında "database is locked" hatası KALICI olarak çözüldü
 
 ### 17.03.2026 - README Profesyonel Görünüm Güncelleme
 - ✅ **README.md GitHub için profesyonel görünüm**
