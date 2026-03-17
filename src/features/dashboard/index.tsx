@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Main } from '@/components/layout/main'
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
 import { Users, Briefcase, FileText, Clock, Calendar, UserCheck } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || ""
@@ -59,6 +59,15 @@ interface RecentActivity {
   }>
 }
 
+interface CandidateDistribution {
+  total_candidates: number
+  distribution: Array<{
+    position: string
+    count: number
+    percentage: number
+  }>
+}
+
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
 
 const DURUM_LABELS: Record<string, string> = {
@@ -74,6 +83,7 @@ export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [poolData, setPoolData] = useState<PoolDistribution | null>(null)
   const [activities, setActivities] = useState<RecentActivity | null>(null)
+  const [candidateDistribution, setCandidateDistribution] = useState<CandidateDistribution | null>(null)
   const [loading, setLoading] = useState(true)
 
   const fetchDashboardData = () => {
@@ -88,12 +98,14 @@ export function Dashboard() {
     Promise.all([
       fetch(`${API_URL}/api/dashboard/stats`, { headers }).then(r => r.json()),
       fetch(`${API_URL}/api/dashboard/pool-distribution`, { headers }).then(r => r.json()),
-      fetch(`${API_URL}/api/dashboard/recent-activities`, { headers }).then(r => r.json())
+      fetch(`${API_URL}/api/dashboard/recent-activities`, { headers }).then(r => r.json()),
+      fetch(`${API_URL}/api/dashboard/candidate-distribution`, { headers }).then(r => r.json())
     ])
-      .then(([statsData, poolData, activitiesData]) => {
+      .then(([statsData, poolData, activitiesData, distributionData]) => {
         setStats(statsData)
         setPoolData(poolData)
         setActivities(activitiesData)
+        setCandidateDistribution(distributionData)
         setLoading(false)
       })
       .catch(err => {
@@ -209,7 +221,7 @@ export function Dashboard() {
       </div>
 
       {/* Alt Kisim - Grafik ve Aktiviteler */}
-      <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
+      <div className='grid grid-cols-1 gap-4 lg:grid-cols-2 mb-6'>
         {/* Havuz Dağılımı */}
         <Card>
           <CardHeader>
@@ -281,6 +293,59 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* CV Intelligence Aday Dağılımı - EN ALT */}
+      <Card>
+        <CardHeader>
+          <CardTitle>CV Intelligence Aday Dağılımı</CardTitle>
+          <CardDescription>
+            Yapay zeka analizi sonucu adaylara önerilen pozisyonlar (Top 5 + Diğer)
+            {candidateDistribution && candidateDistribution.total_candidates > 0 && (
+              <span className='ml-2 text-primary font-medium'>
+                ({candidateDistribution.total_candidates} aday analiz edildi)
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {candidateDistribution && candidateDistribution.distribution.length > 0 ? (
+            <ResponsiveContainer width='100%' height={300}>
+              <BarChart
+                data={candidateDistribution.distribution}
+                layout='vertical'
+                margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
+              >
+                <XAxis type='number' domain={[0, 'dataMax']} />
+                <YAxis 
+                  type='category' 
+                  dataKey='position' 
+                  width={110}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip 
+                  formatter={(value) => [`${value} aday`, 'Aday Sayısı']}
+                />
+                <Bar 
+                  dataKey='count' 
+                  fill='#0088FE'
+                  radius={[0, 4, 4, 0]}
+                >
+                  {candidateDistribution.distribution.map((entry, index) => (
+                    <Cell 
+                      key={`bar-${index}`} 
+                      fill={entry.position === 'Diger' ? '#94a3b8' : COLORS[index % COLORS.length]} 
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className='flex items-center justify-center h-64 text-muted-foreground'>
+              Henüz CV Intelligence analizi yapılmış aday yok
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </Main>
   )
 }

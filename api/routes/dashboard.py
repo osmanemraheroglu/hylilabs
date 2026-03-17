@@ -82,3 +82,89 @@ def recent_activities(current_user: dict = Depends(get_current_user)):
         "recent_applications": applications,
         "recent_evaluations": evaluations
     }
+
+
+
+@router.get("/candidate-distribution")
+def candidate_distribution(current_user: dict = Depends(get_current_user)):
+    """CV Intelligence analizine gore aday dagilimi - TOP 5 + Diger"""
+    company_id = current_user.get("company_id")
+    
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        
+        # candidate_intelligence tablosundan suitable_positions al
+        if company_id:
+            cursor.execute("""
+                SELECT ci.suitable_positions
+                FROM candidate_intelligence ci
+                JOIN candidates c ON ci.candidate_id = c.id
+                WHERE c.company_id = ? AND ci.suitable_positions IS NOT NULL AND ci.suitable_positions != ""
+            """, (company_id,))
+        else:
+            cursor.execute("""
+                SELECT suitable_positions
+                FROM candidate_intelligence
+                WHERE suitable_positions IS NOT NULL AND suitable_positions != ""
+            """)
+        
+        rows = cursor.fetchall()
+        
+        # Her adayin birincil pozisyonunu al (ilk eleman = en uygun)
+        from collections import Counter
+        primary_positions = []
+        
+        for row in rows:
+            try:
+                positions_str = row["suitable_positions"] if isinstance(row, dict) else row[0]
+                if positions_str:
+                    # Python list literal olarak parse et
+                    if positions_str.startswith("["):
+                        positions = eval(positions_str)
+                    else:
+                        positions = [positions_str]
+                    
+                    if isinstance(positions, list) and len(positions) > 0:
+                        primary_positions.append(positions[0])
+            except:
+                pass
+        
+        total_candidates = len(primary_positions)
+        
+        if total_candidates == 0:
+            return {
+                "total_candidates": 0,
+                "distribution": []
+            }
+        
+        # Pozisyon sayilarini hesapla
+        position_counts = Counter(primary_positions)
+        
+        # TOP 5 al
+        top5 = position_counts.most_common(5)
+        top5_total = sum(c for _, c in top5)
+        others_total = total_candidates - top5_total
+        
+        # Distribution listesi olustur
+        distribution = []
+        for position, count in top5:
+            percentage = round((count / total_candidates) * 100, 1)
+            distribution.append({
+                "position": position,
+                "count": count,
+                "percentage": percentage
+            })
+        
+        # Diger kategorisi ekle
+        if others_total > 0:
+            others_percentage = round((others_total / total_candidates) * 100, 1)
+            distribution.append({
+                "position": "Diger",
+                "count": others_total,
+                "percentage": others_percentage
+            })
+        
+        return {
+            "total_candidates": total_candidates,
+            "distribution": distribution
+        }
