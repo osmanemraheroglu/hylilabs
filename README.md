@@ -29,16 +29,25 @@
 
 ## Overview
 
-HyliLabs is an enterprise-grade AI-powered recruitment platform designed for the Turkish market. It combines multiple AI models (Claude, Gemini, OpenAI, Nous Research) for intelligent CV analysis, candidate matching, and hiring decisions.
+HyliLabs is an enterprise-grade AI-powered recruitment platform designed for the Turkish market. It combines multiple AI models (Hermes by Nous Research, Gemini, Claude, OpenAI) for intelligent CV analysis, candidate matching, and hiring decisions.
 
 ### Powered By
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Nous_Research-Hermes-FF6B6B?style=for-the-badge" alt="Hermes"/>
   <img src="https://img.shields.io/badge/Google-Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini"/>
   <img src="https://img.shields.io/badge/Anthropic-Claude-191919?style=for-the-badge&logo=anthropic&logoColor=white" alt="Claude"/>
-  <img src="https://img.shields.io/badge/OpenAI-GPT-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI"/>
-  <img src="https://img.shields.io/badge/Nous-Hermes-FF6B35?style=for-the-badge" alt="Hermes"/>
+  <img src="https://img.shields.io/badge/OpenAI-GPT--4-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI"/>
 </p>
+
+### AI Models
+
+| Model | Provider | Usage | Fallback Order |
+|-------|----------|-------|----------------|
+| **Hermes** | Nous Research | V3 Scoring (Primary) | 1 |
+| **Gemini 2.5 Flash** | Google | CV Intelligence, V3 Scoring | 2 |
+| **Claude** | Anthropic | CV Parsing, V3 Scoring | 3 |
+| **GPT-4** | OpenAI | V3 Scoring | 4 |
 
 ---
 
@@ -50,7 +59,7 @@ Traditional ATS systems fail at understanding Turkish CVs, construction terminol
 |---------|-----------------|-------------------|
 | Turkish CV parsing | Fails on Turkce characters | Native TR support with correct encoding |
 | Construction sector | Generic keyword matching | 150+ construction terms, certificate tracking |
-| Candidate scoring | Single model, biased results | 4-model consensus (Claude + Gemini + GPT + Hermes) |
+| Candidate scoring | Single model, biased results | 4-model consensus (Hermes + Gemini + Claude + GPT) |
 | KVKK compliance | Bolt-on, incomplete | Built-in audit trail, consent management |
 | Synonym handling | None or basic | 387+ synonyms with ML-based confidence |
 | Location matching | City-level only | Istanbul 38-ilce aware, neighborhood matching |
@@ -74,7 +83,7 @@ Traditional ATS systems fail at understanding Turkish CVs, construction terminol
 ### Backend
 - **Framework:** FastAPI (Python 3.11+)
 - **Database:** SQLite with WAL mode
-- **AI Models:** Claude (Anthropic), Gemini (Google), GPT (OpenAI), Hermes (Nous Research)
+- **AI Models:** Hermes (Nous Research), Gemini (Google), Claude (Anthropic), GPT (OpenAI)
 - **Authentication:** JWT with role-based access control
 
 ### Frontend
@@ -158,10 +167,10 @@ flowchart TB
     end
 
     subgraph AI["AI Layer"]
-        Claude[Claude API]
+        Hermes[Hermes - Nous Research]
         Gemini[Gemini API]
+        Claude[Claude API]
         GPT[OpenAI API]
-        Hermes[Hermes Model]
     end
 
     subgraph Core["Core Modules"]
@@ -230,16 +239,16 @@ HyliLabs uses a hybrid scoring approach combining deterministic rules (V2) with 
 │  Deterministic Rules     │    │    AI Consensus          │
 │                          │    │                          │
 │  Position Match:   20    │    │  ┌─────────┐             │
-│  Technical Skills: 40    │    │  │ Claude  │──┐          │
+│  Technical Skills: 40    │    │  │ Hermes  │──┐          │
 │  General:          15    │    │  └─────────┘  │          │
 │  Task Match:       15    │    │  ┌─────────┐  │ Weighted │
 │  Elimination:      10    │    │  │ Gemini  │──┤ Average  │
 │  ─────────────────────   │    │  └─────────┘  │          │
 │  TOTAL:           100    │    │  ┌─────────┐  │          │
-│                          │    │  │   GPT   │──┤          │
+│                          │    │  │ Claude  │──┤          │
 └──────────────────────────┘    │  └─────────┘  │          │
               │                 │  ┌─────────┐  │          │
-              │                 │  │ Hermes  │──┘          │
+              │                 │  │  GPT-4  │──┘          │
               │                 │  └─────────┘             │
               │                 └──────────────────────────┘
               │                               │
@@ -262,7 +271,7 @@ HyliLabs uses a hybrid scoring approach combining deterministic rules (V2) with 
 
 ### V3 Scoring (AI-Based)
 
-- Multi-model consensus (Claude, Gemini, OpenAI, Hermes)
+- Multi-model consensus (Hermes, Gemini, Claude, OpenAI)
 - Each model evaluates independently
 - Fallback chain: If primary model fails, next model takes over
 - Final score: Weighted average with outlier detection
@@ -314,7 +323,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- [Nous Research](https://nousresearch.com) for Hermes model
+- [Nous Research](https://nousresearch.com) for Hermes model — **Primary AI Engine**
 - [Google](https://ai.google.dev) for Gemini API
 - [Anthropic](https://anthropic.com) for Claude API
 - [OpenAI](https://openai.com) for GPT API
