@@ -1367,7 +1367,7 @@ export default function Havuzlar() {
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
-          <DialogHeader><DialogTitle>Havuz Düzenle</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>İlan Detayı ve Düzenleme Ekranı</DialogTitle></DialogHeader>
           <div className="space-y-4 flex-1 overflow-y-auto">
             <div><Label className="text-sm">Ad *</Label><Input value={poolForm.name} onChange={e => setPoolForm({...poolForm, name: e.target.value})} /></div>
             <div><Label className="text-sm">Açıklama</Label><Textarea value={poolForm.description} onChange={e => setPoolForm({...poolForm, description: e.target.value})} rows={2} /></div>
