@@ -18,22 +18,24 @@ Son güncelleme: 18.03.2026
 
 ## Son 72 Saatte Tamamlananlar
 
-### 18.03.2026 - Database Locked Hatası Kalıcı Çözüm (Çözüm D)
-- ✅ **log_synonym_usage() retry mekanizması** — database.py (satır 3772-3803)
-  - 5 retry, exponential backoff (1,2,4,8,16 saniye)
-  - Toplam maksimum bekleme: 31 saniye
-- ✅ **save_match_details() retry mekanizması** — database.py (satır 3835-3870)
-  - 5 retry, exponential backoff (1,2,4,8,16 saniye)
-  - Toplam maksimum bekleme: 31 saniye
-- ✅ **approve_titles() rescore döngüsü 3 aşamalı refactor** — pools.py (satır 1269-1396)
-  - AŞAMA 1: Veri toplama (READ, connection hemen kapanır)
-  - AŞAMA 2: Hesaplama (her aday için ayrı connection, lock yok)
-  - AŞAMA 3: Toplu UPDATE (tek connection)
-- ✅ **Önceki düzeltmeler:**
-  - count_active_positions_for_candidate() PRAGMA düzeltmesi (satır 12984-12985)
-  - on_position_delete() PRAGMA düzeltmesi (satır 13044-13047)
-- **Kök Neden:** Nested write transactions (ana connection açıkken save_match_details yeni connection açıyordu)
-- **Etki:** Akıllı Havuz Başlıkları ve Eş Anlamlılar sayfalarında "database is locked" hatası KALICI olarak çözüldü
+### 18.03.2026 - Database Locked Hatası KALICI ÇÖZÜM (WRITE_LOCK)
+- ✅ **get_connection() WRITE_LOCK entegrasyonu** — database.py (satır 1908-1946)
+  - FAZ 16 WRITE_LOCK (threading.Lock) kullanıldı
+  - WRITE_LOCK.acquire(timeout=120) ile deadlock önleme
+  - Tüm 220 get_connection() kullanımı OTOMATİK korunuyor
+  - Commit: 210127f
+- ✅ **busy_timeout artırıldı** — 30000 → 120000 (2 dakika)
+  - 6 sqlite3.connect() noktası güncellendi
+  - get_connection, get_pool_by_name, assign_candidate_to_pool, count_active_positions_for_candidate, handle_position_deletion
+- ✅ **save_v3_evaluation_to_db() retry güncellendi**
+  - max_retries: 3 → 5
+  - wait_time: linear (0.5x) → exponential (2^n)
+- ✅ **Önceki düzeltmeler korunuyor:**
+  - log_synonym_usage(), save_match_details(): 5 retry + exponential backoff
+  - approve_titles() rescore: 3 aşamalı refactor
+- **Kök Neden:** Concurrent write transactions (birden fazla thread aynı anda yazma)
+- **Çözüm:** WRITE_LOCK ile tek writer garantisi
+- **Etki:** TÜM "database is locked" hataları KALICI olarak çözüldü
 
 ### 17.03.2026 - README Profesyonel Görünüm Güncelleme
 - ✅ **README.md GitHub için profesyonel görünüm**
