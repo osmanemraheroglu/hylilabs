@@ -1,6 +1,6 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 16.03.2026
+Son güncelleme: 17.03.2026
 
 ## Mevcut Sistem Durumu
 
@@ -17,6 +17,20 @@ Son güncelleme: 16.03.2026
 - 3 şirket, ~50 aday, 5 pozisyon
 
 ## Son 72 Saatte Tamamlananlar
+### 17.03.2026 - V3 Scoring Düzeltmeleri
+- ✅ **Gemini JSON Parse Hatası Düzeltildi** — ai_evaluator.py
+  - maxOutputTokens: 4096 → 8192 artırıldı
+  - Gemini artık V3 Scoring yanıtı dönüyor
+- ✅ **OpenAI Encoding Hatası Düzeltildi** — ai_evaluator.py
+  - Accept-Encoding: identity header eklendi (3 yerde)
+  - Brotli decoding hatası önlendi
+- ✅ **CV Intelligence Tamamlandı** — 87/87 aday
+  - Gemini ile kariyer analizi başarılı
+- ✅ **V3 Scoring Çalışıyor**
+  - Gemini: ✅ Aktif
+  - Hermes: ✅ Aktif
+  - OpenAI: Fallback olarak bekliyor
+
 
 ### 16.03.2026 - FAZ 17: İnşaat Sektörü ATS Zekası
 - ✅ **Kanonik Form Normalizasyonu** — database.py

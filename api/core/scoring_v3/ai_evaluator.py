@@ -408,7 +408,7 @@ class AIEvaluator:
             ],
             "generationConfig": {
                 "temperature": 0.3,
-                "maxOutputTokens": 4096
+                "maxOutputTokens": 8192
             }
         }
 
@@ -489,7 +489,8 @@ class AIEvaluator:
 
         headers = {
             "Authorization": f"Bearer {self.hermes_api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept-Encoding": "identity"
         }
 
         payload = {
@@ -578,7 +579,8 @@ class AIEvaluator:
 
         headers = {
             "Authorization": f"Bearer {self.openai_api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept-Encoding": "identity"
         }
 
         payload = {
@@ -673,6 +675,7 @@ class AIEvaluator:
         headers = {
             "x-api-key": self.claude_api_key,
             "Content-Type": "application/json",
+            "Accept-Encoding": "identity",
             "anthropic-version": "2023-06-01"
         }
 
