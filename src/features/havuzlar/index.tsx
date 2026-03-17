@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   FolderTree, Plus, Edit, Trash2, RefreshCw, ChevronRight, ChevronDown,
   Archive, Inbox, Building2, Target, UserPlus, Search, User,
-  Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown, Ban, CheckCircle
+  Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown, Ban, CheckCircle, Eye
 } from 'lucide-react'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -93,6 +93,10 @@ export default function Havuzlar() {
   const [removeBlacklistDialogOpen, setRemoveBlacklistDialogOpen] = useState(false)
   const [removeBlacklistReason, setRemoveBlacklistReason] = useState('')
   const [removeBlacklistLoading, setRemoveBlacklistLoading] = useState(false)
+
+  // Aday Detay Modalı
+  const [candidateDetailModalOpen, setCandidateDetailModalOpen] = useState(false)
+  const [selectedCandidateDetail, setSelectedCandidateDetail] = useState<any>(null)
 
   // Forms
   const [poolForm, setPoolForm] = useState({ name: '', pool_type: 'department', parent_id: '', icon: '', keywords: '', description: '', gerekli_deneyim_yil: '0', gerekli_egitim: '', lokasyon: '' })
@@ -845,6 +849,7 @@ export default function Havuzlar() {
                               </TableCell>
                               <TableCell onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center gap-1">
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setSelectedCandidateDetail(c); setCandidateDetailModalOpen(true); }} title="Detaylı Görüntüle"><Eye className="h-3.5 w-3.5 text-green-600" /></Button>
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleRescore(c.id)} disabled={rescoring} title="Skoru Yeniden Hesapla"><RefreshCw className="h-3.5 w-3.5 text-blue-500" /></Button>
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEvaluate(c.id)} disabled={evaluating} title="AI Değerlendir"><Brain className="h-3.5 w-3.5 text-purple-500" /></Button>
                                   <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRemoveCandidate(c.id)} title="Çıkar"><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -1729,6 +1734,124 @@ export default function Havuzlar() {
             >
               {removeBlacklistLoading ? 'İşleniyor...' : 'Kara Listeden Çıkar'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Aday Detay Modalı */}
+      <Dialog open={candidateDetailModalOpen} onOpenChange={setCandidateDetailModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              {selectedCandidateDetail?.ad_soyad || 'Aday Detayı'}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedCandidateDetail && (
+            <div className="space-y-4">
+              {/* Temel Bilgiler */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Ad Soyad</Label>
+                  <p className="font-medium">{selectedCandidateDetail.ad_soyad || '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Email</Label>
+                  <p className="font-medium">{selectedCandidateDetail.email || '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Telefon</Label>
+                  <p className="font-medium">{selectedCandidateDetail.telefon || '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Lokasyon</Label>
+                  <p className="font-medium">{selectedCandidateDetail.lokasyon || '-'}</p>
+                </div>
+              </div>
+
+              {/* Mesleki Bilgiler */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-semibold mb-3">Mesleki Bilgiler</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Mevcut Pozisyon</Label>
+                    <p className="font-medium">{selectedCandidateDetail.mevcut_pozisyon || '-'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Mevcut Şirket</Label>
+                    <p className="font-medium">{selectedCandidateDetail.mevcut_sirket || '-'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Toplam Deneyim</Label>
+                    <p className="font-medium">{selectedCandidateDetail.toplam_deneyim_yil ? `${selectedCandidateDetail.toplam_deneyim_yil} yıl` : '-'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Eşleşme Skoru</Label>
+                    <p className="font-medium">{selectedCandidateDetail.match_score ? `${selectedCandidateDetail.match_score} puan` : '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Eğitim Bilgileri */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-semibold mb-3">Eğitim Bilgileri</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Eğitim Seviyesi</Label>
+                    <p className="font-medium">{selectedCandidateDetail.egitim || '-'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Üniversite</Label>
+                    <p className="font-medium">{selectedCandidateDetail.universite || '-'}</p>
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-xs text-muted-foreground">Bölüm</Label>
+                    <p className="font-medium">{selectedCandidateDetail.bolum || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Teknik Beceriler */}
+              {selectedCandidateDetail.teknik_beceriler && (
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-semibold mb-3">Teknik Beceriler</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {String(selectedCandidateDetail.teknik_beceriler).split(',').map((skill: string, i: number) => (
+                      <Badge key={i} variant="secondary" className="text-xs">{skill.trim()}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Diller */}
+              {selectedCandidateDetail.diller && (
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-semibold mb-3">Diller</h4>
+                  <p className="text-sm">{selectedCandidateDetail.diller}</p>
+                </div>
+              )}
+
+              {/* Sertifikalar */}
+              {selectedCandidateDetail.sertifikalar && (
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-semibold mb-3">Sertifikalar</h4>
+                  <p className="text-sm">{selectedCandidateDetail.sertifikalar}</p>
+                </div>
+              )}
+
+              {/* Durum */}
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">Durum:</Label>
+                  <Badge variant={selectedCandidateDetail.durum === 'blacklist' ? 'destructive' : 'secondary'}>
+                    {STATUS_MAP[selectedCandidateDetail.durum as keyof typeof STATUS_MAP]?.label || selectedCandidateDetail.durum || '-'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCandidateDetailModalOpen(false)}>Kapat</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
