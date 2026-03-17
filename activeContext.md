@@ -1,12 +1,12 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 17.03.2026
+Son güncelleme: 18.03.2026
 
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** hylilabs.com (PM2 ile çalışıyor)
 - **Domain:** https://hylilabs.com (Nginx + SSL aktif, 14.03.2026)
-- **Son commit:** 1a0f60c (FAZ 17 - İnşaat sektörü ATS zekası)
+- **Son commit:** (database locked fix)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -17,6 +17,16 @@ Son güncelleme: 17.03.2026
 - 3 şirket, ~50 aday, 5 pozisyon
 
 ## Son 72 Saatte Tamamlananlar
+
+### 18.03.2026 - Database Locked Hatası Kalıcı Çözüm
+- ✅ **count_active_positions_for_candidate() PRAGMA düzeltmesi** — database.py
+  - PRAGMA journal_mode=WAL eklendi (satır 12984)
+  - PRAGMA busy_timeout=30000 eklendi (satır 12985)
+- ✅ **on_position_delete() PRAGMA düzeltmesi** — database.py
+  - timeout=30 eklendi (satır 13044)
+  - PRAGMA journal_mode=WAL eklendi (satır 13046)
+  - PRAGMA busy_timeout=30000 eklendi (satır 13047)
+- **Etki:** Akıllı Havuz Başlıkları ve Eş Anlamlılar sayfalarında "database is locked" hatası önlendi
 
 ### 17.03.2026 - README Profesyonel Görünüm Güncelleme
 - ✅ **README.md GitHub için profesyonel görünüm**

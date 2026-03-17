@@ -12981,6 +12981,8 @@ def get_candidate_position_count(candidate_id: int, conn=None) -> int:
         ensure_data_dir()
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=30000")
         conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
@@ -13039,8 +13041,10 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
     if conn is None:
         from config import DATABASE_PATH
         ensure_data_dir()
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=30000")
         conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
