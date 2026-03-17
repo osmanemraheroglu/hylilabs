@@ -1227,7 +1227,7 @@ export default function Havuzlar() {
                     <Input value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://www.kariyer.net/is-ilani/..." className="flex-1" />
                     <Button onClick={handleParseUrl} disabled={parseLoading || !urlInput}>
                       {parseLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                      <span className="ml-1">Analiz</span>
+                      <span className="ml-1">{parsedData ? 'Yeniden Analiz Et' : 'Analiz'}</span>
                     </Button>
                   </div>
                 </div>
