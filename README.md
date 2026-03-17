@@ -1,119 +1,206 @@
-# Shadcn Admin Dashboard
+<div align="center">
 
-Admin Dashboard UI crafted with Shadcn and Vite. Built with responsiveness and accessibility in mind.
+<img src="public/images/Logo_600x400.png" alt="HyliLabs Logo" width="200"/>
 
-![alt text](public/images/shadcn-admin.png)
+# HyliLabs
 
-[![Sponsored by Clerk](https://img.shields.io/badge/Sponsored%20by-Clerk-5b6ee1?logo=clerk)](https://go.clerk.com/GttUAaK)
+**AI-Powered HR Recruitment Platform**
 
-I've been creating dashboard UIs at work and for my personal projects. I always wanted to make a reusable collection of dashboard UI for future projects; and here it is now. While I've created a few custom components, some of the code is directly adapted from ShadcnUI examples.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776ab.svg)](https://python.org)
+[![React](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com)
 
-> This is not a starter project (template) though. I'll probably make one in the future.
+[Demo](https://hylilabs.com) • [Documentation](#-documentation) • [Contributing](CONTRIBUTING.md)
 
-## Features
+</div>
 
-- Light/dark mode
-- Responsive
-- Accessible
-- With built-in Sidebar component
-- Global search command
-- 10+ pages
-- Extra custom components
-- RTL support
+---
 
-<details>
-<summary>Customized Components (click to expand)</summary>
+## 🚀 Overview
 
-This project uses Shadcn UI components, but some have been slightly modified for better RTL (Right-to-Left) support and other improvements. These customized components differ from the original Shadcn UI versions.
+HyliLabs is an enterprise-grade AI-powered recruitment platform designed for the Turkish market. It combines multiple AI models (Claude, Gemini, OpenAI, Nous Research) for intelligent CV analysis, candidate matching, and hiring decisions.
 
-If you want to update components using the Shadcn CLI (e.g., `npx shadcn@latest add <component>`), it's generally safe for non-customized components. For the listed customized ones, you may need to manually merge changes to preserve the project's modifications and avoid overwriting RTL support or other updates.
+### Key Features
 
-> If you don't require RTL support, you can safely update the 'RTL Updated Components' via the Shadcn CLI, as these changes are primarily for RTL compatibility. The 'Modified Components' may have other customizations to consider.
+- **🤖 Multi-AI Scoring System** - Consensus-based evaluation using 4 AI models
+- **📄 Intelligent CV Parsing** - Automatic extraction of skills, experience, and education
+- **🎯 Smart Matching** - 100-point scoring system with weighted categories
+- **🏗️ Industry Intelligence** - Specialized support for construction sector
+- **📅 Interview Management** - Scheduling, reminders, and KVKK-compliant confirmations
+- **🔒 KVKK Compliance** - Full Turkish data protection law compliance
+- **🏢 Multi-tenant Architecture** - Company-level data isolation
 
-### Modified Components
+---
 
-- scroll-area
-- sonner
-- separator
+## 🛠️ Tech Stack
 
-### RTL Updated Components
+### Backend
+- **Framework:** FastAPI (Python 3.11+)
+- **Database:** SQLite with WAL mode
+- **AI Models:** Claude (Anthropic), Gemini (Google), GPT (OpenAI), Hermes (Nous Research)
+- **Authentication:** JWT with role-based access control
 
-- alert-dialog
-- calendar
-- command
-- dialog
-- dropdown-menu
-- select
-- table
-- sheet
-- sidebar
-- switch
+### Frontend
+- **Framework:** React 18 + TypeScript
+- **UI Library:** shadcn/ui + Tailwind CSS
+- **Routing:** TanStack Router
+- **Build Tool:** Vite
 
-**Notes:**
+### Infrastructure
+- **Deployment:** PM2 + Nginx
+- **SSL:** Let's Encrypt (Certbot)
+- **Server:** Ubuntu 22.04 LTS
 
-- **Modified Components**: These have general updates, potentially including RTL adjustments.
-- **RTL Updated Components**: These have specific changes for RTL language support (e.g., layout, positioning).
-- For implementation details, check the source files in `src/components/ui/`.
-- All other Shadcn UI components in the project are standard and can be safely updated via the CLI.
+---
 
-</details>
+## 📦 Installation
 
-## Tech Stack
+### Prerequisites
 
-**UI:** [ShadcnUI](https://ui.shadcn.com) (TailwindCSS + RadixUI)
+- Python 3.11+
+- Node.js 18+
+- pnpm or npm
 
-**Build Tool:** [Vite](https://vitejs.dev/)
+### Quick Start
 
-**Routing:** [TanStack Router](https://tanstack.com/router/latest)
-
-**Type Checking:** [TypeScript](https://www.typescriptlang.org/)
-
-**Linting/Formatting:** [ESLint](https://eslint.org/) & [Prettier](https://prettier.io/)
-
-**Icons:** [Lucide Icons](https://lucide.dev/icons/), [Tabler Icons](https://tabler.io/icons) (Brand icons only)
-
-**Auth (partial):** [Clerk](https://go.clerk.com/GttUAaK)
-
-## Run Locally
-
-Clone the project
-
+1. **Clone the repository**
 ```bash
-  git clone https://github.com/satnaing/shadcn-admin.git
+git clone https://github.com/osmanemraheroglu/hylilabs.git
+cd hylilabs
 ```
 
-Go to the project directory
-
+2. **Backend Setup**
 ```bash
-  cd shadcn-admin
+cd api
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env with your API keys
 ```
 
-Install dependencies
-
+3. **Frontend Setup**
 ```bash
-  pnpm install
+cd ..  # Back to root
+pnpm install
+cp .env.example .env
+# Edit .env with your settings
 ```
 
-Start the server
-
+4. **Start Development Servers**
 ```bash
-  pnpm run dev
+# Terminal 1 - Backend
+cd api && uvicorn main:app --reload --port 8000
+
+# Terminal 2 - Frontend
+pnpm dev
 ```
 
-## Sponsoring this project ❤️
+5. **Access the application**
+- Frontend: http://localhost:5173
+- API Docs: http://localhost:8000/docs
 
-If you find this project helpful or use this in your own work, consider [sponsoring me](https://github.com/sponsors/satnaing) to support development and maintenance. You can [buy me a coffee](https://buymeacoffee.com/satnaing) as well. Don’t worry, every penny helps. Thank you! 🙏
+---
 
-For questions or sponsorship inquiries, feel free to reach out at [satnaingdev@gmail.com](mailto:satnaingdev@gmail.com).
+## 🏗️ Architecture
 
-### Current Sponsor
+```
+hylilabs/
+├── api/                    # FastAPI Backend
+│   ├── core/              # Core modules (scoring, CV parsing, matching)
+│   │   ├── scoring_v2.py  # 100-point scoring system
+│   │   ├── scoring_v3/    # AI-based evaluation
+│   │   ├── cv_parser.py   # CV parsing with Claude
+│   │   └── candidate_matcher.py
+│   ├── routes/            # API endpoints
+│   ├── database.py        # SQLite operations
+│   └── main.py            # FastAPI app
+├── src/                   # React Frontend
+│   ├── features/          # Feature modules
+│   ├── components/        # Shared components
+│   └── routes/            # TanStack Router
+├── data/                  # Database & CV storage
+└── docs/                  # Documentation
+```
 
-- [Clerk](https://go.clerk.com/GttUAaK) - authentication and user management for the modern web
+---
 
-## Author
+## 📊 Scoring System
 
-Crafted with 🤍 by [@satnaing](https://github.com/satnaing)
+HyliLabs uses a hybrid scoring approach:
 
-## License
+### V2 Scoring (Deterministic) - 100 Points
+| Category | Max Points | Details |
+|----------|------------|---------|
+| Position Match | 20 | Title (8) + Sector (7) + Seniority (5) |
+| Technical Skills | 40 | Must-have (15) + Critical (15) + Important (10) |
+| General | 15 | Experience (8) + Education (7) |
+| Task Match | 15 | Job description alignment |
+| Elimination | 10 | Location (5) + Other (5) |
 
-Licensed under the [MIT License](https://choosealicense.com/licenses/mit/)
+### V3 Scoring (AI-Based)
+- Multi-model consensus (Claude, Gemini, OpenAI, Hermes)
+- Final score: `(V3 × 0.60) + (V2 × 0.40)`
+
+---
+
+## 🔒 Security
+
+- **API Keys**: Stored in `.env` files, never committed to repository
+- **KVKK Compliance**: Full Turkish data protection law compliance
+- **Multi-tenant Isolation**: Company-level data separation
+- **JWT Authentication**: Secure token-based authentication
+- **Rate Limiting**: API endpoint protection
+
+---
+
+## 🗺️ Roadmap
+
+| Feature | Status |
+|---------|--------|
+| Multi-AI Scoring System | ✅ Complete |
+| CV Intelligence | ✅ Complete |
+| Construction Industry Intelligence | ✅ Complete |
+| Dashboard Analytics | ✅ Complete |
+| Fallback Chain System | ✅ Complete |
+| Career Page | 🔜 Coming Soon |
+| Public API | 🔜 Coming Soon |
+| Mobile App | 🔜 Planned |
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- [Nous Research](https://nousresearch.com) for Hermes model
+- [Google](https://ai.google.dev) for Gemini API
+- [Anthropic](https://anthropic.com) for Claude API
+- [OpenAI](https://openai.com) for GPT API
+
+---
+
+<div align="center">
+
+Built with ❤️ by [@osmanemraheroglu](https://github.com/osmanemraheroglu)
+
+**[HyliLabs](https://hylilabs.com)** — Smarter Hiring, Powered by AI
+
+</div>

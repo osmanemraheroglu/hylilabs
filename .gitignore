@@ -1,5 +1,75 @@
+# ===========================================
+# HyliLabs .gitignore
+# ===========================================
+
+# ------------------------------------------
+# Environment Variables (CRITICAL - API KEYS)
+# ------------------------------------------
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ------------------------------------------
+# Database
+# ------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+api/data/
+
+# ------------------------------------------
+# Python
+# ------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+env/
+.eggs/
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ------------------------------------------
+# Node.js / Frontend
+# ------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+build/
+.npm
+.pnpm-store/
+*.tsbuildinfo
+*.local
+
+# ------------------------------------------
+# IDE / Editor
+# ------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ------------------------------------------
 # Logs
-logs
+# ------------------------------------------
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,27 +77,24 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-.env
-*.env
-*.env.save
-*.env.*
-api/.env.save
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-api/data/
-__pycache__/
+# ------------------------------------------
+# Temporary Files
+# ------------------------------------------
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
 backups/
+
+# ------------------------------------------
+# CV Files (Sensitive)
+# ------------------------------------------
+uploads/
+cv_files/
+
+# ------------------------------------------
+# PM2
+# ------------------------------------------
+.pm2/
+ecosystem.config.cjs.bak
