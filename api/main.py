@@ -54,7 +54,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://***REMOVED***:3000",      # Development (mevcut)
+        "http://localhost:3000",            # Development
         "https://hylilabs.com",             # Production
         "https://www.hylilabs.com",         # Production (www)
     ],

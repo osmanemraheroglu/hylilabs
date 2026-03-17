@@ -29,8 +29,8 @@
 
 ## Sunucular
 
-- **HyliLabs (Yeni):** ***REMOVED*** — React + FastAPI
-- **TalentFlow (Eski):** ***REMOVED*** — Streamlit (KAPANACAK)
+- **HyliLabs (Yeni):** hylilabs.com — React + FastAPI
+- **TalentFlow (Eski):** KAPATILDI
 
 ## Cron Jobs
 
@@ -44,6 +44,6 @@
 ## Kalan Isler (Manuel)
 
 - [ ] cv_parser.py ve bagimliliklar tasinmali (email_worker icin)
-- [ ] DNS guncelleme: talentflow.com.tr -> ***REMOVED***
+- [x] DNS guncelleme: hylilabs.com yapılandırıldı
 - [ ] SSL sertifikasi (Let is Encrypt)
 - [ ] Streamlit kapatma: systemctl stop streamlit && systemctl disable streamlit

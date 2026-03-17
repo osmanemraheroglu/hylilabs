@@ -1,15 +1,19 @@
 # HyliLabs — Özel Yetenekler
 
 ## Deploy
+
+Deploy komutları sunucuya SSH ile bağlanarak çalıştırılır.
+Detaylar için deployment dokümantasyonuna bakınız.
+
 ```bash
 # Backend restart
-ssh root@***REMOVED*** "systemctl restart hylilabs-api"
+pm2 restart hylilabs-api
 
 # Frontend build + restart
-ssh root@***REMOVED*** "cd /var/www/hylilabs && npm run build && systemctl restart hylilabs-frontend"
+npm run build && pm2 restart hylilabs-frontend
 
 # Her ikisi
-ssh root@***REMOVED*** "systemctl restart hylilabs-api && systemctl restart hylilabs-frontend"
+pm2 restart all
 ```
 
 ## Git Workflow
@@ -22,7 +26,7 @@ git checkout main && git merge dev
 git push origin main
 
 # Sunucuda
-ssh root@***REMOVED*** "cd /var/www/hylilabs && git pull"
+cd /var/www/hylilabs && git pull
 ```
 
 ## Database

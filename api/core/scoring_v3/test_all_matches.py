@@ -34,7 +34,8 @@ from scoring_v3 import evaluate_candidate_sync, CandidateEvaluationResponse
 # YAPILANDIRMA
 # ═══════════════════════════════════════════════════════════════════════════════
 
-SERVER_HOST = "root@***REMOVED***"
+# SERVER_HOST removed for security - use environment variable or local connection
+SERVER_HOST = None  # Set via SSH_HOST env variable if needed
 SERVER_DB_PATH = "/var/www/hylilabs/api/data/talentflow.db"
 COMPANY_ID = 1
 PROGRESS_INTERVAL = 5  # Her 5 testte bir progress goster

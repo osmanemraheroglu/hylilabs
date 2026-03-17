@@ -176,7 +176,7 @@ def create_company_endpoint(body: dict, request: Request, current_user: dict = D
 {ad} için HyliLabs hesabınız oluşturuldu.
 
 Giriş Bilgileri:
-URL: http://***REMOVED***:3000
+URL: https://hylilabs.com
 Email: {yetkili_email}
 Şifre: {gecici_sifre}
 

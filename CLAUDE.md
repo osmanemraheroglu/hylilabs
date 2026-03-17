@@ -146,9 +146,9 @@ BU KURAL ATLANAMAZLAR. activeContext.md guncellenmeden gorev bitmez.
 HyliLabs: AI destekli HR recruitment platformu. React + FastAPI + SQLite. Turkiye pazari, KVKK uyumlu.
 
 ## Sunucular
-- Production: ***REMOVED*** (React:3000, FastAPI:8000)
-- Domain: hylilabs.com (Nginx reverse proxy + SSL, 14.03.2026)
-- Eski TalentFlow: ***REMOVED*** (Streamlit, artik guncellenmeyecek)
+- Production: hylilabs.com (Nginx reverse proxy + SSL)
+- Domain: hylilabs.com
+- Eski TalentFlow: KAPATILDI
 
 ## Roller
 - Claude Opus: Planlama, mimari kararlar, strateji

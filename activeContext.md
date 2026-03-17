@@ -4,7 +4,7 @@ Son güncelleme: 17.03.2026
 
 ## Mevcut Sistem Durumu
 
-- **Sunucu:** ***REMOVED*** (PM2 ile çalışıyor)
+- **Sunucu:** hylilabs.com (PM2 ile çalışıyor)
 - **Domain:** https://hylilabs.com (Nginx + SSL aktif, 14.03.2026)
 - **Son commit:** 1a0f60c (FAZ 17 - İnşaat sektörü ATS zekası)
 - **Backend:** FastAPI + SQLite (WAL mode)
@@ -416,7 +416,7 @@ Son güncelleme: 17.03.2026
 ### FAZ 15 - Production Deployment ✅ (14.03.2026)
 
 **Tamamlanan İşler:**
-- [x] Domain: hylilabs.com DNS ayarları (A kayıtları ***REMOVED***)
+- [x] Domain: hylilabs.com DNS ayarları yapılandırıldı
 - [x] Nginx 1.24.0 kurulumu + reverse proxy (3000→frontend, 8000→backend)
 - [x] SSL: Let's Encrypt sertifikası (12 Haziran 2026'ya kadar geçerli)
 - [x] HTTP → HTTPS redirect (301)
@@ -438,7 +438,7 @@ Son güncelleme: 17.03.2026
 
 **Erişim:**
 - Production: https://hylilabs.com
-- Development: http://***REMOVED***:3000
+- Development: http://localhost:3000
 
 ### Pozisyon Sil→Aday Kaybı Fix ✅ (09.03.2026)
 - [x] CV Çek sadece durum='yeni' tarıyor (f872d62)

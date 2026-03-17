@@ -484,7 +484,7 @@ def get_email_preview(
             confirm_url = None
             onay_suresi = 3  # varsayılan
             if interview.get("confirm_token"):
-                confirm_url = f"http://***REMOVED***:8000/api/interviews/confirm/{interview['confirm_token']}"
+                confirm_url = f"https://hylilabs.com/api/interviews/confirm/{interview['confirm_token']}"
                 # onay_suresi hesapla (confirm_token_expires - olusturma_tarihi)
                 if interview.get("confirm_token_expires") and interview.get("olusturma_tarihi"):
                     try:
@@ -579,7 +579,7 @@ def send_interview_email(
             confirm_url = None
             onay_suresi = 3  # varsayılan
             if interview.get("confirm_token"):
-                confirm_url = f"http://***REMOVED***:8000/api/interviews/confirm/{interview['confirm_token']}"
+                confirm_url = f"https://hylilabs.com/api/interviews/confirm/{interview['confirm_token']}"
                 # onay_suresi hesapla (confirm_token_expires - olusturma_tarihi)
                 if interview.get("confirm_token_expires") and interview.get("olusturma_tarihi"):
                     try:

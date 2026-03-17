@@ -85,7 +85,7 @@ def send_reminder_emails():
                     # Confirm URL
                     confirm_url = None
                     if interview['confirm_token']:
-                        confirm_url = f"http://***REMOVED***:8000/api/interviews/confirm/{interview['confirm_token']}"
+                        confirm_url = f"https://hylilabs.com/api/interviews/confirm/{interview['confirm_token']}"
 
                     # Hatirlatma emaili gonder
                     success, msg = send_interview_invite(
