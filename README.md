@@ -288,6 +288,18 @@ HyliLabs uses a hybrid scoring approach combining deterministic rules (V2) with 
 
 ---
 
+## Screenshots
+
+> Screenshots will be added soon. See [docs/screenshots/](docs/screenshots/) for details.
+
+<!--
+| Dashboard | Candidate List |
+|-----------|----------------|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Candidates](docs/screenshots/candidates.png) |
+-->
+
+---
+
 ## Roadmap
 
 | Feature | Status |
