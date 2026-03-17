@@ -10,6 +10,9 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-3776ab.svg)](https://python.org)
 [![React](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com)
+[![AI Multi-Model](https://img.shields.io/badge/AI-Multi--Model-ff6b6b.svg)](#-scoring-system)
+[![Turkish Market](https://img.shields.io/badge/Market-T%C3%BCrkiye-e30a17.svg)](#)
+[![KVKK Compliant](https://img.shields.io/badge/KVKK-Compliant-00875a.svg)](#-security)
 
 [Demo](https://hylilabs.com) • [Documentation](#-documentation) • [Contributing](CONTRIBUTING.md)
 
@@ -17,23 +20,56 @@
 
 ---
 
-## 🚀 Overview
+## Quick Links
 
-HyliLabs is an enterprise-grade AI-powered recruitment platform designed for the Turkish market. It combines multiple AI models (Claude, Gemini, OpenAI, Nous Research) for intelligent CV analysis, candidate matching, and hiring decisions.
-
-### Key Features
-
-- **🤖 Multi-AI Scoring System** - Consensus-based evaluation using 4 AI models
-- **📄 Intelligent CV Parsing** - Automatic extraction of skills, experience, and education
-- **🎯 Smart Matching** - 100-point scoring system with weighted categories
-- **🏗️ Industry Intelligence** - Specialized support for construction sector
-- **📅 Interview Management** - Scheduling, reminders, and KVKK-compliant confirmations
-- **🔒 KVKK Compliance** - Full Turkish data protection law compliance
-- **🏢 Multi-tenant Architecture** - Company-level data isolation
+| [Overview](#-overview) | [Why HyliLabs?](#-why-hylilabs) | [Tech Stack](#-tech-stack) | [Installation](#-installation) | [Architecture](#-architecture) | [Scoring System](#-scoring-system) | [Roadmap](#-roadmap) |
+|---|---|---|---|---|---|---|
 
 ---
 
-## 🛠️ Tech Stack
+## Overview
+
+HyliLabs is an enterprise-grade AI-powered recruitment platform designed for the Turkish market. It combines multiple AI models (Claude, Gemini, OpenAI, Nous Research) for intelligent CV analysis, candidate matching, and hiring decisions.
+
+### Powered By
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Google-Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini"/>
+  <img src="https://img.shields.io/badge/Anthropic-Claude-191919?style=for-the-badge&logo=anthropic&logoColor=white" alt="Claude"/>
+  <img src="https://img.shields.io/badge/OpenAI-GPT-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI"/>
+  <img src="https://img.shields.io/badge/Nous-Hermes-FF6B35?style=for-the-badge" alt="Hermes"/>
+</p>
+
+---
+
+## Why HyliLabs?
+
+Traditional ATS systems fail at understanding Turkish CVs, construction terminology, and local market nuances. HyliLabs was built from the ground up for Turkish HR teams.
+
+| Problem | Traditional ATS | HyliLabs Solution |
+|---------|-----------------|-------------------|
+| Turkish CV parsing | Fails on Turkce characters | Native TR support with correct encoding |
+| Construction sector | Generic keyword matching | 150+ construction terms, certificate tracking |
+| Candidate scoring | Single model, biased results | 4-model consensus (Claude + Gemini + GPT + Hermes) |
+| KVKK compliance | Bolt-on, incomplete | Built-in audit trail, consent management |
+| Synonym handling | None or basic | 387+ synonyms with ML-based confidence |
+| Location matching | City-level only | Istanbul 38-ilce aware, neighborhood matching |
+
+---
+
+### Key Features
+
+- **Multi-AI Scoring System** - Consensus-based evaluation using 4 AI models
+- **Intelligent CV Parsing** - Automatic extraction of skills, experience, and education
+- **Smart Matching** - 100-point scoring system with weighted categories
+- **Industry Intelligence** - Specialized support for construction sector
+- **Interview Management** - Scheduling, reminders, and KVKK-compliant confirmations
+- **KVKK Compliance** - Full Turkish data protection law compliance
+- **Multi-tenant Architecture** - Company-level data isolation
+
+---
+
+## Tech Stack
 
 ### Backend
 - **Framework:** FastAPI (Python 3.11+)
@@ -54,7 +90,7 @@ HyliLabs is an enterprise-grade AI-powered recruitment platform designed for the
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 
@@ -103,7 +139,51 @@ pnpm dev
 
 ---
 
-## 🏗️ Architecture
+## Architecture
+
+### System Overview
+
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend (React 18)"]
+        UI[shadcn/ui Components]
+        Router[TanStack Router]
+        State[Zustand State]
+    end
+
+    subgraph Backend["Backend (FastAPI)"]
+        API[REST API]
+        Auth[JWT Auth]
+        Routes[Route Handlers]
+    end
+
+    subgraph AI["AI Layer"]
+        Claude[Claude API]
+        Gemini[Gemini API]
+        GPT[OpenAI API]
+        Hermes[Hermes Model]
+    end
+
+    subgraph Core["Core Modules"]
+        CVParser[CV Parser]
+        Scoring[Scoring V2]
+        Matcher[Candidate Matcher]
+        Evaluator[AI Evaluator]
+    end
+
+    subgraph Data["Data Layer"]
+        SQLite[(SQLite WAL)]
+        CVStore[CV Storage]
+    end
+
+    Frontend -->|HTTPS| Backend
+    Backend --> Core
+    Core --> AI
+    Core --> Data
+    AI -->|Consensus| Scoring
+```
+
+### Directory Structure
 
 ```
 hylilabs/
@@ -126,11 +206,52 @@ hylilabs/
 
 ---
 
-## 📊 Scoring System
+## Scoring System
 
-HyliLabs uses a hybrid scoring approach:
+HyliLabs uses a hybrid scoring approach combining deterministic rules (V2) with AI consensus (V3).
+
+### Scoring Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        CV UPLOADED                               │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    CV PARSER (Claude)                            │
+│  Extract: Skills, Experience, Education, Location, Certificates │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+              ┌───────────────┴───────────────┐
+              ▼                               ▼
+┌──────────────────────────┐    ┌──────────────────────────┐
+│     V2 SCORING (40%)     │    │     V3 SCORING (60%)     │
+│  Deterministic Rules     │    │    AI Consensus          │
+│                          │    │                          │
+│  Position Match:   20    │    │  ┌─────────┐             │
+│  Technical Skills: 40    │    │  │ Claude  │──┐          │
+│  General:          15    │    │  └─────────┘  │          │
+│  Task Match:       15    │    │  ┌─────────┐  │ Weighted │
+│  Elimination:      10    │    │  │ Gemini  │──┤ Average  │
+│  ─────────────────────   │    │  └─────────┘  │          │
+│  TOTAL:           100    │    │  ┌─────────┐  │          │
+│                          │    │  │   GPT   │──┤          │
+└──────────────────────────┘    │  └─────────┘  │          │
+              │                 │  ┌─────────┐  │          │
+              │                 │  │ Hermes  │──┘          │
+              │                 │  └─────────┘             │
+              │                 └──────────────────────────┘
+              │                               │
+              └───────────────┬───────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              FINAL SCORE = (V3 × 0.60) + (V2 × 0.40)            │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ### V2 Scoring (Deterministic) - 100 Points
+
 | Category | Max Points | Details |
 |----------|------------|---------|
 | Position Match | 20 | Title (8) + Sector (7) + Seniority (5) |
@@ -140,12 +261,15 @@ HyliLabs uses a hybrid scoring approach:
 | Elimination | 10 | Location (5) + Other (5) |
 
 ### V3 Scoring (AI-Based)
+
 - Multi-model consensus (Claude, Gemini, OpenAI, Hermes)
-- Final score: `(V3 × 0.60) + (V2 × 0.40)`
+- Each model evaluates independently
+- Fallback chain: If primary model fails, next model takes over
+- Final score: Weighted average with outlier detection
 
 ---
 
-## 🔒 Security
+## Security
 
 - **API Keys**: Stored in `.env` files, never committed to repository
 - **KVKK Compliance**: Full Turkish data protection law compliance
@@ -155,22 +279,22 @@ HyliLabs uses a hybrid scoring approach:
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 | Feature | Status |
 |---------|--------|
-| Multi-AI Scoring System | ✅ Complete |
-| CV Intelligence | ✅ Complete |
-| Construction Industry Intelligence | ✅ Complete |
-| Dashboard Analytics | ✅ Complete |
-| Fallback Chain System | ✅ Complete |
-| Career Page | 🔜 Coming Soon |
-| Public API | 🔜 Coming Soon |
-| Mobile App | 🔜 Planned |
+| Multi-AI Scoring System | Complete |
+| CV Intelligence | Complete |
+| Construction Industry Intelligence | Complete |
+| Dashboard Analytics | Complete |
+| Fallback Chain System | Complete |
+| Career Page | Coming Soon |
+| Public API | Coming Soon |
+| Mobile App | Planned |
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -182,13 +306,13 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Nous Research](https://nousresearch.com) for Hermes model
 - [Google](https://ai.google.dev) for Gemini API
@@ -199,7 +323,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-Built with ❤️ by [@osmanemraheroglu](https://github.com/osmanemraheroglu)
+Built with care by [@osmanemraheroglu](https://github.com/osmanemraheroglu)
 
 **[HyliLabs](https://hylilabs.com)** — Smarter Hiring, Powered by AI
 

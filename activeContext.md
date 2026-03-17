@@ -17,6 +17,27 @@ Son güncelleme: 17.03.2026
 - 3 şirket, ~50 aday, 5 pozisyon
 
 ## Son 72 Saatte Tamamlananlar
+
+### 17.03.2026 - README Profesyonel Görünüm Güncelleme
+- ✅ **README.md GitHub için profesyonel görünüm**
+  - Yeni badge'ler: AI Multi-Model, Turkish Market, KVKK Compliant
+  - Quick Links navigasyon tablosu
+  - "Powered By" bölümü (Gemini, Claude, OpenAI, Hermes badge'leri)
+  - "Why HyliLabs?" bölümü (Problem/Solution tablosu)
+  - Mermaid.js mimari diyagramı (System Overview)
+  - Scoring Flow ASCII diyagramı (V2+V3 akışı)
+  - V3 Scoring detayları güncellendi
+
+### 17.03.2026 - Güvenlik Temizliği
+- ✅ **Sunucu IP'leri domain ile değiştirildi**
+  - 116.203.29.174 → hylilabs.com (14 dosya)
+  - 46.224.206.15 referansları silindi
+  - SSH komutları SKILLS.md'den temizlendi
+  - Git history BFG ile temizlendi
+- ✅ **Backup dosyaları temizlendi**
+  - src.bak klasörü silindi (238 dosya)
+  - 36 .bak/.backup dosyası silindi
+
 ### 17.03.2026 - V3 Scoring Düzeltmeleri
 - ✅ **Gemini JSON Parse Hatası Düzeltildi** — ai_evaluator.py
   - maxOutputTokens: 4096 → 8192 artırıldı
