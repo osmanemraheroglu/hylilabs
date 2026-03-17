@@ -61,7 +61,7 @@ def atomic_write_transaction(db_path=None):
     try:
         conn = sqlite3.connect(db_path, timeout=30.0)
         conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("PRAGMA busy_timeout=120000")
         conn.execute("PRAGMA foreign_keys=ON")
         yield conn
         conn.commit()
@@ -1905,27 +1905,45 @@ def get_candidate_position_text(candidate_dict: dict) -> str:
 
 @contextmanager
 def get_connection():
-    """Veritabani baglantisi context manager
-
-    Performans iyileştirmeleri:
-    - WAL mode: Concurrent read/write performansını artırır
-    - Timeout: Database locked hatalarını önler
+    """Veritabani baglantisi context manager - WRITE_LOCK korumali.
+    
+    Ozellikler:
+    - WRITE_LOCK ile thread-safe yazma islemleri (tek writer)
+    - WAL mode: Concurrent read/write performansi
+    - busy_timeout: 2 dakika (SQLite seviyesinde lock bekleme)
+    
+    Kullanim degismez - tum mevcut kod calismaya devam eder.
     """
     ensure_data_dir()
-    conn = sqlite3.connect(DATABASE_PATH, timeout=30)
-    conn.row_factory = sqlite3.Row
-    # WAL mode: Write-Ahead Logging - concurrent read/write performansı için
-    conn.execute("PRAGMA journal_mode=WAL")
-    # busy_timeout: Lock durumunda 30 saniye bekle (database locked hatası önleme)
-    conn.execute("PRAGMA busy_timeout=30000")
-    conn.execute("PRAGMA foreign_keys=ON")
-    # Türkçe karakter duyarsız arama için custom SQL function
-    conn.create_function("TURKISH_LOWER", 1, turkish_lower)
+    
+    # WRITE_LOCK al - 120 saniye timeout ile deadlock onleme
+    acquired = WRITE_LOCK.acquire(timeout=120)
+    if not acquired:
+        raise sqlite3.OperationalError("database is locked - WRITE_LOCK acquire timeout")
+    
+    conn = None
     try:
+        conn = sqlite3.connect(DATABASE_PATH, timeout=30)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=120000")  # 2 dakika
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.create_function("TURKISH_LOWER", 1, turkish_lower)
+        
         yield conn
         conn.commit()
+        
+    except Exception as e:
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
+        raise
     finally:
-        conn.close()
+        if conn:
+            conn.close()
+        WRITE_LOCK.release()
 
 
 def init_database():
@@ -7111,7 +7129,7 @@ def get_pool_by_name(company_id: int, name: str, conn=None) -> Optional[dict]:
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("PRAGMA busy_timeout=120000")
         conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
@@ -7155,7 +7173,7 @@ def assign_candidate_to_department_pool(candidate_id: int, pool_id: int, company
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("PRAGMA busy_timeout=120000")
         conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
@@ -13015,7 +13033,7 @@ def get_candidate_position_count(candidate_id: int, conn=None) -> int:
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("PRAGMA busy_timeout=120000")
         conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
@@ -13077,7 +13095,7 @@ def handle_position_deletion(position_id: int, company_id: int, conn=None) -> di
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("PRAGMA busy_timeout=120000")
         conn.execute("PRAGMA foreign_keys=ON")
         close_conn = True
 
@@ -13408,7 +13426,7 @@ def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, compan
 
     evaluation_text = json.dumps(evaluation_data, ensure_ascii=False)
     
-    max_retries = 3
+    max_retries = 5
     for attempt in range(max_retries):
         try:
             with get_connection() as conn:
@@ -13423,8 +13441,8 @@ def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, compan
                 return True
         except sqlite3.OperationalError as e:
             if "database is locked" in str(e) and attempt < max_retries - 1:
-                wait_time = 0.5 * (attempt + 1)  # 0.5s, 1s, 1.5s exponential backoff
-                logger.warning(f"Database locked, retry {attempt + 1}/{max_retries}, bekleniyor: {wait_time}s")
+                wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 saniye exponential backoff
+                logger.warning(f"save_v3_evaluation_to_db: Database locked, retry {attempt + 1}/{max_retries}, bekleniyor: {wait_time}s")
                 _time.sleep(wait_time)
                 continue
             logger.error(f"save_v3_evaluation_to_db hatasi (retry sonrasi): {e}")
