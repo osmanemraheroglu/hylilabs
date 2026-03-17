@@ -404,7 +404,8 @@ if __name__ == "__main__":
         }
     }
 
-    with open("/Users/emraheroglu/hylilabs/api/core/scoring_v3/comparison_result.json", "w", encoding="utf-8") as f:
+    output_path = os.path.join(os.path.dirname(__file__), "comparison_result.json")
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
     print("\n📁 Sonuçlar kaydedildi: comparison_result.json")
