@@ -59,7 +59,7 @@ const features = [
   { icon: icons.match, title: 'Akıllı Eşleştirme', desc: 'Pozisyon gereksinimlerinize en uygun adayları %95 doğruluk oranıyla eşleştirin. Keyword bazlı ve semantik analiz birlikte çalışır.' },
   { icon: icons.pool, title: 'Havuz Yönetimi', desc: 'Adaylarınızı genel havuz, pozisyon havuzları ve arşiv olarak organize edin. Otomatik kategorizasyon ile veri kaybını önleyin.' },
   { icon: icons.calendar, title: 'Mülakat Planlama', desc: 'Mülakat takvimi oluşturun, adaylara otomatik davetiye gönderin. Onay takibi ve hatırlatma emaillerini yönetin.' },
-  { icon: icons.ai, title: 'AI Değerlendirme', desc: 'Çoklu AI modeli (Claude, Gemini, OpenAI, Nous) ile adayları değerlendirin. Konsensüs bazlı puanlama ile objektif sonuçlar alın.' },
+  { icon: icons.ai, title: 'AI Değerlendirme', desc: 'Çoklu AI modeli (Claude, Gemini, OpenAI, Nous Research) ile adayları değerlendirin. Konsensüs bazlı puanlama ile objektif sonuçlar alın.' },
   { icon: icons.shield, title: 'KVKK Uyumlu', desc: 'Tüm süreçlerde KVKK uyumluluğu sağlanır. Aydınlatma metni, açık rıza ve audit log mekanizmaları yerleşiktir.' },
 ]
 

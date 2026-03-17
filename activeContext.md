@@ -101,6 +101,11 @@ Son güncelleme: 17.03.2026
   - candidates/index.tsx: durumLabel() mapping + filtre dropdown güncellendi
   - Backend 'yeni' değeri DEĞİŞMEDİ (sadece frontend label)
 
+### 17.03.2026 - Landing Page Düzeltme
+- ✅ **AI Değerlendirme kartı metin düzeltmesi**
+  - "Nous" → "Nous Research" olarak güncellendi
+  - Dosya: src/features/landing/index.tsx satır 62
+
 ### 14.03.2026 - Favicon + Branding
 - ✅ **HyliLabs favicon** — Logo_600x400.png'den oluşturuldu
   - favicon.png (32x32), favicon_light.png, favicon_16.png
