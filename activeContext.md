@@ -16,42 +16,30 @@ Son güncelleme: 18.03.2026
 - Adnan Bey (İK Direktörü) — test + onay
 - 3 şirket, ~50 aday, 5 pozisyon
 
-## ✅ TAMAMLANAN GÖREV: "database is locked" Kalıcı Çözüm - PARÇA 6 TAMAMLANDI
+## ✅ TAMAMLANAN GÖREV: Hybrid Re-entrant Architecture - SQLite Kalıcı Çözüm
 
 **Tarih:** 2026-03-18
-**Son Commit:** bf29d9b
 
 ### Çözüm Özeti
-READ/WRITE connection separation TAMAMLANDI:
-- `get_connection()` → READ işlemleri (SELECT) - 87 fonksiyon
-- `get_write_connection()` → WRITE işlemleri (INSERT/UPDATE/DELETE) - 133 fonksiyon
+4 katmanlı mimari ile nested deadlock ve "database is locked" sorunları KALICI olarak çözüldü:
 
-### PARÇA 6: database.py Batch Güncelleme
+| Katman | Değişiklik | Satır |
+|--------|-----------|-------|
+| KATMAN 1 | WRITE_LOCK → RLock (nested deadlock koruması) | 38 |
+| KATMAN 2 | save_v3_evaluation_to_db conn parametresi (atomiklik) | 13413 |
+| KATMAN 3a | verify_department_pool_ownership: get_write → get_connection | 5784 |
+| KATMAN 3b | pull_matching ilk SELECT: get_write → get_connection | 7709 |
+| KATMAN 4 | pull_matching içinde save_v3 çağrısına conn geçirme | 8001 |
 
-| Aşama | Fonksiyon Sayısı | Commit |
-|-------|------------------|--------|
-| PARÇA 6.1 (kritik) | 7 | 06e99f2, 95caea1, 99508a9, 36de231 |
-| PARÇA 6.2 (batch) | 125 | bf29d9b |
-| **TOPLAM** | **132** | ✅ |
+### Teknik Detaylar
+- **RLock (Re-entrant Lock):** Aynı thread kilit içindeyken tekrar kilit alabilir
+- **conn parametresi:** Nested çağrılarda mevcut bağlantıyı kullanarak deadlock önleme
+- **SELECT optimizasyonu:** READ işlemlerinde WRITE_LOCK gereksiz tutulması engellendi
 
-### Önceki PARÇA'lar (1-5): routes/*.py dosyaları
-| Dosya | WRITE Fonksiyon Sayısı |
-|-------|------------------------|
-| pools.py | 8 |
-| interviews.py | 5 |
-| candidates.py | 4 |
-| admin.py | 3 |
-| companies.py | 2 |
-| synonyms.py | 5 |
-| auth.py | 1 |
-| scoring_v2.py | 1 |
-| candidate_matcher.py | 1 |
-
-### Final Durum
-- ✅ database.py: 133 get_write_connection, 87 get_connection (READ)
-- ✅ routes/*.py: Tüm WRITE fonksiyonlar güncellendi
-- ✅ Deploy başarılı (pm2 restart, pid: 1243498)
-- ⏳ Kullanıcı testleri bekleniyor
+### Önceki Çözümler (Korunuyor)
+- ✅ READ/WRITE connection separation (PARÇA 1-6)
+- ✅ WAL mode + busy_timeout=30000
+- ✅ retry mekanizması (save_v3_evaluation_to_db)
 
 ---
 

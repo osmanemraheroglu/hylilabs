@@ -35,7 +35,7 @@ from config import CACHE_TTL
 
 
 # ============ ATOMIC WRITE TRANSACTION (FAZ 16) ============
-WRITE_LOCK = threading.Lock()
+WRITE_LOCK = threading.RLock()  # Re-entrant Lock: Aynı thread kilit içindeyken tekrar kilit alabilir (nested deadlock koruması)
 
 @contextmanager
 def atomic_write_transaction(db_path=None):
@@ -5781,7 +5781,7 @@ def verify_department_pool_ownership(pool_id: int, company_id: int) -> bool:
     if not company_id:
         raise ValueError("company_id zorunludur")
 
-    with get_write_connection() as conn:
+    with get_connection() as conn:  # READ işlemi - WRITE_LOCK gereksiz
         cursor = conn.cursor()
         cursor.execute(
             "SELECT company_id FROM department_pools WHERE id = ?",
@@ -7705,14 +7705,14 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
     stats = {'total_scanned': 0, 'matched': 0, 'transferred': 0, 'already_exists': 0,
              'from_general': 0, 'from_archive': 0, 'limit_applied': limit}
 
-    # Pozisyon bilgilerini al
-    with get_write_connection() as conn:
+    # Pozisyon bilgilerini al (READ işlemi)
+    with get_connection() as conn:  # READ işlemi - WRITE_LOCK gereksiz
         cursor = conn.cursor()
         cursor.execute("SELECT name, keywords, gerekli_deneyim_yil, gerekli_egitim, lokasyon FROM department_pools WHERE id = ?", (position_pool_id,))
         row = cursor.fetchone()
         if not row:
             return stats
-        
+
         position_name = row[0] or ''
         position_keywords = row[1] or ''
         position_exp_years = row[2] or 0
@@ -7997,8 +7997,8 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                                 WHERE candidate_id = ? AND position_id = ?
                             """, (final_score, candidate_id, position_pool_id))
 
-                            # V3 sonucunu ai_evaluations'a kaydet
-                            save_v3_evaluation_to_db(candidate_id, position_pool_id, v3_result, company_id)
+                            # V3 sonucunu ai_evaluations'a kaydet (conn geçir - nested deadlock önleme)
+                            save_v3_evaluation_to_db(candidate_id, position_pool_id, v3_result, company_id, conn=conn)
 
                             # Eligible değilse (score < 40) adayı pozisyondan çıkar
                             if final_score < 40:
@@ -13410,22 +13410,26 @@ def get_ai_evaluation(candidate_id: int, position_id: int) -> dict:
         return None
 
 
-def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, company_id: int) -> bool:
+def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, company_id: int, conn=None) -> bool:
     """
     V3 degerlendirme sonucunu ai_evaluations tablosuna kaydeder.
     FAZ 12.2: Retry mekanizmasi eklendi (database locked hatasi icin).
+
+    SaaS Uyumluluğu: Eğer dışarıdan bir transaction (conn) gelmişse onu kullanır,
+    gelmemişse (standalone kullanım) yeni bir kilitli bağlantı açar.
 
     Args:
         candidate_id: Aday ID
         position_id: Pozisyon ID
         result: CandidateEvaluationResponse nesnesi
         company_id: Firma ID
+        conn: Opsiyonel - Dışarıdan geçirilen connection (nested çağrılar için)
 
     Returns:
         bool: Basarili mi?
     """
     import time as _time
-    
+
     evaluation_data = {
         "version": "v3",
         "total_score": result.total_score,
@@ -13443,18 +13447,33 @@ def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, compan
     }
 
     evaluation_text = json.dumps(evaluation_data, ensure_ascii=False)
-    
+
+    def _execute_save_logic(cursor):
+        """İç yardımcı: INSERT işlemini çalıştır"""
+        cursor.execute("""
+            INSERT OR REPLACE INTO ai_evaluations
+            (candidate_id, position_id, evaluation_text, v2_score, eval_prompt, created_at)
+            VALUES (?, ?, ?, ?, 'v3_auto_eval', datetime('now'))
+        """, (candidate_id, position_id, evaluation_text, result.total_score))
+        logger.info(f"V3 degerlendirme kaydedildi: candidate_id={candidate_id}, position_id={position_id}, score={result.total_score}")
+
+    # Dışarıdan connection geldiyse onu kullan (nested çağrı - kilit zaten alındı)
+    if conn is not None:
+        try:
+            cursor = conn.cursor()
+            _execute_save_logic(cursor)
+            return True
+        except Exception as e:
+            logger.error(f"save_v3_evaluation_to_db hatasi (nested conn): {e}")
+            return False
+
+    # Dışarıdan connection yoksa kendi connection'ını aç (standalone kullanım)
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            with get_write_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    INSERT OR REPLACE INTO ai_evaluations
-                    (candidate_id, position_id, evaluation_text, v2_score, eval_prompt, created_at)
-                    VALUES (?, ?, ?, ?, 'v3_auto_eval', datetime('now'))
-                """, (candidate_id, position_id, evaluation_text, result.total_score))
-                logger.info(f"V3 degerlendirme kaydedildi: candidate_id={candidate_id}, position_id={position_id}, score={result.total_score}")
+            with get_write_connection() as standalone_conn:
+                cursor = standalone_conn.cursor()
+                _execute_save_logic(cursor)
                 return True
         except sqlite3.OperationalError as e:
             if "database is locked" in str(e) and attempt < max_retries - 1:
@@ -13467,7 +13486,7 @@ def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, compan
         except Exception as e:
             logger.error(f"save_v3_evaluation_to_db hatasi: {e}")
             return False
-    
+
     return False
 
 
