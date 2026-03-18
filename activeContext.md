@@ -6,7 +6,7 @@ Son güncelleme: 18.03.2026
 
 - **Sunucu:** hylilabs.com (PM2 ile çalışıyor)
 - **Domain:** https://hylilabs.com (Nginx + SSL aktif, 14.03.2026)
-- **Son commit:** 518965f - READ/WRITE connection separation FINAL (18.03.2026)
+- **Son commit:** 99508a9 - fix: approve_titles - get_write_connection() (18.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -16,21 +16,30 @@ Son güncelleme: 18.03.2026
 - Adnan Bey (İK Direktörü) — test + onay
 - 3 şirket, ~50 aday, 5 pozisyon
 
-## ✅ TAMAMLANAN GÖREV: "database is locked" Kalıcı Çözüm
+## ✅ TAMAMLANAN GÖREV: "database is locked" Kalıcı Çözüm - PARÇA 6
 
 **Tarih:** 2026-03-18
-**Commit:** 518965f
+**Son Commit:** 99508a9
 
 ### Çözüm Özeti
 READ/WRITE connection separation uygulandı:
 - `get_connection()` → READ işlemleri (SELECT) - paralel erişim
 - `get_write_connection()` → WRITE işlemleri (INSERT/UPDATE/DELETE) - WRITE_LOCK ile thread-safe
 
-### Değiştirilen Dosyalar (10 dosya, 30 WRITE fonksiyon)
+### PARÇA 6: database.py İç WRITE Fonksiyonları (6/105 tamamlandı)
 
+| Fonksiyon | Satır | Commit |
+|-----------|-------|--------|
+| log_synonym_usage() | 3815 | 06e99f2 |
+| save_match_details() | 3877 | 06e99f2 |
+| update_hired_stats() | 3925 | 06e99f2 |
+| approve_synonyms() | 4222 | 06e99f2 |
+| save_v3_evaluation_to_db() | 13450 | 95caea1 |
+| approve_titles() | 13318 | 99508a9 |
+
+### Önceki PARÇA'lar (1-5): routes/*.py dosyaları
 | Dosya | WRITE Fonksiyon Sayısı |
 |-------|------------------------|
-| database.py | get_write_connection() tanımı |
 | pools.py | 8 |
 | interviews.py | 5 |
 | candidates.py | 4 |
@@ -41,14 +50,14 @@ READ/WRITE connection separation uygulandı:
 | scoring_v2.py | 1 |
 | candidate_matcher.py | 1 |
 
-### Kilitli Dosyalar (Tekrar KİLİTLENDİ)
-- scoring_v2.py - ❌ DOKUNMA
-- candidate_matcher.py - ❌ DOKUNMA
+### Kalan İşler
+- ~99 WRITE fonksiyon database.py içinde hala get_connection() kullanıyor
+- PARÇA 6.2-6.5 ile güncellenecek (onay bekleniyor)
 
 ### Test Durumu
-- ✅ Deploy başarılı
-- ✅ PM2 restart sonrası hata yok
-- ⏳ Kullanıcı testleri bekleniyor (CV yükleme, mülakat, rescore)
+- ✅ Deploy başarılı (pm2 restart)
+- ✅ approve_titles() düzeltildi - "Seçilenleri Onayla" test edilecek
+- ⏳ Kullanıcı testleri bekleniyor
 
 ---
 
