@@ -1,5 +1,6 @@
 import { toast } from 'sonner'
 import { useState, useEffect, useCallback, Fragment } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   FolderTree, Plus, Edit, Trash2, RefreshCw, ChevronRight, ChevronDown,
   Archive, Inbox, Building2, Target, UserPlus, Search, User,
-  Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown, Ban, CheckCircle, Eye
+  Download, ChevronUp, Brain, FileText, Link, X, Check, ChevronsUpDown, Ban, CheckCircle, Eye, Calendar
 } from 'lucide-react'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -55,6 +56,7 @@ const LevelBadge = ({ level }: { level?: string }) => {
 }
 
 export default function Havuzlar() {
+  const navigate = useNavigate()
   const [tree, setTree] = useState<TreeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null)
@@ -1750,8 +1752,36 @@ export default function Havuzlar() {
                   <Button variant="outline" size="sm" onClick={() => handleViewCV(selectedCandidateDetail.id)} disabled={!selectedCandidateDetail.cv_dosya_adi}>
                     <FileText className="h-4 w-4 mr-1" />CV Görüntüle
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => { setCandidateDetailModalOpen(false); window.location.href = '/mulakat-takvimi'; }}>
-                    <Target className="h-4 w-4 mr-1" />Mülakat Planla
+                  <Button variant="outline" size="sm" onClick={() => {
+                    setCandidateDetailModalOpen(false)
+                    const params = new URLSearchParams({
+                      newInterview: 'true',
+                      candidateId: String(selectedCandidateDetail.id || ''),
+                      candidateName: selectedCandidateDetail.ad_soyad || '',
+                      positionId: String(poolInfo?.id || ''),
+                      positionName: poolInfo?.name || ''
+                    })
+                    navigate({ to: `/mulakat-takvimi?${params.toString()}` })
+                  }}>
+                    <Calendar className="h-4 w-4 mr-1" />Mülakat Planla
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => {
+                    // Genel havuza taşı
+                    fetch(`${API}/api/candidates/${selectedCandidateDetail.id}/elen`, { method: 'POST', headers: H() })
+                      .then(r => r.json())
+                      .then(res => {
+                        if (res.success) {
+                          toast.success('Aday genel havuza taşındı')
+                          setCandidateDetailModalOpen(false)
+                          if (selectedPoolId) loadCandidates(selectedPoolId)
+                          loadTree()
+                        } else {
+                          toast.error(res.detail || 'İşlem başarısız')
+                        }
+                      })
+                      .catch(() => toast.error('Bağlantı hatası'))
+                  }}>
+                    <Inbox className="h-4 w-4 mr-1" />Genel Havuza
                   </Button>
                   <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600" onClick={() => { setCandidateDetailModalOpen(false); }}>
                     <Archive className="h-4 w-4 mr-1" />Arşivle

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -208,6 +209,35 @@ export default function MulakatTakvimi() {
   const [kvkkSearch, setKvkkSearch] = useState('')
   const [kvkkDetailOpen, setKvkkDetailOpen] = useState(false)
   const [kvkkDetailItem, setKvkkDetailItem] = useState<KvkkConsentItem | null>(null)
+
+  // URL params okuma (Havuzlar'dan yönlendirme için)
+  const navigate = useNavigate()
+
+  // URL'den query params oku ve yeni mülakat modalını aç
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const newInterview = urlParams.get('newInterview')
+    const candidateId = urlParams.get('candidateId')
+    const candidateName = urlParams.get('candidateName')
+    const positionId = urlParams.get('positionId')
+    const positionName = urlParams.get('positionName')
+
+    if (newInterview === 'true') {
+      // Form alanlarını doldur
+      setForm(prev => ({
+        ...prev,
+        candidate_id: candidateId || '',
+        position_id: positionId || '',
+      }))
+
+      // Yeni mülakat modalını aç
+      setDialogOpen(true)
+      setEditingId(null)
+
+      // URL'den params temizle
+      navigate({ to: '/mulakat-takvimi', replace: true })
+    }
+  }, [navigate])
 
   const loadInterviews = useCallback(() => {
     setLoading(true)
