@@ -13315,9 +13315,9 @@ def approve_titles(position_id: int, approved_title_ids: list, rejected_title_id
     Return: True/False
     """
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
-            
+
             # Onaylanan başlıkları güncelle
             if approved_title_ids:
                 placeholders = ','.join(['?'] * len(approved_title_ids))
@@ -13326,7 +13326,7 @@ def approve_titles(position_id: int, approved_title_ids: list, rejected_title_id
                     SET is_approved = 1, approved_at = CURRENT_TIMESTAMP
                     WHERE position_id = ? AND id IN ({placeholders})
                 """, (position_id, *approved_title_ids))
-            
+
             # Reddedilen başlıkları güncelle
             if rejected_title_ids:
                 placeholders = ','.join(['?'] * len(rejected_title_ids))
@@ -13335,7 +13335,7 @@ def approve_titles(position_id: int, approved_title_ids: list, rejected_title_id
                     SET is_approved = -1
                     WHERE position_id = ? AND id IN ({placeholders})
                 """, (position_id, *rejected_title_ids))
-            
+
             return True
     except Exception as e:
         logger.error(f"approve_titles FAILED: {e}", exc_info=True)
