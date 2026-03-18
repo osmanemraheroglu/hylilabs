@@ -3812,7 +3812,7 @@ def log_synonym_usage(
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            with get_connection() as conn:
+            with get_write_connection() as conn:
                 cursor = conn.cursor()
 
                 # UPSERT: Varsa güncelle, yoksa ekle
@@ -3825,7 +3825,6 @@ def log_synonym_usage(
                         last_used_at = CURRENT_TIMESTAMP
                 """, (keyword_lower, synonym_lower, company_id))
 
-                conn.commit()
                 return True
 
         except sqlite3.OperationalError as e:
@@ -3875,7 +3874,7 @@ def save_match_details(
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            with get_connection() as conn:
+            with get_write_connection() as conn:
                 cursor = conn.cursor()
 
                 cursor.execute("""
@@ -3892,7 +3891,6 @@ def save_match_details(
                     company_id
                 ))
 
-                conn.commit()
                 return True
 
         except sqlite3.OperationalError as e:
@@ -3924,7 +3922,7 @@ def update_hired_stats(candidate_id: int, position_id: int) -> int:
     Returns: Güncellenen synonym sayısı
     """
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # 1. Bu aday-pozisyon için match_history kayıtlarını bul
@@ -3954,8 +3952,6 @@ def update_hired_stats(candidate_id: int, position_id: int) -> int:
                 SET hired = 1
                 WHERE candidate_id = ? AND position_id = ?
             """, (candidate_id, position_id))
-
-            conn.commit()
 
             if updated > 0:
                 logger.info(f"update_hired_stats: Aday {candidate_id} pozisyon {position_id} için {updated} synonym güncellendi")
@@ -4223,7 +4219,7 @@ def approve_synonyms(
     try:
         conflicts_found = []
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             placeholders = ','.join(['?'] * len(synonym_ids))
