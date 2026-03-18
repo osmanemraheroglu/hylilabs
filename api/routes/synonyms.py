@@ -34,6 +34,7 @@ from database import (
     # FAZ 10.1: Confidence sistemi
     calculate_final_confidence,
     get_connection,
+    get_write_connection,
     # FAZ 10.2: Semantic Similarity
     check_semantic_similarity,
     find_semantic_duplicates,
@@ -922,29 +923,25 @@ def approve_blacklist_candidate(
         require_company_user(current_user)
         company_id = current_user["company_id"]
 
-        conn = get_connection()
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
+        with get_write_connection() as conn:
+            cursor = conn.cursor()
 
-        # Adayı bul
-        cursor.execute(
-            "SELECT synonym FROM blacklist_candidates WHERE id = ? AND company_id = ?",
-            (candidate_id, company_id)
-        )
-        row = cursor.fetchone()
-        if not row:
-            conn.close()
-            raise HTTPException(status_code=404, detail="Aday bulunamadı")
+            # Adayı bul
+            cursor.execute(
+                "SELECT synonym FROM blacklist_candidates WHERE id = ? AND company_id = ?",
+                (candidate_id, company_id)
+            )
+            row = cursor.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
-        synonym = row[0]
+            synonym = row[0]
 
-        # Status'u approved yap
-        cursor.execute(
-            "UPDATE blacklist_candidates SET status = 'approved' WHERE id = ?",
-            (candidate_id,)
-        )
-        conn.commit()
-        conn.close()
+            # Status'u approved yap
+            cursor.execute(
+                "UPDATE blacklist_candidates SET status = 'approved' WHERE id = ?",
+                (candidate_id,)
+            )
 
         return {
             "success": True,
@@ -973,29 +970,25 @@ def dismiss_blacklist_candidate(
         require_company_user(current_user)
         company_id = current_user["company_id"]
 
-        conn = get_connection()
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
+        with get_write_connection() as conn:
+            cursor = conn.cursor()
 
-        # Adayı bul
-        cursor.execute(
-            "SELECT synonym FROM blacklist_candidates WHERE id = ? AND company_id = ?",
-            (candidate_id, company_id)
-        )
-        row = cursor.fetchone()
-        if not row:
-            conn.close()
-            raise HTTPException(status_code=404, detail="Aday bulunamadı")
+            # Adayı bul
+            cursor.execute(
+                "SELECT synonym FROM blacklist_candidates WHERE id = ? AND company_id = ?",
+                (candidate_id, company_id)
+            )
+            row = cursor.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
-        synonym = row[0]
+            synonym = row[0]
 
-        # Status'u dismissed yap
-        cursor.execute(
-            "UPDATE blacklist_candidates SET status = 'dismissed' WHERE id = ?",
-            (candidate_id,)
-        )
-        conn.commit()
-        conn.close()
+            # Status'u dismissed yap
+            cursor.execute(
+                "UPDATE blacklist_candidates SET status = 'dismissed' WHERE id = ?",
+                (candidate_id,)
+            )
 
         return {
             "success": True,
@@ -1547,133 +1540,122 @@ def update_synonym(
         user_id = auth_info["user_id"]
         is_super_admin = auth_info["is_super_admin"]
 
-        # Mevcut synonym'ü bul
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, keyword, synonym, status, company_id, match_weight, synonym_type, version FROM keyword_synonyms WHERE id = ?",
-            (synonym_id,)
-        )
-        row = cursor.fetchone()
+        with get_write_connection() as conn:
+            cursor = conn.cursor()
 
-        if not row:
-            conn.close()
-            raise HTTPException(status_code=404, detail="Synonym bulunamadı.")
+            # Mevcut synonym'ü bul
+            cursor.execute(
+                "SELECT id, keyword, synonym, status, company_id, match_weight, synonym_type, version FROM keyword_synonyms WHERE id = ?",
+                (synonym_id,)
+            )
+            row = cursor.fetchone()
 
-        synonym_company_id = row["company_id"]
-        old_version = row["version"] or 1
+            if not row:
+                raise HTTPException(status_code=404, detail="Synonym bulunamadı.")
 
-        # Yetki kontrolü
-        if synonym_company_id is None:
-            # Global synonym - sadece super_admin güncelleyebilir
-            if not is_super_admin:
-                conn.close()
-                raise HTTPException(
-                    status_code=403,
-                    detail="Global synonym'ler sadece super_admin tarafından güncellenebilir."
-                )
-        else:
-            # Firma synonym - sadece aynı firma güncelleyebilir
-            if company_id != synonym_company_id:
-                conn.close()
-                raise HTTPException(
-                    status_code=403,
-                    detail="Bu synonym'ü güncelleme yetkiniz yok."
-                )
+            synonym_company_id = row["company_id"]
+            old_version = row["version"] or 1
 
-        # Scope değişikliği kontrolü
-        new_company_id = synonym_company_id
-        if request.scope is not None:
-            if request.scope == "global":
+            # Yetki kontrolü
+            if synonym_company_id is None:
+                # Global synonym - sadece super_admin güncelleyebilir
                 if not is_super_admin:
-                    conn.close()
                     raise HTTPException(
                         status_code=403,
-                        detail="Synonym'ü global yapma yetkisi sadece super_admin'de."
+                        detail="Global synonym'ler sadece super_admin tarafından güncellenebilir."
                     )
-                new_company_id = None
-            elif request.scope == "company":
-                if synonym_company_id is None:
-                    # Global'den company'ye çevirme - sadece super_admin
+            else:
+                # Firma synonym - sadece aynı firma güncelleyebilir
+                if company_id != synonym_company_id:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Bu synonym'ü güncelleme yetkiniz yok."
+                    )
+
+            # Scope değişikliği kontrolü
+            new_company_id = synonym_company_id
+            if request.scope is not None:
+                if request.scope == "global":
                     if not is_super_admin:
-                        conn.close()
                         raise HTTPException(
                             status_code=403,
-                            detail="Global synonym'ü firma synonym'üne çevirme yetkisi yok."
+                            detail="Synonym'ü global yapma yetkisi sadece super_admin'de."
                         )
-                    new_company_id = company_id  # super_admin'in firmasına ata (veya None kalabilir)
+                    new_company_id = None
+                elif request.scope == "company":
+                    if synonym_company_id is None:
+                        # Global'den company'ye çevirme - sadece super_admin
+                        if not is_super_admin:
+                            raise HTTPException(
+                                status_code=403,
+                                detail="Global synonym'ü firma synonym'üne çevirme yetkisi yok."
+                            )
+                        new_company_id = company_id  # super_admin'in firmasına ata (veya None kalabilir)
 
-        # Güncelleme sorgusu oluştur
-        updates = []
-        params = []
+            # Güncelleme sorgusu oluştur
+            updates = []
+            params = []
 
-        if request.status is not None:
-            if request.status not in ["pending", "approved", "rejected"]:
-                conn.close()
-                raise HTTPException(status_code=400, detail="Geçersiz status değeri.")
-            updates.append("status = ?")
-            params.append(request.status)
+            if request.status is not None:
+                if request.status not in ["pending", "approved", "rejected"]:
+                    raise HTTPException(status_code=400, detail="Geçersiz status değeri.")
+                updates.append("status = ?")
+                params.append(request.status)
 
-            # Status değişikliğine göre ek alanlar
-            if request.status == "approved":
-                updates.append("approved_by = ?")
-                params.append(user_id)
-                updates.append("approved_at = datetime('now')")
+                # Status değişikliğine göre ek alanlar
+                if request.status == "approved":
+                    updates.append("approved_by = ?")
+                    params.append(user_id)
+                    updates.append("approved_at = datetime('now')")
 
-        if request.scope is not None:
-            updates.append("company_id = ?")
-            params.append(new_company_id)
+            if request.scope is not None:
+                updates.append("company_id = ?")
+                params.append(new_company_id)
 
-        if request.match_weight is not None:
-            updates.append("match_weight = ?")
-            params.append(request.match_weight)
+            if request.match_weight is not None:
+                updates.append("match_weight = ?")
+                params.append(request.match_weight)
 
-        if request.synonym_type is not None:
-            valid_types = ["exact_synonym", "abbreviation", "english", "turkish", "broader_term", "narrower_term"]
-            if request.synonym_type not in valid_types:
-                conn.close()
-                raise HTTPException(status_code=400, detail=f"Geçersiz synonym_type. Geçerli değerler: {valid_types}")
-            updates.append("synonym_type = ?")
-            params.append(request.synonym_type)
+            if request.synonym_type is not None:
+                valid_types = ["exact_synonym", "abbreviation", "english", "turkish", "broader_term", "narrower_term"]
+                if request.synonym_type not in valid_types:
+                    raise HTTPException(status_code=400, detail=f"Geçersiz synonym_type. Geçerli değerler: {valid_types}")
+                updates.append("synonym_type = ?")
+                params.append(request.synonym_type)
 
-        if not updates:
-            conn.close()
-            raise HTTPException(status_code=400, detail="Güncellenecek alan belirtilmedi.")
+            if not updates:
+                raise HTTPException(status_code=400, detail="Güncellenecek alan belirtilmedi.")
 
-        # Versiyon ve timestamp ekle
-        updates.append("version = ?")
-        params.append(old_version + 1)
-        updates.append("updated_at = datetime('now')")
-        updates.append("updated_by = ?")
-        params.append(user_id)
+            # Versiyon ve timestamp ekle
+            updates.append("version = ?")
+            params.append(old_version + 1)
+            updates.append("updated_at = datetime('now')")
+            updates.append("updated_by = ?")
+            params.append(user_id)
 
-        # Güncelleme yap
-        params.append(synonym_id)
-        sql = f"UPDATE keyword_synonyms SET {', '.join(updates)} WHERE id = ?"
-        cursor.execute(sql, params)
-        conn.commit()
+            # Güncelleme yap
+            params.append(synonym_id)
+            sql = f"UPDATE keyword_synonyms SET {', '.join(updates)} WHERE id = ?"
+            cursor.execute(sql, params)
 
-        # History tablosuna kaydet (FAZ 9.4)
-        try:
-            cursor.execute("""
-                INSERT INTO keyword_synonyms_history (
-                    synonym_id, keyword, synonym, old_status, new_status,
-                    changed_by, change_reason
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                synonym_id,
-                row["keyword"],
-                row["synonym"],
-                row["status"],
-                request.status or row["status"],
-                user_id,
-                "FAZ 3.2 UPDATE endpoint"
-            ))
-            conn.commit()
-        except Exception:
-            pass  # History tablosu yoksa sessizce geç
-
-        conn.close()
+            # History tablosuna kaydet (FAZ 9.4)
+            try:
+                cursor.execute("""
+                    INSERT INTO keyword_synonyms_history (
+                        synonym_id, keyword, synonym, old_status, new_status,
+                        changed_by, change_reason
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    synonym_id,
+                    row["keyword"],
+                    row["synonym"],
+                    row["status"],
+                    request.status or row["status"],
+                    user_id,
+                    "FAZ 3.2 UPDATE endpoint"
+                ))
+            except Exception:
+                pass  # History tablosu yoksa sessizce geç
 
         # Loglama
         scope_text = "global" if new_company_id is None else f"company={new_company_id}"
@@ -2592,7 +2574,7 @@ def update_synonym_confidence(
         )
 
         # DB'de güncelle
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE keyword_synonyms
@@ -2601,7 +2583,6 @@ def update_synonym_confidence(
                 AND (company_id IS NULL OR company_id = ?)
             """, (new_confidence, request.keyword.lower(), request.synonym.lower(), company_id))
             updated = cursor.rowcount
-            conn.commit()
 
         return {
             "success": True,
@@ -3002,19 +2983,17 @@ def add_translation(
     try:
         require_company_user(current_user)
 
-        conn = get_connection()
-        cursor = conn.cursor()
+        with get_write_connection() as conn:
+            cursor = conn.cursor()
 
-        user_id = current_user.get('id', 0)
-        cursor.execute('''INSERT INTO translation_dictionary
-                          (source_term, source_lang, canonical_term, sector, verified, verified_by)
-                          VALUES (?, ?, ?, ?, 1, ?)
-                          ON CONFLICT(source_term, source_lang) DO UPDATE SET
-                          canonical_term=excluded.canonical_term''',
-                       (request.source_term.lower(), request.source_lang,
-                        request.canonical_term.lower(), request.sector, user_id))
-        conn.commit()
-        conn.close()
+            user_id = current_user.get('id', 0)
+            cursor.execute('''INSERT INTO translation_dictionary
+                              (source_term, source_lang, canonical_term, sector, verified, verified_by)
+                              VALUES (?, ?, ?, ?, 1, ?)
+                              ON CONFLICT(source_term, source_lang) DO UPDATE SET
+                              canonical_term=excluded.canonical_term''',
+                           (request.source_term.lower(), request.source_lang,
+                            request.canonical_term.lower(), request.sector, user_id))
 
         return {
             "success": True,

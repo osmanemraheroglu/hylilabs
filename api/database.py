@@ -4,7 +4,6 @@ SQLite ile CRUD operasyonlari
 """
 
 import sqlite3
-import sys
 import os
 import json
 import re
@@ -1904,80 +1903,51 @@ def get_candidate_position_text(candidate_dict: dict) -> str:
     return turkish_lower(combined.strip())
 
 
-
 @contextmanager
-def get_read_connection():
-    """READ islemleri icin connection - LOCK YOK, paralel calisir.
-    
-    SELECT sorgulari icin kullanilir.
-    COMMIT yapmaz (okuma islemi).
+def get_connection():
+    """Veritabani baglantisi context manager (READ için optimize)
+
+    Performans iyileştirmeleri:
+    - WAL mode: Concurrent read/write performansını artırır
+    - Timeout: Database locked hatalarını önler
+
+    NOT: WRITE işlemleri için get_write_connection() kullanın.
     """
     ensure_data_dir()
-    conn = None
+    conn = sqlite3.connect(DATABASE_PATH, timeout=30)
+    conn.row_factory = sqlite3.Row
+    # WAL mode: Write-Ahead Logging - concurrent read/write performansı için
+    conn.execute("PRAGMA journal_mode=WAL")
+    # busy_timeout: Lock durumunda 30 saniye bekle (database locked hatası önleme)
+    conn.execute("PRAGMA busy_timeout=30000")
+    conn.execute("PRAGMA foreign_keys=ON")
+    # Türkçe karakter duyarsız arama için custom SQL function
+    conn.create_function("TURKISH_LOWER", 1, turkish_lower)
     try:
-        conn = sqlite3.connect(DATABASE_PATH, timeout=30)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=120000")
-        conn.execute("PRAGMA foreign_keys=ON")
-        conn.create_function("TURKISH_LOWER", 1, turkish_lower)
         yield conn
+        conn.commit()
     finally:
-        if conn:
-            conn.close()
+        conn.close()
 
 
 @contextmanager
 def get_write_connection():
-    """WRITE islemleri icin connection - WRITE_LOCK ile korumali.
-    
-    INSERT/UPDATE/DELETE sorgulari icin kullanilir.
-    WRITE_LOCK sayesinde ayni anda sadece 1 write islemi yapilir.
-    Retry YOK - context manager icinde retry sorunlu.
+    """WRITE işlemleri için thread-safe connection (WRITE_LOCK korumalı)
+
+    READ/WRITE Separation (18.03.2026):
+    - WRITE_LOCK ile aynı anda tek writer
+    - Exception durumunda rollback
+    - Başarılı durumda commit
+    - row_factory ve TURKISH_LOWER dahil
+
+    Kullanım:
+        with get_write_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT/UPDATE/DELETE ...")
+            # commit otomatik yapılır
     """
     ensure_data_dir()
-    
-    # Lock al (60 saniye timeout)
-    acquired = WRITE_LOCK.acquire(timeout=60)
-    if not acquired:
-        raise sqlite3.OperationalError("database is locked - WRITE_LOCK acquire timeout")
-    
-    conn = None
-    try:
-        conn = sqlite3.connect(DATABASE_PATH, timeout=30)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=120000")  # 2 dakika
-        conn.execute("PRAGMA foreign_keys=ON")
-        conn.create_function("TURKISH_LOWER", 1, turkish_lower)
-        
-        yield conn
-        conn.commit()
-        
-    except Exception:
-        if conn:
-            try:
-                conn.rollback()
-            except:
-                pass
-        raise
-    finally:
-        if conn:
-            try:
-                conn.close()
-            except:
-                pass
-        WRITE_LOCK.release()
-
-
-@contextmanager
-def get_connection():
-    """Backward compatibility - READ islemleri icin.
-    
-    UYARI: Bu fonksiyon artik sadece READ islemleri icin kullanilmali.
-    WRITE islemleri icin get_write_connection() kullanin.
-    """
-    ensure_data_dir()
+    WRITE_LOCK.acquire()
     conn = None
     try:
         conn = sqlite3.connect(DATABASE_PATH, timeout=30)
@@ -1988,9 +1958,14 @@ def get_connection():
         conn.create_function("TURKISH_LOWER", 1, turkish_lower)
         yield conn
         conn.commit()
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise e
     finally:
         if conn:
             conn.close()
+        WRITE_LOCK.release()
 
 
 def init_database():
@@ -3837,7 +3812,7 @@ def log_synonym_usage(
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            with get_write_connection() as conn:
+            with get_connection() as conn:
                 cursor = conn.cursor()
 
                 # UPSERT: Varsa güncelle, yoksa ekle
@@ -3900,7 +3875,7 @@ def save_match_details(
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            with get_write_connection() as conn:
+            with get_connection() as conn:
                 cursor = conn.cursor()
 
                 cursor.execute("""
@@ -13344,7 +13319,7 @@ def approve_titles(position_id: int, approved_title_ids: list, rejected_title_id
     Return: True/False
     """
     try:
-        with get_write_connection() as conn:
+        with get_connection() as conn:
             cursor = conn.cursor()
             
             # Onaylanan başlıkları güncelle
@@ -13476,7 +13451,7 @@ def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, compan
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            with get_write_connection() as conn:
+            with get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT OR REPLACE INTO ai_evaluations

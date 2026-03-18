@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from routes.auth import get_current_user
 from database import (
     create_interview, update_interview, get_interviews,
-    delete_interview, get_connection
+    delete_interview, get_connection, get_write_connection
 )
 from models import Interview
 from datetime import datetime, timedelta
@@ -158,7 +158,7 @@ def create_new_interview(
         onay_suresi = body.get("onay_suresi", 3)  # varsayilan 3 gun
         confirm_expires = datetime.now() + timedelta(days=onay_suresi)
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """UPDATE interviews
@@ -224,7 +224,7 @@ def update_existing_interview(
         # Değerlendirme durumuna göre aday taşıma aksiyonu
         sonuc_karari = body.get("sonuc_karari")
         if sonuc_karari in ("genel_havuz", "arsiv", "kara_liste", "ise_alindi") and candidate_id:
-            with get_connection() as conn:
+            with get_write_connection() as conn:
                 cursor = conn.cursor()
                 # company_id ile aday sahiplik kontrolü
                 cursor.execute(
@@ -311,7 +311,7 @@ def update_existing_interview(
 
         # Eger mulakat iptal edildiyse ve baska aktif mulakat yoksa, aday durumunu geri al
         if body.get("durum") == "iptal" and candidate_id:
-            with get_connection() as conn:
+            with get_write_connection() as conn:
                 cursor = conn.cursor()
                 # Başka aktif mülakat var mı kontrol et
                 cursor.execute(
@@ -392,7 +392,7 @@ def delete_existing_interview(
 
         # Silme sonrasi: baska aktif mulakat yoksa aday durumunu geri al
         if candidate_id:
-            with get_connection() as conn:
+            with get_write_connection() as conn:
                 cursor = conn.cursor()
                 # Başka aktif mülakat var mı kontrol et
                 cursor.execute(
@@ -883,7 +883,7 @@ async def confirm_interview_kvkk(token: str, request: Request, kvkk_onay: str = 
         user_agent = request.headers.get("user-agent", "")
 
         # KVKK onay kaydi + mulakat onaylama — tek transaction
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # KVKK consent kaydi (immutable — sadece INSERT)

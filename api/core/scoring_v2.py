@@ -16,7 +16,7 @@ import os
 import re
 import time
 from typing import Optional, Dict, List, Union
-from database import get_connection
+from database import get_connection, get_write_connection
 # from core.candidate_matcher import check_keyword_match  # lazy import - circular dependency
 
 # Anthropic Claude API
@@ -1083,9 +1083,9 @@ def save_categorized_data(position_id: int, categorized_data: Dict) -> bool:
         bool: Başarılı ise True
     """
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
-            
+
             # a) position_keywords_v2 tablosuna keyword'leri kaydet
             keywords = categorized_data.get('keywords', {})
 

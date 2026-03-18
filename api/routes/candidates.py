@@ -133,13 +133,13 @@ def delete_candidate(candidate_id: int, current_user: dict = Depends(get_current
     require_company_user(current_user)
     company_id = current_user["company_id"]
     try:
-        from database import get_connection, verify_candidate_ownership
+        from database import get_write_connection, verify_candidate_ownership
         if not verify_candidate_ownership(candidate_id, company_id):
             raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
         delete_candidate_cv_file(candidate_id)
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             # CASCADE: Önce bağımlı tabloları temizle (orphan önleme)
             cursor.execute("DELETE FROM candidate_pool_assignments WHERE candidate_id = ?", (candidate_id,))
@@ -186,11 +186,11 @@ def elen_candidate(candidate_id: int, current_user: dict = Depends(get_current_u
     require_company_user(current_user)
     company_id = current_user["company_id"]
     try:
-        from database import get_connection, verify_candidate_ownership
+        from database import get_write_connection, verify_candidate_ownership
         if not verify_candidate_ownership(candidate_id, company_id):
             raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             # Pozisyon atamasını sil
             cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
@@ -235,11 +235,11 @@ def arsivle_candidate(candidate_id: int, current_user: dict = Depends(get_curren
     require_company_user(current_user)
     company_id = current_user["company_id"]
     try:
-        from database import get_connection, verify_candidate_ownership
+        from database import get_write_connection, verify_candidate_ownership
         if not verify_candidate_ownership(candidate_id, company_id):
             raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             # Arşiv havuzunu bul
             cursor.execute("""
@@ -281,11 +281,11 @@ def ise_al_candidate(candidate_id: int, current_user: dict = Depends(get_current
     require_company_user(current_user)
     company_id = current_user["company_id"]
     try:
-        from database import get_connection, verify_candidate_ownership, update_hired_stats
+        from database import get_write_connection, verify_candidate_ownership, update_hired_stats
         if not verify_candidate_ownership(candidate_id, company_id):
             raise HTTPException(status_code=404, detail="Aday bulunamadı")
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # FAZ 10.1: Pozisyon ID'lerini al ÖNCE silmeden

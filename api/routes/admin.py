@@ -5,7 +5,7 @@ Sistem yonetimi ve istatistikler
 
 from fastapi import APIRouter, HTTPException, Depends, Request
 from routes.auth import get_current_user
-from database import get_connection, get_super_admin_stats, get_company_wise_stats, verify_password, toggle_company_status
+from database import get_connection, get_write_connection, get_super_admin_stats, get_company_wise_stats, verify_password, toggle_company_status
 import traceback
 import os
 
@@ -82,7 +82,7 @@ def update_user_status(user_id: int, body: dict, current_user: dict = Depends(ge
         if aktif is None:
             raise HTTPException(status_code=400, detail="aktif alani zorunlu")
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # Super admin kontrolu
@@ -121,7 +121,7 @@ def update_user_role(user_id: int, body: dict, current_user: dict = Depends(get_
         if rol not in ["company_admin", "user"]:
             raise HTTPException(status_code=400, detail="Gecersiz rol. Izin verilen: company_admin, user")
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # Mevcut rolu kontrol et
@@ -162,13 +162,13 @@ async def reset_data(request: Request, current_user: dict = Depends(get_current_
     if current_user.get("rol") not in ["super_admin", "company_admin"]:
         raise HTTPException(403, "Bu islem icin yetkiniz yok")
     
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT password_hash FROM users WHERE id = ?", (current_user["id"],))
         user = cursor.fetchone()
         if not user:
             raise HTTPException(404, "Kullanıcı bulunamadı")
-        
+
         if not verify_password(password, user[0]):
             raise HTTPException(403, "Sifre yanlis")
         

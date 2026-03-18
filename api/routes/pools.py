@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from routes.auth import get_current_user
 from core.cv_parser import validate_cv_access, get_safe_content_disposition, convert_to_pdf
 from database import (
-    get_write_connection,
-    get_connection,
+    get_connection, get_write_connection,
     get_department_pools, get_department_pool, get_department_pool_stats,
     get_hierarchical_pool_stats, get_department_pool_candidates,
     get_pool_candidates_with_days, get_pool_by_name,
@@ -509,7 +508,7 @@ def remove_candidate(
             raise HTTPException(status_code=403, detail="Bu havuza erisim yetkiniz yok")
 
         # Havuz tipini kontrol et ve durumu güncelle
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             cursor.execute(
@@ -1271,7 +1270,7 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
         # 3 AŞAMALI REFACTOR: Database lock önleme (18.03.2026)
         rescore_count = 0
         try:
-            from database import get_connection as get_rescore_conn
+            from database import get_connection as get_rescore_conn, get_write_connection as get_rescore_write_conn
             from scoring_v2 import calculate_match_score_v2
             import json as json_rescore
 
@@ -1369,7 +1368,7 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
                 # ==================== AŞAMA 3: TOPLU UPDATE ====================
                 # Tek connection ile tüm UPDATE'ler yapılır
                 if rescore_results:
-                    with get_rescore_conn() as conn_update:
+                    with get_rescore_write_conn() as conn_update:
                         rc3 = conn_update.cursor()
 
                         for item in rescore_results:
@@ -1773,7 +1772,7 @@ def get_candidate_cv(pool_id: int, candidate_id: int, current_user: dict = Depen
         if not verify_department_pool_ownership(pool_id, company_id):
             raise HTTPException(status_code=403, detail="Erisim yetkiniz yok")
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             cursor.execute("""
@@ -1849,10 +1848,10 @@ def rescore_candidate(pool_id: int, candidate_id: int, current_user: dict = Depe
         company_id = current_user["company_id"]
         if not verify_department_pool_ownership(pool_id, company_id):
             raise HTTPException(status_code=403, detail="Erişim yetkiniz yok")
-        
-        with get_connection() as conn:
+
+        with get_write_connection() as conn:
             cursor = conn.cursor()
-            
+
             # Eski skoru al
             cursor.execute("""
                 SELECT match_score FROM candidate_positions 
@@ -2093,7 +2092,7 @@ def save_job_description_results(pool_id: int, company_id: int,
     # 2. position_keywords_v2'ye MERGE (additive)
     ek_keywords = parsed.get("ek_keywordler", {})
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         for category, keyword_list in ek_keywords.items():
@@ -2138,7 +2137,7 @@ def save_job_description_results(pool_id: int, company_id: int,
     # 3. Yeni title'lar PENDING olarak ekle
     ek_titlelar = parsed.get("ek_titlelar", {})
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         for match_level, title_list in ek_titlelar.items():
@@ -2179,7 +2178,7 @@ def rescore_position_candidates(pool_id: int, company_id: int) -> int:
 
     rescore_count = 0
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Pozisyon dict

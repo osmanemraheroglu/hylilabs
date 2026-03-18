@@ -1818,7 +1818,7 @@ def recalculate_all_keyword_scores(company_id: int) -> dict:
         dict: {'total': int, 'updated': int, 'errors': int}
     """
     from database import (
-        get_connection, get_candidate, get_department_pools, save_match, get_candidates_by_ids
+        get_connection, get_write_connection, get_candidate, get_department_pools, save_match, get_candidates_by_ids
     )
     
     stats = {'total': 0, 'updated': 0, 'errors': 0}
@@ -1977,9 +1977,9 @@ def recalculate_all_keyword_scores(company_id: int) -> dict:
                 detayli_analiz=detayli_analiz_json
             )
             save_match(match)
-            
+
             # candidate_positions.match_score'u güncelle
-            with get_connection() as conn:
+            with get_write_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
                     UPDATE candidate_positions

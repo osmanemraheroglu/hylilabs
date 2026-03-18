@@ -6,7 +6,7 @@ Firma CRUD islemleri
 from fastapi import APIRouter, HTTPException, Depends, Request
 from routes.auth import get_current_user
 from database import (
-    get_connection, get_all_companies_admin, create_company,
+    get_connection, get_write_connection, get_all_companies_admin, create_company,
     update_company, update_company_status, delete_company_soft,
     create_company_user, hash_password, hard_delete_company
 )
@@ -148,7 +148,7 @@ def create_company_endpoint(body: dict, request: Request, current_user: dict = D
                 gecici_sifre = ''.join(secrets.choice(chars) for _ in range(8))
 
                 # Kullaniciyi DB'ye kaydet
-                with get_connection() as conn:
+                with get_write_connection() as conn:
                     cursor = conn.cursor()
                     hashed = hash_password(gecici_sifre)
                     cursor.execute("""
@@ -245,7 +245,7 @@ def toggle_company_status(company_id: int, request: Request, current_user: dict 
     require_super_admin(current_user)
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # Mevcut durumu ve firma adını al

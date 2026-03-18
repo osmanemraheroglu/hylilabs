@@ -6,7 +6,7 @@ import jwt
 from datetime import datetime, timedelta
 import sys
 sys.path.append("/var/www/hylilabs/api")
-from database import verify_user, get_user, get_connection
+from database import verify_user, get_user, get_connection, get_write_connection
 from rate_limiter import check_login_limit, record_login_attempt, clear_login_attempts
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -135,7 +135,7 @@ class ChangePasswordRequest(BaseModel):
 @router.put("/change-password")
 def change_password(request: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
     """Kullanici sifresini degistir"""
-    from database import verify_password, hash_password, get_connection
+    from database import verify_password, hash_password, get_write_connection
     
     if len(request.new_password) < 8:
         raise HTTPException(status_code=400, detail="Yeni sifre en az 8 karakter olmali")
@@ -156,7 +156,7 @@ def change_password(request: ChangePasswordRequest, current_user: dict = Depends
     
     # Yeni sifreyi kaydet
     new_hash = hash_password(request.new_password)
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, current_user["id"]))
     
