@@ -7752,7 +7752,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
     BATCH_SIZE = 100  # Her seferde işlenecek aday sayısı
     matched_candidates_list = []
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # === BATCH İŞLEME: Toplam aday sayısını al ===
