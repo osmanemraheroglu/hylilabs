@@ -6,7 +6,7 @@ Son güncelleme: 18.03.2026
 
 - **Sunucu:** hylilabs.com (PM2 ile çalışıyor)
 - **Domain:** https://hylilabs.com (Nginx + SSL aktif, 14.03.2026)
-- **Son commit:** (database locked fix)
+- **Son commit:** 518965f - READ/WRITE connection separation FINAL (18.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -16,26 +16,43 @@ Son güncelleme: 18.03.2026
 - Adnan Bey (İK Direktörü) — test + onay
 - 3 şirket, ~50 aday, 5 pozisyon
 
-## Son 72 Saatte Tamamlananlar
+## ✅ TAMAMLANAN GÖREV: "database is locked" Kalıcı Çözüm
 
-### 18.03.2026 - Database Locked Hatası KALICI ÇÖZÜM (WRITE_LOCK)
-- ✅ **get_connection() WRITE_LOCK entegrasyonu** — database.py (satır 1908-1946)
-  - FAZ 16 WRITE_LOCK (threading.Lock) kullanıldı
-  - WRITE_LOCK.acquire(timeout=120) ile deadlock önleme
-  - Tüm 220 get_connection() kullanımı OTOMATİK korunuyor
-  - Commit: 210127f
-- ✅ **busy_timeout artırıldı** — 30000 → 120000 (2 dakika)
-  - 6 sqlite3.connect() noktası güncellendi
-  - get_connection, get_pool_by_name, assign_candidate_to_pool, count_active_positions_for_candidate, handle_position_deletion
-- ✅ **save_v3_evaluation_to_db() retry güncellendi**
-  - max_retries: 3 → 5
-  - wait_time: linear (0.5x) → exponential (2^n)
-- ✅ **Önceki düzeltmeler korunuyor:**
-  - log_synonym_usage(), save_match_details(): 5 retry + exponential backoff
-  - approve_titles() rescore: 3 aşamalı refactor
-- **Kök Neden:** Concurrent write transactions (birden fazla thread aynı anda yazma)
-- **Çözüm:** WRITE_LOCK ile tek writer garantisi
-- **Etki:** TÜM "database is locked" hataları KALICI olarak çözüldü
+**Tarih:** 2026-03-18
+**Commit:** 518965f
+
+### Çözüm Özeti
+READ/WRITE connection separation uygulandı:
+- `get_connection()` → READ işlemleri (SELECT) - paralel erişim
+- `get_write_connection()` → WRITE işlemleri (INSERT/UPDATE/DELETE) - WRITE_LOCK ile thread-safe
+
+### Değiştirilen Dosyalar (10 dosya, 30 WRITE fonksiyon)
+
+| Dosya | WRITE Fonksiyon Sayısı |
+|-------|------------------------|
+| database.py | get_write_connection() tanımı |
+| pools.py | 8 |
+| interviews.py | 5 |
+| candidates.py | 4 |
+| admin.py | 3 |
+| companies.py | 2 |
+| synonyms.py | 5 |
+| auth.py | 1 |
+| scoring_v2.py | 1 |
+| candidate_matcher.py | 1 |
+
+### Kilitli Dosyalar (Tekrar KİLİTLENDİ)
+- scoring_v2.py - ❌ DOKUNMA
+- candidate_matcher.py - ❌ DOKUNMA
+
+### Test Durumu
+- ✅ Deploy başarılı
+- ✅ PM2 restart sonrası hata yok
+- ⏳ Kullanıcı testleri bekleniyor (CV yükleme, mülakat, rescore)
+
+---
+
+## Son 72 Saatte Tamamlananlar
 
 ### 17.03.2026 - README Profesyonel Görünüm Güncelleme
 - ✅ **README.md GitHub için profesyonel görünüm**
