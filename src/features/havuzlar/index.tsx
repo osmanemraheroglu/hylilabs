@@ -1738,121 +1738,259 @@ export default function Havuzlar() {
         </DialogContent>
       </Dialog>
 
-      {/* Aday Detay Modalı */}
+      {/* Aday Detay Modalı - Yeni Dizayn */}
       <Dialog open={candidateDetailModalOpen} onOpenChange={setCandidateDetailModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              {selectedCandidateDetail?.ad_soyad || 'Aday Detayı'}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
           {selectedCandidateDetail && (
-            <div className="space-y-4">
-              {/* Temel Bilgiler */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Ad Soyad</Label>
-                  <p className="font-medium">{selectedCandidateDetail.ad_soyad || '-'}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Email</Label>
-                  <p className="font-medium">{selectedCandidateDetail.email || '-'}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Telefon</Label>
-                  <p className="font-medium">{selectedCandidateDetail.telefon || '-'}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Lokasyon</Label>
-                  <p className="font-medium">{selectedCandidateDetail.lokasyon || '-'}</p>
+            <>
+              {/* HEADER */}
+              <div className="flex items-center justify-between p-4 border-b bg-white sticky top-0 z-10">
+                <h2 className="text-2xl font-bold">{selectedCandidateDetail.ad_soyad || 'Aday Detayı'}</h2>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleViewCV(selectedCandidateDetail.id)} disabled={!selectedCandidateDetail.cv_dosya_adi}>
+                    <FileText className="h-4 w-4 mr-1" />CV Görüntüle
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => { setCandidateDetailModalOpen(false); window.location.href = '/mulakat-takvimi'; }}>
+                    <Target className="h-4 w-4 mr-1" />Mülakat Planla
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600" onClick={() => { setCandidateDetailModalOpen(false); }}>
+                    <Archive className="h-4 w-4 mr-1" />Arşivle
+                  </Button>
                 </div>
               </div>
 
-              {/* Mesleki Bilgiler */}
-              <div className="border-t pt-4">
-                <h4 className="text-sm font-semibold mb-3">Mesleki Bilgiler</h4>
+              {/* BODY - 2 SÜTUN */}
+              <div className="grid grid-cols-2 gap-6 p-6 bg-gray-50">
+                {/* SOL SÜTUN */}
+                <div className="space-y-6">
+                  {/* Kariyer Bilgileri */}
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <h3 className="font-semibold mb-4">Kariyer Bilgileri</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm text-gray-500">Mevcut Pozisyon</label>
+                        <p className="font-medium">{selectedCandidateDetail.mevcut_pozisyon || '-'}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">Deneyim</label>
+                        <p className="font-medium">{selectedCandidateDetail.toplam_deneyim_yil ? `${selectedCandidateDetail.toplam_deneyim_yil} yıl` : '-'}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">Mevcut Şirket</label>
+                        <p className="font-medium">{selectedCandidateDetail.mevcut_sirket || '-'}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">Durum</label>
+                        <Badge variant={selectedCandidateDetail.durum === 'blacklist' ? 'destructive' : 'secondary'} className="mt-1">
+                          {STATUS_MAP[selectedCandidateDetail.durum as keyof typeof STATUS_MAP]?.label || selectedCandidateDetail.durum || '-'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Uyum Değerlendirmesi */}
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <h3 className="font-semibold mb-4">Uyum Değerlendirmesi</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* AI Model Skorları */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-gray-600">AI Model Skorları</h4>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Gemini</span>
+                          <span className="px-2 py-0.5 bg-white rounded text-sm font-medium">{selectedCandidateDetail.gemini_score || '-'}%</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Hermes</span>
+                          <span className="px-2 py-0.5 bg-white rounded text-sm font-medium">{selectedCandidateDetail.hermes_score || '-'}%</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">OpenAI</span>
+                          <span className="px-2 py-0.5 bg-white rounded text-sm font-medium">{selectedCandidateDetail.openai_score || '-'}%</span>
+                        </div>
+                        <div className="flex justify-between items-center font-medium border-t pt-2 mt-2">
+                          <span className="text-sm">Ortalama AI</span>
+                          <span className="px-2 py-0.5 bg-white rounded text-sm font-bold">{selectedCandidateDetail.avg_ai_score || '-'}%</span>
+                        </div>
+                      </div>
+                      {/* Kelime Skoru */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-gray-600">Kelime Skoru</h4>
+                        <div className="text-4xl font-bold text-center p-4 bg-white rounded-lg text-blue-600">
+                          {selectedCandidateDetail.keyword_score || selectedCandidateDetail.match_score || '-'}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Sonuç */}
+                    <div className="mt-4 p-3 bg-white rounded-lg text-center">
+                      <label className="text-sm text-gray-500">Toplam Uyum Puanı</label>
+                      <p className="text-3xl font-bold text-blue-600">{selectedCandidateDetail.match_score || selectedCandidateDetail.uyum_puani || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SAĞ SÜTUN */}
+                <div className="space-y-6">
+                  {/* Kişisel Bilgiler */}
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <h3 className="font-semibold mb-4">Kişisel Bilgiler</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-sm">E-posta</span>
+                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.email || '-'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-sm">Telefon</span>
+                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.telefon || '-'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-sm">Doğum Tarihi</span>
+                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.dogum_tarihi || '-'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-sm">Lokasyon</span>
+                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.lokasyon || '-'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Eğitim Bilgileri */}
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <h3 className="font-semibold mb-4">Eğitim Bilgileri</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-sm">Eğitim Seviyesi</span>
+                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.egitim || '-'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-sm">Üniversite</span>
+                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.universite || '-'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-sm">Bölüm</span>
+                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.bolum || '-'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Diller */}
+                  {selectedCandidateDetail.diller && (
+                    <div className="p-4 bg-sky-50 rounded-lg">
+                      <h3 className="font-semibold mb-3">Diller</h3>
+                      <p className="text-sm bg-white rounded px-3 py-2">{selectedCandidateDetail.diller}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ORTA BÖLÜM - BADGE'LER */}
+              <div className="px-6 pb-4 space-y-4 bg-gray-50">
+                {/* Teknik Beceriler */}
+                {selectedCandidateDetail.teknik_beceriler && (
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <label className="text-sm text-gray-500 font-medium">Öne Çıkan Beceriler</label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {String(selectedCandidateDetail.teknik_beceriler).split(',').map((skill: string, i: number) => (
+                        <span key={i} className="px-3 py-1 bg-white rounded-full text-sm border">{skill.trim()}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sertifikalar */}
+                {selectedCandidateDetail.sertifikalar && (
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <label className="text-sm text-gray-500 font-medium">Sertifikalar</label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {String(selectedCandidateDetail.sertifikalar).split(',').map((cert: string, i: number) => (
+                        <span key={i} className="px-3 py-1 bg-white rounded-full text-sm border">{cert.trim()}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* SKORLAR - PROGRESS BAR'LAR */}
+              <div className="px-6 py-4 bg-gray-50">
+                <div className="grid grid-cols-3 gap-4">
+                  {/* Teknik Beceriler */}
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium text-sm">Teknik Beceriler</span>
+                      <span className="text-blue-600 font-bold text-sm">{selectedCandidateDetail.teknik_puan || '-'}/25</span>
+                    </div>
+                    <div className="h-3 bg-white rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((selectedCandidateDetail.teknik_puan || 0) / 25) * 100}%`}}></div>
+                    </div>
+                  </div>
+
+                  {/* Pozisyon Uyumu */}
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium text-sm">Pozisyon Uyumu</span>
+                      <span className="text-blue-600 font-bold text-sm">{selectedCandidateDetail.pozisyon_puan || '-'}/25</span>
+                    </div>
+                    <div className="h-3 bg-white rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((selectedCandidateDetail.pozisyon_puan || 0) / 25) * 100}%`}}></div>
+                    </div>
+                  </div>
+
+                  {/* Deneyim */}
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium text-sm">Deneyim</span>
+                      <span className="text-blue-600 font-bold text-sm">{selectedCandidateDetail.deneyim_puan || '-'}/25</span>
+                    </div>
+                    <div className="h-3 bg-white rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((selectedCandidateDetail.deneyim_puan || 0) / 25) * 100}%`}}></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  {/* Eğitim */}
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium text-sm">Eğitim</span>
+                      <span className="text-blue-600 font-bold text-sm">{selectedCandidateDetail.egitim_puan || '-'}/15</span>
+                    </div>
+                    <div className="h-3 bg-white rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((selectedCandidateDetail.egitim_puan || 0) / 15) * 100}%`}}></div>
+                    </div>
+                  </div>
+
+                  {/* Diğer */}
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium text-sm">Diğer</span>
+                      <span className="text-blue-600 font-bold text-sm">{selectedCandidateDetail.diger_puan || '-'}/10</span>
+                    </div>
+                    <div className="h-3 bg-white rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((selectedCandidateDetail.diger_puan || 0) / 10) * 100}%`}}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* EN ALT - GÜÇLÜ YÖNLER & GELİŞİM ALANLARI */}
+              <div className="px-6 pb-6 bg-gray-50">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Mevcut Pozisyon</Label>
-                    <p className="font-medium">{selectedCandidateDetail.mevcut_pozisyon || '-'}</p>
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <h3 className="font-semibold mb-2">Güçlü Yönler</h3>
+                    <p className="text-gray-600 text-sm">{selectedCandidateDetail.guclu_yonler || selectedCandidateDetail.strengths || '-'}</p>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Mevcut Şirket</Label>
-                    <p className="font-medium">{selectedCandidateDetail.mevcut_sirket || '-'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Toplam Deneyim</Label>
-                    <p className="font-medium">{selectedCandidateDetail.toplam_deneyim_yil ? `${selectedCandidateDetail.toplam_deneyim_yil} yıl` : '-'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Eşleşme Skoru</Label>
-                    <p className="font-medium">{selectedCandidateDetail.match_score ? `${selectedCandidateDetail.match_score} puan` : '-'}</p>
+                  <div className="p-4 bg-sky-50 rounded-lg">
+                    <h3 className="font-semibold mb-2">Gelişim Alanları</h3>
+                    <p className="text-gray-600 text-sm">{selectedCandidateDetail.gelisim_alanlari || selectedCandidateDetail.improvements || '-'}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Eğitim Bilgileri */}
-              <div className="border-t pt-4">
-                <h4 className="text-sm font-semibold mb-3">Eğitim Bilgileri</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Eğitim Seviyesi</Label>
-                    <p className="font-medium">{selectedCandidateDetail.egitim || '-'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Üniversite</Label>
-                    <p className="font-medium">{selectedCandidateDetail.universite || '-'}</p>
-                  </div>
-                  <div className="space-y-1 col-span-2">
-                    <Label className="text-xs text-muted-foreground">Bölüm</Label>
-                    <p className="font-medium">{selectedCandidateDetail.bolum || '-'}</p>
-                  </div>
-                </div>
+              {/* FOOTER */}
+              <div className="flex justify-end p-4 border-t bg-white sticky bottom-0">
+                <Button variant="outline" onClick={() => setCandidateDetailModalOpen(false)}>Kapat</Button>
               </div>
-
-              {/* Teknik Beceriler */}
-              {selectedCandidateDetail.teknik_beceriler && (
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold mb-3">Teknik Beceriler</h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {String(selectedCandidateDetail.teknik_beceriler).split(',').map((skill: string, i: number) => (
-                      <Badge key={i} variant="secondary" className="text-xs">{skill.trim()}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Diller */}
-              {selectedCandidateDetail.diller && (
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold mb-3">Diller</h4>
-                  <p className="text-sm">{selectedCandidateDetail.diller}</p>
-                </div>
-              )}
-
-              {/* Sertifikalar */}
-              {selectedCandidateDetail.sertifikalar && (
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold mb-3">Sertifikalar</h4>
-                  <p className="text-sm">{selectedCandidateDetail.sertifikalar}</p>
-                </div>
-              )}
-
-              {/* Durum */}
-              <div className="border-t pt-4">
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">Durum:</Label>
-                  <Badge variant={selectedCandidateDetail.durum === 'blacklist' ? 'destructive' : 'secondary'}>
-                    {STATUS_MAP[selectedCandidateDetail.durum as keyof typeof STATUS_MAP]?.label || selectedCandidateDetail.durum || '-'}
-                  </Badge>
-                </div>
-              </div>
-            </div>
+            </>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCandidateDetailModalOpen(false)}>Kapat</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
