@@ -13447,14 +13447,13 @@ def save_v3_evaluation_to_db(candidate_id: int, position_id: int, result, compan
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            with get_connection() as conn:
+            with get_write_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT OR REPLACE INTO ai_evaluations
                     (candidate_id, position_id, evaluation_text, v2_score, eval_prompt, created_at)
                     VALUES (?, ?, ?, ?, 'v3_auto_eval', datetime('now'))
                 """, (candidate_id, position_id, evaluation_text, result.total_score))
-                conn.commit()
                 logger.info(f"V3 degerlendirme kaydedildi: candidate_id={candidate_id}, position_id={position_id}, score={result.total_score}")
                 return True
         except sqlite3.OperationalError as e:
