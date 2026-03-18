@@ -5747,7 +5747,7 @@ def verify_candidate_ownership(candidate_id: int, company_id: int) -> bool:
     if not company_id:
         raise ValueError("company_id zorunludur")
 
-    with get_write_connection() as conn:
+    with get_connection() as conn:  # READ işlemi - WRITE_LOCK gereksiz
         cursor = conn.cursor()
         cursor.execute(
             "SELECT company_id FROM candidates WHERE id = ?",
@@ -5764,7 +5764,7 @@ def verify_position_ownership(position_id: int, company_id: int) -> bool:
     if not company_id:
         raise ValueError("company_id zorunludur")
 
-    with get_write_connection() as conn:
+    with get_connection() as conn:  # READ işlemi - WRITE_LOCK gereksiz
         cursor = conn.cursor()
         cursor.execute(
             "SELECT company_id FROM positions WHERE id = ?",
@@ -5798,7 +5798,7 @@ def verify_email_account_ownership(account_id: int, company_id: int) -> bool:
     if not company_id:
         raise ValueError("company_id zorunludur")
 
-    with get_write_connection() as conn:
+    with get_connection() as conn:  # READ işlemi - WRITE_LOCK gereksiz
         cursor = conn.cursor()
         cursor.execute(
             "SELECT company_id FROM email_accounts WHERE id = ?",
@@ -5815,7 +5815,7 @@ def verify_interview_ownership(interview_id: int, company_id: int) -> bool:
     if not company_id:
         raise ValueError("company_id zorunludur")
 
-    with get_write_connection() as conn:
+    with get_connection() as conn:  # READ işlemi - WRITE_LOCK gereksiz
         cursor = conn.cursor()
         cursor.execute("""
             SELECT c.company_id FROM interviews i

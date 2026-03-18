@@ -16,6 +16,29 @@ Son güncelleme: 19.03.2026
 - Adnan Bey (İK Direktörü) — test + onay
 - 3 şirket, ~50 aday, 5 pozisyon
 
+## ✅ TAMAMLANAN GÖREV: database.py verify_* Connection Type Fix
+
+**Tarih:** 2026-03-19
+
+### Sorun
+4 verify_* fonksiyonu sadece SELECT sorgusu yapıyor ama `get_write_connection()` kullanıyordu.
+Bu gereksiz WRITE_LOCK alınmasına ve performans darboğazına neden oluyordu.
+
+### Çözüm
+4 fonksiyonda `get_write_connection()` → `get_connection()` değiştirildi:
+
+| Fonksiyon | Satır | Değişiklik |
+|-----------|-------|------------|
+| verify_candidate_ownership | 5750 | get_write_connection → get_connection |
+| verify_position_ownership | 5767 | get_write_connection → get_connection |
+| verify_email_account_ownership | 5801 | get_write_connection → get_connection |
+| verify_interview_ownership | 5818 | get_write_connection → get_connection |
+
+### Not
+`verify_department_pool_ownership` (satır 5784) zaten `get_connection()` kullanıyordu (önceki düzeltme).
+
+---
+
 ## ✅ TAMAMLANAN GÖREV: synonyms.py Context Manager Bug Fix
 
 **Tarih:** 2026-03-19
