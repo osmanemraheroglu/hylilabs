@@ -658,70 +658,67 @@ def list_synonyms(
             }
 
         # FAZ 3.2: Keyword yoksa tüm synonym'ları getir (pagination ile)
-        conn = get_connection()
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
+        with get_connection() as conn:
+            cursor = conn.cursor()
 
-        # Count sorgusu
-        if is_super_admin:
-            count_sql = "SELECT COUNT(*) FROM keyword_synonyms WHERE 1=1"
-            count_params = []
-        else:
-            count_sql = "SELECT COUNT(*) FROM keyword_synonyms WHERE (company_id IS NULL OR company_id = ?)"
-            count_params = [company_id]
+            # Count sorgusu
+            if is_super_admin:
+                count_sql = "SELECT COUNT(*) FROM keyword_synonyms WHERE 1=1"
+                count_params = []
+            else:
+                count_sql = "SELECT COUNT(*) FROM keyword_synonyms WHERE (company_id IS NULL OR company_id = ?)"
+                count_params = [company_id]
 
-        if status:
-            count_sql += " AND status = ?"
-            count_params.append(status)
+            if status:
+                count_sql += " AND status = ?"
+                count_params.append(status)
 
-        cursor.execute(count_sql, count_params)
-        total = cursor.fetchone()[0]
+            cursor.execute(count_sql, count_params)
+            total = cursor.fetchone()[0]
 
-        # Data sorgusu
-        offset = (page - 1) * per_page
-        if is_super_admin:
-            data_sql = """
-                SELECT id, keyword, synonym, synonym_type, status, match_weight,
-                       company_id, created_by, created_at, confidence_score
-                FROM keyword_synonyms
-                WHERE 1=1
-            """
-            data_params = []
-        else:
-            data_sql = """
-                SELECT id, keyword, synonym, synonym_type, status, match_weight,
-                       company_id, created_by, created_at, confidence_score
-                FROM keyword_synonyms
-                WHERE (company_id IS NULL OR company_id = ?)
-            """
-            data_params = [company_id]
+            # Data sorgusu
+            offset = (page - 1) * per_page
+            if is_super_admin:
+                data_sql = """
+                    SELECT id, keyword, synonym, synonym_type, status, match_weight,
+                           company_id, created_by, created_at, confidence_score
+                    FROM keyword_synonyms
+                    WHERE 1=1
+                """
+                data_params = []
+            else:
+                data_sql = """
+                    SELECT id, keyword, synonym, synonym_type, status, match_weight,
+                           company_id, created_by, created_at, confidence_score
+                    FROM keyword_synonyms
+                    WHERE (company_id IS NULL OR company_id = ?)
+                """
+                data_params = [company_id]
 
-        if status:
-            data_sql += " AND status = ?"
-            data_params.append(status)
+            if status:
+                data_sql += " AND status = ?"
+                data_params.append(status)
 
-        data_sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
-        data_params.extend([per_page, offset])
+            data_sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            data_params.extend([per_page, offset])
 
-        cursor.execute(data_sql, data_params)
+            cursor.execute(data_sql, data_params)
 
-        items = []
-        for row in cursor.fetchall():
-            items.append({
-                "id": row[0],
-                "keyword": row[1],
-                "synonym": row[2],
-                "synonym_type": row[3],
-                "status": row[4],
-                "match_weight": row[5],
-                "company_id": row[6],
-                "created_by": row[7],
-                "created_at": row[8],
-                "confidence_score": row[9],
-                "is_global": row[6] is None
-            })
-
-        conn.close()
+            items = []
+            for row in cursor.fetchall():
+                items.append({
+                    "id": row[0],
+                    "keyword": row[1],
+                    "synonym": row[2],
+                    "synonym_type": row[3],
+                    "status": row[4],
+                    "match_weight": row[5],
+                    "company_id": row[6],
+                    "created_by": row[7],
+                    "created_at": row[8],
+                    "confidence_score": row[9],
+                    "is_global": row[6] is None
+                })
 
         return {
             "success": True,
@@ -1021,60 +1018,57 @@ def get_synonym_audit(
         require_company_user(current_user)
         company_id = current_user["company_id"]
 
-        conn = get_connection()
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
+        with get_connection() as conn:
+            cursor = conn.cursor()
 
-        # Base query
-        query = """
-            SELECT h.id, h.synonym_id, h.action, h.old_values, h.new_values,
-                   h.changed_by, h.changed_at, u.email as changed_by_email,
-                   s.keyword, s.synonym
-            FROM keyword_synonyms_history h
-            LEFT JOIN users u ON h.changed_by = u.id
-            LEFT JOIN keyword_synonyms s ON h.synonym_id = s.id
-            WHERE (s.company_id IS NULL OR s.company_id = ?)
-        """
-        params = [company_id]
+            # Base query
+            query = """
+                SELECT h.id, h.synonym_id, h.action, h.old_values, h.new_values,
+                       h.changed_by, h.changed_at, u.email as changed_by_email,
+                       s.keyword, s.synonym
+                FROM keyword_synonyms_history h
+                LEFT JOIN users u ON h.changed_by = u.id
+                LEFT JOIN keyword_synonyms s ON h.synonym_id = s.id
+                WHERE (s.company_id IS NULL OR s.company_id = ?)
+            """
+            params = [company_id]
 
-        # Filtreler
-        if user_id is not None:
-            query += " AND h.changed_by = ?"
-            params.append(user_id)
+            # Filtreler
+            if user_id is not None:
+                query += " AND h.changed_by = ?"
+                params.append(user_id)
 
-        if from_date:
-            query += " AND h.changed_at >= ?"
-            params.append(from_date + " 00:00:00")
+            if from_date:
+                query += " AND h.changed_at >= ?"
+                params.append(from_date + " 00:00:00")
 
-        if to_date:
-            query += " AND h.changed_at <= ?"
-            params.append(to_date + " 23:59:59")
+            if to_date:
+                query += " AND h.changed_at <= ?"
+                params.append(to_date + " 23:59:59")
 
-        if action:
-            query += " AND h.action = ?"
-            params.append(action)
+            if action:
+                query += " AND h.action = ?"
+                params.append(action)
 
-        query += " ORDER BY h.changed_at DESC LIMIT ?"
-        params.append(limit)
+            query += " ORDER BY h.changed_at DESC LIMIT ?"
+            params.append(limit)
 
-        cursor.execute(query, params)
+            cursor.execute(query, params)
 
-        audit_logs = []
-        for row in cursor.fetchall():
-            audit_logs.append({
-                "id": row[0],
-                "synonym_id": row[1],
-                "action": row[2],
-                "old_values": row[3],
-                "new_values": row[4],
-                "changed_by": row[5],
-                "changed_at": row[6],
-                "changed_by_email": row[7],
-                "keyword": row[8],
-                "synonym": row[9]
-            })
-
-        conn.close()
+            audit_logs = []
+            for row in cursor.fetchall():
+                audit_logs.append({
+                    "id": row[0],
+                    "synonym_id": row[1],
+                    "action": row[2],
+                    "old_values": row[3],
+                    "new_values": row[4],
+                    "changed_by": row[5],
+                    "changed_at": row[6],
+                    "changed_by_email": row[7],
+                    "keyword": row[8],
+                    "synonym": row[9]
+                })
 
         return {
             "success": True,
@@ -1103,43 +1097,39 @@ def get_synonym_history(
         require_company_user(current_user)
         company_id = current_user["company_id"]
 
-        conn = get_connection()
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
+        with get_connection() as conn:
+            cursor = conn.cursor()
 
-        # Synonym'un bu firmaya ait olduğunu doğrula
-        cursor.execute(
-            "SELECT id FROM keyword_synonyms WHERE id = ? AND (company_id IS NULL OR company_id = ?)",
-            (synonym_id, company_id)
-        )
-        if not cursor.fetchone():
-            conn.close()
-            raise HTTPException(status_code=404, detail="Synonym bulunamadı")
+            # Synonym'un bu firmaya ait olduğunu doğrula
+            cursor.execute(
+                "SELECT id FROM keyword_synonyms WHERE id = ? AND (company_id IS NULL OR company_id = ?)",
+                (synonym_id, company_id)
+            )
+            if not cursor.fetchone():
+                raise HTTPException(status_code=404, detail="Synonym bulunamadı")
 
-        # History kayıtlarını getir
-        cursor.execute("""
-            SELECT h.id, h.synonym_id, h.action, h.old_values, h.new_values,
-                   h.changed_by, h.changed_at, u.email as changed_by_email
-            FROM keyword_synonyms_history h
-            LEFT JOIN users u ON h.changed_by = u.id
-            WHERE h.synonym_id = ?
-            ORDER BY h.changed_at DESC
-        """, (synonym_id,))
+            # History kayıtlarını getir
+            cursor.execute("""
+                SELECT h.id, h.synonym_id, h.action, h.old_values, h.new_values,
+                       h.changed_by, h.changed_at, u.email as changed_by_email
+                FROM keyword_synonyms_history h
+                LEFT JOIN users u ON h.changed_by = u.id
+                WHERE h.synonym_id = ?
+                ORDER BY h.changed_at DESC
+            """, (synonym_id,))
 
-        history = []
-        for row in cursor.fetchall():
-            history.append({
-                "id": row[0],
-                "synonym_id": row[1],
-                "action": row[2],
-                "old_values": row[3],
-                "new_values": row[4],
-                "changed_by": row[5],
-                "changed_at": row[6],
-                "changed_by_email": row[7]
-            })
-
-        conn.close()
+            history = []
+            for row in cursor.fetchall():
+                history.append({
+                    "id": row[0],
+                    "synonym_id": row[1],
+                    "action": row[2],
+                    "old_values": row[3],
+                    "new_values": row[4],
+                    "changed_by": row[5],
+                    "changed_at": row[6],
+                    "changed_by_email": row[7]
+                })
 
         return {
             "success": True,
@@ -1198,21 +1188,19 @@ def create_synonym(
             auto_approve = request.auto_approve
 
         # FAZ 3.2: Duplicate kontrolü
-        conn = get_connection()
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
-        if company_id is None:
-            cursor.execute(
-                "SELECT id FROM keyword_synonyms WHERE keyword = ? AND synonym = ? AND company_id IS NULL",
-                (keyword, synonym)
-            )
-        else:
-            cursor.execute(
-                "SELECT id FROM keyword_synonyms WHERE keyword = ? AND synonym = ? AND company_id = ?",
-                (keyword, synonym, company_id)
-            )
-        existing = cursor.fetchone()
-        conn.close()
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            if company_id is None:
+                cursor.execute(
+                    "SELECT id FROM keyword_synonyms WHERE keyword = ? AND synonym = ? AND company_id IS NULL",
+                    (keyword, synonym)
+                )
+            else:
+                cursor.execute(
+                    "SELECT id FROM keyword_synonyms WHERE keyword = ? AND synonym = ? AND company_id = ?",
+                    (keyword, synonym, company_id)
+                )
+            existing = cursor.fetchone()
 
         if existing:
             raise HTTPException(
@@ -1345,14 +1333,13 @@ def remove_synonym(
         is_super_admin = auth_info["is_super_admin"]
 
         # Synonym'ü bul ve yetki kontrolü yap
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, keyword, synonym, company_id FROM keyword_synonyms WHERE id = ?",
-            (synonym_id,)
-        )
-        synonym_row = cursor.fetchone()
-        conn.close()
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id, keyword, synonym, company_id FROM keyword_synonyms WHERE id = ?",
+                (synonym_id,)
+            )
+            synonym_row = cursor.fetchone()
 
         if not synonym_row:
             raise HTTPException(status_code=404, detail="Synonym bulunamadı.")
@@ -1440,34 +1427,33 @@ def get_synonym_detail(
         company_id = auth_info["company_id"]
         is_super_admin = auth_info["is_super_admin"]
 
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT
-                ks.id,
-                ks.keyword,
-                ks.synonym,
-                ks.status,
-                ks.company_id,
-                ks.match_weight,
-                ks.synonym_type,
-                ks.confidence_score,
-                ks.ambiguity_score,
-                ks.version,
-                ks.model_version,
-                ks.created_at,
-                ks.updated_at,
-                ks.approved_by,
-                ks.approved_at,
-                ks.reject_reason,
-                ks.reject_note,
-                u.ad_soyad as approved_by_name
-            FROM keyword_synonyms ks
-            LEFT JOIN users u ON ks.approved_by = u.id
-            WHERE ks.id = ?
-        """, (synonym_id,))
-        row = cursor.fetchone()
-        conn.close()
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    ks.id,
+                    ks.keyword,
+                    ks.synonym,
+                    ks.status,
+                    ks.company_id,
+                    ks.match_weight,
+                    ks.synonym_type,
+                    ks.confidence_score,
+                    ks.ambiguity_score,
+                    ks.version,
+                    ks.model_version,
+                    ks.created_at,
+                    ks.updated_at,
+                    ks.approved_by,
+                    ks.approved_at,
+                    ks.reject_reason,
+                    ks.reject_note,
+                    u.ad_soyad as approved_by_name
+                FROM keyword_synonyms ks
+                LEFT JOIN users u ON ks.approved_by = u.id
+                WHERE ks.id = ?
+            """, (synonym_id,))
+            row = cursor.fetchone()
 
         if not row:
             raise HTTPException(status_code=404, detail="Synonym bulunamadı.")
@@ -2948,11 +2934,10 @@ def dictionary_stats(
     try:
         require_company_user(current_user)
 
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT COUNT(*) FROM translation_dictionary')
-        db_count = cursor.fetchone()[0]
-        conn.close()
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM translation_dictionary')
+            db_count = cursor.fetchone()[0]
 
         return {
             "success": True,
@@ -3023,12 +3008,10 @@ def language_stats(
     try:
         require_company_user(current_user)
 
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute('SELECT keyword, synonym FROM keyword_synonyms LIMIT 500')
-        rows = cursor.fetchall()
-        conn.close()
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT keyword, synonym FROM keyword_synonyms LIMIT 500')
+            rows = cursor.fetchall()
 
         lang_stats = {'tr': 0, 'en': 0, 'unknown': 0, 'other': 0}
         untranslated_tr = []
@@ -3200,45 +3183,42 @@ def ml_model_stats(
     try:
         require_company_user(current_user)
 
-        conn = get_connection()
-        cursor = conn.cursor()
+        with get_connection() as conn:
+            cursor = conn.cursor()
 
-        # Aktif model
-        cursor.execute("""
-            SELECT id, model_name, model_version, model_type, accuracy,
-                   precision_score, recall_score, f1_score,
-                   training_samples, test_samples, created_at
-            FROM ml_models
-            WHERE is_active = 1
-            ORDER BY created_at DESC
-            LIMIT 1
-        """)
-        row = cursor.fetchone()
+            # Aktif model
+            cursor.execute("""
+                SELECT id, model_name, model_version, model_type, accuracy,
+                       precision_score, recall_score, f1_score,
+                       training_samples, test_samples, created_at
+                FROM ml_models
+                WHERE is_active = 1
+                ORDER BY created_at DESC
+                LIMIT 1
+            """)
+            row = cursor.fetchone()
 
-        if not row:
-            conn.close()
-            return {
-                "success": True,
-                "data": {
-                    "has_model": False,
-                    "message": "Henüz aktif model yok"
+            if not row:
+                return {
+                    "success": True,
+                    "data": {
+                        "has_model": False,
+                        "message": "Henüz aktif model yok"
+                    }
                 }
-            }
 
-        model_id = row[0]
+            model_id = row[0]
 
-        # Tahmin istatistikleri
-        cursor.execute("""
-            SELECT
-                COUNT(*) as total,
-                SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct,
-                AVG(probability) as avg_probability
-            FROM ml_predictions
-            WHERE model_id = ?
-        """, (model_id,))
-        pred_row = cursor.fetchone()
-
-        conn.close()
+            # Tahmin istatistikleri
+            cursor.execute("""
+                SELECT
+                    COUNT(*) as total,
+                    SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct,
+                    AVG(probability) as avg_probability
+                FROM ml_predictions
+                WHERE model_id = ?
+            """, (model_id,))
+            pred_row = cursor.fetchone()
 
         return {
             "success": True,
@@ -3289,40 +3269,38 @@ def ml_model_history(
     try:
         require_company_user(current_user)
 
-        conn = get_connection()
-        cursor = conn.cursor()
+        with get_connection() as conn:
+            cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT id, model_name, model_version, model_type,
-                   accuracy, precision_score, recall_score, f1_score,
-                   training_samples, test_samples,
-                   is_active, is_ab_test, ab_test_group,
-                   created_at
-            FROM ml_models
-            ORDER BY created_at DESC
-            LIMIT ?
-        """, (limit,))
+            cursor.execute("""
+                SELECT id, model_name, model_version, model_type,
+                       accuracy, precision_score, recall_score, f1_score,
+                       training_samples, test_samples,
+                       is_active, is_ab_test, ab_test_group,
+                       created_at
+                FROM ml_models
+                ORDER BY created_at DESC
+                LIMIT ?
+            """, (limit,))
 
-        models = []
-        for row in cursor.fetchall():
-            models.append({
-                "id": row[0],
-                "model_name": row[1],
-                "model_version": row[2],
-                "model_type": row[3],
-                "accuracy": round(row[4] or 0, 4),
-                "precision": round(row[5] or 0, 4),
-                "recall": round(row[6] or 0, 4),
-                "f1": round(row[7] or 0, 4),
-                "training_samples": row[8] or 0,
-                "test_samples": row[9] or 0,
-                "is_active": bool(row[10]),
-                "is_ab_test": bool(row[11]),
-                "ab_test_group": row[12],
-                "created_at": row[13]
-            })
-
-        conn.close()
+            models = []
+            for row in cursor.fetchall():
+                models.append({
+                    "id": row[0],
+                    "model_name": row[1],
+                    "model_version": row[2],
+                    "model_type": row[3],
+                    "accuracy": round(row[4] or 0, 4),
+                    "precision": round(row[5] or 0, 4),
+                    "recall": round(row[6] or 0, 4),
+                    "f1": round(row[7] or 0, 4),
+                    "training_samples": row[8] or 0,
+                    "test_samples": row[9] or 0,
+                    "is_active": bool(row[10]),
+                    "is_ab_test": bool(row[11]),
+                    "ab_test_group": row[12],
+                    "created_at": row[13]
+                })
 
         return {
             "success": True,
@@ -3353,22 +3331,20 @@ def ml_training_data_stats(
     try:
         require_company_user(current_user)
 
-        conn = get_connection()
-        cursor = conn.cursor()
+        with get_connection() as conn:
+            cursor = conn.cursor()
 
-        # Onaylı synonym sayısı
-        cursor.execute("""
-            SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'approved'
-        """)
-        approved = cursor.fetchone()[0]
+            # Onaylı synonym sayısı
+            cursor.execute("""
+                SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'approved'
+            """)
+            approved = cursor.fetchone()[0]
 
-        # Reddedilmiş synonym sayısı
-        cursor.execute("""
-            SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'rejected'
-        """)
-        rejected = cursor.fetchone()[0]
-
-        conn.close()
+            # Reddedilmiş synonym sayısı
+            cursor.execute("""
+                SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'rejected'
+            """)
+            rejected = cursor.fetchone()[0]
 
         return {
             "success": True,
@@ -3607,106 +3583,104 @@ def ml_dashboard(
     try:
         require_company_user(current_user)
 
-        conn = get_connection()
-        cursor = conn.cursor()
+        with get_connection() as conn:
+            cursor = conn.cursor()
 
-        dashboard = {
-            "sklearn_available": SKLEARN_AVAILABLE,
-            "thresholds": {
-                "auto_approve": AUTO_APPROVE_THRESHOLD,
-                "auto_reject": AUTO_REJECT_THRESHOLD
+            dashboard = {
+                "sklearn_available": SKLEARN_AVAILABLE,
+                "thresholds": {
+                    "auto_approve": AUTO_APPROVE_THRESHOLD,
+                    "auto_reject": AUTO_REJECT_THRESHOLD
+                }
             }
-        }
 
-        # Aktif model
-        cursor.execute("""
-            SELECT id, model_name, model_version, accuracy, precision_score,
-                   recall_score, f1_score, training_samples, created_at
-            FROM ml_models
-            WHERE is_active = 1
-            ORDER BY created_at DESC
-            LIMIT 1
-        """)
-        model_row = cursor.fetchone()
+            # Aktif model
+            cursor.execute("""
+                SELECT id, model_name, model_version, accuracy, precision_score,
+                       recall_score, f1_score, training_samples, created_at
+                FROM ml_models
+                WHERE is_active = 1
+                ORDER BY created_at DESC
+                LIMIT 1
+            """)
+            model_row = cursor.fetchone()
 
-        if model_row:
-            dashboard["active_model"] = {
-                "id": model_row[0],
-                "name": model_row[1],
-                "version": model_row[2],
-                "accuracy": round(model_row[3] or 0, 4),
-                "precision": round(model_row[4] or 0, 4),
-                "recall": round(model_row[5] or 0, 4),
-                "f1": round(model_row[6] or 0, 4),
-                "training_samples": model_row[7] or 0,
-                "created_at": model_row[8]
+            if model_row:
+                dashboard["active_model"] = {
+                    "id": model_row[0],
+                    "name": model_row[1],
+                    "version": model_row[2],
+                    "accuracy": round(model_row[3] or 0, 4),
+                    "precision": round(model_row[4] or 0, 4),
+                    "recall": round(model_row[5] or 0, 4),
+                    "f1": round(model_row[6] or 0, 4),
+                    "training_samples": model_row[7] or 0,
+                    "created_at": model_row[8]
+                }
+            else:
+                dashboard["active_model"] = None
+
+            # Eğitim verisi
+            cursor.execute("SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'approved'")
+            approved = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'rejected'")
+            rejected = cursor.fetchone()[0]
+
+            dashboard["training_data"] = {
+                "total": approved + rejected,
+                "approved": approved,
+                "rejected": rejected,
+                "ready": (approved + rejected) >= 100
             }
-        else:
-            dashboard["active_model"] = None
 
-        # Eğitim verisi
-        cursor.execute("SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'approved'")
-        approved = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(*) FROM keyword_synonyms WHERE status = 'rejected'")
-        rejected = cursor.fetchone()[0]
+            # Son 10 tahmin
+            cursor.execute("""
+                SELECT keyword, synonym, probability, prediction, actual_result,
+                       is_correct, created_at
+                FROM ml_predictions
+                ORDER BY created_at DESC
+                LIMIT 10
+            """)
+            predictions = []
+            for row in cursor.fetchall():
+                predictions.append({
+                    "keyword": row[0],
+                    "synonym": row[1],
+                    "probability": round(row[2] or 0, 4),
+                    "prediction": row[3],
+                    "actual_result": row[4],
+                    "is_correct": bool(row[5]) if row[5] is not None else None,
+                    "created_at": row[6]
+                })
+            dashboard["recent_predictions"] = predictions
 
-        dashboard["training_data"] = {
-            "total": approved + rejected,
-            "approved": approved,
-            "rejected": rejected,
-            "ready": (approved + rejected) >= 100
-        }
+            # Retraining durumu
+            if SKLEARN_AVAILABLE:
+                dashboard["retraining_status"] = check_retraining_needed()
+            else:
+                dashboard["retraining_status"] = {"needs_retraining": False}
 
-        # Son 10 tahmin
-        cursor.execute("""
-            SELECT keyword, synonym, probability, prediction, actual_result,
-                   is_correct, created_at
-            FROM ml_predictions
-            ORDER BY created_at DESC
-            LIMIT 10
-        """)
-        predictions = []
-        for row in cursor.fetchall():
-            predictions.append({
-                "keyword": row[0],
-                "synonym": row[1],
-                "probability": round(row[2] or 0, 4),
-                "prediction": row[3],
-                "actual_result": row[4],
-                "is_correct": bool(row[5]) if row[5] is not None else None,
-                "created_at": row[6]
-            })
-        dashboard["recent_predictions"] = predictions
+            # A/B test durumu
+            dashboard["ab_test"] = get_ab_test_results()
 
-        # Retraining durumu
-        if SKLEARN_AVAILABLE:
-            dashboard["retraining_status"] = check_retraining_needed()
-        else:
-            dashboard["retraining_status"] = {"needs_retraining": False}
-
-        # A/B test durumu
-        dashboard["ab_test"] = get_ab_test_results()
-
-        # Retraining job history
-        cursor.execute("""
-            SELECT id, job_type, status, trigger_reason, started_at, completed_at
-            FROM ml_retraining_jobs
-            ORDER BY created_at DESC
-            LIMIT 5
-        """)
-        jobs = []
-        for row in cursor.fetchall():
-            jobs.append({
-                "id": row[0],
-                "type": row[1],
-                "status": row[2],
-                "trigger": row[3],
-                "started_at": row[4],
-                "completed_at": row[5]
-            })
-        dashboard["recent_jobs"] = jobs
-
-        conn.close()
+            # Retraining job history
+            cursor.execute("""
+                SELECT id, job_type, status, trigger_reason, started_at, completed_at
+                FROM ml_retraining_jobs
+                ORDER BY created_at DESC
+                LIMIT 5
+            """)
+            jobs = []
+            for row in cursor.fetchall():
+                jobs.append({
+                    "id": row[0],
+                    "type": row[1],
+                    "status": row[2],
+                    "trigger": row[3],
+                    "started_at": row[4],
+                    "completed_at": row[5]
+                })
+            dashboard["recent_jobs"] = jobs
 
         return {
             "success": True,

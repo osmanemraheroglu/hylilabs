@@ -1,12 +1,12 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 18.03.2026
+Son güncelleme: 19.03.2026
 
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** hylilabs.com (PM2 ile çalışıyor)
 - **Domain:** https://hylilabs.com (Nginx + SSL aktif, 14.03.2026)
-- **Son commit:** 99508a9 - fix: approve_titles - get_write_connection() (18.03.2026)
+- **Son commit:** synonyms.py context manager fix (19.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -15,6 +15,43 @@ Son güncelleme: 18.03.2026
 
 - Adnan Bey (İK Direktörü) — test + onay
 - 3 şirket, ~50 aday, 5 pozisyon
+
+## ✅ TAMAMLANAN GÖREV: synonyms.py Context Manager Bug Fix
+
+**Tarih:** 2026-03-19
+
+### Sorun
+`get_connection()` bir `@contextmanager` dekoratörü ile tanımlı. `with` bloğu olmadan çağrıldığında:
+- `_GeneratorContextManager` objesi döner (sqlite3 connection DEĞİL)
+- `.execute()` metodu yok → `AttributeError` riski
+- 500 Internal Server Error potansiyeli
+
+### Çözüm
+12 endpoint'te `conn = get_connection()` pattern'ı `with get_connection() as conn:` pattern'a dönüştürüldü:
+
+| Fonksiyon | Eski Satır | Açıklama |
+|-----------|------------|----------|
+| list_synonyms | 661 | Paginated synonym listesi |
+| synonym_audit_report | 1024 | Audit geçmişi |
+| synonym_history | 1106 | Tek synonym geçmişi |
+| create_synonym | 1201 | Duplicate kontrolü |
+| delete_synonym_endpoint | 1348 | Yetki kontrolü |
+| get_synonym_detail | 1443 | Detay görüntüleme |
+| dictionary_stats | 2951 | Sözlük istatistikleri |
+| language_stats | 3026 | Dil istatistikleri |
+| ml_model_stats | 3203 | ML model istatistikleri |
+| ml_model_history | 3292 | Model geçmişi |
+| ml_training_data_stats | 3356 | Eğitim verisi istatistikleri |
+| ml_dashboard | 3610 | ML dashboard |
+
+### Silinen Kodlar
+- `conn.execute("PRAGMA foreign_keys = ON")` - get_connection() içinde zaten var
+- `conn.close()` - context manager otomatik yapıyor
+
+### Dosya
+- api/routes/synonyms.py: 360 ekleme, 386 silme (net -26 satır)
+
+---
 
 ## ✅ TAMAMLANAN GÖREV: Hybrid Re-entrant Architecture - SQLite Kalıcı Çözüm
 
