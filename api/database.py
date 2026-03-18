@@ -1928,57 +1928,46 @@ def get_read_connection():
 
 
 @contextmanager
-def get_write_connection(max_retries=5):
+def get_write_connection():
     """WRITE islemleri icin connection - WRITE_LOCK ile korumali.
     
     INSERT/UPDATE/DELETE sorgulari icin kullanilir.
     WRITE_LOCK sayesinde ayni anda sadece 1 write islemi yapilir.
-    Retry mekanizmasi ile database locked hatalari onlenir.
+    Retry YOK - context manager icinde retry sorunlu.
     """
     ensure_data_dir()
-    conn = None
-    last_error = None
     
-    for attempt in range(max_retries):
-        acquired = WRITE_LOCK.acquire(timeout=60)
-        if not acquired:
-            print(f"[WARN] get_write_connection: WRITE_LOCK timeout, attempt {attempt+1}/{max_retries}", file=sys.stderr)
-            continue
+    # Lock al (60 saniye timeout)
+    acquired = WRITE_LOCK.acquire(timeout=60)
+    if not acquired:
+        raise sqlite3.OperationalError("database is locked - WRITE_LOCK acquire timeout")
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(DATABASE_PATH, timeout=30)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=120000")  # 2 dakika
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.create_function("TURKISH_LOWER", 1, turkish_lower)
         
-        try:
-            conn = sqlite3.connect(DATABASE_PATH, timeout=30)
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.execute("PRAGMA busy_timeout=30000")
-            conn.execute("PRAGMA foreign_keys=ON")
-            conn.create_function("TURKISH_LOWER", 1, turkish_lower)
-            yield conn
-            conn.commit()
-            return
-        except sqlite3.OperationalError as e:
-            last_error = e
-            if "database is locked" in str(e).lower():
-                print(f"[WARN] get_write_connection: DB locked, retry {attempt+1}/{max_retries}", file=sys.stderr)
-                if conn:
-                    try:
-                        conn.rollback()
-                    except:
-                        pass
-                time.sleep(2 ** attempt)
-            else:
-                raise
-        finally:
-            if conn:
-                try:
-                    conn.close()
-                except:
-                    pass
+        yield conn
+        conn.commit()
+        
+    except Exception:
+        if conn:
             try:
-                WRITE_LOCK.release()
+                conn.rollback()
             except:
                 pass
-    
-    raise sqlite3.OperationalError(f"Database locked after {max_retries} retries: {last_error}")
+        raise
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
+        WRITE_LOCK.release()
 
 
 @contextmanager
