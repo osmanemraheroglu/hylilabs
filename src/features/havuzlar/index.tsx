@@ -1740,7 +1740,7 @@ export default function Havuzlar() {
 
       {/* Aday Detay Modalı - Yeni Dizayn */}
       <Dialog open={candidateDetailModalOpen} onOpenChange={setCandidateDetailModalOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="max-w-[90vw] min-w-[900px] max-h-[90vh] overflow-y-auto p-0">
           {selectedCandidateDetail && (
             <>
               {/* HEADER */}
@@ -1768,20 +1768,20 @@ export default function Havuzlar() {
                     <h3 className="font-semibold mb-4">Kariyer Bilgileri</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm text-gray-500">Mevcut Pozisyon</label>
-                        <p className="font-medium">{selectedCandidateDetail.mevcut_pozisyon || '-'}</p>
+                        <p className="text-xs text-gray-500 mb-1">Mevcut Pozisyon</p>
+                        <p className="font-semibold text-lg">{selectedCandidateDetail.mevcut_pozisyon || '-'}</p>
                       </div>
                       <div>
-                        <label className="text-sm text-gray-500">Deneyim</label>
-                        <p className="font-medium">{selectedCandidateDetail.toplam_deneyim_yil ? `${selectedCandidateDetail.toplam_deneyim_yil} yıl` : '-'}</p>
+                        <p className="text-xs text-gray-500 mb-1">Deneyim</p>
+                        <p className="font-semibold text-lg">{selectedCandidateDetail.toplam_deneyim_yil ? `${selectedCandidateDetail.toplam_deneyim_yil} yıl` : '-'}</p>
                       </div>
                       <div>
-                        <label className="text-sm text-gray-500">Mevcut Şirket</label>
-                        <p className="font-medium">{selectedCandidateDetail.mevcut_sirket || '-'}</p>
+                        <p className="text-xs text-gray-500 mb-1">Mevcut Şirket</p>
+                        <p className="font-semibold text-lg">{selectedCandidateDetail.mevcut_sirket || '-'}</p>
                       </div>
                       <div>
-                        <label className="text-sm text-gray-500">Durum</label>
-                        <Badge variant={selectedCandidateDetail.durum === 'blacklist' ? 'destructive' : 'secondary'} className="mt-1">
+                        <p className="text-xs text-gray-500 mb-1">Durum</p>
+                        <Badge variant={selectedCandidateDetail.durum === 'blacklist' ? 'destructive' : 'secondary'} className="text-sm">
                           {STATUS_MAP[selectedCandidateDetail.durum as keyof typeof STATUS_MAP]?.label || selectedCandidateDetail.durum || '-'}
                         </Badge>
                       </div>
@@ -1791,39 +1791,40 @@ export default function Havuzlar() {
                   {/* Uyum Değerlendirmesi */}
                   <div className="p-4 bg-sky-50 rounded-lg">
                     <h3 className="font-semibold mb-4">Uyum Değerlendirmesi</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
                       {/* AI Model Skorları */}
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-gray-600">AI Model Skorları</h4>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Gemini</span>
-                          <span className="px-2 py-0.5 bg-white rounded text-sm font-medium">{selectedCandidateDetail.gemini_score || '-'}%</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Hermes</span>
-                          <span className="px-2 py-0.5 bg-white rounded text-sm font-medium">{selectedCandidateDetail.hermes_score || '-'}%</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">OpenAI</span>
-                          <span className="px-2 py-0.5 bg-white rounded text-sm font-medium">{selectedCandidateDetail.openai_score || '-'}%</span>
-                        </div>
-                        <div className="flex justify-between items-center font-medium border-t pt-2 mt-2">
-                          <span className="text-sm">Ortalama AI</span>
-                          <span className="px-2 py-0.5 bg-white rounded text-sm font-bold">{selectedCandidateDetail.avg_ai_score || '-'}%</span>
-                        </div>
-                      </div>
-                      {/* Kelime Skoru */}
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-gray-600">Kelime Skoru</h4>
-                        <div className="text-4xl font-bold text-center p-4 bg-white rounded-lg text-blue-600">
-                          {selectedCandidateDetail.keyword_score || selectedCandidateDetail.match_score || '-'}
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-600 mb-2">AI Model Skorları</h4>
+                        <div className="grid grid-cols-4 gap-2">
+                          <div className="text-center p-2 bg-white rounded">
+                            <p className="text-xs text-gray-500">Gemini</p>
+                            <p className="font-bold">{selectedCandidateDetail.gemini_score || '-'}%</p>
+                          </div>
+                          <div className="text-center p-2 bg-white rounded">
+                            <p className="text-xs text-gray-500">Hermes</p>
+                            <p className="font-bold">{selectedCandidateDetail.hermes_score || '-'}%</p>
+                          </div>
+                          <div className="text-center p-2 bg-white rounded">
+                            <p className="text-xs text-gray-500">OpenAI</p>
+                            <p className="font-bold">{selectedCandidateDetail.openai_score || '-'}%</p>
+                          </div>
+                          <div className="text-center p-2 bg-white rounded">
+                            <p className="text-xs text-gray-500">Ortalama</p>
+                            <p className="font-bold">{selectedCandidateDetail.avg_ai_score || '-'}%</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    {/* Sonuç */}
-                    <div className="mt-4 p-3 bg-white rounded-lg text-center">
-                      <label className="text-sm text-gray-500">Toplam Uyum Puanı</label>
-                      <p className="text-3xl font-bold text-blue-600">{selectedCandidateDetail.match_score || selectedCandidateDetail.uyum_puani || '-'}</p>
+                      {/* Kelime Skoru ve Toplam Puan */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-4 bg-white rounded-lg">
+                          <p className="text-sm text-gray-500">Kelime Skoru</p>
+                          <p className="text-4xl font-bold text-blue-600">{selectedCandidateDetail.keyword_score || selectedCandidateDetail.match_score || '-'}</p>
+                        </div>
+                        <div className="text-center p-4 bg-white rounded-lg">
+                          <p className="text-sm text-gray-500">Toplam Puan</p>
+                          <p className="text-4xl font-bold text-green-600">{selectedCandidateDetail.match_score || selectedCandidateDetail.uyum_puani || '-'}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1834,21 +1835,21 @@ export default function Havuzlar() {
                   <div className="p-4 bg-sky-50 rounded-lg">
                     <h3 className="font-semibold mb-4">Kişisel Bilgiler</h3>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 text-sm">E-posta</span>
-                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.email || '-'}</span>
+                      <div>
+                        <p className="text-xs text-gray-500">E-posta</p>
+                        <p className="font-medium bg-white px-3 py-2 rounded mt-1">{selectedCandidateDetail.email || '-'}</p>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 text-sm">Telefon</span>
-                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.telefon || '-'}</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Telefon</p>
+                        <p className="font-medium bg-white px-3 py-2 rounded mt-1">{selectedCandidateDetail.telefon || '-'}</p>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 text-sm">Doğum Tarihi</span>
-                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.dogum_tarihi || '-'}</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Doğum Tarihi</p>
+                        <p className="font-medium bg-white px-3 py-2 rounded mt-1">{selectedCandidateDetail.dogum_tarihi || '-'}</p>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 text-sm">Lokasyon</span>
-                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.lokasyon || '-'}</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Lokasyon</p>
+                        <p className="font-medium bg-white px-3 py-2 rounded mt-1">{selectedCandidateDetail.lokasyon || '-'}</p>
                       </div>
                     </div>
                   </div>
@@ -1857,17 +1858,17 @@ export default function Havuzlar() {
                   <div className="p-4 bg-sky-50 rounded-lg">
                     <h3 className="font-semibold mb-4">Eğitim Bilgileri</h3>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 text-sm">Eğitim Seviyesi</span>
-                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.egitim || '-'}</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Eğitim Seviyesi</p>
+                        <p className="font-medium bg-white px-3 py-2 rounded mt-1">{selectedCandidateDetail.egitim || '-'}</p>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 text-sm">Üniversite</span>
-                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.universite || '-'}</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Üniversite</p>
+                        <p className="font-medium bg-white px-3 py-2 rounded mt-1">{selectedCandidateDetail.universite || '-'}</p>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 text-sm">Bölüm</span>
-                        <span className="px-3 py-1 bg-white rounded text-sm">{selectedCandidateDetail.bolum || '-'}</span>
+                      <div>
+                        <p className="text-xs text-gray-500">Bölüm</p>
+                        <p className="font-medium bg-white px-3 py-2 rounded mt-1">{selectedCandidateDetail.bolum || '-'}</p>
                       </div>
                     </div>
                   </div>
