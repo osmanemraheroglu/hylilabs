@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from routes.auth import get_current_user
 from core.cv_parser import validate_cv_access, get_safe_content_disposition, convert_to_pdf
 from database import (
+    get_write_connection,
     get_connection,
     get_department_pools, get_department_pool, get_department_pool_stats,
     get_hierarchical_pool_stats, get_department_pool_candidates,
@@ -1192,7 +1193,7 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
         approved_count = 0
         rejected_count = 0
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # Onaylananlar

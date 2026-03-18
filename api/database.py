@@ -4,6 +4,7 @@ SQLite ile CRUD operasyonlari
 """
 
 import sqlite3
+import sys
 import os
 import json
 import re
