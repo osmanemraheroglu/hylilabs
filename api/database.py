@@ -857,7 +857,7 @@ def save_keyword_embedding(keyword: str) -> bool:
     if not embedding:
         return False
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             embedding_blob = pickle.dumps(embedding)
             cursor.execute('''INSERT INTO keyword_embeddings (keyword, embedding)
@@ -879,7 +879,7 @@ def save_synonym_embedding(synonym: str, keyword: str) -> bool:
     if not embedding:
         return False
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             embedding_blob = pickle.dumps(embedding)
             cursor.execute('''INSERT INTO synonym_embeddings (synonym, keyword, embedding)
@@ -939,7 +939,7 @@ def find_semantic_duplicates(threshold: float = 0.92) -> list:
         [{'synonym1': str, 'keyword1': str, 'synonym2': str, 'keyword2': str, 'similarity': float}, ...]
     """
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT synonym, keyword, embedding FROM synonym_embeddings')
             rows = cursor.fetchall()
@@ -1970,7 +1970,7 @@ def get_write_connection():
 
 def init_database():
     """Veritabani tablolarini olustur"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Firmalar tablosu
@@ -3255,7 +3255,7 @@ def increment_keyword_usage(keywords: list, source: str = "position") -> dict:
     created = 0
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             for kw in keywords:
@@ -3311,7 +3311,7 @@ def decrement_keyword_usage(keywords: list) -> dict:
     zero_count = 0
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             for kw in keywords:
@@ -3432,7 +3432,7 @@ def check_synonym_conflict(
     keyword_lower = turkish_lower(keyword.strip())
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # Bu synonym başka hangi keyword'lere atanmış?
@@ -3495,7 +3495,7 @@ def update_synonym_mapping(
     keyword_lower = turkish_lower(keyword.strip())
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # Mevcut mapping var mı?
@@ -3557,7 +3557,7 @@ def build_synonym_mapping_index(company_id: int = None) -> dict:
         {"success": True, "indexed": int, "conflicts": int}
     """
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # Çakışan synonym'ları bul
@@ -3673,7 +3673,7 @@ def calculate_corpus_relevance(keyword: str, synonym: str, company_id: int = Non
     Returns: 0.3 - 1.0
     """
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             query = """
@@ -3722,7 +3722,7 @@ def calculate_historical_precision(keyword: str, synonym: str, company_id: int =
     Returns: 0.0 - 1.0
     """
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             query = """
@@ -4055,7 +4055,7 @@ def save_generated_synonyms(
     skipped = 0
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             for syn_data in synonyms:
@@ -4353,7 +4353,7 @@ def reject_synonyms(
         return {"success": False, "error": "Synonym ID'leri gerekli"}
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             placeholders = ','.join(['?'] * len(synonym_ids))
@@ -4469,7 +4469,7 @@ def add_manual_synonym(
             }
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # FAZ 8.3: match_weight hesapla
@@ -4515,7 +4515,7 @@ def delete_synonym(
         return False
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             if company_id is not None:
@@ -4628,7 +4628,7 @@ def check_synonym_exists(
     synonym_lower = turkish_lower(synonym.strip())
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             if company_id is not None:
@@ -4816,7 +4816,7 @@ Saygılarımızla,
 
 def _init_api_usage_table():
     """API kullanim tablosunu olustur"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS api_usage_logs (
@@ -4893,7 +4893,7 @@ def log_api_usage(
     output_cost = (output_tokens / 1_000_000) * pricing["output"]
     tahmini_maliyet = input_cost + output_cost
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO api_usage_logs
@@ -5114,7 +5114,7 @@ _init_api_usage_table()
 
 def _init_email_collection_table():
     """Email toplama log tablosunu olustur"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS email_collection_logs (
@@ -5350,7 +5350,7 @@ def log_email_collection(
     if baslangic_zamani and bitis_zamani:
         sure_saniye = int((bitis_zamani - baslangic_zamani).total_seconds())
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO email_collection_logs
@@ -5425,7 +5425,7 @@ def update_email_collection_log(
         query = f"UPDATE email_collection_logs SET {', '.join(updates)} WHERE id = ?"
         params.append(log_id)
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
             return cursor.rowcount > 0
@@ -5641,7 +5641,7 @@ def save_company_setting(company_id: int, key: str, value) -> bool:
     else:
         value_str = str(value) if value is not None else None
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO company_settings (company_id, setting_key, setting_value)
@@ -5747,7 +5747,7 @@ def verify_candidate_ownership(candidate_id: int, company_id: int) -> bool:
     if not company_id:
         raise ValueError("company_id zorunludur")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT company_id FROM candidates WHERE id = ?",
@@ -5764,7 +5764,7 @@ def verify_position_ownership(position_id: int, company_id: int) -> bool:
     if not company_id:
         raise ValueError("company_id zorunludur")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT company_id FROM positions WHERE id = ?",
@@ -5781,7 +5781,7 @@ def verify_department_pool_ownership(pool_id: int, company_id: int) -> bool:
     if not company_id:
         raise ValueError("company_id zorunludur")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT company_id FROM department_pools WHERE id = ?",
@@ -5798,7 +5798,7 @@ def verify_email_account_ownership(account_id: int, company_id: int) -> bool:
     if not company_id:
         raise ValueError("company_id zorunludur")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT company_id FROM email_accounts WHERE id = ?",
@@ -5815,7 +5815,7 @@ def verify_interview_ownership(interview_id: int, company_id: int) -> bool:
     if not company_id:
         raise ValueError("company_id zorunludur")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT c.company_id FROM interviews i
@@ -5859,7 +5859,7 @@ def check_duplicate_candidate(company_id: int, email: Optional[str] = None,
         'existing_name': None
     }
     
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         
         # 1. Email ile kontrol (en güvenilir)
@@ -5906,7 +5906,7 @@ def check_duplicate_candidate(company_id: int, email: Optional[str] = None,
 
 def find_duplicate_candidate(email: str, telefon: Optional[str] = None) -> Optional[Candidate]:
     """Email veya telefon ile duplicate aday bul (geriye uyumluluk için)"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Oncelikle email ile ara
@@ -5953,7 +5953,7 @@ def find_duplicate_candidates_detailed(email: str, telefon: Optional[str] = None
             "candidates": list[dict] - tum eslesmeler
         }
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         result = {
@@ -6033,7 +6033,7 @@ def find_duplicate_candidates_detailed(email: str, telefon: Optional[str] = None
 def log_candidate_merge(master_id: int, merged_id: Optional[int], eslesme_tipi: str,
                         eslesme_degeri: str, islem_tipi: str, detay: str = None) -> int:
     """Aday birlestirme/eslestirme logunu kaydet"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO candidate_merge_logs
@@ -6162,7 +6162,7 @@ def create_candidate(candidate: Candidate, company_id: int) -> int:
     email = getattr(candidate, 'email', None)
     telefon = getattr(candidate, 'telefon', None)
     
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         
         # Email ile kontrol
@@ -6198,7 +6198,7 @@ def create_candidate(candidate: Candidate, company_id: int) -> int:
     # Limit kontrolü
     check_and_raise_limit(company_id, 'cvs')
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO candidates (
@@ -6262,7 +6262,7 @@ def update_candidate(candidate_id: int, company_id: int = None, **fields) -> boo
     if not set_clause:
         return False
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         if company_id:
             cursor.execute(
@@ -6673,7 +6673,7 @@ def create_position(position: Position, company_id: int) -> int:
     # Limit kontrolü
     check_and_raise_limit(company_id, 'positions')
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO positions (
@@ -6802,7 +6802,7 @@ def update_position(position_id: int, company_id: int = None, **fields) -> bool:
     if not set_clause:
         return False
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         if company_id:
             cursor.execute(
@@ -6832,7 +6832,7 @@ def delete_position(position_id: int, company_id: int = None) -> bool:
         if not verify_position_ownership(position_id, company_id):
             return False
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         if company_id:
             cursor.execute(
@@ -6857,7 +6857,7 @@ def add_position_criteria(
     agirlik: float = 1.0
 ) -> int:
     """Pozisyona kriter ekle"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO position_criteria (
@@ -6869,7 +6869,7 @@ def add_position_criteria(
 
 def get_position_criteria(position_id: int) -> list[dict]:
     """Pozisyon kriterlerini getir"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT * FROM position_criteria WHERE position_id = ? ORDER BY zorunlu DESC, kriter_tipi",
@@ -6880,7 +6880,7 @@ def get_position_criteria(position_id: int) -> list[dict]:
 
 def delete_all_position_criteria(position_id: int) -> bool:
     """Pozisyonun tum kriterlerini sil"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM position_criteria WHERE position_id = ?", (position_id,))
         return True
@@ -6896,7 +6896,7 @@ def add_candidate_to_pool(
     notlar: str = None
 ) -> int:
     """Adayi pozisyon havuzuna ekle"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT OR REPLACE INTO position_pools (
@@ -6977,7 +6977,7 @@ def update_pool_candidate(position_id: int, candidate_id: int, company_id: int =
     # Sahiplik kontrolü
     if company_id:
         # Pozisyon sahipliği kontrolü (department_pools üzerinden)
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT company_id FROM department_pools WHERE id = ?
@@ -7001,7 +7001,7 @@ def update_pool_candidate(position_id: int, candidate_id: int, company_id: int =
     set_clause = ", ".join(set_parts)
     values = list(updates.values()) + [candidate_id, position_id]
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             f"UPDATE candidate_positions SET {set_clause} WHERE candidate_id = ? AND position_id = ?",
@@ -7049,7 +7049,7 @@ def update_candidate_general_pool(candidate_id: int, havuz: str, company_id: int
         if not verify_candidate_ownership(candidate_id, company_id):
             raise PermissionError("Bu adaya erişim yetkiniz yok")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         if company_id:
             cursor.execute(
@@ -7075,7 +7075,7 @@ SYSTEM_POOLS = [
 def create_system_pools(company_id: int) -> list[int]:
     """Şirket için varsayılan sistem havuzlarını oluştur"""
     created_ids = []
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         for pool_data in SYSTEM_POOLS:
             cursor.execute("""
@@ -7431,7 +7431,7 @@ def auto_assign_candidate_to_pool(candidate_id: int, company_id: int, position_i
 
 def remove_candidate_from_department_pool(candidate_id: int, pool_id: int) -> bool:
     """Adayı departman havuzundan çıkar"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             DELETE FROM candidate_pool_assignments
@@ -7461,7 +7461,7 @@ def auto_archive_old_candidates(company_id: int) -> dict:
     if not general_pool or not archive_pool:
         return stats
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # 90 günden eski + pozisyon eşleşmesi olmayan adaylar
@@ -7518,7 +7518,7 @@ def auto_delete_expired_candidates(company_id: int) -> dict:
     if not archive_pool:
         return stats
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # 30 günden eski adayları bul (olusturma_tarihi'ne göre)
@@ -7706,7 +7706,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
              'from_general': 0, 'from_archive': 0, 'limit_applied': limit}
 
     # Pozisyon bilgilerini al
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT name, keywords, gerekli_deneyim_yil, gerekli_egitim, lokasyon FROM department_pools WHERE id = ?", (position_pool_id,))
         row = cursor.fetchone()
@@ -8096,7 +8096,7 @@ def move_candidate_to_pool(candidate_id: int, from_position_id: int, to_position
     Returns:
         True: Başarılı, False: Kayıt bulunamadı
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Eski havuzdan bilgileri al (candidate_positions tablosundan)
@@ -8170,7 +8170,7 @@ def create_department_pool(company_id: int, name: str, icon: str = '📁',
                            is_tanimi: str = None) -> int:
     """Yeni departman veya pozisyon havuzu oluştur"""
     keywords_json = json.dumps(keywords or [], ensure_ascii=False)
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO department_pools (company_id, parent_id, pool_type, name, icon, keywords, description, 
@@ -8206,7 +8206,7 @@ def update_department_pool(pool_id: int, company_id: int = None, **fields) -> bo
     set_clause = ', '.join(f"{k} = ?" for k in updates.keys())
     values = list(updates.values()) + [pool_id]
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         if company_id:
             cursor.execute(f"""
@@ -8248,7 +8248,7 @@ def delete_department_pool(pool_id: int, company_id: int = None) -> bool:
     except Exception as usage_err:
         print(f"[delete-pool] USAGE hatası (devam ediliyor): {usage_err}")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Sistem havuzu mu kontrol et
@@ -8441,7 +8441,7 @@ def reassign_all_candidates_to_positions(company_id: int) -> dict:
     if not general_pool:
         return stats
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT candidate_id FROM candidate_pool_assignments
@@ -8472,7 +8472,7 @@ def transfer_candidates_to_position(candidate_ids: list[int], target_pool_id: in
     """Seçili adayları kaynak havuzdan hedef pozisyon havuzuna taşı"""
     stats = {'success': 0, 'failed': 0, 'already_exists': 0}
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         for candidate_id in candidate_ids:
@@ -8738,7 +8738,7 @@ def sync_candidates_to_all_positions(company_id: int) -> dict:
         'position_results': []
     }
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -8780,7 +8780,7 @@ def remove_candidate_from_pool(position_id: int, candidate_id: int) -> bool:
     Returns:
         True: Başarılı, False: Kayıt bulunamadı
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         # candidate_positions tablosundan sil
         cursor.execute(
@@ -8879,7 +8879,7 @@ def batch_update_pool_status(position_id: int, candidate_ids: list, durum: str) 
     status_value = status_map.get(durum, durum)
     
     updated = 0
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         placeholders = ','.join(['?' for _ in candidate_ids])
         cursor.execute(f"""
@@ -8918,7 +8918,7 @@ def create_application(application: Application, company_id: int = None) -> int:
         if not verify_candidate_ownership(application.candidate_id, company_id):
             raise PermissionError("Bu adaya erişim yetkiniz yok")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO applications (candidate_id, position_id, kaynak, email_id, basvuru_tarihi, company_id)
@@ -9045,7 +9045,7 @@ def save_match(match: Match) -> int:
     candidate_positions.match_score da güncellenir (aynı transaction).
     DB trigger'ı da güvenlik ağı olarak mevcuttur.
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         # Get company_id from candidate
         cursor.execute("SELECT company_id FROM candidates WHERE id = ?", (match.candidate_id,))
@@ -9078,7 +9078,7 @@ def save_match(match: Match) -> int:
 
 def log_email(email_log: EmailLog) -> int:
     """Email logunu kaydet"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT OR IGNORE INTO email_logs (
@@ -9094,7 +9094,7 @@ def log_email(email_log: EmailLog) -> int:
 
 def is_email_processed(email_id: str) -> bool:
     """Email daha once islendi mi?"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT 1 FROM email_logs WHERE email_id = ? AND islendi = 1",
@@ -9105,7 +9105,7 @@ def is_email_processed(email_id: str) -> bool:
 
 def mark_email_processed(email_id: str, hata: Optional[str] = None):
     """Emaili islendi olarak isaretle"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             UPDATE email_logs
@@ -9131,7 +9131,7 @@ def create_interview(interview: Interview, company_id: int = None) -> int:
         if not verify_candidate_ownership(interview.candidate_id, company_id):
             raise PermissionError("Bu adaya erişim yetkiniz yok")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO interviews (
@@ -9175,7 +9175,7 @@ def update_interview(interview_id: int, company_id: int = None, **fields) -> boo
     if not set_clause:
         return False
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             f"UPDATE interviews SET {set_clause} WHERE id = ?",
@@ -9257,7 +9257,7 @@ def delete_interview(interview_id: int, company_id: int = None) -> bool:
         if not verify_interview_ownership(interview_id, company_id):
             raise PermissionError("Bu mülakata erişim yetkiniz yok")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM interviews WHERE id = ?", (interview_id,))
         return cursor.rowcount > 0
@@ -9291,7 +9291,7 @@ def create_email_account(
     # Şifreyi şifrele
     encrypted_password = encrypt_email_password(sifre)
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO email_accounts (
@@ -9360,7 +9360,7 @@ def update_email_account(account_id: int, company_id: int = None, **fields) -> b
     if not set_clause:
         return False
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         if company_id:
             cursor.execute(
@@ -9390,7 +9390,7 @@ def delete_email_account(account_id: int, company_id: int = None) -> bool:
         if not verify_email_account_ownership(account_id, company_id):
             raise PermissionError("Bu email hesabına erişim yetkiniz yok")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         if company_id:
             cursor.execute("DELETE FROM email_accounts WHERE id = ? AND company_id = ?", (account_id, company_id))
@@ -9401,7 +9401,7 @@ def delete_email_account(account_id: int, company_id: int = None) -> bool:
 
 def set_default_email_account(account_id: int, for_reading: bool = False, for_sending: bool = False) -> bool:
     """Varsayilan email hesabini ayarla"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         if for_reading:
@@ -9419,7 +9419,7 @@ def set_default_email_account(account_id: int, for_reading: bool = False, for_se
 
 def increment_email_account_cv_count(account_id: int, count: int = 1) -> bool:
     """Email hesabinin CV sayacini artir"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE email_accounts SET toplam_cv = toplam_cv + ?, son_kontrol = ? WHERE id = ?",
@@ -9430,7 +9430,7 @@ def increment_email_account_cv_count(account_id: int, count: int = 1) -> bool:
 
 def migrate_email_passwords():
     """Mevcut düz metin şifreleri şifrele"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id, sifre FROM email_accounts")
         rows = cursor.fetchall()
@@ -9462,7 +9462,7 @@ def save_ai_analysis(
     position_id: int = None
 ) -> int:
     """AI analiz sonucunu kaydet"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO ai_analyses (
@@ -9507,7 +9507,7 @@ def save_hr_evaluation(
     durum: str = "beklemede"
 ) -> int:
     """IK degerlendirmesi kaydet veya guncelle"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Mevcut degerlendirme var mi kontrol et
@@ -9730,7 +9730,7 @@ def create_company(ad: str, slug: str, email: str = None, telefon: str = None,
                    yetkili_telefon: str = None, max_kullanici: int = 5,
                    max_aday: int = 1000) -> int:
     """Yeni firma olustur"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO companies (ad, slug, email, telefon, adres, website, plan,
@@ -9763,7 +9763,7 @@ def get_company_by_slug(slug: str) -> Optional[dict]:
 
 def toggle_company_status(company_id: int) -> dict:
     """Firma aktiflik durumunu degistir"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         # Mevcut durumu al
         cursor.execute("SELECT aktif, ad FROM companies WHERE id = ?", (company_id,))
@@ -9808,7 +9808,7 @@ def update_company(company_id: int, **fields) -> bool:
     if not set_clause:
         return False
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             f"UPDATE companies SET {set_clause} WHERE id = ?",
@@ -9886,7 +9886,7 @@ def create_company_with_admin(
     # Geçici şifre oluştur (8 karakter)
     temp_password = secrets.token_urlsafe(6)  # ~8 karakter
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # 1. Firma oluştur
@@ -9959,7 +9959,7 @@ def create_company_user(
     # Geçici şifre oluştur
     temp_password = secrets.token_urlsafe(6)
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         hashed_pw = hash_password(temp_password)
@@ -9991,7 +9991,7 @@ def update_company_status(company_id: int, durum: str) -> bool:
     if durum not in ['aktif', 'askida', 'pasif']:
         return False
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE companies SET durum = ?, aktif = ? WHERE id = ?",
@@ -10010,7 +10010,7 @@ def delete_company_soft(company_id: int) -> bool:
     Returns:
         bool: Silme başarılı mı?
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Firma aktif durumunu guncelle
@@ -10039,7 +10039,7 @@ def hard_delete_company(company_id: int) -> bool:
     Returns:
         bool: Silme başarılı mı?
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Önce firma var mı kontrol et
@@ -10315,7 +10315,7 @@ def set_company_plan(company_id: int, plan_id: int, trial_ends_at: str = None) -
     Returns:
         bool: Başarılı mı?
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         if trial_ends_at:
             cursor.execute("""
@@ -10387,7 +10387,7 @@ def check_limit(company_id: int, limit_type: str) -> dict:
 
 def _get_current_count(company_id: int, limit_type: str) -> int:
     """Mevcut kullanım sayısını getir"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         if limit_type == 'users':
@@ -10627,7 +10627,7 @@ def verify_password(password: str, stored_hash: str) -> bool:
 def migrate_password_to_bcrypt(user_id: int, plain_password: str) -> bool:
     """Eski SHA256 sifresini bcrypt'e migrate et"""
     new_hash = hash_password(plain_password)
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE users SET password_hash = ? WHERE id = ?",
@@ -10652,7 +10652,7 @@ def create_user(email: str, password: str, ad_soyad: str,
     if company_id:
         check_and_raise_limit(company_id, 'users')
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO users (email, password_hash, ad_soyad, company_id, rol)
@@ -10705,7 +10705,7 @@ def verify_user(email: str, password: str) -> Optional[dict]:
 
 def update_user_last_login(user_id: int):
     """Son giris tarihini guncelle"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE users SET son_giris = ? WHERE id = ?",
@@ -10738,7 +10738,7 @@ def update_user(user_id: int, **fields) -> bool:
     if not set_clause:
         return False
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             f"UPDATE users SET {set_clause} WHERE id = ?",
@@ -10749,7 +10749,7 @@ def update_user(user_id: int, **fields) -> bool:
 
 def delete_user(user_id: int) -> bool:
     """Kullaniciyi sil"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
         return cursor.rowcount > 0
@@ -10881,7 +10881,7 @@ def create_user_with_temp_password(
     # Geçici şifre oluştur
     temp_password = generate_temp_password()
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO users (
@@ -10959,7 +10959,7 @@ def update_user_by_company_admin(
     if not set_clause:
         return False
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             f"UPDATE users SET {set_clause} WHERE id = ?",
@@ -11005,7 +11005,7 @@ def delete_user_by_company_admin(
     if user.get('rol') == 'super_admin':
         raise PermissionError("Super admin silinemez")
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
         return cursor.rowcount > 0
@@ -11043,7 +11043,7 @@ def toggle_user_status(
 
     new_status = 0 if user.get('aktif', 1) == 1 else 1
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE users SET aktif = ? WHERE id = ?",
@@ -11086,7 +11086,7 @@ def reset_user_password(
     # Yeni geçici şifre oluştur
     temp_password = generate_temp_password()
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             UPDATE users
@@ -11105,7 +11105,7 @@ def check_must_change_password(user_id: int) -> bool:
 
 def clear_must_change_password(user_id: int) -> bool:
     """Şifre değiştirme zorunluluğunu kaldır"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE users SET must_change_password = 0 WHERE id = ?",
@@ -11218,7 +11218,7 @@ def create_password_reset_token(email: str) -> Optional[str]:
     expires_at = (datetime.now() + timedelta(minutes=15)).isoformat()
 
     # Onceki kullanilmamis tokenleri gecersiz yap
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Eski tokenlari sil
@@ -11248,7 +11248,7 @@ def verify_password_reset_token(email: str, token: str) -> tuple[bool, str]:
     Returns:
         (gecerli_mi, mesaj)
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         cursor.execute(
@@ -11320,7 +11320,7 @@ def get_expired_candidates(company_id: int = None) -> list[dict]:
 
 def extend_candidate_expiry(candidate_id: int, years: int = 1) -> bool:
     """Aday veri saklama suresini uzat"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT expires_at FROM candidates WHERE id = ?", (candidate_id,))
         row = cursor.fetchone()
@@ -11343,7 +11343,7 @@ def anonymize_candidate(candidate_id: int) -> bool:
     Aday verilerini anonimleştir (KVKK Unutulma Hakki)
     Kisisel bilgiler silinir, istatistiksel veriler korunur
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Aday bilgilerini anonimleştir
@@ -11376,7 +11376,7 @@ def delete_candidate_cv_file(candidate_id: int) -> bool:
     """Aday CV dosyasini sil"""
     import os
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT cv_dosya_yolu FROM candidates WHERE id = ?",
@@ -11454,7 +11454,7 @@ def delete_candidate(candidate_id: int, company_id: int = None) -> dict:
                     "error": "Bu adaya erisim yetkiniz yok"
                 }
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # 1. CV dosyasini sil
@@ -11817,7 +11817,7 @@ def reset_all_cv_data(company_id: int = None) -> dict:
     }
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             
             # Foreign key constraint'leri geçici olarak kapat (ekstra güvenlik)
@@ -11980,7 +11980,7 @@ def find_candidates_by_position_titles(company_id: int, title_list: list, pool_t
         return []
     
     # Genel Havuz ve Arşiv'deki adayları çek (candidate_pool_assignments üzerinden)
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -12358,7 +12358,7 @@ def create_position_template(ad: str, ikon: str, renk: str, departman: str,
                             lokasyon: str, aciklama: str, gerekli_deneyim_yil: float,
                             gerekli_egitim: str, kriterler: list, siralama: int = 0) -> int:
     """Yeni pozisyon şablonu oluştur"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO position_templates
@@ -12371,7 +12371,7 @@ def create_position_template(ad: str, ikon: str, renk: str, departman: str,
 
 def seed_default_templates():
     """Varsayılan inşaat sektörü şablonlarını oluştur"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # Zaten şablon var mı kontrol et
@@ -12536,7 +12536,7 @@ def seed_default_templates():
 def seed_job_titles():
     """İnşaat odaklı varsayılan meslek unvanlarını oluştur"""
     # Önce mevcut sayıyı kontrol et
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM job_titles")
         if cursor.fetchone()[0] > 0:
@@ -12703,7 +12703,7 @@ def seed_job_titles():
     ]
 
     # Insert işlemleri için yeni bağlantı
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         for unvan, kategori, sektor, departman, egitim, deneyim in job_titles:
             cursor.execute("""
@@ -12776,7 +12776,7 @@ def get_all_department_templates(company_id: int) -> list[dict]:
 def create_department_template(company_id: int, name: str, icon: str = '📁',
                                description: str = '', display_order: int = 0) -> int:
     """Yeni departman şablonu oluştur"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO department_templates (company_id, name, icon, description, display_order)
@@ -12796,7 +12796,7 @@ def update_department_template(template_id: int, **kwargs) -> bool:
     set_clause = ', '.join(f"{k} = ?" for k in updates.keys())
     values = list(updates.values()) + [template_id]
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(f"""
             UPDATE department_templates SET {set_clause} WHERE id = ?
@@ -12806,7 +12806,7 @@ def update_department_template(template_id: int, **kwargs) -> bool:
 
 def delete_department_template(template_id: int) -> bool:
     """Departman şablonunu sil"""
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM department_templates WHERE id = ?", (template_id,))
         return cursor.rowcount > 0
@@ -12832,7 +12832,7 @@ def seed_default_department_templates(company_id: int):
         {"name": "Teknik Servis", "icon": "🔧", "description": "Teknik destek ve saha hizmetleri"},
     ]
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         for i, dept in enumerate(default_departments):
             try:
@@ -12867,7 +12867,7 @@ def add_candidate_to_position(
     """
     import json
 
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         # 1. Aday var mı ve şirket kontrolü
@@ -13079,7 +13079,7 @@ def remove_candidate_from_position(candidate_id: int, position_id: int) -> bool:
     Returns:
         True: Başarılı, False: Bulunamadı
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             DELETE FROM candidate_positions
@@ -13185,7 +13185,7 @@ def get_all_keywords() -> list:
 def add_keyword(keyword: str, category: str = 'genel', source: str = 'user_edit') -> bool:
     """Yeni keyword ekle, varsa False dön"""
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             conn.execute(
                 "INSERT OR IGNORE INTO keyword_dictionary (keyword, category, source) VALUES (?, ?, ?)",
                 (keyword.lower().strip(), category, source)
@@ -13225,7 +13225,7 @@ def save_suggested_titles(position_id: int, title_mappings: dict) -> bool:
     Return: True/False
     """
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             
             # Tüm kategorileri işle
@@ -13379,7 +13379,7 @@ seed_job_titles()
 
 def save_ai_evaluation(candidate_id: int, position_id: int, evaluation_text: str, v2_score: int = 0, eval_prompt: str = "") -> bool:
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT OR REPLACE INTO ai_evaluations 
@@ -13708,7 +13708,7 @@ def check_and_suggest_blacklist(
         return {"suggested": False, "reject_count": 0, "message": "Zaten blacklist'te"}
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # Bu synonym kaç kez reddedildi?
@@ -13884,7 +13884,7 @@ def set_keyword_importance(
     keyword_lower = keyword.lower().strip()
 
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # Mevcut kayıt var mı?
@@ -13968,7 +13968,7 @@ def delete_keyword_importance(id: int, company_id: int) -> dict:
         {"success": True/False, "message": str}
     """
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
 
             # Önce kaydın bu firmaya ait olduğunu doğrula
@@ -14049,7 +14049,7 @@ def blacklist_candidate(candidate_id: int, reason: str, blacklisted_by: int, com
     - Tüm havuz atamalarından çıkarır
     - Aktif mülakatları iptal eder
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         try:
@@ -14144,7 +14144,7 @@ def remove_from_blacklist(candidate_id: int, removed_by: int, company_id: int, r
     - blacklisted_candidates tablosunda is_active = 0 yapar
     - candidates tablosunda is_blacklisted = 0, durum = 'yeni' yapar
     """
-    with get_connection() as conn:
+    with get_write_connection() as conn:
         cursor = conn.cursor()
 
         try:
@@ -14251,7 +14251,7 @@ def save_candidate_intelligence(candidate_id: int, company_id: int, intelligence
         suitable_positions = intelligence_data.get("suitable_positions", [])
         search_text = ",".join([p.lower() for p in suitable_positions]) if suitable_positions else ""
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO candidate_intelligence (
@@ -14412,7 +14412,7 @@ def find_candidates_for_position(company_id: int, position_title: str, sectors: 
         query += " ORDER BY ci.analyzed_at DESC LIMIT ?"
         params.append(limit)
 
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(query, params)
             rows = cursor.fetchall()
@@ -14563,7 +14563,7 @@ def fix_score_inconsistencies() -> dict:
     stats = {"weighted_fixed": 0, "cp_fixed": 0, "errors": 0}
     
     try:
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             
             # 1. Weighted formula tutarsızlıklarını bul (candidate_positions tablosundan)
@@ -14594,7 +14594,7 @@ def fix_score_inconsistencies() -> dict:
                     logger.error(f"Weighted düzeltme hatası: {e}")
         
         # 2. CP vs matches tutarsızlıklarını bul ve düzelt
-        with get_connection() as conn:
+        with get_write_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT 
