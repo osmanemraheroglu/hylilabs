@@ -16,26 +16,23 @@ Son güncelleme: 18.03.2026
 - Adnan Bey (İK Direktörü) — test + onay
 - 3 şirket, ~50 aday, 5 pozisyon
 
-## ✅ TAMAMLANAN GÖREV: "database is locked" Kalıcı Çözüm - PARÇA 6
+## ✅ TAMAMLANAN GÖREV: "database is locked" Kalıcı Çözüm - PARÇA 6 TAMAMLANDI
 
 **Tarih:** 2026-03-18
-**Son Commit:** 99508a9
+**Son Commit:** bf29d9b
 
 ### Çözüm Özeti
-READ/WRITE connection separation uygulandı:
-- `get_connection()` → READ işlemleri (SELECT) - paralel erişim
-- `get_write_connection()` → WRITE işlemleri (INSERT/UPDATE/DELETE) - WRITE_LOCK ile thread-safe
+READ/WRITE connection separation TAMAMLANDI:
+- `get_connection()` → READ işlemleri (SELECT) - 87 fonksiyon
+- `get_write_connection()` → WRITE işlemleri (INSERT/UPDATE/DELETE) - 133 fonksiyon
 
-### PARÇA 6: database.py İç WRITE Fonksiyonları (6/105 tamamlandı)
+### PARÇA 6: database.py Batch Güncelleme
 
-| Fonksiyon | Satır | Commit |
-|-----------|-------|--------|
-| log_synonym_usage() | 3815 | 06e99f2 |
-| save_match_details() | 3877 | 06e99f2 |
-| update_hired_stats() | 3925 | 06e99f2 |
-| approve_synonyms() | 4222 | 06e99f2 |
-| save_v3_evaluation_to_db() | 13450 | 95caea1 |
-| approve_titles() | 13318 | 99508a9 |
+| Aşama | Fonksiyon Sayısı | Commit |
+|-------|------------------|--------|
+| PARÇA 6.1 (kritik) | 7 | 06e99f2, 95caea1, 99508a9, 36de231 |
+| PARÇA 6.2 (batch) | 125 | bf29d9b |
+| **TOPLAM** | **132** | ✅ |
 
 ### Önceki PARÇA'lar (1-5): routes/*.py dosyaları
 | Dosya | WRITE Fonksiyon Sayısı |
@@ -50,13 +47,10 @@ READ/WRITE connection separation uygulandı:
 | scoring_v2.py | 1 |
 | candidate_matcher.py | 1 |
 
-### Kalan İşler
-- ~99 WRITE fonksiyon database.py içinde hala get_connection() kullanıyor
-- PARÇA 6.2-6.5 ile güncellenecek (onay bekleniyor)
-
-### Test Durumu
-- ✅ Deploy başarılı (pm2 restart)
-- ✅ approve_titles() düzeltildi - "Seçilenleri Onayla" test edilecek
+### Final Durum
+- ✅ database.py: 133 get_write_connection, 87 get_connection (READ)
+- ✅ routes/*.py: Tüm WRITE fonksiyonlar güncellendi
+- ✅ Deploy başarılı (pm2 restart, pid: 1243498)
 - ⏳ Kullanıcı testleri bekleniyor
 
 ---
