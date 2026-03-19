@@ -1640,8 +1640,8 @@ def update_synonym(
                     user_id,
                     "FAZ 3.2 UPDATE endpoint"
                 ))
-            except Exception:
-                pass  # History tablosu yoksa sessizce geç
+            except Exception as e:
+                logger.debug(f"History tablosu hatası (beklenen olabilir): {e}")
 
         # Loglama
         scope_text = "global" if new_company_id is None else f"company={new_company_id}"
