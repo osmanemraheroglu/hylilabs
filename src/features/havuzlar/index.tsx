@@ -1186,7 +1186,7 @@ export default function Havuzlar() {
                                       {t.match_level === 'exact' ? '🎯' : t.match_level === 'similar' ? '🔄' : '🔗'}
                                     </span>
                                     <span className="text-sm">{t.related_title}</span>
-                                    <Badge variant="outline" className="text-[9px]">{t.match_level}</Badge>
+                                    <Badge variant="outline" className="text-[9px]">{t.match_level === 'exact' ? 'Tam' : t.match_level === 'close' || t.match_level === 'similar' ? 'Benzer' : 'İlişkili'}</Badge>
                                   </div>
                                 ))}
                                 <Button
