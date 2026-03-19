@@ -972,3 +972,53 @@ Commit: 1a0f60c
 - calculate_certificate_penalty() max 10 puan limiti değiştirilemez
 
 Bu sistem KİLİTLİDİR. Değiştirilemez.
+
+---
+
+## ═══════════════════════════════════════════════════════════════
+## AKILLI HAVUZ BAŞLIKLARI - AI PROMPT KURALLARI (KİLİTLİ)
+## ═══════════════════════════════════════════════════════════════
+Tarih: 2026-03-19
+Commitler: 5d2b64d, 39c727e, eb88330
+
+**Dosya:** api/routes/pools.py (satır 1991-2085)
+**Fonksiyon:** parse_job_description_with_ai()
+
+### ek_titlelar Kuralları (7a-7e) - DEĞİŞTİRME
+
+| Kural | Açıklama |
+|-------|----------|
+| 7a | exact: Birebir TR/EN çevirileri (max 4) |
+| 7b | close: Aynı işi yapan alternatif pozisyonlar (max 6) |
+| 7c | YASAK: Diploma, sektör, farklı seviye, araç/beceri, departman |
+| 7d | KONTROL: "Bu başlıkla ayrı iş ilanı açsam, AYNI işi yapan aday başvurur mu?" |
+| 7e | Boş liste: Uygun başlık yoksa [] döndür, zorlama yapma |
+
+### Backend Mapping - DEĞİŞTİRME
+
+| AI Çıktısı | Backend Grupla |
+|------------|----------------|
+| exact | exact |
+| close | similar |
+
+**Konum:** pools.py:1117-1175 (get_approved_titles, get_pending_titles)
+**Mapping:** `level_mapping = {"exact": "exact", "close": "similar", "similar": "similar", "related": "related"}`
+
+### UI Etiketleri - DEĞİŞTİRME
+
+| match_level | Emoji | Türkçe |
+|-------------|-------|--------|
+| exact | 🎯 | Tam |
+| close/similar | 🔄 | Benzer |
+| related/partial | 🔗 | İlişkili |
+
+**Konum:** havuzlar/index.tsx:1148-1190
+
+### KİLİTLİ KURALLAR:
+- AI prompt kuralları (7a-7e) değiştirilemez
+- Backend level_mapping değiştirilemez
+- UI etiketleri (Tam/Benzer/İlişkili) değiştirilemez
+- exact max 4, close max 6 limitleri değiştirilemez
+
+Bu sistem KİLİTLİDİR. Değiştirilemez.
+
