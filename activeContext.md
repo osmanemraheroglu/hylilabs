@@ -16,7 +16,7 @@ Son güncelleme: 19.03.2026
 - Adnan Bey (İK Direktörü) — test + onay
 - 3 şirket, ~50 aday, 5 pozisyon
 
-## ✅ TAMAMLANAN GÖREV: PM2 ENV Cache Kalıcı Çözüm
+## ✅ TAMAMLANAN GÖREV: PM2 ENV Cache Kalıcı Çözüm + Git Hook
 
 **Tarih:** 2026-03-19
 
@@ -31,13 +31,18 @@ Bu sebeple .env'de yapılan değişiklikler (örn: API key güncelleme) etkili o
    - API health check yapar
    - Kullanım: `./scripts/pm2-reload-env.sh` (backend), `./scripts/pm2-reload-env.sh all` (tümü)
 
-2. **ecosystem.config.cjs Güncellendi:**
+2. **Git Post-Merge Hook Eklendi:** `/var/www/hylilabs/.git/hooks/post-merge`
+   - git pull sonrası .env veya ecosystem.config.cjs değiştiyse otomatik çalışır
+   - pm2-reload-env.sh'ı tetikler
+   - Manuel müdahale gerekmez
+
+3. **ecosystem.config.cjs Güncellendi:**
    - Dosya başına ENV cache uyarı yorumu eklendi
    - Script referansı eklendi
 
-3. **CLAUDE.md Kural #20 Güncellendi:**
-   - Script referansı eklendi
-   - "ENV değişikliği sonrası API çalışmıyorsa bu kurala bak" notu eklendi
+4. **CLAUDE.md Güncellendi:**
+   - Kural #20: Script referansı eklendi
+   - Kural #34: Git hook kuralı eklendi
 
 ### Tespit Edilen ENV Değişkenleri
 - API Keys: ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, HERMES_API_KEY
