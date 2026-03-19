@@ -17,6 +17,8 @@ from typing import Optional
 import traceback
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 
 router = APIRouter(prefix="/api/pools", tags=["pools"])
 
@@ -99,6 +101,188 @@ def filter_keywords(keywords: list) -> list:
             filtered.append(kw)
 
     return filtered
+
+
+# ============================================================
+# V3 WEIGHTED AVERAGE HELPER FONKSİYONLARI
+# Ekleme tarihi: 2026-03-20
+# 4 Golden Rule uyumlu
+# ============================================================
+
+def get_scoring_weights() -> tuple:
+    """
+    Config'den V3/V2 ağırlık katsayılarını al.
+
+    Rule 2: KATSAYI YÖNETİMİ - Hardcoded yasak, config'den çek.
+
+    Returns:
+        tuple: (v3_weight, v2_weight) - örn: (0.60, 0.40)
+    """
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT key, value FROM system_settings
+                WHERE key IN ('v3_weight', 'v2_weight')
+            """)
+            rows = cursor.fetchall()
+            weights = {row['key']: float(row['value']) for row in rows}
+            return (
+                weights.get('v3_weight', 0.60),
+                weights.get('v2_weight', 0.40)
+            )
+    except Exception as e:
+        logging.warning(f"get_scoring_weights fallback: {e}")
+        return (0.60, 0.40)
+
+
+def calculate_weighted_score(v2_score: int, v3_score: int, v3_weight: float, v2_weight: float) -> tuple:
+    """
+    V3 weighted average hesapla.
+
+    Rule 3: VERİ BÜTÜNLÜĞÜ - JSON metadata döndür.
+    Rule 4: GÜVENLİ FALLBACK - V3 yoksa V2'yi koru.
+
+    Args:
+        v2_score: V2 puanı
+        v3_score: V3 puanı (None veya 0 olabilir)
+        v3_weight: V3 ağırlığı (örn: 0.60)
+        v2_weight: V2 ağırlığı (örn: 0.40)
+
+    Returns:
+        tuple: (final_score, metadata_dict)
+    """
+    # Rule 4: Güvenli Fallback
+    if v3_score is None or v3_score == 0:
+        logging.info(f"V3 Fallback activated: v2_score={v2_score}, v3_score={v3_score}")
+        return v2_score, {
+            "method": "v2_fallback",
+            "calculated_at": datetime.now().isoformat(),
+            "v2_score": v2_score,
+            "v3_score": None,
+            "final_score": v2_score,
+            "fallback_reason": "v3_score_missing_or_zero"
+        }
+
+    # V3 weighted average hesapla
+    weighted = (v3_score * v3_weight) + (v2_score * v2_weight)
+    final_score = int(round(weighted))
+
+    # Rule 3: JSON metadata
+    metadata = {
+        "method": "v3_weighted",
+        "calculated_at": datetime.now().isoformat(),
+        "v2_score": v2_score,
+        "v3_score": v3_score,
+        "weights": {
+            "v3": v3_weight,
+            "v2": v2_weight
+        },
+        "formula": f"({v3_score}*{v3_weight})+({v2_score}*{v2_weight})",
+        "weighted_raw": weighted,
+        "final_score": final_score,
+        "fallback_used": False
+    }
+
+    return final_score, metadata
+
+
+def batch_v3_evaluate(candidates_data: list, position_dict: dict, max_workers: int = 4) -> dict:
+    """
+    Toplu V3 değerlendirme - paralel işlem.
+
+    Rule 1: HIZ VE PERFORMANS - Async/Bulk processing.
+
+    Args:
+        candidates_data: [{'id': X, 'cv_text': '...', ...}, ...]
+        position_dict: Pozisyon bilgileri
+        max_workers: Paralel thread sayısı
+
+    Returns:
+        dict: {candidate_id: v3_result veya None, ...}
+    """
+    results = {}
+
+    if not candidates_data:
+        return results
+
+    try:
+        from core.scoring_v3 import evaluate_candidate_sync
+    except ImportError:
+        logging.error("core.scoring_v3 import failed - returning empty results")
+        return results
+
+    try:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_candidate = {}
+
+            for c in candidates_data:
+                candidate_id = c.get('id') or c.get('candidate_id')
+                if candidate_id:
+                    future = executor.submit(
+                        evaluate_candidate_sync,
+                        c,
+                        position_dict
+                    )
+                    future_to_candidate[future] = candidate_id
+
+            for future in as_completed(future_to_candidate, timeout=120):
+                candidate_id = future_to_candidate[future]
+                try:
+                    result = future.result(timeout=30)
+                    results[candidate_id] = result
+                except Exception as e:
+                    logging.warning(f"V3 evaluation failed: candidate_id={candidate_id}, error={str(e)}")
+                    results[candidate_id] = None
+
+    except Exception as e:
+        logging.error(f"batch_v3_evaluate error: {e}")
+
+    return results
+
+
+def update_score_with_metadata(cursor, table: str, final_score: int, v2_score: int,
+                                v3_score: int, metadata: dict, candidate_id: int,
+                                position_id: int) -> None:
+    """
+    Skoru ve metadata'yı güncelle.
+
+    Args:
+        cursor: DB cursor
+        table: 'candidate_positions' veya 'matches'
+        final_score: Hesaplanan final skor
+        v2_score: V2 puanı
+        v3_score: V3 puanı
+        metadata: Hesaplama detayları
+        candidate_id: Aday ID
+        position_id: Pozisyon ID
+    """
+    metadata_json = json.dumps(metadata, ensure_ascii=False)
+
+    if table == 'candidate_positions':
+        cursor.execute("""
+            UPDATE candidate_positions
+            SET match_score = ?,
+                v2_score = ?,
+                v3_score = ?,
+                calculation_metadata = ?,
+                score_version = 'v3_weighted',
+                updated_at = datetime('now')
+            WHERE candidate_id = ? AND position_id = ?
+        """, (final_score, v2_score, v3_score or 0, metadata_json, candidate_id, position_id))
+
+    elif table == 'matches':
+        cursor.execute("""
+            UPDATE matches
+            SET uyum_puani = ?,
+                calculation_metadata = ?,
+                hesaplama_tarihi = datetime('now')
+            WHERE candidate_id = ? AND position_id = ?
+        """, (final_score, metadata_json, candidate_id, position_id))
+
+# ============================================================
+# V3 WEIGHTED AVERAGE HELPER FONKSİYONLARI SONU
+# ============================================================
 
 
 @router.get("/hierarchical")
@@ -1369,33 +1553,92 @@ def approve_titles(pool_id: int, data: dict, current_user: dict = Depends(get_cu
                         print(f"[approve-titles] G8 hesaplama hatası (cid={cid}): {calc_err}")
                         continue
 
-                # ==================== AŞAMA 3: TOPLU UPDATE ====================
-                # Tek connection ile tüm UPDATE'ler yapılır
+                # ==================== AŞAMA 3: V3 WEIGHTED AVERAGE (4 Golden Rule) ====================
+                # Rule 1: Batch V3 evaluate, Rule 2: Config weights, Rule 3: Metadata, Rule 4: Fallback
                 if rescore_results:
+                    # Ağırlıkları al (Rule 2: CONFIG)
+                    v3_weight, v2_weight = get_scoring_weights()
+                    print(f"[approve-titles] G8: Weights loaded - v3={v3_weight}, v2={v2_weight}")
+
+                    # Batch için aday verilerini hazırla (Rule 1: ASYNC/BULK)
+                    candidates_for_v3 = []
+                    for item in rescore_results:
+                        cid = item['cid']
+                        with get_rescore_conn() as conn_v3:
+                            rc_v3 = conn_v3.cursor()
+                            rc_v3.execute("""
+                                SELECT id, ad_soyad, teknik_beceriler, mevcut_pozisyon,
+                                       deneyim_detay, toplam_deneyim_yil, egitim, lokasyon,
+                                       mevcut_sirket, cv_raw_text
+                                FROM candidates WHERE id = ?
+                            """, (cid,))
+                            r = rc_v3.fetchone()
+                            if r:
+                                candidates_for_v3.append({
+                                    'id': r[0],
+                                    'candidate_id': r[0],
+                                    'ad_soyad': r[1] or '',
+                                    'teknik_beceriler': r[2] or '',
+                                    'mevcut_pozisyon': r[3] or '',
+                                    'deneyim_detay': r[4] or '',
+                                    'toplam_deneyim_yil': r[5] or 0,
+                                    'egitim': r[6] or '',
+                                    'lokasyon': r[7] or '',
+                                    'mevcut_sirket': r[8] or '',
+                                    'cv_raw_text': r[9] or '',
+                                    'company_id': company_id
+                                })
+
+                    # Batch V3 değerlendirme
+                    print(f"[approve-titles] G8: Starting batch V3 for {len(candidates_for_v3)} candidates")
+                    v3_results = batch_v3_evaluate(candidates_for_v3, position_dict)
+                    print(f"[approve-titles] G8: V3 results received for {len(v3_results)} candidates")
+
+                    # Toplu UPDATE
                     with get_rescore_write_conn() as conn_update:
                         rc3 = conn_update.cursor()
 
                         for item in rescore_results:
                             cid = item['cid']
-                            new_score = item['score']
+                            v2_score = item['score']
                             analysis = item['analysis']
 
-                            rc3.execute("""
-                                UPDATE matches SET uyum_puani = ?, detayli_analiz = ?
-                                WHERE candidate_id = ? AND position_id = ?
-                            """, (new_score, analysis, cid, pool_id))
+                            # V3 sonucunu al (Rule 4: FALLBACK)
+                            v3_result = v3_results.get(cid)
+                            v3_score = None
+                            if v3_result:
+                                if hasattr(v3_result, 'total_score'):
+                                    v3_score = v3_result.total_score
+                                elif isinstance(v3_result, dict):
+                                    v3_score = v3_result.get('total_score')
 
+                            # Weighted average hesapla (Rule 3: METADATA)
+                            final_score, metadata = calculate_weighted_score(v2_score, v3_score, v3_weight, v2_weight)
+                            metadata['source'] = 'approve_titles_g8'
+                            metadata['position_id'] = pool_id
+
+                            # matches tablosunu güncelle
+                            metadata_json = json_rescore.dumps(metadata, ensure_ascii=False)
                             rc3.execute("""
-                                UPDATE candidate_positions SET match_score = ?
+                                UPDATE matches SET uyum_puani = ?, detayli_analiz = ?, calculation_metadata = ?
                                 WHERE candidate_id = ? AND position_id = ?
-                            """, (new_score, cid, pool_id))
+                            """, (final_score, analysis, metadata_json, cid, pool_id))
+
+                            # candidate_positions tablosunu güncelle
+                            rc3.execute("""
+                                UPDATE candidate_positions
+                                SET match_score = ?, v2_score = ?, v3_score = ?,
+                                    calculation_metadata = ?, score_version = 'v3_weighted',
+                                    updated_at = datetime('now')
+                                WHERE candidate_id = ? AND position_id = ?
+                            """, (final_score, v2_score, v3_score or 0, metadata_json, cid, pool_id))
 
                             rescore_count += 1
 
                         conn_update.commit()
                     # ← CONNECTION KAPANDI
 
-            print(f"[approve-titles] G8 rescore: {rescore_count} aday güncellendi")
+            print(f"[approve-titles] G8 V3 weighted rescore: {rescore_count} aday güncellendi")
         except Exception as rescore_err:
             print(f"[approve-titles] G8 rescore hatası (devam ediliyor): {rescore_err}")
 
@@ -1909,48 +2152,85 @@ def rescore_candidate(pool_id: int, candidate_id: int, current_user: dict = Depe
             
             # V2 skorlama
             v2_result = calculate_match_score_v2(candidate_dict, position_dict)
-            
+
             if not v2_result:
                 raise HTTPException(status_code=500, detail="Skorlama başarısız")
-            
-            new_score = v2_result.get('total', 0)
-            
-            # candidate_positions güncelle
+
+            v2_score = v2_result.get('total', 0)
+
+            # ============================================================
+            # V3 Weighted Average (4 Golden Rule uyumlu)
+            # ============================================================
+
+            # Ağırlıkları al (Rule 2: CONFIG)
+            v3_weight, v2_weight = get_scoring_weights()
+
+            # V3 değerlendirme (Rule 4: FALLBACK)
+            v3_score = None
+            try:
+                from core.scoring_v3 import evaluate_candidate_sync
+                v3_result_obj = evaluate_candidate_sync(candidate_dict, position_dict)
+                if v3_result_obj:
+                    if hasattr(v3_result_obj, 'total_score'):
+                        v3_score = v3_result_obj.total_score
+                    elif isinstance(v3_result_obj, dict):
+                        v3_score = v3_result_obj.get('total_score')
+            except Exception as v3_err:
+                logging.warning(f"V3 Fallback in rescore_candidate: candidate_id={candidate_id}, error={str(v3_err)}")
+                v3_score = None
+
+            # Weighted average hesapla (Rule 3: METADATA)
+            final_score, metadata = calculate_weighted_score(v2_score, v3_score, v3_weight, v2_weight)
+            metadata['source'] = 'rescore_candidate'
+            metadata['position_id'] = pool_id
+            metadata['candidate_id'] = candidate_id
+            metadata_json = json_lib.dumps(metadata, ensure_ascii=False)
+
+            print(f"[rescore_candidate] V3 weighted: cid={candidate_id}, v2={v2_score}, v3={v3_score}, final={final_score}")
+
+            # candidate_positions güncelle (V3 weighted)
             cursor.execute("""
-                UPDATE candidate_positions SET match_score = ?
+                UPDATE candidate_positions
+                SET match_score = ?, v2_score = ?, v3_score = ?,
+                    calculation_metadata = ?, score_version = 'v3_weighted',
+                    updated_at = datetime('now')
                 WHERE candidate_id = ? AND position_id = ?
-            """, (new_score, candidate_id, pool_id))
-            
+            """, (final_score, v2_score, v3_score or 0, metadata_json, candidate_id, pool_id))
+
             # matches tablosunu güncelle
             cursor.execute("""
                 INSERT OR REPLACE INTO matches (
                     candidate_id, position_id, uyum_puani, detayli_analiz,
                     deneyim_puani, egitim_puani, beceri_puani, company_id,
-                    hesaplama_tarihi
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                    hesaplama_tarihi, calculation_metadata
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)
             """, (
                 candidate_id,
                 pool_id,
-                new_score,
+                final_score,
                 json_lib.dumps(v2_result, ensure_ascii=False),
                 v2_result.get('experience_score', 0),
                 v2_result.get('education_score', 0),
                 v2_result.get('technical_score', 0),
-                company_id
+                company_id,
+                metadata_json
             ))
-            
+
             # ai_evaluations.v2_score güncelle (varsa)
             cursor.execute("""
                 UPDATE ai_evaluations SET v2_score = ?
                 WHERE candidate_id = ? AND position_id = ?
-            """, (new_score, candidate_id, pool_id))
-            
+            """, (v2_score, candidate_id, pool_id))
+
             conn.commit()
-            
+
             return {
                 "success": True,
                 "old_score": old_score,
-                "new_score": new_score,
+                "new_score": final_score,
+                "v2_score": v2_score,
+                "v3_score": v3_score,
+                "method": metadata.get('method', 'unknown'),
                 "candidate_id": candidate_id,
                 "position_id": pool_id,
                 "v2_result": v2_result
@@ -2237,6 +2517,16 @@ def rescore_position_candidates(pool_id: int, company_id: int) -> int:
         """, (pool_id,))
         cids = [r[0] for r in cursor.fetchall()]
 
+        # ============================================================
+        # V3 Weighted Average Batch Processing (4 Golden Rule uyumlu)
+        # ============================================================
+
+        # Ağırlıkları al (Rule 2: CONFIG)
+        v3_weight, v2_weight = get_scoring_weights()
+        print(f"[rescore_position_candidates] Weights: v3={v3_weight}, v2={v2_weight}")
+
+        # Tüm aday verilerini topla (Rule 1: ASYNC/BULK hazırlık)
+        candidates_data = {}
         for cid in cids:
             cursor.execute("""
                 SELECT id, ad_soyad, teknik_beceriler, mevcut_pozisyon,
@@ -2246,41 +2536,79 @@ def rescore_position_candidates(pool_id: int, company_id: int) -> int:
                 FROM candidates WHERE id = ?
             """, (cid,))
             r = cursor.fetchone()
-            if not r:
+            if r:
+                candidates_data[cid] = {
+                    'id': r[0], 'candidate_id': r[0], 'ad_soyad': r[1],
+                    'teknik_beceriler': r[2] or '',
+                    'mevcut_pozisyon': r[3] or '',
+                    'deneyim_detay': r[4] or '',
+                    'toplam_deneyim_yil': r[5] or 0,
+                    'egitim': r[6] or '',
+                    'lokasyon': r[7] or '',
+                    'mevcut_sirket': r[8] or '',
+                    'cv_raw_text': r[9] or '',
+                    'diller': r[10] or '',
+                    'sertifikalar': r[11] or '',
+                    'deneyim_aciklama': r[12] or '',
+                    'company_id': company_id
+                }
+
+        # Batch V3 değerlendirme (Rule 1: ASYNC/BULK)
+        print(f"[rescore_position_candidates] Starting batch V3 for {len(candidates_data)} candidates")
+        v3_results = batch_v3_evaluate(list(candidates_data.values()), position_dict)
+        print(f"[rescore_position_candidates] V3 results: {len(v3_results)} candidates")
+
+        # Her aday için V3 weighted average hesapla
+        for cid in cids:
+            if cid not in candidates_data:
                 continue
 
-            candidate_dict = {
-                'id': r[0], 'ad_soyad': r[1],
-                'teknik_beceriler': r[2] or '',
-                'mevcut_pozisyon': r[3] or '',
-                'deneyim_detay': r[4] or '',
-                'toplam_deneyim_yil': r[5] or 0,
-                'egitim': r[6] or '',
-                'lokasyon': r[7] or '',
-                'mevcut_sirket': r[8] or '',
-                'cv_raw_text': r[9] or '',
-                'diller': r[10] or '',
-                'sertifikalar': r[11] or '',
-                'deneyim_aciklama': r[12] or '',
-                'company_id': company_id
-            }
+            candidate_dict = candidates_data[cid]
 
+            # V2 hesapla
             v2_result = calculate_match_score_v2(candidate_dict, position_dict)
-            if v2_result:
-                new_score = v2_result.get('total', 0)
-                cursor.execute("""
-                    UPDATE matches SET uyum_puani = ?, detayli_analiz = ?
-                    WHERE candidate_id = ? AND position_id = ?
-                """, (new_score, json_lib.dumps(v2_result, ensure_ascii=False),
-                      cid, pool_id))
-                cursor.execute("""
-                    UPDATE candidate_positions SET match_score = ?
-                    WHERE candidate_id = ? AND position_id = ?
-                """, (new_score, cid, pool_id))
-                rescore_count += 1
+            if not v2_result:
+                continue
+
+            v2_score = v2_result.get('total', 0)
+
+            # V3 sonucunu al (Rule 4: FALLBACK)
+            v3_result = v3_results.get(cid)
+            v3_score = None
+            if v3_result:
+                if hasattr(v3_result, 'total_score'):
+                    v3_score = v3_result.total_score
+                elif isinstance(v3_result, dict):
+                    v3_score = v3_result.get('total_score')
+
+            # Weighted average hesapla (Rule 3: METADATA)
+            final_score, metadata = calculate_weighted_score(v2_score, v3_score, v3_weight, v2_weight)
+            metadata['source'] = 'rescore_position_candidates'
+            metadata['position_id'] = pool_id
+            metadata['candidate_id'] = cid
+            metadata_json = json_lib.dumps(metadata, ensure_ascii=False)
+
+            # matches güncelle
+            cursor.execute("""
+                UPDATE matches SET uyum_puani = ?, detayli_analiz = ?, calculation_metadata = ?
+                WHERE candidate_id = ? AND position_id = ?
+            """, (final_score, json_lib.dumps(v2_result, ensure_ascii=False), metadata_json,
+                  cid, pool_id))
+
+            # candidate_positions güncelle
+            cursor.execute("""
+                UPDATE candidate_positions
+                SET match_score = ?, v2_score = ?, v3_score = ?,
+                    calculation_metadata = ?, score_version = 'v3_weighted',
+                    updated_at = datetime('now')
+                WHERE candidate_id = ? AND position_id = ?
+            """, (final_score, v2_score, v3_score or 0, metadata_json, cid, pool_id))
+
+            rescore_count += 1
 
         conn.commit()
 
+    print(f"[rescore_position_candidates] V3 weighted rescore: {rescore_count} aday güncellendi")
     return rescore_count
 
 

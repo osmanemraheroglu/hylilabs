@@ -1,8 +1,56 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 19.03.2026
+Son güncelleme: 20.03.2026
 
-## ✅ TAMAMLANAN GÖREV: Akıllı Havuz Başlıkları - Bug Fix + Prompt Güncelleme
+## ✅ TAMAMLANAN GÖREV: V3 Weighted Average Rescore Fix
+
+**Tarih:** 2026-03-20
+
+### Sorun
+Title onayı (approve-titles G8) ve rescore fonksiyonları sadece V2 skoru yazıyordu, V3 weighted average (60%V3+40%V2) hesaplanmıyordu. Bu durum `candidate_positions.match_score` alanının yanlış (V2 only) değer içermesine neden oluyordu.
+
+### Kök Neden
+3 kritik fonksiyon V2 only yazıyordu:
+- `approve-titles G8` (pools.py:1556-1641)
+- `rescore_candidate()` (pools.py:2089-2237)
+- `rescore_position_candidates()` (pools.py:2475-2612)
+
+### Çözüm (4 Golden Rule)
+
+1. **DB Migration:**
+   - `candidate_positions.calculation_metadata` (TEXT)
+   - `candidate_positions.updated_at` (DATETIME)
+   - `matches.calculation_metadata` (TEXT)
+   - `system_settings` tablosu (v3_weight=0.60, v2_weight=0.40)
+
+2. **Helper Fonksiyonlar (pools.py:106-285):**
+   - `get_scoring_weights()`: Config'den ağırlıkları al (Rule 2: CONFIG)
+   - `calculate_weighted_score()`: V3 weighted average + JSON metadata (Rule 3 & 4)
+   - `batch_v3_evaluate()`: ThreadPoolExecutor ile paralel V3 (Rule 1: ASYNC/BULK)
+   - `update_score_with_metadata()`: Tablolara metadata ile güncelleme
+
+3. **Güncellenen Fonksiyonlar:**
+   - `approve-titles G8`: Batch V3 + weighted average + metadata
+   - `rescore_candidate()`: Single V3 + weighted average + metadata
+   - `rescore_position_candidates()`: Batch V3 + weighted average + metadata
+
+### 4 Golden Rule Uyumu
+| Rule | Açıklama | Durum |
+|------|----------|-------|
+| Rule 1 | ASYNC/BULK - ThreadPoolExecutor batch processing | ✅ |
+| Rule 2 | CONFIG - system_settings tablosundan ağırlık çekme | ✅ |
+| Rule 3 | METADATA - JSON calculation_metadata kayıt | ✅ |
+| Rule 4 | FALLBACK - V3 yoksa V2'ye düşme | ✅ |
+
+### Değişen Dosyalar
+- `api/routes/pools.py`: +381 satır (helper + 3 fonksiyon)
+
+### Backup
+- `talentflow.db.backup_v3_20260320_020406` (10.4 MB)
+
+---
+
+## ✅ TAMAMLANAN GÖREV: Akıllı Havuz Başlıkları - Tam Düzeltme
 
 **Tarih:** 2026-03-19
 
@@ -19,27 +67,62 @@ Son güncelleme: 19.03.2026
    - Sektör isimleri pozisyon olarak öneriliyordu
    - Farklı seviye pozisyonlar öneriliyordu
 
+3. **Frontend Build Eksik:**
+   - Türkçe etiketler kaynak kodda vardı ama build güncellenmemişti
+
 ### Çözümler
 
-1. **Backend Mapping Fix (pools.py):**
-   - `get_approved_titles()` (satır 1117-1132): `close` → `similar` mapping eklendi
-   - `get_pending_titles()` (satır 1160-1175): `close` → `similar` mapping eklendi
+1. **Backend Mapping Fix (pools.py:1117-1175):**
+   - `get_approved_titles()`: `close` → `similar` mapping eklendi
+   - `get_pending_titles()`: `close` → `similar` mapping eklendi
    - `level_mapping = {"exact": "exact", "close": "similar", "similar": "similar", "related": "related"}`
 
-2. **AI Prompt Güncelleme (pools.py satır 2056-2069):**
+2. **AI Prompt Güncelleme (pools.py:2056-2072):**
    - Kural 7 genişletildi: `ek_titlelar KURALLARI (KRİTİK)`
-   - 7a: exact tanımı + örnek
-   - 7b: close tanımı + örnek
+   - 7a: exact tanımı + örnek (birebir TR/EN çevirileri, max 4)
+   - 7b: close tanımı + örnek (aynı işi yapan alternatif pozisyonlar, max 6)
    - 7c: YASAK listesi (diploma, sektör, farklı seviye, araç/beceri, departman)
    - 7d: KONTROL sorusu ("Bu başlıkla ayrı iş ilanı açsam, AYNI işi yapan aday başvurur mu?")
+   - 7e: Boş liste senaryosu (uygun başlık yoksa [] döndür, zorlama yapma)
+
+3. **Frontend Türkçe Etiketler (havuzlar/index.tsx:1152-1189):**
+   - 🎯 Tam (exact)
+   - 🔄 Benzer (close/similar)
+   - 🔗 İlişkili (related/partial)
+   - Badge'da Türkçe label gösterimi
+
+4. **CLAUDE.md Kuralları Eklendi (satır 979-1024):**
+   - ek_titlelar kuralları (7a-7e) dokümante edildi
+   - Backend mapping dokümante edildi
+   - UI etiketleri dokümante edildi
+   - Sistem KİLİTLİ olarak işaretlendi
+
+5. **Frontend Build + PM2 Restart:**
+   - `npm run build` çalıştırıldı
+   - `pm2 restart hylilabs-frontend` yapıldı
 
 ### Değişen Dosyalar
-- `api/routes/pools.py`: 2 fonksiyon mapping fix + prompt kuralları genişletme
-- `src/features/havuzlar/index.tsx`: Pending titles badge Türkçe label (satır 1189)
+- `api/routes/pools.py`: Backend mapping + AI prompt kuralları (7a-7e)
+- `src/features/havuzlar/index.tsx`: Türkçe badge etiketleri
+- `CLAUDE.md`: Akıllı Havuz Başlıkları kuralları bölümü
 
-### Commitler
-- `5d2b64d`: fix: smart pool titles close→similar mapping + prompt rules
-- `39c727e`: fix: pending titles badge Turkish labels
+### Commitler (Tümü)
+| Commit | Mesaj |
+|--------|-------|
+| `5d2b64d` | fix: smart pool titles close→similar mapping + prompt rules |
+| `39c727e` | fix: pending titles badge Turkish labels |
+| `91bb6df` | docs: update activeContext with title badge fix |
+| `eb88330` | feat: add 7e rule for empty list scenario |
+| `3314448` | docs: add smart pool titles rules to CLAUDE.md |
+
+### Final Kontrol
+| Bileşen | Durum |
+|---------|-------|
+| AI Prompt (7a-7e) | ✅ |
+| Backend Mapping | ✅ |
+| Frontend Etiketler | ✅ |
+| CLAUDE.md | ✅ |
+| Frontend Build | ✅ (19.03.2026 20:21) |
 
 ---
 
