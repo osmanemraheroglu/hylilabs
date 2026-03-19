@@ -1,3 +1,14 @@
+/**
+ * PM2 ENV CACHE UYARISI
+ * ====================
+ * PM2, process baslatildiginda .env dosyasini CACHE'ler.
+ * ENV degisikligi yapildiginda "pm2 restart" YETMEZ!
+ *
+ * Cozum: ./scripts/pm2-reload-env.sh kullan
+ * veya:  pm2 delete <app> && pm2 start ecosystem.config.cjs --only <app>
+ *
+ * Detay: CLAUDE.md Kural #20
+ */
 module.exports = {
   apps: [
     {

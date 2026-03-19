@@ -6,7 +6,7 @@ Son güncelleme: 19.03.2026
 
 - **Sunucu:** hylilabs.com (PM2 ile çalışıyor)
 - **Domain:** https://hylilabs.com (Nginx + SSL aktif, 14.03.2026)
-- **Son commit:** synonyms.py context manager fix (19.03.2026)
+- **Son commit:** PM2 ENV reload script + docs (19.03.2026)
 - **Backend:** FastAPI + SQLite (WAL mode)
 - **Frontend:** React + TypeScript + Tailwind
 - **Puanlama:** 100 puan sistemi v2.1 + V3 weighted (60%V3+40%V2) aktif
@@ -15,6 +15,37 @@ Son güncelleme: 19.03.2026
 
 - Adnan Bey (İK Direktörü) — test + onay
 - 3 şirket, ~50 aday, 5 pozisyon
+
+## ✅ TAMAMLANAN GÖREV: PM2 ENV Cache Kalıcı Çözüm
+
+**Tarih:** 2026-03-19
+
+### Sorun
+PM2, process başlatıldığında .env dosyasını CACHE'ler. `pm2 restart` komutu ENV değişikliklerini YUKLEMEZ.
+Bu sebeple .env'de yapılan değişiklikler (örn: API key güncelleme) etkili olmaz.
+
+### Çözüm
+1. **Helper Script Oluşturuldu:** `scripts/pm2-reload-env.sh`
+   - Kritik ENV değerlerini maskeleyerek gösterir
+   - pm2 delete + pm2 start yaparak ENV'yi yeniler
+   - API health check yapar
+   - Kullanım: `./scripts/pm2-reload-env.sh` (backend), `./scripts/pm2-reload-env.sh all` (tümü)
+
+2. **ecosystem.config.cjs Güncellendi:**
+   - Dosya başına ENV cache uyarı yorumu eklendi
+   - Script referansı eklendi
+
+3. **CLAUDE.md Kural #20 Güncellendi:**
+   - Script referansı eklendi
+   - "ENV değişikliği sonrası API çalışmıyorsa bu kurala bak" notu eklendi
+
+### Tespit Edilen ENV Değişkenleri
+- API Keys: ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, HERMES_API_KEY
+- Security: JWT_SECRET, SECRET_KEY, EMAIL_ENCRYPTION_KEY
+- Config: ENV, DATABASE_PATH, CLAUDE_MODEL
+- Email: IMAP_*, SMTP_*, EMAIL_*
+
+---
 
 ## ✅ TAMAMLANAN GÖREV: database.py verify_* Connection Type Fix
 
