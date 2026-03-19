@@ -45,25 +45,40 @@ def scrape_kariyer_net(url: str) -> dict:
             # Çoklu boşlukları temizle
             text = re.sub(r'\s+', ' ', text)
             
-            # Sadece ilan içeriğini kes
+            # Header bölümünü al (pozisyon adı, firma, lokasyon burada)
+            # Kariyer.net header örneği: "Firma Pozisyon İş İlanı ... İstanbul(Avr.) ... Pozisyon Firma Lokasyon Tam Zamanlı"
+            header_end_markers = ["İş İlanı Hakkında", "İlan Hakkında", "GENEL NİTELİKLER"]
+            header_end_idx = len(text)
+            for marker in header_end_markers:
+                idx = text.find(marker)
+                if idx != -1:
+                    header_end_idx = idx
+                    break
+
+            # Header'ı al (max 600 karakter - pozisyon adı, firma, lokasyon)
+            header_text = text[:min(header_end_idx, 600)].strip()
+
+            # Ana içeriği al (İş İlanı Hakkında'dan sonrası)
             start_markers = ["İş İlanı Hakkında", "İlan Hakkında"]
             end_markers = ["Şirket Hakkında", "Şirketin Diğer İlanları", "Benzer İlanlar", "Bu İlanı Paylaş"]
-            
+
             start_idx = 0
             for marker in start_markers:
                 idx = text.find(marker)
                 if idx != -1:
                     start_idx = idx
                     break
-            
+
             end_idx = len(text)
             for marker in end_markers:
                 idx = text.find(marker)
                 if idx != -1 and idx > start_idx:
                     end_idx = idx
                     break
-            
-            clean_text = text[start_idx:end_idx].strip()
+
+            # Header + ana içerik birleştir
+            main_content = text[start_idx:end_idx].strip()
+            clean_text = f"[HEADER] {header_text} [/HEADER]\n\n{main_content}"
             
             # Aday Kriterleri bölümünü de ekle (deneyim, eğitim bilgisi için)
             aday_idx = text.find("Aday Kriterleri")
@@ -102,9 +117,11 @@ def parse_job_with_ai(text: str) -> dict:
 
     JOB_PARSE_PROMPT = """İş ilanından şu bilgileri çıkar:
 
-1. pozisyon_adi: Tırnak içindeki pozisyon adı
-2. firma: Şirket adı (ilk cümlede geçen)
-3. lokasyon: Şehir/ilçe (örn: "İstanbul", "Ankara", "İzmir")
+ÖNEMLİ: [HEADER] ve [/HEADER] arasındaki bölüm sayfa başlığıdır. Pozisyon adı, firma adı ve lokasyon bilgisi GENELLIKLE bu bölümde bulunur. Örnek: "[HEADER] TOR Holding İş Geliştirme Uzmanı İş İlanı ... İstanbul(Avr.) (Esenyurt) [/HEADER]"
+
+1. pozisyon_adi: Pozisyon adı (HEADER bölümünde veya sayfada geçen, örn: "İş Geliştirme Uzmanı", "Test Uzmanı")
+2. firma: Şirket adı (HEADER bölümünde veya sayfada geçen, örn: "TOR Holding", "OPET")
+3. lokasyon: Şehir/ilçe (HEADER bölümünde veya sayfada geçen, örn: "İstanbul", "Ankara", "İstanbul(Avr.)")
 4. deneyim_yil: Minimum deneyim yılı SAYI olarak (örn: "3-5 yıl" → 3, "En az 5 yıl" → 5, "5+" → 5)
 5. egitim_seviyesi: İstenen eğitim seviyesi STANDART FORMATTA (Lise, Ön Lisans, Lisans, Yüksek Lisans, Doktora)
    - "Üniversite(Mezun)" → "Lisans"

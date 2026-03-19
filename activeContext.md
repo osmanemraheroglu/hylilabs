@@ -16,6 +16,39 @@ Son güncelleme: 19.03.2026
 - Adnan Bey (İK Direktörü) — test + onay
 - 3 şirket, ~50 aday, 5 pozisyon
 
+## ✅ TAMAMLANAN GÖREV: Kariyer.net URL Parse Bug Fix
+
+**Tarih:** 2026-03-19
+
+### Sorun
+Kariyer.net URL analiz edildiğinde pozisyon adı, firma ve lokasyon "Belirtilmemiş" dönüyordu.
+
+### Kök Neden
+`scrape_kariyer_net()` fonksiyonu metni "İş İlanı Hakkında" marker'ından itibaren kesiyordu.
+Ancak pozisyon adı, firma ve lokasyon bilgileri bu marker'ın **ÖNÜNDE** (sayfa header/title bölümünde) yer alıyor.
+
+**Örnek HTML yapısı:**
+```
+TOR Holding İş Geliştirme Uzmanı İş İlanı ... İstanbul(Avr.) (Esenyurt) ...
+[İş İlanı Hakkında]  <-- marker burada, önceki bilgiler kesiliyor
+GENEL NİTELİKLER ...
+```
+
+### Çözüm
+1. **scrape_kariyer_net() Güncellendi:**
+   - Header bölümünü (ilk 600 karakter) `[HEADER]...[/HEADER]` olarak sakla
+   - Ana içerikle birleştir
+   - AI'a hem header hem içerik gönder
+
+2. **AI Prompt Güncellendi:**
+   - `[HEADER]` tag'i açıklaması eklendi
+   - Pozisyon adı/firma/lokasyon için HEADER'a bakması söylendi
+
+### Değişen Dosya
+- `api/job_scraper.py`: satır 48-81 (scraper), satır 118-124 (prompt)
+
+---
+
 ## ✅ TAMAMLANAN GÖREV: PM2 ENV Cache Kalıcı Çözüm + Git Hook
 
 **Tarih:** 2026-03-19
