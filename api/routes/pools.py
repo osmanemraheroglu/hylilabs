@@ -218,11 +218,14 @@ def batch_v3_evaluate(candidates_data: list, position_dict: dict, max_workers: i
 
             for c in candidates_data:
                 candidate_id = c.get('id') or c.get('candidate_id')
-                if candidate_id:
+                position_id = position_dict.get('id')
+                if candidate_id and position_id:
                     future = executor.submit(
                         evaluate_candidate_sync,
-                        c,
-                        position_dict
+                        candidate_id,      # candidate_id
+                        position_id,       # position_id
+                        c,                 # candidate_data
+                        position_dict      # position_data
                     )
                     future_to_candidate[future] = candidate_id
 
@@ -2169,7 +2172,12 @@ def rescore_candidate(pool_id: int, candidate_id: int, current_user: dict = Depe
             v3_score = None
             try:
                 from core.scoring_v3 import evaluate_candidate_sync
-                v3_result_obj = evaluate_candidate_sync(candidate_dict, position_dict)
+                v3_result_obj = evaluate_candidate_sync(
+                    candidate_id,      # candidate_id
+                    pool_id,           # position_id
+                    candidate_dict,    # candidate_data
+                    position_dict      # position_data
+                )
                 if v3_result_obj:
                     if hasattr(v3_result_obj, 'total_score'):
                         v3_score = v3_result_obj.total_score
