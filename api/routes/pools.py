@@ -1115,7 +1115,11 @@ def get_approved_titles(pool_id: int, current_user: dict = Depends(get_current_u
             rows = cursor.fetchall()
 
         # match_level bazli grupla
+        # NOT: AI prompt "exact" ve "close" dondurur
+        # Frontend "exact", "similar", "related" bekler
+        # Mapping: close -> similar
         result = {"exact": [], "similar": [], "related": []}
+        level_mapping = {"exact": "exact", "close": "similar", "similar": "similar", "related": "related"}
         for row in rows:
             item = {
                 "id": row["id"],
@@ -1123,11 +1127,9 @@ def get_approved_titles(pool_id: int, current_user: dict = Depends(get_current_u
                 "match_level": row["match_level"],
                 "source": row["source"]
             }
-            level = row["match_level"] or "related"
-            if level in result:
-                result[level].append(item)
-            else:
-                result["related"].append(item)
+            db_level = row["match_level"] or "related"
+            mapped_level = level_mapping.get(db_level, "related")
+            result[mapped_level].append(item)
 
         return {"success": True, "data": result}
     except HTTPException:
@@ -1156,7 +1158,11 @@ def get_pending_titles(pool_id: int, current_user: dict = Depends(get_current_us
             rows = cursor.fetchall()
 
         # match_level bazli grupla
+        # NOT: AI prompt "exact" ve "close" dondurur
+        # Frontend "exact", "similar", "related" bekler
+        # Mapping: close -> similar
         result = {"exact": [], "similar": [], "related": []}
+        level_mapping = {"exact": "exact", "close": "similar", "similar": "similar", "related": "related"}
         for row in rows:
             item = {
                 "id": row["id"],
@@ -1164,11 +1170,9 @@ def get_pending_titles(pool_id: int, current_user: dict = Depends(get_current_us
                 "match_level": row["match_level"],
                 "source": row["source"]
             }
-            level = row["match_level"] or "related"
-            if level in result:
-                result[level].append(item)
-            else:
-                result["related"].append(item)
+            db_level = row["match_level"] or "related"
+            mapped_level = level_mapping.get(db_level, "related")
+            result[mapped_level].append(item)
 
         return {"success": True, "data": result}
     except HTTPException:
@@ -2048,7 +2052,21 @@ KURALLAR:
 4. deneyim_yil: Sayısal değer ("minimum 8 yıl" → 8, belirtilmemişse 0)
 5. seviye: Ast varsa yönetici seviyesi, yoksa uzman/mühendis
 6. Türkçe keyword varsa İngilizce karşılığını da ek_keywordler'e ekle
-7. ek_titlelar.exact: Hem Türkçe hem İngilizce ZORUNLU
+
+7. ek_titlelar KURALLARI (KRİTİK):
+   a) exact: SADECE pozisyon başlığının birebir TR/EN çevirileri (max 4)
+      - Örnek: "Test & Commissioning Engineer" → ["Test ve Devreye Alma Mühendisi", "Test Engineer", "Commissioning Engineer"]
+   b) close: Aynı işi yapan alternatif pozisyon isimleri (max 6)
+      - Örnek: "Saha Test Mühendisi", "Field Service Engineer", "Site Engineer"
+   c) YASAK - Şunları ek_titlelar'a ASLA KOYMA:
+      - Diploma/eğitim gereksinimleri (örn: "Makine Mühendisi" diploma ise pozisyon DEĞİL)
+      - Sektör isimleri (örn: "Gemi İnşaat", "İnşaat Sektörü", "Enerji")
+      - Farklı seviye pozisyonlar (Manager ≠ Engineer, Müdür ≠ Uzman, Şef ≠ Mühendis)
+      - Araç/beceri/sertifika adları (örn: "SAP Uzmanı", "AutoCAD Operatörü")
+      - Departman isimleri (örn: "Teknik Departman", "Kalite Birimi")
+   d) KONTROL: Her öneriyi şu soruyla test et:
+      "Bu başlıkla ayrı bir iş ilanı açsam, AYNI işi yapan aday başvurur mu?"
+      Hayır ise → KOYMA
 """
 
     try:

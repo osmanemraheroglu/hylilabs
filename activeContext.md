@@ -2,6 +2,42 @@
 
 Son güncelleme: 19.03.2026
 
+## ✅ TAMAMLANAN GÖREV: Akıllı Havuz Başlıkları - Bug Fix + Prompt Güncelleme
+
+**Tarih:** 2026-03-19
+
+### Tespit Edilen Sorunlar
+
+1. **Backend Mapping Bug:**
+   - AI prompt `exact` ve `close` döndürüyor
+   - Frontend `exact`, `similar`, `related` bekliyor
+   - Backend'de `close` mapping YOKTU → otomatik `related`'a düşüyordu
+
+2. **AI Prompt Eksikliği:**
+   - Title önerileri için sadece 1 kural vardı (kural 7)
+   - Diploma/eğitim gereksinimleri pozisyon olarak öneriliyordu
+   - Sektör isimleri pozisyon olarak öneriliyordu
+   - Farklı seviye pozisyonlar öneriliyordu
+
+### Çözümler
+
+1. **Backend Mapping Fix (pools.py):**
+   - `get_approved_titles()` (satır 1117-1132): `close` → `similar` mapping eklendi
+   - `get_pending_titles()` (satır 1160-1175): `close` → `similar` mapping eklendi
+   - `level_mapping = {"exact": "exact", "close": "similar", "similar": "similar", "related": "related"}`
+
+2. **AI Prompt Güncelleme (pools.py satır 2056-2069):**
+   - Kural 7 genişletildi: `ek_titlelar KURALLARI (KRİTİK)`
+   - 7a: exact tanımı + örnek
+   - 7b: close tanımı + örnek
+   - 7c: YASAK listesi (diploma, sektör, farklı seviye, araç/beceri, departman)
+   - 7d: KONTROL sorusu ("Bu başlıkla ayrı iş ilanı açsam, AYNI işi yapan aday başvurur mu?")
+
+### Değişen Dosya
+- `api/routes/pools.py`: 2 fonksiyon mapping fix + prompt kuralları genişletme
+
+---
+
 ## Mevcut Sistem Durumu
 
 - **Sunucu:** hylilabs.com (PM2 ile çalışıyor)
