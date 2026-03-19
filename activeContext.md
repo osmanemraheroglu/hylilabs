@@ -33,8 +33,13 @@ Son güncelleme: 19.03.2026
    - 7c: YASAK listesi (diploma, sektör, farklı seviye, araç/beceri, departman)
    - 7d: KONTROL sorusu ("Bu başlıkla ayrı iş ilanı açsam, AYNI işi yapan aday başvurur mu?")
 
-### Değişen Dosya
+### Değişen Dosyalar
 - `api/routes/pools.py`: 2 fonksiyon mapping fix + prompt kuralları genişletme
+- `src/features/havuzlar/index.tsx`: Pending titles badge Türkçe label (satır 1189)
+
+### Commitler
+- `5d2b64d`: fix: smart pool titles close→similar mapping + prompt rules
+- `39c727e`: fix: pending titles badge Turkish labels
 
 ---
 
