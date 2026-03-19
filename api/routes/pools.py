@@ -2067,6 +2067,9 @@ KURALLAR:
    d) KONTROL: Her öneriyi şu soruyla test et:
       "Bu başlıkla ayrı bir iş ilanı açsam, AYNI işi yapan aday başvurur mu?"
       Hayır ise → KOYMA
+   e) Uygun başlık bulunamazsa boş liste döndür:
+      "exact": [] veya "close": []
+      Zorlama yapma, alakasız başlık KOYMA.
 """
 
     try:
