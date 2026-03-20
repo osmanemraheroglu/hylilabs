@@ -1081,3 +1081,69 @@ match_score = (v3_score × 0.60) + (v2_score × 0.40)
 
 Bu sistem KİLİTLİDİR. Değiştirilemez.
 
+---
+
+## ═══════════════════════════════════════════════════════════════
+## HyliLabs V3 SCORING PROTOCOL (KİLİTLİ - 2026-03-20)
+## ═══════════════════════════════════════════════════════════════
+Commit: 526ed26
+
+### Protokol Akışı
+
+```
+INITIAL: Gemini + Hermes paralel çalıştır
+├─► İkisi de 0 → Exception, çık
+└─► Devam
+
+RETRY LOGIC: Biri 0+, diğeri 0 ise
+└─► 0 olan modele MAX_RETRIES=3 ile tekrar sor
+
+OpenAI FALLBACK: Retry sonrası hala tek pozitif varsa
+└─► OpenAI'yi çağır
+
+ARBITRATION: İki pozitif skor farkı > 15 ise
+└─► arbitrate_with_claude() tetikle
+
+RESULT: En az 2 pozitif skor ile ortalama al
+```
+
+### Kök Neden (Çözülen Bug)
+
+**Bug:** `gemini_ok = result.error is None` → 0 skor "başarılı" sayılıyordu
+**Sonuç:** Gemini=0, Hermes=90 → V3=(0+90)/2=45 (YANLIŞ!)
+**Düzeltme:** `gemini_ok = result.error is None AND result.total_score > 0`
+
+### Kod Değişiklikleri
+
+| Dosya | Satır | Değişiklik |
+|-------|-------|------------|
+| ai_evaluator.py | 178 | MAX_RETRIES = 1 → 3 |
+| ai_evaluator.py | 230-238 | gemini_ok/hermes_ok: total_score > 0 kontrolü |
+| ai_evaluator.py | 246-253 | İkisi de 0 → Exception |
+| ai_evaluator.py | 255-280 | Retry logic (0 skor için) |
+| ai_evaluator.py | 290-307 | OpenAI fallback: total_score > 0 kontrolü |
+| ai_evaluator.py | 316-321 | successful_results: sadece pozitif skorlar |
+| ai_evaluator.py | 412-470 | _retry_zero_score_model(), _retry_gemini_zero_score() |
+
+### Test Sonuçları (2026-03-20)
+
+| Aday | Eski V3 | Yeni V3 | Fark | Eski Gemini | Yeni Gemini |
+|------|---------|---------|------|-------------|-------------|
+| 450 | 45 | 81 | +36 | 0 | 83 |
+| 383 | 37 | 38 | +1 | 0 | 36 |
+| 462 | 45 | 43 | -2 | 0 | 27 |
+
+### DEĞİŞTİRİLEMEZ KURALLAR
+
+1. **MAX_RETRIES = 3** - 0 skor için 3 kez retry zorunlu
+2. **total_score > 0** - 0 skor başarısız sayılır, ortalamaya dahil edilmez
+3. **Tek pozitif → OpenAI** - Retry sonrası tek pozitif varsa OpenAI çağrılır
+4. **Fark > 15 → Claude** - İki skor farkı büyükse arbitration zorunlu
+5. **En az 2 pozitif** - V3 oluşması için minimum 2 model başarılı olmalı
+
+### İlgili Dosya
+
+- `api/core/scoring_v3/ai_evaluator.py`
+
+Bu protokol KİLİTLİDİR. Değiştirilemez.
+

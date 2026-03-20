@@ -2,6 +2,25 @@
 
 Son güncelleme: 20.03.2026
 
+## ✅ TAMAMLANAN GÖREV: HyliLabs Protocol CLAUDE.md Dokümantasyonu
+
+**Tarih:** 2026-03-20
+
+### Yapılan İş
+HyliLabs V3 SCORING PROTOCOL bölümü CLAUDE.md'ye eklendi (satır 1086-1148).
+
+### Eklenen İçerik
+- Protokol akış diyagramı (INITIAL → RETRY → FALLBACK → ARBITRATION → RESULT)
+- Kök neden açıklaması (gemini_ok bug)
+- Kod değişiklikleri tablosu (7 satır)
+- Test sonuçları tablosu (3 aday)
+- 5 DEĞİŞTİRİLEMEZ KURAL
+
+### Dosya
+- CLAUDE.md: +63 satır
+
+---
+
 ## ✅ TAMAMLANAN GÖREV: HyliLabs Protocol - V3 Scoring Zero Score Bug Fix
 
 **Tarih:** 2026-03-20
