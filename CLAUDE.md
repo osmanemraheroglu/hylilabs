@@ -1022,3 +1022,62 @@ Commitler: 5d2b64d, 39c727e, eb88330
 
 Bu sistem KİLİTLİDİR. Değiştirilemez.
 
+---
+
+## ═══════════════════════════════════════════════════════════════
+## V3 WEIGHTED AVERAGE SİSTEMİ (KİLİTLİ - DEĞİŞTİRİLEMEZ)
+## ═══════════════════════════════════════════════════════════════
+Tarih: 2026-03-20
+Commitler: b6fced1, 709bba2
+
+### ÖZET
+CV skorlama sistemi V3 weighted average kullanıyor:
+```
+match_score = (v3_score × 0.60) + (v2_score × 0.40)
+```
+
+### KÖK NEDEN (ÇÖZÜLEN BUG)
+3 fonksiyon sadece V2 skoru yazıyordu, V3 weighted average hesaplamıyordu:
+- `approve-titles G8` (pools.py) - Title onayı sonrası rescore
+- `rescore_candidate()` (pools.py) - Tekil aday rescore
+- `rescore_position_candidates()` (pools.py) - Toplu rescore
+
+**Sonuç:** CV Çek'te doğru hesaplanan skor, title onayı veya rescore sonrası V2 değerine düşüyordu.
+
+### ÇÖZÜM (4 ALTIN KURAL)
+
+| Kural | Uygulama |
+|-------|----------|
+| 1. Async/Bulk | `batch_v3_evaluate()` - ThreadPoolExecutor ile paralel V3 değerlendirme |
+| 2. Config | `get_scoring_weights()` - Katsayılar `system_settings` tablosundan |
+| 3. Metadata | `calculation_metadata` - JSON olarak hesaplama detayları |
+| 4. Fallback | V3 başarısız → V2 korunur, log yazılır |
+
+### VERİTABANI DEĞİŞİKLİKLERİ
+- `candidate_positions.calculation_metadata` (TEXT) - JSON hesaplama detayları
+- `candidate_positions.updated_at` (DATETIME) - Güncelleme zamanı
+- `matches.calculation_metadata` (TEXT) - JSON hesaplama detayları
+- `system_settings` tablosu - v3_weight=0.60, v2_weight=0.40
+
+### HELPER FONKSİYONLAR (pools.py)
+
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `get_scoring_weights()` | Config'den v3_weight/v2_weight çeker |
+| `calculate_weighted_score()` | Weighted average + metadata hesaplar |
+| `batch_v3_evaluate()` | Paralel V3 değerlendirme (ThreadPoolExecutor) |
+| `update_score_with_metadata()` | Skor + metadata günceller |
+
+### KİLİTLİ KURALLAR
+1. **Formül sabit:** `match_score = (v3 × 0.60) + (v2 × 0.40)` - Katsayılar sadece `system_settings` tablosundan değiştirilebilir
+2. **Fallback zorunlu:** V3 başarısız olursa V2 skoru korunur, 0 yazılmaz
+3. **Metadata zorunlu:** Her skor güncellemesinde `calculation_metadata` JSON yazılır
+4. **3 fonksiyon senkron:** approve-titles G8, rescore_candidate, rescore_position_candidates aynı mantığı kullanır
+
+### İLGİLİ DOSYALAR
+- `api/routes/pools.py` - Helper fonksiyonlar + 3 güncellenen fonksiyon
+- `api/core/scoring_v3/evaluate_candidate.py` - V3 değerlendirme
+- `system_settings` tablosu - Katsayı config
+
+Bu sistem KİLİTLİDİR. Değiştirilemez.
+
