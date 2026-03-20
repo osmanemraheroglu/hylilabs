@@ -175,7 +175,7 @@ class AIEvaluator:
     SCORE_DIFFERENCE_THRESHOLD = 15  # Bu farkin uzerinde Claude devreye girer
 
     # Retry settings
-    MAX_RETRIES = 1
+    MAX_RETRIES = 3  # HyliLabs Protocol: 0 skor için 3 retry
     RETRY_DELAY = 2  # saniye
     RETRY_STATUS_CODES = {500, 502, 503, 504, 529}  # 5xx hatalar
 
@@ -227,14 +227,57 @@ class AIEvaluator:
         )
 
         # Basari durumlarini kontrol et
-        gemini_ok = gemini_result is not None and gemini_result.error is None
-        hermes_ok = hermes_result is not None and hermes_result.error is None
+        # HyliLabs Protocol: total_score > 0 kontrolü EKLENDİ
+        gemini_ok = (gemini_result is not None and
+                     gemini_result.error is None and
+                     gemini_result.total_score is not None and
+                     gemini_result.total_score > 0)
+        hermes_ok = (hermes_result is not None and
+                     hermes_result.error is None and
+                     hermes_result.total_score is not None and
+                     hermes_result.total_score > 0)
 
         logger.info(f"Paralel degerlendirme tamamlandi. "
-                   f"Gemini: {gemini_result.total_score if gemini_ok else 'HATA'}, "
-                   f"Hermes: {hermes_result.total_score if hermes_ok else 'HATA'}")
+                   f"Gemini: {gemini_result.total_score if gemini_ok else 'HATA/0'}, "
+                   f"Hermes: {hermes_result.total_score if hermes_ok else 'HATA/0'}")
 
         openai_result = None
+
+        # HyliLabs Protocol Adim 1: İkisi de 0 ise çık
+        both_zero = (
+            (gemini_result is not None and gemini_result.error is None and gemini_result.total_score == 0) and
+            (hermes_result is not None and hermes_result.error is None and hermes_result.total_score == 0)
+        )
+        if both_zero:
+            logger.warning("HyliLabs Protocol: İkisi de 0 skor döndü, değerlendirme sonlandırılıyor")
+            raise Exception("Tüm AI modelleri 0 skor döndü - CV değerlendirilemedi")
+
+        # HyliLabs Protocol Adim 2: Biri 0+ diğeri 0 ise, 0 olana retry
+        if gemini_ok and not hermes_ok:
+            # Hermes 0 veya hata - retry
+            if hermes_result is not None and hermes_result.error is None and hermes_result.total_score == 0:
+                logger.info("HyliLabs Protocol: Hermes 0 skor döndü, retry başlatılıyor...")
+                hermes_result = await self._retry_zero_score_model(
+                    "Hermes", system_prompt, evaluation_prompt
+                )
+                hermes_ok = (hermes_result is not None and
+                             hermes_result.error is None and
+                             hermes_result.total_score is not None and
+                             hermes_result.total_score > 0)
+                logger.info(f"Hermes retry sonucu: {hermes_result.total_score if hermes_ok else 'HATA/0'}")
+
+        if hermes_ok and not gemini_ok:
+            # Gemini 0 veya hata - retry
+            if gemini_result is not None and gemini_result.error is None and gemini_result.total_score == 0:
+                logger.info("HyliLabs Protocol: Gemini 0 skor döndü, retry başlatılıyor...")
+                gemini_result = await self._retry_gemini_zero_score(
+                    system_prompt, evaluation_prompt
+                )
+                gemini_ok = (gemini_result is not None and
+                             gemini_result.error is None and
+                             gemini_result.total_score is not None and
+                             gemini_result.total_score > 0)
+                logger.info(f"Gemini retry sonucu: {gemini_result.total_score if gemini_ok else 'HATA/0'}")
 
         # 2. Ikisi de basarili -> Normal consensus (OpenAI cagrilmaz)
         if gemini_ok and hermes_ok:
@@ -244,29 +287,37 @@ class AIEvaluator:
                 system_prompt, evaluation_prompt, start_time
             )
 
-        # 3. Biri basarisiz -> OpenAI sigorta devreye
+        # HyliLabs Protocol Adim 3: Retry sonrası hala tek pozitif skor varsa -> OpenAI fallback
         if not gemini_ok or not hermes_ok:
             failed_model = "Gemini" if not gemini_ok else "Hermes"
-            logger.warning(f"{failed_model} basarisiz, OpenAI sigorta devreye giriyor...")
+            logger.warning(f"HyliLabs Protocol: {failed_model} retry sonrası hala başarısız, OpenAI fallback devreye giriyor...")
 
             if self.openai_api_key:
                 openai_result = await self._evaluate_openai(
                     system_prompt, evaluation_prompt
                 )
+                # HyliLabs Protocol: OpenAI için de total_score > 0 kontrolü
                 if openai_result.error:
                     logger.warning(f"OpenAI de basarisiz: {openai_result.error}")
+                elif openai_result.total_score is None or openai_result.total_score == 0:
+                    logger.warning(f"OpenAI 0 skor döndü, başarısız sayılıyor")
                 else:
                     logger.info(f"OpenAI basarili: skor={openai_result.total_score}")
             else:
                 logger.warning("OpenAI API key yok, sigorta kullanilamadi")
 
         # 4. Basarili modelleri topla
+        # HyliLabs Protocol: total_score > 0 kontrolü zorunlu
         successful_results = []
-        if gemini_ok:
+        if gemini_ok:  # Zaten total_score > 0 kontrolü var
             successful_results.append(("Gemini", gemini_result))
-        if hermes_ok:
+        if hermes_ok:  # Zaten total_score > 0 kontrolü var
             successful_results.append(("Hermes", hermes_result))
-        if openai_result and openai_result.error is None:
+        # OpenAI için de aynı total_score > 0 kontrolü
+        if (openai_result and
+            openai_result.error is None and
+            openai_result.total_score is not None and
+            openai_result.total_score > 0):
             successful_results.append(("OpenAI", openai_result))
 
         logger.info(f"Basarili model sayisi: {len(successful_results)}")
@@ -365,6 +416,66 @@ class AIEvaluator:
             score_diff, eligible_disagreement, total_time,
             primary_results, models_used
         )
+
+    async def _retry_zero_score_model(
+        self,
+        model_name: str,
+        system_prompt: str,
+        evaluation_prompt: str
+    ) -> EvaluationResult:
+        """
+        HyliLabs Protocol: 0 skor dönen modele MAX_RETRIES kadar tekrar dene.
+        Hermes için kullanılır.
+        """
+        logger.info(f"HyliLabs Protocol: {model_name} için {self.MAX_RETRIES} retry başlatılıyor...")
+
+        for attempt in range(self.MAX_RETRIES):
+            logger.info(f"{model_name} retry {attempt + 1}/{self.MAX_RETRIES}")
+
+            async with aiohttp.ClientSession() as session:
+                if model_name == "Hermes":
+                    result = await self._evaluate_hermes(session, system_prompt, evaluation_prompt)
+                else:
+                    # Varsayılan olarak error dön
+                    return self._error_result(model_name, f"Bilinmeyen model: {model_name}")
+
+                # Başarılı mı kontrol et
+                if result.error is None and result.total_score is not None and result.total_score > 0:
+                    logger.info(f"{model_name} retry {attempt + 1} başarılı: skor={result.total_score}")
+                    return result
+
+                logger.warning(f"{model_name} retry {attempt + 1} başarısız: skor={result.total_score}")
+                await asyncio.sleep(self.RETRY_DELAY)
+
+        logger.warning(f"{model_name} tüm retry'lar başarısız")
+        return result  # Son denemenin sonucunu dön
+
+    async def _retry_gemini_zero_score(
+        self,
+        system_prompt: str,
+        evaluation_prompt: str
+    ) -> EvaluationResult:
+        """
+        HyliLabs Protocol: 0 skor dönen Gemini'ye MAX_RETRIES kadar tekrar dene.
+        """
+        logger.info(f"HyliLabs Protocol: Gemini için {self.MAX_RETRIES} retry başlatılıyor...")
+
+        for attempt in range(self.MAX_RETRIES):
+            logger.info(f"Gemini retry {attempt + 1}/{self.MAX_RETRIES}")
+
+            async with aiohttp.ClientSession() as session:
+                result = await self._evaluate_gemini(session, system_prompt, evaluation_prompt)
+
+                # Başarılı mı kontrol et
+                if result.error is None and result.total_score is not None and result.total_score > 0:
+                    logger.info(f"Gemini retry {attempt + 1} başarılı: skor={result.total_score}")
+                    return result
+
+                logger.warning(f"Gemini retry {attempt + 1} başarısız: skor={result.total_score}")
+                await asyncio.sleep(self.RETRY_DELAY)
+
+        logger.warning(f"Gemini tüm retry'lar başarısız")
+        return result  # Son denemenin sonucunu dön
 
     async def _evaluate_parallel(
         self,

@@ -2,6 +2,59 @@
 
 Son güncelleme: 20.03.2026
 
+## ✅ TAMAMLANAN GÖREV: HyliLabs Protocol - V3 Scoring Zero Score Bug Fix
+
+**Tarih:** 2026-03-20
+
+### Sorun
+V3 değerlendirmede Gemini veya Hermes 0 skor döndürdüğünde sistem bunu "başarılı" sayıyordu.
+Sonuç: Gemini(0) + Hermes(90) ortalaması → V3=45 (yanlış), olması gereken V3=90.
+
+### Kök Neden
+`ai_evaluator.py` satır 230-231:
+```python
+# ESKI (BUG):
+gemini_ok = gemini_result is not None and gemini_result.error is None
+# total_score > 0 kontrolü YOK!
+```
+
+### Çözüm (HyliLabs Protocol 5 Adım)
+
+| Adım | Açıklama | Dosya/Satır |
+|------|----------|-------------|
+| 1 | İkisi de 0 → Exception fırlat | ai_evaluator.py:246-253 |
+| 2 | Biri 0+ diğeri 0 → MAX_RETRIES=3 ile retry | ai_evaluator.py:255-280 |
+| 3 | Retry sonrası hala tek pozitif → OpenAI fallback | ai_evaluator.py:290-307 |
+| 4 | Fark > 15 → Claude arbitration (mevcut, korundu) | ai_evaluator.py:175 |
+| 5 | Orchestrator pattern | evaluate() fonksiyonu |
+
+### Yapılan Değişiklikler
+
+1. **MAX_RETRIES = 3** (satır 178)
+   - Eski: 1, Yeni: 3
+
+2. **gemini_ok/hermes_ok total_score > 0 kontrolü** (satır 230-238)
+   - `total_score is not None and total_score > 0` eklendi
+
+3. **İkisi de 0 kontrolü** (satır 246-253)
+   - `both_zero` durumunda Exception fırlatılıyor
+
+4. **Retry helper fonksiyonları** (satır 412-470)
+   - `_retry_zero_score_model()`: Hermes için
+   - `_retry_gemini_zero_score()`: Gemini için
+   - MAX_RETRIES kadar deneme, her deneme sonrası total_score > 0 kontrolü
+
+5. **OpenAI fallback güncelleme** (satır 316-321)
+   - `total_score > 0` kontrolü eklendi
+
+### Etkilenen Adaylar
+- candidate_id: 450, 462, 383 (V3 Anomaly analizi sonucu)
+
+### Dosyalar
+- `api/core/scoring_v3/ai_evaluator.py`: +80 satır (helper + logic)
+
+---
+
 ## ✅ TAMAMLANAN GÖREV: V3 Weighted Average Rescore Fix
 
 **Tarih:** 2026-03-20
