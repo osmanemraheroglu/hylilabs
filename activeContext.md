@@ -2,6 +2,40 @@
 
 Son güncelleme: 20.03.2026
 
+## ✅ TAMAMLANAN GÖREV: Frontend score_version Filter Fix
+
+**Tarih:** 2026-03-20
+
+### Sorun
+Frontend'de `score_version === 'v3_hylilabs_protocol'` tanınmıyordu.
+3 aday (Büşra Aymaz, SAMET KAYA, Semih Aydın Demir) yanlışlıkla "Değerlendir" butonu görüyordu.
+
+### Kök Neden
+`havuzlar/index.tsx:202` satırında score_version kontrolü sadece `'v3_weighted'` ve `'v3'` kabul ediyordu.
+HyliLabs Protocol rescore işlemi `score_version = 'v3_hylilabs_protocol'` değerini kullanıyordu.
+
+### Çözüm
+Satır 202'de filtre genişletildi:
+```javascript
+// ÖNCEKİ:
+if (c.score_version === 'v3_weighted' || c.score_version === 'v3') {
+
+// YENİ:
+if (c.score_version === 'v3_weighted' || c.score_version === 'v3' || c.score_version === 'v3_hylilabs_protocol') {
+```
+
+### Etkilenen Adaylar
+| Aday | ID | Önceki | Yeni |
+|------|-----|--------|------|
+| Büşra Aymaz | 462 | "Değerlendir" | V3 skor görünür |
+| SAMET KAYA | 383 | "Değerlendir" | V3 skor görünür |
+| Semih Aydın Demir | 450 | "Değerlendir" | V3 skor görünür |
+
+### Dosya
+- `src/features/havuzlar/index.tsx`: Satır 202
+
+---
+
 ## ✅ TAMAMLANAN GÖREV: HyliLabs Protocol CLAUDE.md Dokümantasyonu
 
 **Tarih:** 2026-03-20

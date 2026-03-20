@@ -199,7 +199,7 @@ export default function Havuzlar() {
             weaknesses: string[]
           }> = {}
           res.data.forEach((c: { id: number; v3_score?: number; gemini_score?: number; hermes_score?: number; openai_score?: number; score_version?: string }) => {
-            if (c.score_version === 'v3_weighted' || c.score_version === 'v3') {
+            if (c.score_version === 'v3_weighted' || c.score_version === 'v3' || c.score_version === 'v3_hylilabs_protocol') {
               v3Data[c.id] = {
                 total_score: c.v3_score || 0,
                 eligible: (c.v3_score || 0) >= 40,
