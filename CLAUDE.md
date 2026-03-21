@@ -1187,10 +1187,10 @@ Bu sistem KİLİTLİDİR. Değiştirilemez.
 
 | Kategori | Durum | Bulgu Sayısı |
 |----------|-------|--------------|
-| KRİTİK | 🔴 | 6 |
-| YÜKSEK | 🟡 | 4 |
-| ORTA | 🟠 | 4 |
-| **TOPLAM** | | **14** |
+| KRİTİK | ✅ | 6/6 Tamamlandı |
+| YÜKSEK | ✅ | 4/4 Tamamlandı |
+| ORTA | ✅ | 4/4 Tamamlandı |
+| **TOPLAM** | ✅ | **14/14 (%100)** |
 
 ---
 
@@ -1218,14 +1218,14 @@ Bu sistem KİLİTLİDİR. Değiştirilemez.
 
 ---
 
-### P2 - ORTA (SONRAKI SPRINT)
+### P2 - ORTA (TAMAMLANDI)
 
 | # | Sorun | Tablo/Dosya | Durum |
 |---|-------|-------------|-------|
-| 11 | company_id eksik | email_logs | ⏳ Bekliyor |
-| 12 | company_id eksik | api_usage_logs | ⏳ Bekliyor |
-| 13 | SQL Injection riski (f-string) | candidates.py:363-365, synonyms.py:1624 | ⏳ Bekliyor |
-| 14 | Rate limiting eksik | interviews.py, /api/test/db | ⏳ Bekliyor |
+| 11 | company_id eksik | email_logs | ✅ Tamamlandı (7584285) |
+| 12 | company_id eksik | api_usage_logs | ✅ Zaten vardı (NULL = historical) |
+| 13 | SQL Injection riski (f-string) | candidates.py:363-365, synonyms.py:1624 | ✅ FALSE POSITIVE (parameterized query) |
+| 14 | Rate limiting eksik + /api/test/db | interviews.py (zaten var), main.py (endpoint kaldırıldı) | ✅ Tamamlandı (7584285) |
 
 ---
 
@@ -1273,5 +1273,5 @@ ORDER BY m.name;
 | 2026-03-21 | 0de76a6 | P0-A: candidate_positions company_id migration | ✅ |
 | 2026-03-21 | a832d91 | P0-B: DELETE sorguları + AI masking | ✅ |
 | 2026-03-21 | 53d2741 | P1: 3 tabloya company_id migration (ai_evaluations zaten vardı) | ✅ |
-| - | - | P2: Rate limiting + SQL injection fix | ⏳ |
+| 2026-03-21 | 7584285 | P2: email_logs company_id + /api/test/db kaldırıldı | ✅ |
 

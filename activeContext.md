@@ -2,6 +2,60 @@
 
 Son güncelleme: 21.03.2026
 
+## ✅ TAMAMLANAN GÖREV: P2 Güvenlik - Orta Öncelikli Düzeltmeler
+
+**Tarih:** 2026-03-21
+**Commit:** 7584285
+
+### Sorun
+4 orta öncelikli güvenlik bulgusu:
+- email_logs tablosunda company_id yok
+- api_usage_logs'ta NULL company_id kayıtları
+- SQL Injection riski (candidates.py, synonyms.py)
+- Rate limiting eksik (interviews.py) + /api/test/db public endpoint
+
+### Çözüm
+
+**1. Database Migration (email_logs):**
+- ALTER TABLE email_logs ADD COLUMN company_id
+- Index oluşturuldu: idx_email_logs_company_id
+- 75 mevcut kayıt NULL (tarihsel veri, email hesabı bilgisi yok)
+
+**2. api_usage_logs Analizi:**
+- company_id zaten VAR
+- 653/680 kayıt NULL (eski kayıtlar, user_id de NULL)
+- Tarihsel veri, düzeltme gerekli DEĞİL
+
+**3. SQL Injection Analizi (FALSE POSITIVE):**
+- candidates.py:363-365 → Parameterized query kullanılıyor (GÜVENLİ)
+- synonyms.py:1624 → Hardcoded column names + parameterized values (GÜVENLİ)
+
+**4. Rate Limiting + Test Endpoint:**
+- interviews.py → Zaten rate limiting VAR (satır 816)
+- /api/test/db → Endpoint KALDIRILDI (main.py)
+
+**5. Backend Güncellemeleri:**
+
+| Dosya | Değişiklik |
+|-------|------------|
+| models.py | EmailLog.company_id alanı eklendi |
+| database.py | log_email() INSERT'e company_id eklendi |
+| email_worker.py | EmailLog company_id ile oluşturuluyor |
+| cv.py | EmailLog company_id ile oluşturuluyor |
+| routes/cv.py | EmailLog company_id ile oluşturuluyor |
+| main.py | /api/test/db endpoint kaldırıldı |
+
+### 🎯 GÜVENLİK DENETİMİ TAMAMLANDI
+
+| Öncelik | Durum |
+|---------|-------|
+| P0 KRİTİK | ✅ 6/6 Tamamlandı |
+| P1 YÜKSEK | ✅ 4/4 Tamamlandı |
+| P2 ORTA | ✅ 4/4 Tamamlandı |
+| **TOPLAM** | ✅ **14/14 (%100)** |
+
+---
+
 ## ✅ TAMAMLANAN GÖREV: P1 Güvenlik - 3 Tabloya company_id Migration
 
 **Tarih:** 2026-03-21
@@ -46,7 +100,7 @@ Son güncelleme: 21.03.2026
 |---------|-------|
 | P0 KRİTİK | ✅ 6/6 Tamamlandı |
 | P1 YÜKSEK | ✅ 4/4 Tamamlandı |
-| P2 ORTA | ⏳ 4 sorun bekliyor |
+| P2 ORTA | ✅ 4/4 Tamamlandı |
 
 ---
 
