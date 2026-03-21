@@ -519,6 +519,8 @@ Title onayı (approve-titles G8) ve rescore fonksiyonları sadece V2 skoru yazı
   - Kök neden: assign_candidate → match_score=0 → frontend < 40 filtresi → aday gizleniyor
   - Çözüm: pools.py assign_candidate endpoint'ine V2+V3 skorlama eklendi
   - V2 → V3 → weighted average → candidate_positions + matches güncelleme
+  - Toplu rescore endpoint: POST /api/pools/{id}/rescore-unscored
+  - Frontend: "Skorlanmamışları Puanla" butonu eklendi
 
 ---
 

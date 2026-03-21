@@ -750,6 +750,18 @@ export default function Havuzlar() {
                     </>
                   )}
                   <Button variant="outline" size="sm" onClick={() => setAssignDialogOpen(true)}><UserPlus className="h-3.5 w-3.5 mr-1" />Aday Ata</Button>
+                  {poolInfo && poolInfo.pool_type === 'position' && (
+                    <Button variant="outline" size="sm" onClick={() => {
+                      fetch(`${API}/api/pools/${selectedPoolId}/rescore-unscored`, { method: 'POST', headers: H() })
+                        .then(r => r.json()).then(res => {
+                          if (res.success) {
+                            toast.success(res.message)
+                            loadCandidates(selectedPoolId)
+                            loadTree()
+                          } else toast.error(res.detail || 'Hata')
+                        }).catch(() => toast.error('Bağlantı hatası'))
+                    }}><RefreshCw className="h-3.5 w-3.5 mr-1" />Skorlanmamışları Puanla</Button>
+                  )}
                 </div>
 
                 {/* Açıklama kaldırıldı */}

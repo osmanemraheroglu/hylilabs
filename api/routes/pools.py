@@ -2172,6 +2172,122 @@ def get_candidate_cv(pool_id: int, candidate_id: int, current_user: dict = Depen
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/{pool_id}/rescore-unscored")
+def rescore_unscored_candidates(pool_id: int, current_user: dict = Depends(get_current_user)):
+    """match_score=0 veya NULL olan adayları toplu rescore et"""
+    from scoring_v2 import calculate_match_score_v2
+    import json as json_lib
+
+    try:
+        company_id = current_user["company_id"]
+        if not verify_department_pool_ownership(pool_id, company_id):
+            raise HTTPException(status_code=403, detail="Erişim yetkiniz yok")
+
+        with get_write_connection() as conn:
+            cursor = conn.cursor()
+
+            # Skorlanmamış adayları bul
+            cursor.execute("""
+                SELECT cp.candidate_id
+                FROM candidate_positions cp
+                WHERE cp.position_id = ? AND (cp.match_score = 0 OR cp.match_score IS NULL)
+            """, (pool_id,))
+            unscored = [row['candidate_id'] for row in cursor.fetchall()]
+
+            if not unscored:
+                return {"success": True, "message": "Skorlanmamış aday yok", "rescored": 0}
+
+            # Pozisyon bilgileri
+            cursor.execute("""
+                SELECT id, name, keywords, gerekli_deneyim_yil, gerekli_egitim, lokasyon
+                FROM department_pools WHERE id = ? AND company_id = ? AND pool_type = 'position'
+            """, (pool_id, company_id))
+            pos = cursor.fetchone()
+            if not pos:
+                raise HTTPException(status_code=404, detail="Pozisyon bulunamadı")
+
+            position_dict = {
+                'id': pos['id'], 'name': pos['name'] or '',
+                'keywords': pos['keywords'] or '[]',
+                'gerekli_deneyim_yil': pos['gerekli_deneyim_yil'] or 0,
+                'gerekli_egitim': pos['gerekli_egitim'] or '', 'lokasyon': pos['lokasyon'] or ''
+            }
+
+            rescored = 0
+            for cid in unscored:
+                try:
+                    cursor.execute("""
+                        SELECT id, ad_soyad, teknik_beceriler, toplam_deneyim_yil,
+                               egitim, lokasyon, cv_raw_text, deneyim_detay,
+                               mevcut_pozisyon, mevcut_sirket
+                        FROM candidates WHERE id = ? AND company_id = ?
+                    """, (cid, company_id))
+                    cand = cursor.fetchone()
+                    if not cand:
+                        continue
+
+                    candidate_dict = {
+                        'id': cand['id'], 'ad_soyad': cand['ad_soyad'] or '',
+                        'teknik_beceriler': cand['teknik_beceriler'] or '',
+                        'toplam_deneyim_yil': cand['toplam_deneyim_yil'] or 0,
+                        'egitim': cand['egitim'] or '', 'lokasyon': cand['lokasyon'] or '',
+                        'cv_raw_text': cand['cv_raw_text'] or '', 'deneyim_detay': cand['deneyim_detay'] or '',
+                        'mevcut_pozisyon': cand['mevcut_pozisyon'] or '', 'mevcut_sirket': cand['mevcut_sirket'] or ''
+                    }
+
+                    # V2 skorlama
+                    v2_result = calculate_match_score_v2(candidate_dict, position_dict)
+                    v2_score = v2_result.get('total', 0) if v2_result else 0
+
+                    # V3 değerlendirme
+                    v3_score = None
+                    v3_result_obj = None
+                    try:
+                        from core.scoring_v3 import evaluate_candidate_sync
+                        v3_result_obj = evaluate_candidate_sync(cid, pool_id, candidate_dict, position_dict)
+                        if v3_result_obj and hasattr(v3_result_obj, 'total_score'):
+                            v3_score = v3_result_obj.total_score
+                            from database import save_v3_evaluation_to_db
+                            save_v3_evaluation_to_db(cid, pool_id, v3_result_obj, company_id)
+                    except Exception as v3_err:
+                        logging.warning(f"Toplu rescore V3 hatası: cid={cid}, error={v3_err}")
+
+                    # Weighted average
+                    v3_weight, v2_weight = get_scoring_weights()
+                    final_score, metadata = calculate_weighted_score(v2_score, v3_score, v3_weight, v2_weight)
+
+                    v3_gemini = getattr(v3_result_obj, 'gemini_score', 0) if v3_result_obj else 0
+                    v3_hermes = getattr(v3_result_obj, 'hermes_score', 0) if v3_result_obj else 0
+                    v3_openai = getattr(v3_result_obj, 'openai_score', 0) if v3_result_obj else 0
+
+                    cursor.execute("""
+                        UPDATE candidate_positions
+                        SET match_score = ?, v2_score = ?, v3_score = ?,
+                            gemini_score = ?, hermes_score = ?, openai_score = ?,
+                            score_version = 'v3_weighted', updated_at = datetime('now')
+                        WHERE candidate_id = ? AND position_id = ?
+                    """, (final_score, v2_score, v3_score or 0, v3_gemini, v3_hermes, v3_openai, cid, pool_id))
+
+                    detayli_analiz = json_lib.dumps(v2_result, ensure_ascii=False) if v2_result else '{}'
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO matches (candidate_id, position_id, uyum_puani, detayli_analiz)
+                        VALUES (?, ?, ?, ?)
+                    """, (cid, pool_id, final_score, detayli_analiz))
+
+                    rescored += 1
+                    logging.info(f"Toplu rescore: cid={cid}, v2={v2_score}, v3={v3_score}, final={final_score}")
+                except Exception as e:
+                    logging.error(f"Toplu rescore tek aday hatası: cid={cid}, error={e}")
+
+            conn.commit()
+            return {"success": True, "message": f"{rescored}/{len(unscored)} aday skorlandı", "rescored": rescored, "total": len(unscored)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/{pool_id}/candidates/{candidate_id}/rescore")
 def rescore_candidate(pool_id: int, candidate_id: int, current_user: dict = Depends(get_current_user)):
     """Tek aday için v2 skorunu yeniden hesapla"""
