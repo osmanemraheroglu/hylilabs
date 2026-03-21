@@ -1179,3 +1179,99 @@ MINIMUM_MATCH_THRESHOLD = 40     # database.py:81
 
 Bu sistem KİLİTLİDİR. Değiştirilemez.
 
+---
+
+## 🔐 GÜVENLİK DENETİM BULGULARI (2026-03-21)
+
+### Denetim Özeti
+
+| Kategori | Durum | Bulgu Sayısı |
+|----------|-------|--------------|
+| KRİTİK | 🔴 | 6 |
+| YÜKSEK | 🟡 | 4 |
+| ORTA | 🟠 | 4 |
+| **TOPLAM** | | **14** |
+
+---
+
+### P0 - KRİTİK (HEMEN DÜZELTİLMELİ)
+
+| # | Sorun | Tablo/Dosya | Durum |
+|---|-------|-------------|-------|
+| 1 | company_id eksik | candidate_positions | ✅ Tamamlandı (0de76a6) |
+| 2 | company_id eksik | candidate_pool_assignments | ✅ Zaten vardı |
+| 3 | company_id eksik | matches | ✅ Zaten vardı |
+| 4 | company_id eksik | applications | ✅ Zaten vardı (NULL düzeltildi) |
+| 5 | DELETE sorgularında company_id filtresi eksik | candidates.py:146-147,255,257 | ⏳ Bekliyor (KİLİTLİ dosya) |
+| 6 | AI prompt'larına data masking YOK | smart_prompt_builder.py:280-376 | ⏳ Bekliyor |
+
+---
+
+### P1 - YÜKSEK (BU HAFTA)
+
+| # | Sorun | Tablo/Dosya | Durum |
+|---|-------|-------------|-------|
+| 7 | company_id eksik | position_criteria | ⏳ Bekliyor |
+| 8 | company_id eksik | ai_evaluations | ⏳ Bekliyor |
+| 9 | company_id eksik | ai_analyses | ⏳ Bekliyor |
+| 10 | company_id eksik | hr_evaluations | ⏳ Bekliyor |
+
+---
+
+### P2 - ORTA (SONRAKI SPRINT)
+
+| # | Sorun | Tablo/Dosya | Durum |
+|---|-------|-------------|-------|
+| 11 | company_id eksik | email_logs | ⏳ Bekliyor |
+| 12 | company_id eksik | api_usage_logs | ⏳ Bekliyor |
+| 13 | SQL Injection riski (f-string) | candidates.py:363-365, synonyms.py:1624 | ⏳ Bekliyor |
+| 14 | Rate limiting eksik | interviews.py, /api/test/db | ⏳ Bekliyor |
+
+---
+
+### 🔒 GÜVENLİK KURALLARI (DEĞİŞTİRİLEMEZ)
+
+#### KURAL 1: Multi-Tenancy İzolasyonu
+Tüm tablolarda company_id kolonu ZORUNLU. Her SELECT/INSERT/UPDATE/DELETE sorgusunda company_id filtresi OLMALI.
+
+#### KURAL 2: AI Data Masking
+AI servislerine (Claude, Gemini, Hermes, OpenAI) gönderilen verilerde şunlar MASKELENMELİ:
+- Aday adı → "Aday_001" formatında
+- Email → "email_001@masked.com"
+- Telefon → "0000000000"
+- Firma adı → "Firma_X"
+
+#### KURAL 3: DELETE Sorguları
+Tüm DELETE sorgularında company_id filtresi ZORUNLU. Filtresiz DELETE yasak.
+
+#### KURAL 4: KVKK Uyumluluğu
+- AI servislerine veri göndermeden önce açık rıza kontrolü
+- Kişisel veriler anonimize edilmeli
+- Veri minimizasyonu ilkesi uygulanmalı
+
+---
+
+### company_id Eksik Tablo Kontrolü (Güncel)
+```sql
+-- Bu sorgu ile company_id eksik tablo kontrolü yapılabilir
+SELECT m.name as tablo,
+       CASE WHEN EXISTS (
+           SELECT 1 FROM pragma_table_info(m.name) WHERE name = 'company_id'
+       ) THEN '✅ VAR' ELSE '❌ YOK' END as company_id_durumu
+FROM sqlite_master m
+WHERE type = 'table'
+AND name NOT LIKE 'sqlite_%'
+ORDER BY m.name;
+```
+
+---
+
+### Düzeltme Geçmişi
+
+| Tarih | Commit | Açıklama | Durum |
+|-------|--------|----------|-------|
+| 2026-03-21 | 0de76a6 | P0-A: candidate_positions company_id migration | ✅ |
+| - | - | P0-B: DELETE sorguları + AI masking | ⏳ |
+| - | - | P1: 4 tabloya company_id migration | ⏳ |
+| - | - | P2: Rate limiting + SQL injection fix | ⏳ |
+
