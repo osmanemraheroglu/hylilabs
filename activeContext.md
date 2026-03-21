@@ -1,6 +1,56 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 20.03.2026
+Son güncelleme: 21.03.2026
+
+## ✅ TAMAMLANAN GÖREV: CV Çek Threshold - 4 Katmanlı Kalıcı Çözüm
+
+**Tarih:** 2026-03-21
+
+### Sorun
+match_score < 40 olan adaylar pozisyon listesinde görünüyordu (Büşra Aymaz: 39, SAMET KAYA: 23).
+
+### Çözüm (4 Katmanlı Savunma)
+
+| Katman | Konum | Açıklama |
+|--------|-------|----------|
+| 1. Backend INSERT | database.py:7880-7883 | V2 skoru < 40 ise listeye ekleme |
+| 2. Backend DELETE | database.py:8010,8684 | V3 sonrası < 40 ise sil |
+| 3. Frontend Filter | havuzlar/index.tsx:647-650 | < 40 adayları gizle |
+| 4. Data Cleanup | SQL | Mevcut < 40 adaylar silindi |
+
+### Kod Değişiklikleri
+
+**database.py:**
+```python
+# Satır 81 - Sabit tanımı
+MINIMUM_MATCH_THRESHOLD = 40     # Minimum match score to insert (CV Çek threshold)
+
+# Satır 7880-7883 - INSERT öncesi kontrol
+if match_score < MINIMUM_MATCH_THRESHOLD:
+    logger.info(f"[Threshold] Aday {candidate_id} elendi: match_score={match_score} < {MINIMUM_MATCH_THRESHOLD}")
+    continue
+
+# Satır 8010, 8684 - V3 sonrası DELETE
+if final_score < MINIMUM_MATCH_THRESHOLD:
+    cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ? AND position_id = ?", ...)
+```
+
+**havuzlar/index.tsx:**
+```javascript
+// Satır 647-650 - Frontend filtre
+const MINIMUM_MATCH_THRESHOLD = 40
+const filteredCandidates = candidates.filter(c => {
+  if ((c.match_score || 0) < MINIMUM_MATCH_THRESHOLD) return false
+  ...
+})
+```
+
+### Veri Temizliği
+- candidate_positions: 2 kayıt silindi
+- matches: 2 kayıt silindi
+- Etkilenen adaylar: SAMET KAYA (23), Büşra Aymaz (39)
+
+---
 
 ## ✅ TAMAMLANAN GÖREV: Frontend score_version Filter Fix
 

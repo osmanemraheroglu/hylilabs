@@ -644,7 +644,10 @@ export default function Havuzlar() {
   }
 
   // Filtering & Sorting
+  const MINIMUM_MATCH_THRESHOLD = 40 // Minimum skor eşiği (backend ile senkron)
   const filteredCandidates = candidates.filter(c => {
+    // Threshold kontrolü: < 40 puan adayları gizle
+    if ((c.match_score || 0) < MINIMUM_MATCH_THRESHOLD) return false
     if (searchQuery) {
       const q = searchQuery.toLocaleLowerCase('tr-TR')
       if (!(c.ad_soyad || '').toLocaleLowerCase('tr-TR').includes(q) && !(c.email || '').toLocaleLowerCase('tr-TR').includes(q) && !(c.mevcut_pozisyon || '').toLocaleLowerCase('tr-TR').includes(q)) return false

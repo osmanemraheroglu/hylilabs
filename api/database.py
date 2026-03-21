@@ -78,6 +78,7 @@ logger = logging.getLogger(__name__)
 # ============ PULL MATCH THRESHOLDS (G1) ============
 PULL_MATCH_CLOSE_THRESHOLD = 75    # Close title match (was 85)
 PULL_MATCH_PARTIAL_THRESHOLD = 60  # Partial title match (was 70)
+MINIMUM_MATCH_THRESHOLD = 40     # Minimum match score to insert (CV Çek threshold)
 
 # ============ EXCLUSIVE KEYWORD GROUPS (FAZ 16) ============
 # Bu gruplar birbirinden tamamen farklı alanları temsil eder.
@@ -7875,6 +7876,11 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                     logger.warning(f"position_id={position_pool_id} bulunamadı veya pozisyon değil, atlanıyor")
                     continue
 
+
+                # Threshold kontrolü: < 40 puan ise ekleme (MINIMUM_MATCH_THRESHOLD)
+                if match_score < MINIMUM_MATCH_THRESHOLD:
+                    logger.info(f"[Threshold] Aday {candidate_id} elendi: match_score={match_score} < {MINIMUM_MATCH_THRESHOLD}")
+                    continue
                 # Adayı listeye ekle (henüz INSERT yapma)
                 matched_candidates_list.append({
                     'candidate_id': candidate_id,
@@ -8001,7 +8007,7 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
                             save_v3_evaluation_to_db(candidate_id, position_pool_id, v3_result, company_id, conn=conn)
 
                             # Eligible değilse (score < 40) adayı pozisyondan çıkar
-                            if final_score < 40:
+                            if final_score < MINIMUM_MATCH_THRESHOLD:
                                 cursor.execute("""
                                     DELETE FROM candidate_positions
                                     WHERE candidate_id = ? AND position_id = ?
@@ -8675,7 +8681,7 @@ def match_single_candidate_to_positions(candidate_id: int, company_id: int) -> d
                     save_v3_evaluation_to_db(candidate_id, position_id, v3_result, company_id)
                     
                     # Final < 40 kontrolü - bu pozisyonu atla
-                    if final_score < 40:
+                    if final_score < MINIMUM_MATCH_THRESHOLD:
                         logger.info(f"[match_single] Final skor düşük ({final_score}), pozisyon atlanıyor")
                         continue
                 else:

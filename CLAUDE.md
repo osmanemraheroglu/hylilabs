@@ -1147,3 +1147,35 @@ RESULT: En az 2 pozitif skor ile ortalama al
 
 Bu protokol KİLİTLİDİR. Değiştirilemez.
 
+---
+
+## ═══════════════════════════════════════════════════════════════
+## CV ÇEK THRESHOLD SİSTEMİ (KİLİTLİ - 2026-03-21)
+## ═══════════════════════════════════════════════════════════════
+
+### Kural
+match_score < 40 olan adaylar pozisyona EKLENMEMELİ ve GÖSTERİLMEMELİ.
+
+### 4 Katmanlı Savunma
+
+| Katman | Konum | Açıklama |
+|--------|-------|----------|
+| 1. Backend INSERT | database.py:81,7880-7883 | V2 skoru < MINIMUM_MATCH_THRESHOLD ise listeye ekleme |
+| 2. Backend DELETE | database.py:8010,8684 | V3 sonrası < MINIMUM_MATCH_THRESHOLD ise sil |
+| 3. Frontend Filter | havuzlar/index.tsx:647-650 | < 40 adayları gizle |
+| 4. Data Cleanup | Manuel SQL | Mevcut < 40 adaylar silinmeli |
+
+### Sabit
+```python
+MINIMUM_MATCH_THRESHOLD = 40     # database.py:81
+```
+
+### DEĞİŞTİRİLEMEZ KURALLAR
+
+1. **MINIMUM_MATCH_THRESHOLD = 40** - Bu değer değiştirilemez
+2. **4 Katman korunmalı** - Hiçbir katman devre dışı bırakılamaz
+3. **Frontend + Backend senkron** - Her ikisinde de 40 eşiği kullanılmalı
+4. **Yeni CV Çek işleminde** - < 40 adaylar otomatik elenir
+
+Bu sistem KİLİTLİDİR. Değiştirilemez.
+
