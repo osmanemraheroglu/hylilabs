@@ -69,20 +69,23 @@ def check_emails_for_account(account: dict) -> dict:
                 logger.debug(f"Atlandi (islenmis): {email_msg.message_id}")
                 continue
 
+            # P2 Security: company_id email hesabından alınıyor
+            company_id = account.get("company_id", 1)
+
             # Email logla
             email_log = EmailLog(
                 email_id=email_msg.message_id,
                 gonderen=email_msg.sender,
                 konu=email_msg.subject,
                 tarih=email_msg.date,
-                ek_sayisi=len(email_msg.attachments)
+                ek_sayisi=len(email_msg.attachments),
+                company_id=company_id  # P2 Security: multi-tenancy izolasyonu
             )
             log_email(email_log)
 
             # Aynı email'den gelen ekler için aday ID'sini takip et
             # İlk ek aday oluşturur, sonraki ekler mevcut adaya eklenir veya atlanır
             email_candidate_id = None
-            company_id = account.get("company_id", 1)
 
             # Ekleri isle
             for attachment in email_msg.attachments:

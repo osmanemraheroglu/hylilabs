@@ -9107,14 +9107,15 @@ def log_email(email_log: EmailLog) -> int:
     """Email logunu kaydet"""
     with get_write_connection() as conn:
         cursor = conn.cursor()
+        # P2 Security: company_id ile multi-tenancy izolasyonu
         cursor.execute("""
             INSERT OR IGNORE INTO email_logs (
-                email_id, gonderen, konu, tarih, ek_sayisi, islendi, hata
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                email_id, gonderen, konu, tarih, ek_sayisi, islendi, hata, company_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             email_log.email_id, email_log.gonderen, email_log.konu,
             email_log.tarih, email_log.ek_sayisi, email_log.islendi,
-            email_log.hata
+            email_log.hata, email_log.company_id
         ))
         return cursor.lastrowid
 

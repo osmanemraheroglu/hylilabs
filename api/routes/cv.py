@@ -417,7 +417,8 @@ def scan_emails_for_cv(body: ScanEmailsRequest, current_user: dict = Depends(get
                 gonderen=email_msg.sender,
                 konu=email_msg.subject,
                 tarih=email_msg.date,
-                ek_sayisi=len(email_msg.attachments)
+                ek_sayisi=len(email_msg.attachments),
+                company_id=company_id  # P2 Security: multi-tenancy izolasyonu
             )
             log_email(email_log)
 

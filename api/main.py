@@ -94,10 +94,4 @@ app.include_router(ai_evaluation_router)
 def health_check():
     return {"status": "ok"}
 
-@app.get("/api/test/db")
-def test_db():
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM candidates")
-        count = cursor.fetchone()[0]
-    return {"candidate_count": count}
+# P2 Security: /api/test/db endpoint kaldırıldı (public erişim güvenlik açığı)

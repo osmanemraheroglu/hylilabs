@@ -117,6 +117,7 @@ class EmailLog(BaseModel):
     islendi: bool = False
     hata: Optional[str] = None
     islem_tarihi: datetime = Field(default_factory=datetime.now)
+    company_id: Optional[int] = None  # P2 Security: multi-tenancy izolasyonu
 
 
 class CVParseResult(BaseModel):
