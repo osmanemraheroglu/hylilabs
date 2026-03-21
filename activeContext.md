@@ -521,6 +521,7 @@ Title onayı (approve-titles G8) ve rescore fonksiyonları sadece V2 skoru yazı
   - V2 → V3 → weighted average → candidate_positions + matches güncelleme
   - Toplu rescore endpoint: POST /api/pools/{id}/rescore-unscored
   - Frontend: "Skorlanmamışları Puanla" butonu eklendi
+  - ai_evaluation.py cache okuma: cached[] → cached.get() (KeyError fix)
 
 ---
 
