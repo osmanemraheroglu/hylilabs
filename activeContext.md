@@ -2,6 +2,39 @@
 
 Son güncelleme: 21.03.2026
 
+## ✅ TAMAMLANAN GÖREV: P0-A Güvenlik Migration - candidate_positions company_id
+
+**Tarih:** 2026-03-21
+
+### Sorun
+`candidate_positions` tablosunda `company_id` kolonu yoktu → Multi-tenancy izolasyonu kırıktı.
+
+### Çözüm
+
+**1. DB Migration:**
+- `candidate_positions` tablosuna `company_id INTEGER` kolonu eklendi
+- 31 mevcut kayıt `candidates.company_id` JOIN ile güncellendi
+- `applications` tablosundaki 5 NULL `company_id` kaydı düzeltildi
+- 4 tabloya `idx_*_company_id` indexleri oluşturuldu
+
+**2. INSERT Sorguları Güncellendi:**
+
+| Dosya:Satır | Fonksiyon | Değişiklik |
+|-------------|-----------|------------|
+| database.py:7921-7925 | `pull_matching_candidates_to_position()` | company_id parametresi eklendi |
+| database.py:12896-12903 | `add_candidate_to_position()` | company_id parametresi eklendi |
+| database.py:5280-5301 | Migration recovery | candidates JOIN ile company_id |
+
+**3. Backup:**
+- `talentflow.db.backup_security_p0_20260321_165822` (10.4 MB)
+
+### Kalan Tablolar (Zaten OK)
+- `candidate_pool_assignments`: company_id VAR, NULL yok ✅
+- `matches`: company_id VAR, NULL yok ✅
+- `applications`: company_id VAR, NULL düzeltildi ✅
+
+---
+
 ## ✅ TAMAMLANAN GÖREV: CV Çek Threshold - 4 Katmanlı Kalıcı Çözüm
 
 **Tarih:** 2026-03-21

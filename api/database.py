@@ -5272,25 +5272,32 @@ def _init_email_collection_table():
                     cursor.execute("PRAGMA table_info(candidate_positions_backup)")
                     backup_cols = [col[1] for col in cursor.fetchall()]
                     has_v3 = 'v3_score' in backup_cols
+                    has_company_id = 'company_id' in backup_cols
 
                     if has_v3:
-                        cursor.execute("""
+                        # company_id backup'ta varsa kullan, yoksa candidates'tan JOIN ile al
+                        company_id_expr = "IFNULL(cp.company_id, c.company_id)" if has_company_id else "c.company_id"
+                        cursor.execute(f"""
                             INSERT INTO candidate_positions (candidate_id, position_id, match_score, status, created_at,
-                                v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version)
+                                v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version, company_id)
                             SELECT cp.candidate_id, cp.position_id, cp.match_score, cp.status, cp.created_at,
                                 IFNULL(cp.v2_score, 0), IFNULL(cp.v3_score, 0), IFNULL(cp.gemini_score, 0),
-                                IFNULL(cp.hermes_score, 0), IFNULL(cp.openai_score, 0), IFNULL(cp.score_version, 'v2')
+                                IFNULL(cp.hermes_score, 0), IFNULL(cp.openai_score, 0), IFNULL(cp.score_version, 'v2'),
+                                {company_id_expr}
                             FROM candidate_positions_backup cp
-                            WHERE EXISTS (SELECT 1 FROM candidates c WHERE c.id = cp.candidate_id)
-                              AND EXISTS (SELECT 1 FROM department_pools dp WHERE dp.id = cp.position_id)
+                            JOIN candidates c ON c.id = cp.candidate_id
+                            WHERE EXISTS (SELECT 1 FROM department_pools dp WHERE dp.id = cp.position_id)
                         """)
                     else:
-                        cursor.execute("""
-                            INSERT INTO candidate_positions (candidate_id, position_id, match_score, status, created_at)
-                            SELECT cp.candidate_id, cp.position_id, cp.match_score, cp.status, cp.created_at
+                        # company_id backup'ta varsa kullan, yoksa candidates'tan JOIN ile al
+                        company_id_expr = "IFNULL(cp.company_id, c.company_id)" if has_company_id else "c.company_id"
+                        cursor.execute(f"""
+                            INSERT INTO candidate_positions (candidate_id, position_id, match_score, status, created_at, company_id)
+                            SELECT cp.candidate_id, cp.position_id, cp.match_score, cp.status, cp.created_at,
+                                {company_id_expr}
                             FROM candidate_positions_backup cp
-                            WHERE EXISTS (SELECT 1 FROM candidates c WHERE c.id = cp.candidate_id)
-                              AND EXISTS (SELECT 1 FROM department_pools dp WHERE dp.id = cp.position_id)
+                            JOIN candidates c ON c.id = cp.candidate_id
+                            WHERE EXISTS (SELECT 1 FROM department_pools dp WHERE dp.id = cp.position_id)
                         """)
                     restored_count = cursor.rowcount
                     logger.info(f"Veri geri yüklendi: {restored_count}/{row_count} kayıt")
@@ -7920,9 +7927,9 @@ def pull_matching_candidates_to_position(position_pool_id: int, company_id: int,
             try:
                 cursor.execute("""
                     INSERT OR IGNORE INTO candidate_positions
-                    (candidate_id, position_id, match_score, status, created_at)
-                    VALUES (?, ?, ?, 'beklemede', datetime('now'))
-                """, (candidate_id, position_pool_id, match_score))
+                    (candidate_id, position_id, match_score, status, created_at, company_id)
+                    VALUES (?, ?, ?, 'beklemede', datetime('now'), ?)
+                """, (candidate_id, position_pool_id, match_score, company_id))
                 inserted = cursor.rowcount > 0
                 if not inserted:
                     logger.debug(f"candidate_positions INSERT başarısız (muhtemelen zaten mevcut): candidate_id={candidate_id}, position_id={position_pool_id}")
@@ -12891,15 +12898,16 @@ def add_candidate_to_position(
             return {"success": False, "error": "İşe alınmış aday pozisyona atanamaz"}
 
         try:
-            # 4. candidate_positions'a INSERT
+            # 4. candidate_positions'a INSERT (company_id dahil - P0-A güvenlik)
+            actual_company_id = company_id or cand_row['company_id']
             cursor.execute("""
                 INSERT INTO candidate_positions (
                     candidate_id, position_id, match_score, status,
-                    v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version
+                    v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version, company_id
                 )
-                VALUES (?, ?, ?, 'beklemede', ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, 'beklemede', ?, ?, ?, ?, ?, ?, ?)
             """, (candidate_id, position_id, match_score,
-                  v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version))
+                  v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version, actual_company_id))
 
             # 5. candidates.durum ve havuz güncelle
             cursor.execute("""
