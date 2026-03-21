@@ -1843,7 +1843,10 @@ export default function Havuzlar() {
                           </div>
                           <div className="text-center p-2 bg-white rounded">
                             <p className="text-xs text-gray-500">Ortalama</p>
-                            <p className="font-bold">{selectedCandidateDetail.avg_ai_score || '-'}%</p>
+                            <p className="font-bold">{(() => {
+                              const scores = [selectedCandidateDetail.gemini_score, selectedCandidateDetail.hermes_score, selectedCandidateDetail.openai_score].filter((s): s is number => s != null && s > 0)
+                              return scores.length > 0 ? `${Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)}%` : '-%'
+                            })()}</p>
                           </div>
                         </div>
                       </div>
