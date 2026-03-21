@@ -458,9 +458,19 @@ Title onayı (approve-titles G8) ve rescore fonksiyonları sadece V2 skoru yazı
 | CLAUDE.md | ✅ |
 | Frontend Build | ✅ (19.03.2026 20:21) |
 
----
+### 21.03.2026 - AI Model Skorları Ortalama Fix
+- ✅ **Aday Detay Modal: Ortalama AI skoru hesaplanıp gösteriliyor**
+  - `avg_ai_score` (backend'de yok) yerine frontend'de dinamik hesaplama
+  - Aktif model sayısına göre ortalama (0'dan büyük skorlar)
+  - Hiç skor yoksa `-%` gösterimi
 
-## Mevcut Sistem Durumu
+### 21.03.2026 - Skor Detayı Bölümü
+- ✅ **Aday Detay Modal: Skor Detayı bölümü eklendi**
+  - V2 (Keyword) x0.4, V3 (AI) x0.6, Final skor kartları
+  - Final skoru hesaplanıyor: (v2×0.4)+(v3×0.6)
+  - Kelime Skoru / Toplam Puan eski bölümü kaldırıldı
+
+---
 
 - **Sunucu:** hylilabs.com (PM2 ile çalışıyor)
 - **Domain:** https://hylilabs.com (Nginx + SSL aktif, 14.03.2026)
@@ -631,6 +641,12 @@ Bu gereksiz WRITE_LOCK alınmasına ve performans darboğazına neden oluyordu.
 ---
 
 ## Son 72 Saatte Tamamlananlar
+
+### 21.03.2026 - AI Model Skorları Ortalama Fix
+- ✅ **Aday Detay Modal: Ortalama AI skoru hesaplanıp gösteriliyor**
+  - `avg_ai_score` (backend'de yok) yerine frontend'de dinamik hesaplama
+  - Aktif model sayısına göre ortalama (0'dan büyük skorlar)
+  - Hiç skor yoksa `-%` gösterimi
 
 ### 17.03.2026 - README Profesyonel Görünüm Güncelleme
 - ✅ **README.md GitHub için profesyonel görünüm**

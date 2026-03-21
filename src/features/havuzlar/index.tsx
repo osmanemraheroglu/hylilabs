@@ -1843,20 +1843,51 @@ export default function Havuzlar() {
                           </div>
                           <div className="text-center p-2 bg-white rounded">
                             <p className="text-xs text-gray-500">Ortalama</p>
-                            <p className="font-bold">{selectedCandidateDetail.avg_ai_score || '-'}%</p>
+                            <p className="font-bold">{(() => {
+                              const scores = [selectedCandidateDetail.gemini_score, selectedCandidateDetail.hermes_score, selectedCandidateDetail.openai_score].filter((s): s is number => s != null && s > 0)
+                              return scores.length > 0 ? `${Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)}%` : '-%'
+                            })()}</p>
                           </div>
                         </div>
                       </div>
-                      {/* Kelime Skoru ve Toplam Puan */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center p-4 bg-white rounded-lg">
-                          <p className="text-sm text-gray-500">Kelime Skoru</p>
-                          <p className="text-4xl font-bold text-blue-600">{selectedCandidateDetail.keyword_score || selectedCandidateDetail.match_score || '-'}</p>
+                      {/* Skor Detayı */}
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium mb-3">Skor Detayı</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          {/* V2 (Keyword) */}
+                          <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                            <p className="text-xs text-gray-500 mb-1">V2 (Keyword)</p>
+                            <p className="text-2xl font-bold text-blue-600">
+                              {selectedCandidateDetail?.v2_score || selectedCandidateDetail?.keyword_score || '-'}
+                            </p>
+                            <p className="text-xs text-gray-400">x0.4</p>
+                          </div>
+                          {/* V3 (AI) */}
+                          <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                            <p className="text-xs text-gray-500 mb-1">V3 (AI)</p>
+                            <p className="text-2xl font-bold text-purple-600">
+                              {selectedCandidateDetail?.v3_score || selectedCandidateDetail?.ai_score || '-'}
+                            </p>
+                            <p className="text-xs text-gray-400">x0.6</p>
+                          </div>
+                          {/* Final */}
+                          <div className="text-center p-3 bg-green-50 rounded-lg shadow-sm border-2 border-green-200">
+                            <p className="text-xs text-gray-500 mb-1">=</p>
+                            <p className="text-3xl font-bold text-green-600">
+                              {(() => {
+                                const v2 = selectedCandidateDetail?.v2_score || selectedCandidateDetail?.keyword_score || 0
+                                const v3 = selectedCandidateDetail?.v3_score || selectedCandidateDetail?.ai_score || 0
+                                const final_s = selectedCandidateDetail?.final_score || selectedCandidateDetail?.uyum_puani || selectedCandidateDetail?.score || (v2 || v3 ? Math.round((v2 * 0.4) + (v3 * 0.6)) : 0)
+                                return final_s || '-'
+                              })()}
+                            </p>
+                            <p className="text-xs text-gray-500">Final</p>
+                          </div>
                         </div>
-                        <div className="text-center p-4 bg-white rounded-lg">
-                          <p className="text-sm text-gray-500">Toplam Puan</p>
-                          <p className="text-4xl font-bold text-green-600">{selectedCandidateDetail.match_score || selectedCandidateDetail.uyum_puani || '-'}</p>
-                        </div>
+                        {/* Formül */}
+                        <p className="text-xs text-center text-gray-400 mt-3">
+                          match_score = (v2_score × 0.40) + (v3_score × 0.60)
+                        </p>
                       </div>
                     </div>
                   </div>
