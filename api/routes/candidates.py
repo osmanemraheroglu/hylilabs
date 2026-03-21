@@ -142,9 +142,10 @@ def delete_candidate(candidate_id: int, current_user: dict = Depends(get_current
         with get_write_connection() as conn:
             cursor = conn.cursor()
             # CASCADE: Önce bağımlı tabloları temizle (orphan önleme)
-            cursor.execute("DELETE FROM candidate_pool_assignments WHERE candidate_id = ?", (candidate_id,))
-            cursor.execute("DELETE FROM matches WHERE candidate_id = ?", (candidate_id,))
-            cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
+            # P0-B Security: company_id filtresi ile multi-tenancy izolasyonu
+            cursor.execute("DELETE FROM candidate_pool_assignments WHERE candidate_id = ? AND company_id = ?", (candidate_id, company_id))
+            cursor.execute("DELETE FROM matches WHERE candidate_id = ? AND company_id = ?", (candidate_id, company_id))
+            cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ? AND company_id = ?", (candidate_id, company_id))
             # Ana kaydı sil
             cursor.execute("DELETE FROM candidates WHERE id = ? AND company_id = ?", (candidate_id, company_id))
             conn.commit()
@@ -193,7 +194,8 @@ def elen_candidate(candidate_id: int, current_user: dict = Depends(get_current_u
         with get_write_connection() as conn:
             cursor = conn.cursor()
             # Pozisyon atamasını sil
-            cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ?", (candidate_id,))
+            # P0-B Security: company_id filtresi ile multi-tenancy izolasyonu
+            cursor.execute("DELETE FROM candidate_positions WHERE candidate_id = ? AND company_id = ?", (candidate_id, company_id))
 
             # Eski havuz atamasını sil
             cursor.execute(

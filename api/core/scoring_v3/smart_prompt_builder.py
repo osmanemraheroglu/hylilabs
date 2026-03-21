@@ -268,6 +268,26 @@ class SmartPromptBuilder:
         """SmartPromptBuilder başlat"""
         self.system_prompt = self._build_system_prompt()
 
+    # ═══════════════════════════════════════════════════════════════════════════
+    # P0-B: AI DATA MASKING - KVKK UYUMLULUĞU
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    def _mask_personal_data(self, value: str, prefix: str = "MASKED") -> str:
+        """
+        Kişisel veriyi AI servisleri için maskeler.
+        KVKK uyumluluğu için zorunlu - AI'ya gerçek kişisel veri gönderilmez.
+
+        Args:
+            value: Maskelenecek değer
+            prefix: Maskeleme prefix'i (ADAY, SIRKET, FIRMA)
+
+        Returns:
+            str: Maskelenmiş değer
+        """
+        if not value or str(value).strip() == "" or value == "Belirtilmemiş":
+            return "Belirtilmemiş"
+        return f"{prefix}_MASKED"
+
     def _build_system_prompt(self) -> str:
         """
         AI için sabit sistem promptu döndürür.
@@ -330,10 +350,14 @@ class SmartPromptBuilder:
         json_schema = self._get_json_schema()
 
         # Değişkenleri hazırla
+        # P0-B: Kişisel veriler maskeleniyor (KVKK uyumluluğu)
         template_vars = {
             # Pozisyon bilgileri
             "position_title": self._safe_get(position_data, "name", "title", "pozisyon_adi"),
-            "company_name": self._safe_get(position_data, "company_name", "sirket", "company"),
+            # P0-B: Firma adı maskelendi
+            "company_name": self._mask_personal_data(
+                self._safe_get(position_data, "company_name", "sirket", "company"), "FIRMA"
+            ),
             "position_location": self._safe_get(position_data, "lokasyon", "location"),
             "required_experience": self._format_experience_years(
                 self._safe_get(position_data, "gerekli_deneyim_yil", "experience_years", default=None)
@@ -348,16 +372,21 @@ class SmartPromptBuilder:
             "v2_synonyms_formatted": v2_synonyms_formatted,
             "v2_titles_formatted": v2_titles_formatted,
 
-            # Aday bilgileri
-            "candidate_name": self._safe_get(candidate_data, "name", "ad_soyad"),
-            "candidate_email": self._safe_get(candidate_data, "email"),
+            # Aday bilgileri - P0-B: Kişisel veriler maskelendi
+            "candidate_name": self._mask_personal_data(
+                self._safe_get(candidate_data, "name", "ad_soyad"), "ADAY"
+            ),
+            "candidate_email": "masked@privacy.local",  # P0-B: Email maskelendi
             "candidate_location": self._safe_get(candidate_data, "lokasyon", "location"),
             "candidate_experience": self._format_experience_years(
                 self._safe_get(candidate_data, "toplam_deneyim_yil", "experience_years", default=None)
             ),
             "candidate_education": self._extract_education(candidate_data),
             "current_position": self._safe_get(candidate_data, "mevcut_pozisyon", "current_position"),
-            "current_company": self._safe_get(candidate_data, "mevcut_sirket", "current_company"),
+            # P0-B: Şirket adı maskelendi
+            "current_company": self._mask_personal_data(
+                self._safe_get(candidate_data, "mevcut_sirket", "current_company"), "SIRKET"
+            ),
             "career_history": self._extract_career_history(candidate_data),
             "candidate_skills": self._extract_skills(candidate_data),
             "certifications": self._safe_get(candidate_data, "sertifikalar", "certifications"),
