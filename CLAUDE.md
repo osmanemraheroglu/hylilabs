@@ -286,15 +286,16 @@ Toplam: 100 puan (önceki 110 → 100 rebalance yapıldı)
 ---
 
 ## SON COMMIT ZİNCİRİ
+86ab9a1 - fix: remove text truncation from score reason descriptions (21.03.2026)
+a6f2187 - fix: populate score cards with v3Evaluation fallback (21.03.2026)
+41373d1 - feat: connect score cards and evaluation fields to backend data (21.03.2026)
+a7a0bdf - fix: Turkish labels, remove percent signs, add score explanation (21.03.2026)
+a82877a - fix: score detail - show calculated final, fix formula order (21.03.2026)
+17bb231 - feat: add score detail section to candidate modal (21.03.2026)
+bb1d7a7 - fix: calculate and display average AI score in candidate modal (21.03.2026)
 0e7c03b - feat: add .claudeignore (08.03.2026)
 6264245 - fix: job description upload response format
 2a53de5 - docs: 100 puan sistemi rescore
-906cd98 - feat: show seniority_score in v2 detail
-0004039 - fix: AI evaluation prompt term preservation
-2580726 - feat: language 2-layer defense
-4378a26 - feat: 110→100 point rebalance
-c3560c5 - fix: [object Object] render
-8dfa5e7 - fix: DB lock kalıcı çözüm
 
 
 ## KILITLI SISTEMLER (21.02.2026)
@@ -1176,6 +1177,64 @@ MINIMUM_MATCH_THRESHOLD = 40     # database.py:81
 2. **4 Katman korunmalı** - Hiçbir katman devre dışı bırakılamaz
 3. **Frontend + Backend senkron** - Her ikisinde de 40 eşiği kullanılmalı
 4. **Yeni CV Çek işleminde** - < 40 adaylar otomatik elenir
+
+Bu sistem KİLİTLİDİR. Değiştirilemez.
+
+---
+
+## ═══════════════════════════════════════════════════════════════
+## ADAY DETAY MODAL SİSTEMİ (KİLİTLİ - 2026-03-21)
+## ═══════════════════════════════════════════════════════════════
+
+### Yapı (src/features/havuzlar/index.tsx)
+
+Eye butonu → detail API fetch → modal render
+
+**API:** GET /api/pools/{pool_id}/candidates/{candidate_id}/detail
+**Response:** candidate, scoring_info, ai_evaluation, v2_detail
+
+### AI Model Skorları
+- Gemini, Hermes, OpenAI, Ortalama (yüzde işareti YOK)
+- Ortalama: frontend'de dinamik hesaplama (0'dan büyük skorların ortalaması)
+
+### Skor Detayı
+- V2 (Keyword) x0.4 | V3 (AI) x0.6 | Sonuç
+- Formül: sonuç_skor = (v2_skor × 0.40) + (v3_skor × 0.60)
+- Açıklama: "Tüm skorlar 100 üzerinden hesaplanmaktadır."
+- Veri kaynağı: scoring_info.v2_score, scoring_info.v3_score, scoring_info.match_score
+
+### Progress Bar'lar (5 Kategori)
+| Kategori | Max | layer_scores key |
+|----------|-----|------------------|
+| Teknik Beceriler | 25 | technical_skills |
+| Pozisyon Uyumu | 25 | position_match |
+| Deneyim | 25 | experience_quality |
+| Eğitim | 15 | education |
+| Diğer | 10 | other |
+
+Veri: ai_evaluation.layer_scores (fallback: ai_evaluation.scores → v2_detail)
+Açıklamalar: truncation YOK, tam metin görünür.
+
+### Güçlü Yönler / Gelişim Alanları
+- ai_evaluation.strengths → madde işaretli liste
+- ai_evaluation.weaknesses → madde işaretli liste
+- Fallback: v3Evaluation state'inden
+
+### V3 AI Değerlendirmesi Otomatik Tetikleme
+- CV Upload: match_single_candidate_to_positions() → evaluate_candidate_sync() (database.py:8687)
+- CV Çek: pull_matching_candidates_to_position() → evaluate_candidate_sync() (database.py:7991)
+- Kayıt: save_v3_evaluation_to_db() → ai_evaluations.evaluation_text JSON
+- Eski adaylar: V3 öncesi eklenenler için ai_evaluations kaydı yok → Rescore butonu kullanılmalı
+
+### Commitler
+bb1d7a7, 17bb231, a82877a, a7a0bdf, 41373d1, a6f2187, 86ab9a1
+
+### DEĞİŞTİRİLEMEZ KURALLAR
+1. Ortalama hesaplama: 0'dan büyük skorların ortalaması (frontend dinamik)
+2. Skor Detayı: V2 x0.4 + V3 x0.6 formülü
+3. Progress bar veri kaynağı: layer_scores → scores → v2_detail fallback zinciri
+4. Açıklamalarda truncation OLMAMALI
+5. Güçlü Yönler/Gelişim Alanları: madde işaretli liste formatı
 
 Bu sistem KİLİTLİDİR. Değiştirilemez.
 
