@@ -502,6 +502,14 @@ Title onayı (approve-titles G8) ve rescore fonksiyonları sadece V2 skoru yazı
   - Formül Türkçeleştirildi, "100 üzerinden" açıklaması eklendi
   - "=" → "Sonuç", "Final" yazısı kaldırıldı
 
+### 21.03.2026 - Backend Veri Bağlantısı
+- ✅ **Aday Detay Modal: Backend verisiyle dolduruldu**
+  - Eye butonu tıklanınca detail API fetch eklendi (ai_evaluation, scoring_info, v2_detail)
+  - Skor kartları scoring_info.v2_score/v3_score/match_score kullanıyor
+  - Progress bar'lar ai_evaluation.layer_scores'dan dolduruluyor (5 kategori + reason)
+  - Güçlü Yönler: ai_evaluation.strengths (liste olarak)
+  - Gelişim Alanları: ai_evaluation.weaknesses (liste olarak)
+
 ---
 
 - **Sunucu:** hylilabs.com (PM2 ile çalışıyor)

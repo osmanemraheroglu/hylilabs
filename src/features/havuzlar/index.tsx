@@ -854,7 +854,16 @@ export default function Havuzlar() {
                               </TableCell>
                               <TableCell onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center gap-1">
-                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setSelectedCandidateDetail(c); setCandidateDetailModalOpen(true); }} title="Detaylı Görüntüle"><Eye className="h-3.5 w-3.5 text-green-600" /></Button>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => {
+                                    setSelectedCandidateDetail(c);
+                                    setCandidateDetailModalOpen(true);
+                                    fetch(`${API}/api/pools/${selectedPoolId}/candidates/${c.id}/detail`, { headers: H() })
+                                      .then(r => r.json()).then(res => {
+                                        if (res.success) {
+                                          setSelectedCandidateDetail((prev: Record<string, unknown>) => ({ ...prev, ...res.candidate, ai_evaluation: res.ai_evaluation, scoring_info: res.scoring_info, v2_detail: res.v2_detail }))
+                                        }
+                                      }).catch(console.error)
+                                  }} title="Detaylı Görüntüle"><Eye className="h-3.5 w-3.5 text-green-600" /></Button>
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleRescore(c.id)} disabled={rescoring} title="Skoru Yeniden Hesapla"><RefreshCw className="h-3.5 w-3.5 text-blue-500" /></Button>
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEvaluate(c.id)} disabled={evaluating} title="AI Değerlendir"><Brain className="h-3.5 w-3.5 text-purple-500" /></Button>
                                   <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRemoveCandidate(c.id)} title="Çıkar"><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -1858,7 +1867,7 @@ export default function Havuzlar() {
                           <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                             <p className="text-xs text-gray-500 mb-1">V2 (Keyword)</p>
                             <p className="text-2xl font-bold text-blue-600">
-                              {selectedCandidateDetail?.v2_score || selectedCandidateDetail?.keyword_score || '-'}
+                              {selectedCandidateDetail?.scoring_info?.v2_score || selectedCandidateDetail?.v2_score || selectedCandidateDetail?.keyword_score || '-'}
                             </p>
                             <p className="text-xs text-gray-400">x0.4</p>
                           </div>
@@ -1866,7 +1875,7 @@ export default function Havuzlar() {
                           <div className="text-center p-3 bg-white rounded-lg shadow-sm">
                             <p className="text-xs text-gray-500 mb-1">V3 (AI)</p>
                             <p className="text-2xl font-bold text-purple-600">
-                              {selectedCandidateDetail?.v3_score || selectedCandidateDetail?.ai_score || '-'}
+                              {selectedCandidateDetail?.scoring_info?.v3_score || selectedCandidateDetail?.v3_score || selectedCandidateDetail?.ai_score || '-'}
                             </p>
                             <p className="text-xs text-gray-400">x0.6</p>
                           </div>
@@ -1875,10 +1884,11 @@ export default function Havuzlar() {
                             <p className="text-xs text-gray-500 mb-1">Sonuç</p>
                             <p className="text-3xl font-bold text-green-600">
                               {(() => {
-                                const v2 = selectedCandidateDetail?.v2_score || selectedCandidateDetail?.keyword_score || 0
-                                const v3 = selectedCandidateDetail?.v3_score || selectedCandidateDetail?.ai_score || 0
-                                const final_s = selectedCandidateDetail?.final_score || selectedCandidateDetail?.uyum_puani || selectedCandidateDetail?.score || (v2 || v3 ? Math.round((v2 * 0.4) + (v3 * 0.6)) : 0)
-                                return final_s || '-'
+                                const si = selectedCandidateDetail?.scoring_info
+                                if (si?.match_score) return si.match_score
+                                const v2 = si?.v2_score || selectedCandidateDetail?.v2_score || selectedCandidateDetail?.keyword_score || 0
+                                const v3 = si?.v3_score || selectedCandidateDetail?.v3_score || selectedCandidateDetail?.ai_score || 0
+                                return (v2 || v3) ? Math.round((v2 * 0.4) + (v3 * 0.6)) : (selectedCandidateDetail?.match_score || '-')
                               })()}
                             </p>
                           </div>
@@ -1978,64 +1988,54 @@ export default function Havuzlar() {
 
               {/* SKORLAR - PROGRESS BAR'LAR */}
               <div className="px-6 py-4 bg-gray-50">
-                <div className="grid grid-cols-3 gap-4">
-                  {/* Teknik Beceriler */}
-                  <div className="p-4 bg-sky-50 rounded-lg">
-                    <div className="flex justify-between mb-2">
-                      <span className="font-medium text-sm">Teknik Beceriler</span>
-                      <span className="text-blue-600 font-bold text-sm">{selectedCandidateDetail.teknik_puan || '-'}/25</span>
+                {(() => {
+                  const ls = selectedCandidateDetail?.ai_evaluation?.layer_scores || {}
+                  const categories = [
+                    { key: 'technical_skills', label: 'Teknik Beceriler', max: 25 },
+                    { key: 'position_match', label: 'Pozisyon Uyumu', max: 25 },
+                    { key: 'experience_quality', label: 'Deneyim', max: 25 },
+                  ]
+                  const categories2 = [
+                    { key: 'education', label: 'Eğitim', max: 15 },
+                    { key: 'other', label: 'Diğer', max: 10 },
+                  ]
+                  return (<>
+                    <div className="grid grid-cols-3 gap-4">
+                      {categories.map(cat => {
+                        const score = ls[cat.key]?.score ?? null
+                        return (
+                          <div key={cat.key} className="p-4 bg-sky-50 rounded-lg">
+                            <div className="flex justify-between mb-2">
+                              <span className="font-medium text-sm">{cat.label}</span>
+                              <span className="text-blue-600 font-bold text-sm">{score != null ? score : '-'}/{cat.max}</span>
+                            </div>
+                            <div className="h-3 bg-white rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((score || 0) / cat.max) * 100}%`}}></div>
+                            </div>
+                            {ls[cat.key]?.reason && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ls[cat.key].reason}</p>}
+                          </div>
+                        )
+                      })}
                     </div>
-                    <div className="h-3 bg-white rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((selectedCandidateDetail.teknik_puan || 0) / 25) * 100}%`}}></div>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      {categories2.map(cat => {
+                        const score = ls[cat.key]?.score ?? null
+                        return (
+                          <div key={cat.key} className="p-4 bg-sky-50 rounded-lg">
+                            <div className="flex justify-between mb-2">
+                              <span className="font-medium text-sm">{cat.label}</span>
+                              <span className="text-blue-600 font-bold text-sm">{score != null ? score : '-'}/{cat.max}</span>
+                            </div>
+                            <div className="h-3 bg-white rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((score || 0) / cat.max) * 100}%`}}></div>
+                            </div>
+                            {ls[cat.key]?.reason && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ls[cat.key].reason}</p>}
+                          </div>
+                        )
+                      })}
                     </div>
-                  </div>
-
-                  {/* Pozisyon Uyumu */}
-                  <div className="p-4 bg-sky-50 rounded-lg">
-                    <div className="flex justify-between mb-2">
-                      <span className="font-medium text-sm">Pozisyon Uyumu</span>
-                      <span className="text-blue-600 font-bold text-sm">{selectedCandidateDetail.pozisyon_puan || '-'}/25</span>
-                    </div>
-                    <div className="h-3 bg-white rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((selectedCandidateDetail.pozisyon_puan || 0) / 25) * 100}%`}}></div>
-                    </div>
-                  </div>
-
-                  {/* Deneyim */}
-                  <div className="p-4 bg-sky-50 rounded-lg">
-                    <div className="flex justify-between mb-2">
-                      <span className="font-medium text-sm">Deneyim</span>
-                      <span className="text-blue-600 font-bold text-sm">{selectedCandidateDetail.deneyim_puan || '-'}/25</span>
-                    </div>
-                    <div className="h-3 bg-white rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((selectedCandidateDetail.deneyim_puan || 0) / 25) * 100}%`}}></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  {/* Eğitim */}
-                  <div className="p-4 bg-sky-50 rounded-lg">
-                    <div className="flex justify-between mb-2">
-                      <span className="font-medium text-sm">Eğitim</span>
-                      <span className="text-blue-600 font-bold text-sm">{selectedCandidateDetail.egitim_puan || '-'}/15</span>
-                    </div>
-                    <div className="h-3 bg-white rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((selectedCandidateDetail.egitim_puan || 0) / 15) * 100}%`}}></div>
-                    </div>
-                  </div>
-
-                  {/* Diğer */}
-                  <div className="p-4 bg-sky-50 rounded-lg">
-                    <div className="flex justify-between mb-2">
-                      <span className="font-medium text-sm">Diğer</span>
-                      <span className="text-blue-600 font-bold text-sm">{selectedCandidateDetail.diger_puan || '-'}/10</span>
-                    </div>
-                    <div className="h-3 bg-white rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((selectedCandidateDetail.diger_puan || 0) / 10) * 100}%`}}></div>
-                    </div>
-                  </div>
-                </div>
+                  </>)
+                })()}
               </div>
 
               {/* EN ALT - GÜÇLÜ YÖNLER & GELİŞİM ALANLARI */}
@@ -2043,11 +2043,25 @@ export default function Havuzlar() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-sky-50 rounded-lg">
                     <h3 className="font-semibold mb-2">Güçlü Yönler</h3>
-                    <p className="text-gray-600 text-sm">{selectedCandidateDetail.guclu_yonler || selectedCandidateDetail.strengths || '-'}</p>
+                    {(() => {
+                      const strengths = selectedCandidateDetail?.ai_evaluation?.strengths || []
+                      return strengths.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1 text-gray-600 text-sm">
+                          {strengths.map((s: string, i: number) => <li key={i}>{s}</li>)}
+                        </ul>
+                      ) : <p className="text-gray-600 text-sm">-</p>
+                    })()}
                   </div>
                   <div className="p-4 bg-sky-50 rounded-lg">
                     <h3 className="font-semibold mb-2">Gelişim Alanları</h3>
-                    <p className="text-gray-600 text-sm">{selectedCandidateDetail.gelisim_alanlari || selectedCandidateDetail.improvements || '-'}</p>
+                    {(() => {
+                      const weaknesses = selectedCandidateDetail?.ai_evaluation?.weaknesses || []
+                      return weaknesses.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1 text-gray-600 text-sm">
+                          {weaknesses.map((w: string, i: number) => <li key={i}>{w}</li>)}
+                        </ul>
+                      ) : <p className="text-gray-600 text-sm">-</p>
+                    })()}
                   </div>
                 </div>
               </div>
