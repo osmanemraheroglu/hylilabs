@@ -464,6 +464,12 @@ Title onayı (approve-titles G8) ve rescore fonksiyonları sadece V2 skoru yazı
   - Aktif model sayısına göre ortalama (0'dan büyük skorlar)
   - Hiç skor yoksa `-%` gösterimi
 
+### 21.03.2026 - Skor Detayı Bölümü
+- ✅ **Aday Detay Modal: Skor Detayı bölümü eklendi**
+  - V2 (Keyword) x0.4, V3 (AI) x0.6, Final skor kartları
+  - AI Model Skorları ile Kelime Skoru arasına yerleştirildi
+  - Formül gösterimi: match_score = (v3_score × 0.60) + (v2_score × 0.40)
+
 ---
 
 - **Sunucu:** hylilabs.com (PM2 ile çalışıyor)

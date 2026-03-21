@@ -1850,6 +1850,40 @@ export default function Havuzlar() {
                           </div>
                         </div>
                       </div>
+                      {/* Skor Detayı */}
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium mb-3">Skor Detayı</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                          {/* V2 (Keyword) */}
+                          <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                            <p className="text-xs text-gray-500 mb-1">V2 (Keyword)</p>
+                            <p className="text-2xl font-bold text-blue-600">
+                              {selectedCandidateDetail?.v2_score || selectedCandidateDetail?.keyword_score || '-'}
+                            </p>
+                            <p className="text-xs text-gray-400">x0.4</p>
+                          </div>
+                          {/* V3 (AI) */}
+                          <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                            <p className="text-xs text-gray-500 mb-1">V3 (AI)</p>
+                            <p className="text-2xl font-bold text-purple-600">
+                              {selectedCandidateDetail?.v3_score || selectedCandidateDetail?.ai_score || '-'}
+                            </p>
+                            <p className="text-xs text-gray-400">x0.6</p>
+                          </div>
+                          {/* Final */}
+                          <div className="text-center p-3 bg-green-50 rounded-lg shadow-sm border-2 border-green-200">
+                            <p className="text-xs text-gray-500 mb-1">=</p>
+                            <p className="text-3xl font-bold text-green-600">
+                              {selectedCandidateDetail?.final_score || selectedCandidateDetail?.uyum_puani || selectedCandidateDetail?.score || '-'}
+                            </p>
+                            <p className="text-xs text-gray-500">Final</p>
+                          </div>
+                        </div>
+                        {/* Formül */}
+                        <p className="text-xs text-center text-gray-400 mt-3">
+                          match_score = (v3_score × 0.60) + (v2_score × 0.40)
+                        </p>
+                      </div>
                       {/* Kelime Skoru ve Toplam Puan */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="text-center p-4 bg-white rounded-lg">
