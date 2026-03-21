@@ -665,6 +665,90 @@ def assign_candidate(pool_id: int, body: dict, current_user: dict = Depends(get_
             )
             if not result["success"]:
                 raise HTTPException(status_code=400, detail=result["error"])
+
+            # Manuel atama sonrası V2+V3 skorlama tetikle
+            try:
+                from scoring_v2 import calculate_match_score_v2
+                import json as json_lib
+
+                with get_write_connection() as conn:
+                    cursor = conn.cursor()
+
+                    cursor.execute("""
+                        SELECT id, ad_soyad, teknik_beceriler, toplam_deneyim_yil,
+                               egitim, lokasyon, cv_raw_text, deneyim_detay,
+                               mevcut_pozisyon, mevcut_sirket
+                        FROM candidates WHERE id = ? AND company_id = ?
+                    """, (candidate_id, company_id))
+                    cand = cursor.fetchone()
+
+                    cursor.execute("""
+                        SELECT id, name, keywords, gerekli_deneyim_yil, gerekli_egitim, lokasyon
+                        FROM department_pools WHERE id = ? AND company_id = ? AND pool_type = 'position'
+                    """, (pool_id, company_id))
+                    pos = cursor.fetchone()
+
+                    if cand and pos:
+                        candidate_dict = {
+                            'id': cand['id'], 'ad_soyad': cand['ad_soyad'] or '',
+                            'teknik_beceriler': cand['teknik_beceriler'] or '',
+                            'toplam_deneyim_yil': cand['toplam_deneyim_yil'] or 0,
+                            'egitim': cand['egitim'] or '', 'lokasyon': cand['lokasyon'] or '',
+                            'cv_raw_text': cand['cv_raw_text'] or '', 'deneyim_detay': cand['deneyim_detay'] or '',
+                            'mevcut_pozisyon': cand['mevcut_pozisyon'] or '', 'mevcut_sirket': cand['mevcut_sirket'] or ''
+                        }
+                        position_dict = {
+                            'id': pos['id'], 'name': pos['name'] or '',
+                            'keywords': pos['keywords'] or '[]',
+                            'gerekli_deneyim_yil': pos['gerekli_deneyim_yil'] or 0,
+                            'gerekli_egitim': pos['gerekli_egitim'] or '', 'lokasyon': pos['lokasyon'] or ''
+                        }
+
+                        v2_result = calculate_match_score_v2(candidate_dict, position_dict)
+                        v2_score = v2_result.get('total', 0) if v2_result else 0
+
+                        # V3 değerlendirme
+                        v3_score = None
+                        try:
+                            from core.scoring_v3 import evaluate_candidate_sync
+                            v3_result_obj = evaluate_candidate_sync(candidate_id, pool_id, candidate_dict, position_dict)
+                            if v3_result_obj and hasattr(v3_result_obj, 'total_score'):
+                                v3_score = v3_result_obj.total_score
+                                # V3 sonucunu ai_evaluations'a kaydet
+                                from database import save_v3_evaluation_to_db
+                                save_v3_evaluation_to_db(candidate_id, pool_id, v3_result_obj, company_id)
+                        except Exception as v3_err:
+                            logging.warning(f"Manuel atama V3 hatası: candidate_id={candidate_id}, error={v3_err}")
+
+                        # Weighted average
+                        v3_weight, v2_weight = get_scoring_weights()
+                        final_score, metadata = calculate_weighted_score(v2_score, v3_score, v3_weight, v2_weight)
+
+                        # Skorları güncelle
+                        v3_gemini = getattr(v3_result_obj, 'gemini_score', 0) if v3_score else 0
+                        v3_hermes = getattr(v3_result_obj, 'hermes_score', 0) if v3_score else 0
+                        v3_openai = getattr(v3_result_obj, 'openai_score', 0) if v3_score else 0
+
+                        cursor.execute("""
+                            UPDATE candidate_positions
+                            SET match_score = ?, v2_score = ?, v3_score = ?,
+                                gemini_score = ?, hermes_score = ?, openai_score = ?,
+                                score_version = 'v3_weighted', updated_at = datetime('now')
+                            WHERE candidate_id = ? AND position_id = ?
+                        """, (final_score, v2_score, v3_score or 0, v3_gemini, v3_hermes, v3_openai, candidate_id, pool_id))
+
+                        # matches tablosuna da kaydet
+                        detayli_analiz = json_lib.dumps(v2_result, ensure_ascii=False) if v2_result else '{}'
+                        cursor.execute("""
+                            INSERT OR REPLACE INTO matches (candidate_id, position_id, uyum_puani, detayli_analiz)
+                            VALUES (?, ?, ?, ?)
+                        """, (candidate_id, pool_id, final_score, detayli_analiz))
+
+                        conn.commit()
+                        logging.info(f"Manuel atama skorlama: candidate_id={candidate_id}, v2={v2_score}, v3={v3_score}, final={final_score}")
+            except Exception as score_err:
+                logging.warning(f"Manuel atama skorlama hatası (aday yine de atandı): {score_err}")
+
             return {"success": True, "message": "Aday pozisyona atandı"}
         else:
             # Departman/sistem havuzu → candidate_pool_assignments tablosuna

@@ -514,6 +514,12 @@ Title onayı (approve-titles G8) ve rescore fonksiyonları sadece V2 skoru yazı
   - ai_evaluation.scores da layer_scores olarak kabul edilir
   - Skor açıklamalarından line-clamp-2 truncation kaldırıldı
 
+### 21.03.2026 - Aday Ata Skorlama Fix
+- ✅ **Manuel Aday Ata sonrası V2+V3 skorlama otomatik tetikleniyor**
+  - Kök neden: assign_candidate → match_score=0 → frontend < 40 filtresi → aday gizleniyor
+  - Çözüm: pools.py assign_candidate endpoint'ine V2+V3 skorlama eklendi
+  - V2 → V3 → weighted average → candidate_positions + matches güncelleme
+
 ---
 
 - **Sunucu:** hylilabs.com (PM2 ile çalışıyor)
