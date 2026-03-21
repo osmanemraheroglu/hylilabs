@@ -233,7 +233,8 @@ def workflow_process_cv(file_content: bytes, filename: str, company_id: int,
                 career_level=scores.get("career_level"),
                 strengths=", ".join(scores.get("strengths", [])[:5]),
                 improvements=", ".join(scores.get("improvements", [])[:5]),
-                processing_time_ms=parse_result.get("processing_time_ms")
+                processing_time_ms=parse_result.get("processing_time_ms"),
+                company_id=company_id  # P1 Security: multi-tenancy izolasyonu
             )
 
         return {
@@ -341,7 +342,8 @@ def workflow_full_application(file_content: bytes, filename: str, company_id: in
                 career_level=scores.get("career_level"),
                 strengths=", ".join(scores.get("strengths", [])[:5]),
                 improvements=", ".join(scores.get("improvements", [])[:5]),
-                processing_time_ms=parse_result.get("processing_time_ms")
+                processing_time_ms=parse_result.get("processing_time_ms"),
+                company_id=company_id  # P1 Security: multi-tenancy izolasyonu
             )
 
         # 5. Başvuru oluştur

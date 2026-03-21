@@ -6862,35 +6862,49 @@ def add_position_criteria(
     max_deger: str = None,
     seviye: str = None,
     zorunlu: bool = False,
-    agirlik: float = 1.0
+    agirlik: float = 1.0,
+    company_id: int = None
 ) -> int:
     """Pozisyona kriter ekle"""
     with get_write_connection() as conn:
         cursor = conn.cursor()
+        # P1 Security: company_id ile multi-tenancy izolasyonu
         cursor.execute("""
             INSERT INTO position_criteria (
-                position_id, kriter_tipi, deger, min_deger, max_deger, seviye, zorunlu, agirlik
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (position_id, kriter_tipi, deger, min_deger, max_deger, seviye, 1 if zorunlu else 0, agirlik))
+                position_id, kriter_tipi, deger, min_deger, max_deger, seviye, zorunlu, agirlik, company_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (position_id, kriter_tipi, deger, min_deger, max_deger, seviye, 1 if zorunlu else 0, agirlik, company_id))
         return cursor.lastrowid
 
 
-def get_position_criteria(position_id: int) -> list[dict]:
+def get_position_criteria(position_id: int, company_id: int = None) -> list[dict]:
     """Pozisyon kriterlerini getir"""
     with get_write_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM position_criteria WHERE position_id = ? ORDER BY zorunlu DESC, kriter_tipi",
-            (position_id,)
-        )
+        # P1 Security: company_id filtresi ile multi-tenancy izolasyonu
+        if company_id:
+            cursor.execute(
+                "SELECT * FROM position_criteria WHERE position_id = ? AND company_id = ? ORDER BY zorunlu DESC, kriter_tipi",
+                (position_id, company_id)
+            )
+        else:
+            # Geriye uyumluluk için company_id olmadan da çalışır
+            cursor.execute(
+                "SELECT * FROM position_criteria WHERE position_id = ? ORDER BY zorunlu DESC, kriter_tipi",
+                (position_id,)
+            )
         return [dict(row) for row in cursor.fetchall()]
 
 
-def delete_all_position_criteria(position_id: int) -> bool:
+def delete_all_position_criteria(position_id: int, company_id: int = None) -> bool:
     """Pozisyonun tum kriterlerini sil"""
     with get_write_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM position_criteria WHERE position_id = ?", (position_id,))
+        # P1 Security: company_id filtresi ile multi-tenancy izolasyonu
+        if company_id:
+            cursor.execute("DELETE FROM position_criteria WHERE position_id = ? AND company_id = ?", (position_id, company_id))
+        else:
+            cursor.execute("DELETE FROM position_criteria WHERE position_id = ?", (position_id,))
         return True
 
 
@@ -9472,33 +9486,46 @@ def save_ai_analysis(
     strengths: str = None,
     improvements: str = None,
     processing_time_ms: int = None,
-    position_id: int = None
+    position_id: int = None,
+    company_id: int = None
 ) -> int:
     """AI analiz sonucunu kaydet"""
     with get_write_connection() as conn:
         cursor = conn.cursor()
+        # P1 Security: company_id ile multi-tenancy izolasyonu
         cursor.execute("""
             INSERT INTO ai_analyses (
                 candidate_id, analysis_type, analysis_data,
                 skill_score, experience_score, education_score, overall_score,
-                career_level, strengths, improvements, processing_time_ms, position_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                career_level, strengths, improvements, processing_time_ms, position_id, company_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             candidate_id, analysis_type, analysis_data,
             skill_score, experience_score, education_score, overall_score,
-            career_level, strengths, improvements, processing_time_ms, position_id
+            career_level, strengths, improvements, processing_time_ms, position_id, company_id
         ))
         return cursor.lastrowid
 
 
-def get_ai_analysis(candidate_id: int, analysis_type: str = None) -> Optional[dict]:
+def get_ai_analysis(candidate_id: int, analysis_type: str = None, company_id: int = None) -> Optional[dict]:
     """Aday icin AI analizini getir"""
     with get_connection() as conn:
         cursor = conn.cursor()
-        if analysis_type:
+        # P1 Security: company_id filtresi ile multi-tenancy izolasyonu
+        if analysis_type and company_id:
+            cursor.execute(
+                "SELECT * FROM ai_analyses WHERE candidate_id = ? AND analysis_type = ? AND company_id = ? ORDER BY created_at DESC LIMIT 1",
+                (candidate_id, analysis_type, company_id)
+            )
+        elif analysis_type:
             cursor.execute(
                 "SELECT * FROM ai_analyses WHERE candidate_id = ? AND analysis_type = ? ORDER BY created_at DESC LIMIT 1",
                 (candidate_id, analysis_type)
+            )
+        elif company_id:
+            cursor.execute(
+                "SELECT * FROM ai_analyses WHERE candidate_id = ? AND company_id = ? ORDER BY created_at DESC LIMIT 1",
+                (candidate_id, company_id)
             )
         else:
             cursor.execute(
@@ -9517,18 +9544,29 @@ def save_hr_evaluation(
     evaluator_id: int = None,
     ik_puani: int = None,
     ik_notlari: str = None,
-    durum: str = "beklemede"
+    durum: str = "beklemede",
+    company_id: int = None
 ) -> int:
     """IK degerlendirmesi kaydet veya guncelle"""
     with get_write_connection() as conn:
         cursor = conn.cursor()
 
-        # Mevcut degerlendirme var mi kontrol et
-        if position_id:
+        # P1 Security: Mevcut degerlendirme var mi kontrol et (company_id ile)
+        if position_id and company_id:
+            cursor.execute("""
+                SELECT id, durum FROM hr_evaluations
+                WHERE candidate_id = ? AND position_id = ? AND company_id = ?
+            """, (candidate_id, position_id, company_id))
+        elif position_id:
             cursor.execute("""
                 SELECT id, durum FROM hr_evaluations
                 WHERE candidate_id = ? AND position_id = ?
             """, (candidate_id, position_id))
+        elif company_id:
+            cursor.execute("""
+                SELECT id, durum FROM hr_evaluations
+                WHERE candidate_id = ? AND position_id IS NULL AND company_id = ?
+            """, (candidate_id, company_id))
         else:
             cursor.execute("""
                 SELECT id, durum FROM hr_evaluations
@@ -9552,27 +9590,42 @@ def save_hr_evaluation(
             """, (ik_puani, ik_notlari, durum, onceki_durum, evaluator_id, existing["id"]))
             return existing["id"]
         else:
-            # Yeni kayit
+            # P1 Security: Yeni kayit company_id ile
             cursor.execute("""
                 INSERT INTO hr_evaluations
-                (candidate_id, position_id, evaluator_id, ik_puani, ik_notlari, durum)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (candidate_id, position_id, evaluator_id, ik_puani, ik_notlari, durum))
+                (candidate_id, position_id, evaluator_id, ik_puani, ik_notlari, durum, company_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (candidate_id, position_id, evaluator_id, ik_puani, ik_notlari, durum, company_id))
             return cursor.lastrowid
 
 
-def get_hr_evaluation(candidate_id: int, position_id: int = None) -> dict:
+def get_hr_evaluation(candidate_id: int, position_id: int = None, company_id: int = None) -> dict:
     """Aday icin IK degerlendirmesini getir"""
     with get_connection() as conn:
         cursor = conn.cursor()
 
-        if position_id:
+        # P1 Security: company_id filtresi ile multi-tenancy izolasyonu
+        if position_id and company_id:
+            cursor.execute("""
+                SELECT e.*, u.ad_soyad as evaluator_name
+                FROM hr_evaluations e
+                LEFT JOIN users u ON e.evaluator_id = u.id
+                WHERE e.candidate_id = ? AND e.position_id = ? AND e.company_id = ?
+            """, (candidate_id, position_id, company_id))
+        elif position_id:
             cursor.execute("""
                 SELECT e.*, u.ad_soyad as evaluator_name
                 FROM hr_evaluations e
                 LEFT JOIN users u ON e.evaluator_id = u.id
                 WHERE e.candidate_id = ? AND e.position_id = ?
             """, (candidate_id, position_id))
+        elif company_id:
+            cursor.execute("""
+                SELECT e.*, u.ad_soyad as evaluator_name
+                FROM hr_evaluations e
+                LEFT JOIN users u ON e.evaluator_id = u.id
+                WHERE e.candidate_id = ? AND e.position_id IS NULL AND e.company_id = ?
+            """, (candidate_id, company_id))
         else:
             cursor.execute("""
                 SELECT e.*, u.ad_soyad as evaluator_name
@@ -9585,18 +9638,29 @@ def get_hr_evaluation(candidate_id: int, position_id: int = None) -> dict:
         return dict(row) if row else {}
 
 
-def get_all_hr_evaluations(candidate_id: int) -> list[dict]:
+def get_all_hr_evaluations(candidate_id: int, company_id: int = None) -> list[dict]:
     """Aday icin tum IK degerlendirmelerini getir"""
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT e.*, p.baslik as position_title, u.ad_soyad as evaluator_name
-            FROM hr_evaluations e
-            LEFT JOIN positions p ON e.position_id = p.id
-            LEFT JOIN users u ON e.evaluator_id = u.id
-            WHERE e.candidate_id = ?
-            ORDER BY e.guncelleme_tarihi DESC
-        """, (candidate_id,))
+        # P1 Security: company_id filtresi ile multi-tenancy izolasyonu
+        if company_id:
+            cursor.execute("""
+                SELECT e.*, p.baslik as position_title, u.ad_soyad as evaluator_name
+                FROM hr_evaluations e
+                LEFT JOIN positions p ON e.position_id = p.id
+                LEFT JOIN users u ON e.evaluator_id = u.id
+                WHERE e.candidate_id = ? AND e.company_id = ?
+                ORDER BY e.guncelleme_tarihi DESC
+            """, (candidate_id, company_id))
+        else:
+            cursor.execute("""
+                SELECT e.*, p.baslik as position_title, u.ad_soyad as evaluator_name
+                FROM hr_evaluations e
+                LEFT JOIN positions p ON e.position_id = p.id
+                LEFT JOIN users u ON e.evaluator_id = u.id
+                WHERE e.candidate_id = ?
+                ORDER BY e.guncelleme_tarihi DESC
+            """, (candidate_id,))
         return [dict(row) for row in cursor.fetchall()]
 
 
@@ -11748,11 +11812,17 @@ def get_candidate_full_data(candidate_id: int, company_id: int = None, allow_cro
         """, (candidate_id,))
         pools = [dict(row) for row in cursor.fetchall()]
 
-        # AI Analizleri
-        cursor.execute(
-            "SELECT * FROM ai_analyses WHERE candidate_id = ?",
-            (candidate_id,)
-        )
+        # AI Analizleri - P1 Security: company_id ile filtreleme
+        if company_id:
+            cursor.execute(
+                "SELECT * FROM ai_analyses WHERE candidate_id = ? AND company_id = ?",
+                (candidate_id, company_id)
+            )
+        else:
+            cursor.execute(
+                "SELECT * FROM ai_analyses WHERE candidate_id = ?",
+                (candidate_id,)
+            )
         ai_analyses = [dict(row) for row in cursor.fetchall()]
 
         return {
