@@ -860,7 +860,15 @@ export default function Havuzlar() {
                                     fetch(`${API}/api/pools/${selectedPoolId}/candidates/${c.id}/detail`, { headers: H() })
                                       .then(r => r.json()).then(res => {
                                         if (res.success) {
-                                          setSelectedCandidateDetail((prev: Record<string, unknown>) => ({ ...prev, ...res.candidate, ai_evaluation: res.ai_evaluation, scoring_info: res.scoring_info, v2_detail: res.v2_detail }))
+                                          const v3Data = v3Evaluation[c.id]
+                                          const aiEval = res.ai_evaluation || {}
+                                          // v3Evaluation state'inden layer_scores/strengths/weaknesses al (fallback)
+                                          if (v3Data) {
+                                            if (!aiEval.layer_scores && v3Data.layer_scores) aiEval.layer_scores = v3Data.layer_scores
+                                            if ((!aiEval.strengths || aiEval.strengths.length === 0) && v3Data.strengths) aiEval.strengths = v3Data.strengths
+                                            if ((!aiEval.weaknesses || aiEval.weaknesses.length === 0) && v3Data.weaknesses) aiEval.weaknesses = v3Data.weaknesses
+                                          }
+                                          setSelectedCandidateDetail((prev: Record<string, unknown>) => ({ ...prev, ...res.candidate, ai_evaluation: Object.keys(aiEval).length > 0 ? aiEval : null, scoring_info: res.scoring_info, v2_detail: res.v2_detail }))
                                         }
                                       }).catch(console.error)
                                   }} title="Detaylı Görüntüle"><Eye className="h-3.5 w-3.5 text-green-600" /></Button>
@@ -1989,7 +1997,16 @@ export default function Havuzlar() {
               {/* SKORLAR - PROGRESS BAR'LAR */}
               <div className="px-6 py-4 bg-gray-50">
                 {(() => {
-                  const ls = selectedCandidateDetail?.ai_evaluation?.layer_scores || {}
+                  const aiLs = selectedCandidateDetail?.ai_evaluation?.layer_scores || selectedCandidateDetail?.ai_evaluation?.scores || {}
+                  const v2d = selectedCandidateDetail?.v2_detail || {}
+                  // AI layer_scores varsa kullan, yoksa v2_detail'den fallback oluştur
+                  const ls = Object.keys(aiLs).length > 0 ? aiLs : {
+                    technical_skills: v2d.technical_score != null ? { score: v2d.technical_score, reason: '' } : undefined,
+                    position_match: v2d.position_score != null ? { score: v2d.position_score, reason: '' } : undefined,
+                    experience_quality: v2d.experience_score != null ? { score: v2d.experience_score, reason: '' } : undefined,
+                    education: v2d.education_score != null ? { score: v2d.education_score, reason: '' } : undefined,
+                    other: v2d.elimination_score != null ? { score: v2d.elimination_score, reason: '' } : undefined,
+                  }
                   const categories = [
                     { key: 'technical_skills', label: 'Teknik Beceriler', max: 25 },
                     { key: 'position_match', label: 'Pozisyon Uyumu', max: 25 },

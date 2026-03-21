@@ -509,6 +509,9 @@ Title onayı (approve-titles G8) ve rescore fonksiyonları sadece V2 skoru yazı
   - Progress bar'lar ai_evaluation.layer_scores'dan dolduruluyor (5 kategori + reason)
   - Güçlü Yönler: ai_evaluation.strengths (liste olarak)
   - Gelişim Alanları: ai_evaluation.weaknesses (liste olarak)
+  - v3Evaluation state'inden fallback: layer_scores/strengths/weaknesses
+  - V2 fallback: ai layer_scores boşsa v2_detail'den skor çekilir
+  - ai_evaluation.scores da layer_scores olarak kabul edilir
 
 ---
 
