@@ -2,6 +2,49 @@
 
 Son güncelleme: 21.03.2026
 
+## ✅ TAMAMLANAN GÖREV: P0-B Güvenlik - DELETE Sorguları + AI Data Masking
+
+**Tarih:** 2026-03-21
+**Commit:** a832d91
+
+### Sorun
+1. candidates.py'de 4 DELETE sorgusu company_id filtresi olmadan çalışıyordu (multi-tenancy ihlali)
+2. smart_prompt_builder.py AI servislerine gerçek kişisel veri gönderiyordu (KVKK ihlali)
+
+### Çözüm
+
+**1. DELETE Sorguları (candidates.py - KİLİTLİ #9 ONAYLANDI):**
+
+| Satır | Tablo | Değişiklik |
+|-------|-------|------------|
+| 146 | candidate_pool_assignments | + company_id |
+| 147 | matches | + company_id |
+| 148 | candidate_positions | + company_id |
+| 198 | candidate_positions (elen_candidate) | + company_id |
+
+**2. AI Data Masking (smart_prompt_builder.py):**
+
+| Değişken | Önceki | Şimdi |
+|----------|--------|-------|
+| candidate_name | Ham veri | ADAY_MASKED |
+| candidate_email | Ham veri | masked@privacy.local |
+| current_company | Ham veri | SIRKET_MASKED |
+| company_name | Ham veri | FIRMA_MASKED |
+
+**3. Yeni Fonksiyon:**
+- `_mask_personal_data(value, prefix)` - satır 275-289
+
+### P0 Durumu
+
+| Görev | Commit | Durum |
+|-------|--------|-------|
+| P0-A: 4 tablo migration | 0de76a6 | ✅ |
+| P0-B: DELETE + AI masking | a832d91 | ✅ |
+
+**P0 KRİTİK SEVİYE TAMAMLANDI: 6/6 ✅**
+
+---
+
 ## ✅ TAMAMLANAN GÖREV: P0-A Güvenlik Migration - candidate_positions company_id
 
 **Tarih:** 2026-03-21

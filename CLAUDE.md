@@ -1202,8 +1202,8 @@ Bu sistem KİLİTLİDİR. Değiştirilemez.
 | 2 | company_id eksik | candidate_pool_assignments | ✅ Zaten vardı |
 | 3 | company_id eksik | matches | ✅ Zaten vardı |
 | 4 | company_id eksik | applications | ✅ Zaten vardı (NULL düzeltildi) |
-| 5 | DELETE sorgularında company_id filtresi eksik | candidates.py:146-147,255,257 | ⏳ Bekliyor (KİLİTLİ dosya) |
-| 6 | AI prompt'larına data masking YOK | smart_prompt_builder.py:280-376 | ⏳ Bekliyor |
+| 5 | DELETE sorgularında company_id filtresi eksik | candidates.py:146-148,198 | ✅ Tamamlandı (a832d91) |
+| 6 | AI prompt'larına data masking YOK | smart_prompt_builder.py:275-397 | ✅ Tamamlandı (a832d91) |
 
 ---
 
@@ -1271,7 +1271,7 @@ ORDER BY m.name;
 | Tarih | Commit | Açıklama | Durum |
 |-------|--------|----------|-------|
 | 2026-03-21 | 0de76a6 | P0-A: candidate_positions company_id migration | ✅ |
-| - | - | P0-B: DELETE sorguları + AI masking | ⏳ |
+| 2026-03-21 | a832d91 | P0-B: DELETE sorguları + AI masking | ✅ |
 | - | - | P1: 4 tabloya company_id migration | ⏳ |
 | - | - | P2: Rate limiting + SQL injection fix | ⏳ |
 
