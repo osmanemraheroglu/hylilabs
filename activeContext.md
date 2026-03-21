@@ -2,6 +2,36 @@
 
 Son güncelleme: 21.03.2026
 
+## ✅ TAMAMLANAN GÖREV: Senior Engineer Prensipleri Eklendi
+
+**Tarih:** 2026-03-21
+**Commit:** 542f4fc
+
+### Eklenen Bölümler
+
+| Bölüm | Satır Aralığı |
+|-------|---------------|
+| 🎯 SENIOR ENGINEER PRENSİPLERİ | 1184-1271 |
+| 📋 TASK MANAGEMENT | 1274-1282 |
+| 💎 CORE PRINCIPLES | 1285-1291 |
+
+### 6 Prensip
+
+| # | Prensip | HyliLabs Uygulaması |
+|---|---------|---------------------|
+| 1 | Plan Mode Default | V3 scoring değişikliklerinde spec yaz |
+| 2 | Subagent Strategy | CV parsing, AI scoring, Arbitration dağıt |
+| 3 | Self-Improvement Loop | 0 puan hatalarını lessons.md'ye işle |
+| 4 | Verification Before Done | Anomali adaylarla mock test |
+| 5 | Demand Elegance | ai_evaluator.py'de temiz fonksiyonlar |
+| 6 | Autonomous Bug Fixing | Timeout/limit hatalarında otonom fallback |
+
+### Konum
+- Güvenlik bulguları (🔐) bölümünden ÖNCE eklendi
+- Mevcut içerik KORUNDU
+
+---
+
 ## ✅ TAMAMLANAN GÖREV: P2 Güvenlik - Orta Öncelikli Düzeltmeler
 
 **Tarih:** 2026-03-21
