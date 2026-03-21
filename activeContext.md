@@ -467,8 +467,8 @@ Title onayı (approve-titles G8) ve rescore fonksiyonları sadece V2 skoru yazı
 ### 21.03.2026 - Skor Detayı Bölümü
 - ✅ **Aday Detay Modal: Skor Detayı bölümü eklendi**
   - V2 (Keyword) x0.4, V3 (AI) x0.6, Final skor kartları
-  - AI Model Skorları ile Kelime Skoru arasına yerleştirildi
-  - Formül gösterimi: match_score = (v3_score × 0.60) + (v2_score × 0.40)
+  - Final skoru hesaplanıyor: (v2×0.4)+(v3×0.6)
+  - Kelime Skoru / Toplam Puan eski bölümü kaldırıldı
 
 ---
 
