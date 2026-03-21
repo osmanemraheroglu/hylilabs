@@ -2,6 +2,54 @@
 
 Son güncelleme: 21.03.2026
 
+## ✅ TAMAMLANAN GÖREV: P1 Güvenlik - 3 Tabloya company_id Migration
+
+**Tarih:** 2026-03-21
+**Commit:** 53d2741
+
+### Sorun
+3 tablo company_id kolonu olmadan çalışıyordu (multi-tenancy ihlali):
+- position_criteria
+- ai_analyses
+- hr_evaluations
+
+**Not:** ai_evaluations tablosunda company_id zaten vardı (29 kayıt).
+
+### Çözüm
+
+**1. DB Migration:**
+- ALTER TABLE position_criteria ADD COLUMN company_id
+- ALTER TABLE ai_analyses ADD COLUMN company_id
+- ALTER TABLE hr_evaluations ADD COLUMN company_id
+- 3 yeni index oluşturuldu
+
+**2. database.py Fonksiyon Güncellemeleri:**
+
+| Fonksiyon | Değişiklik |
+|-----------|------------|
+| add_position_criteria | + company_id parametresi |
+| get_position_criteria | + company_id filtresi (opsiyonel) |
+| delete_all_position_criteria | + company_id filtresi (opsiyonel) |
+| save_ai_analysis | + company_id parametresi |
+| get_ai_analysis | + company_id filtresi (opsiyonel) |
+| save_hr_evaluation | + company_id parametresi |
+| get_hr_evaluation | + company_id filtresi (opsiyonel) |
+| get_all_hr_evaluations | + company_id filtresi (opsiyonel) |
+| export_candidate_data | + ai_analyses company_id filtresi |
+
+**3. workflows.py Güncellemeleri:**
+- save_ai_analysis() çağrıları company_id parametresi ile güncellendi (2 yer)
+
+### Güvenlik Durumu
+
+| Öncelik | Durum |
+|---------|-------|
+| P0 KRİTİK | ✅ 6/6 Tamamlandı |
+| P1 YÜKSEK | ✅ 4/4 Tamamlandı |
+| P2 ORTA | ⏳ 4 sorun bekliyor |
+
+---
+
 ## ✅ TAMAMLANAN GÖREV: P0-B Güvenlik - DELETE Sorguları + AI Data Masking
 
 **Tarih:** 2026-03-21

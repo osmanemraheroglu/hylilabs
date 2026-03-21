@@ -1211,10 +1211,10 @@ Bu sistem KİLİTLİDİR. Değiştirilemez.
 
 | # | Sorun | Tablo/Dosya | Durum |
 |---|-------|-------------|-------|
-| 7 | company_id eksik | position_criteria | ⏳ Bekliyor |
-| 8 | company_id eksik | ai_evaluations | ⏳ Bekliyor |
-| 9 | company_id eksik | ai_analyses | ⏳ Bekliyor |
-| 10 | company_id eksik | hr_evaluations | ⏳ Bekliyor |
+| 7 | company_id eksik | position_criteria | ✅ Tamamlandı (53d2741) |
+| 8 | company_id eksik | ai_evaluations | ✅ Zaten vardı (29 kayıt) |
+| 9 | company_id eksik | ai_analyses | ✅ Tamamlandı (53d2741) |
+| 10 | company_id eksik | hr_evaluations | ✅ Tamamlandı (53d2741) |
 
 ---
 
@@ -1272,6 +1272,6 @@ ORDER BY m.name;
 |-------|--------|----------|-------|
 | 2026-03-21 | 0de76a6 | P0-A: candidate_positions company_id migration | ✅ |
 | 2026-03-21 | a832d91 | P0-B: DELETE sorguları + AI masking | ✅ |
-| - | - | P1: 4 tabloya company_id migration | ⏳ |
+| 2026-03-21 | 53d2741 | P1: 3 tabloya company_id migration (ai_evaluations zaten vardı) | ✅ |
 | - | - | P2: Rate limiting + SQL injection fix | ⏳ |
 
