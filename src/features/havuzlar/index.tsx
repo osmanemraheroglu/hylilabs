@@ -2029,7 +2029,7 @@ export default function Havuzlar() {
                             <div className="h-3 bg-white rounded-full overflow-hidden">
                               <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((score || 0) / cat.max) * 100}%`}}></div>
                             </div>
-                            {ls[cat.key]?.reason && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ls[cat.key].reason}</p>}
+                            {ls[cat.key]?.reason && <p className="text-xs text-gray-400 mt-1">{ls[cat.key].reason}</p>}
                           </div>
                         )
                       })}
@@ -2046,7 +2046,7 @@ export default function Havuzlar() {
                             <div className="h-3 bg-white rounded-full overflow-hidden">
                               <div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${((score || 0) / cat.max) * 100}%`}}></div>
                             </div>
-                            {ls[cat.key]?.reason && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{ls[cat.key].reason}</p>}
+                            {ls[cat.key]?.reason && <p className="text-xs text-gray-400 mt-1">{ls[cat.key].reason}</p>}
                           </div>
                         )
                       })}

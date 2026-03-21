@@ -512,6 +512,7 @@ Title onayı (approve-titles G8) ve rescore fonksiyonları sadece V2 skoru yazı
   - v3Evaluation state'inden fallback: layer_scores/strengths/weaknesses
   - V2 fallback: ai layer_scores boşsa v2_detail'den skor çekilir
   - ai_evaluation.scores da layer_scores olarak kabul edilir
+  - Skor açıklamalarından line-clamp-2 truncation kaldırıldı
 
 ---
 
