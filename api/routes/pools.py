@@ -661,7 +661,8 @@ def assign_candidate(pool_id: int, body: dict, current_user: dict = Depends(get_
                 candidate_id=candidate_id,
                 position_id=pool_id,
                 match_score=body.get("match_score", 0),
-                company_id=company_id
+                company_id=company_id,
+                source='manual'
             )
             if not result["success"]:
                 raise HTTPException(status_code=400, detail=result["error"])

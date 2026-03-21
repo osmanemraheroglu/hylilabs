@@ -12941,7 +12941,8 @@ def add_candidate_to_position(
     gemini_score: int = 0,
     hermes_score: int = 0,
     openai_score: int = 0,
-    score_version: str = 'v2'
+    score_version: str = 'v2',
+    source: str = 'auto'
 ) -> dict:
     """Adayı pozisyona ekle (manuel atama için)
 
@@ -12974,11 +12975,11 @@ def add_candidate_to_position(
             cursor.execute("""
                 INSERT INTO candidate_positions (
                     candidate_id, position_id, match_score, status,
-                    v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version, company_id
+                    v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version, company_id, source
                 )
-                VALUES (?, ?, ?, 'beklemede', ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, 'beklemede', ?, ?, ?, ?, ?, ?, ?, ?)
             """, (candidate_id, position_id, match_score,
-                  v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version, actual_company_id))
+                  v2_score, v3_score, gemini_score, hermes_score, openai_score, score_version, actual_company_id, source))
 
             # 5. candidates.durum ve havuz güncelle
             cursor.execute("""
@@ -13099,9 +13100,9 @@ def get_position_candidates(position_id: int) -> list[dict]:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT c.*,
-                   'auto' as assignment_type,
+                   COALESCE(cp.source, 'auto') as assignment_type,
                    cp.match_score,
-                   'Pozisyon eşleşmesi' as match_reason,
+                   CASE WHEN cp.source = 'manual' THEN 'Manuel atama' ELSE 'Pozisyon eşleşmesi' END as match_reason,
                    cp.created_at as assigned_at,
                    cp.v2_score,
                    cp.v3_score,
@@ -13109,7 +13110,8 @@ def get_position_candidates(position_id: int) -> list[dict]:
                    cp.hermes_score,
                    cp.openai_score,
                    cp.score_version,
-                   cp.status
+                   cp.status,
+                   COALESCE(cp.source, 'auto') as source
             FROM candidate_positions cp
             JOIN candidates c ON cp.candidate_id = c.id
             WHERE cp.position_id = ?

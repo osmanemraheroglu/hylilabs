@@ -20,6 +20,17 @@ async def lifespan(app: FastAPI):
     """Application lifespan - startup ve shutdown"""
     global scheduler
     # Startup
+    # Migration: candidate_positions.source kolonu
+    try:
+        import sqlite3
+        db_path = os.path.join(os.path.dirname(__file__), "data", "talentflow.db")
+        conn = sqlite3.connect(db_path)
+        conn.execute("ALTER TABLE candidate_positions ADD COLUMN source TEXT DEFAULT 'auto'")
+        conn.commit()
+        conn.close()
+        logger.info("Migration: candidate_positions.source kolonu eklendi")
+    except Exception:
+        pass  # Kolon zaten var
     scheduler = start_scheduler()
     logger.info("Application started - scheduler running")
     yield
