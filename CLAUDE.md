@@ -1181,6 +1181,116 @@ Bu sistem KİLİTLİDİR. Değiştirilemez.
 
 ---
 
+## 🎯 SENIOR ENGINEER PRENSİPLERİ (DEĞİŞTİRİLEMEZ)
+
+HyliLabs geliştirmelerinde uyulması ZORUNLU 6 temel prensip:
+
+---
+
+### 1. Plan Mode Default (Stratejik Planlama)
+
+**Genel Kural:**
+- 3+ adım veya mimari karar gerektiren HER görevde plan moduna gir
+- Bir şey ters giderse DUR ve yeniden planla - körü körüne devam etme
+- Sadece kod yazmak için değil, doğrulama adımları için de plan modu kullan
+- Belirsizliği azaltmak için detaylı spesifikasyonları en başta yaz
+
+**HyliLabs Uygulaması:**
+- V3 scoring mantığında yapılacak en küçük matematiksel değişiklikte bile kod yazmadan önce plan moduna gir
+- Puanlama ağırlıkları (V3 × 0.60 gibi) değişecekse, bunun veritabanındaki eski kayıtları nasıl etkileyeceğini "Spec" olarak en başta yaz
+
+---
+
+### 2. Subagent Strategy (Verimli İş Bölümü)
+
+**Genel Kural:**
+- Ana context window'u temiz tutmak için subagent'leri serbestçe kullan
+- Araştırma, keşif ve paralel analizi subagent'lere yükle
+- Karmaşık problemlerde subagent'ler aracılığıyla daha fazla hesaplama gücü kullan
+- Odaklı yürütme için her subagent'e tek görev ver
+
+**HyliLabs Uygulaması:**
+- Bir aday taranırken; CV ayrıştırma, AI scoring (Hermes/Gemini/OpenAI) ve Tahkim (Arbitration) süreçlerini ayrı alt temsilcilere (subagents) dağıt
+- Ana context window'u şişirmemek için her bir AI modelinin "reasoning" çıktısını subagent seviyesinde filtrele
+
+---
+
+### 3. Self-Improvement Loop (Hata Hafızası)
+
+**Genel Kural:**
+- Kullanıcıdan HERHANGİ bir düzeltme geldiğinde: `tasks/lessons.md` dosyasını güncelle
+- Aynı hatanın tekrarını engelleyen kurallar yaz
+- Hata oranı düşene kadar bu dersleri acımasızca iterate et
+- İlgili proje için session başlangıcında dersleri gözden geçir
+
+**HyliLabs Uygulaması:**
+- Eğer bir AI modeli 0 puan verdiği halde sistem bunu fark etmeyip ortalamaya katarsa, bu hatayı anında `tasks/lessons.md` dosyasına "Kritik Mantık Hatası" olarak işle
+- Bir sonraki session başladığında, V3 Protokolü'nün "0 puan retry" kuralını bu derslerden okuyarak hatasız uygula
+
+---
+
+### 4. Verification Before Done (Kesin Doğrulama)
+
+**Genel Kural:**
+- Çalıştığını kanıtlamadan HİÇBİR görevi tamamlandı olarak işaretleme
+- Uygun olduğunda main branch ile değişikliklerini diff'le
+- Kendine sor: "Bir Staff Engineer bunu onaylar mı?"
+- Testleri çalıştır, logları kontrol et, doğruluğu göster
+
+**HyliLabs Uygulaması:**
+- Kod bittiğinde; ID 450 veya 462 gibi anomali adayları üzerinden "Mock Test" yapmadan görevi "Tamamlandı" işaretleme
+- Staff Engineer bakış açısıyla; "Bu kod, başka bir firmanın (tenant) verisine erişilmesini engelliyor mu?" sorusunu her commit öncesi kanıtla
+
+---
+
+### 5. Demand Elegance (Mimari Zarafet)
+
+**Genel Kural:**
+- Önemsiz olmayan değişiklikler için: dur ve "daha zarif bir yol var mı?" diye sor
+- Eğer bir çözüm "yama" (hacky) hissettiriyorsa: "Şu an bildiğim her şeyi bilerek, en zarif çözümü uygula"
+- Basit, bariz düzeltmeler için bunu atla - aşırı mühendislik yapma
+- Sunmadan önce kendi çalışmanı sorgula
+
+**HyliLabs Uygulaması:**
+- `ai_evaluator.py` içinde spagetti kod yazma. 15 puanlık fark kontrolü ve Tahkim çağrısı (Arbitration) birbirine girmemeli; her biri bağımsız ve temiz fonksiyonlar olmalı
+- Eğer bir çözüm "yama" hissettiriyorsa (örneğin sürekli `try-except` ile hata gizlemek), dur ve protokolün ruhuna uygun "en zarif" asenkron yapıyı kur
+
+---
+
+### 6. Autonomous Bug Fixing (Otonom Müdahale)
+
+**Genel Kural:**
+- Bir bug raporu verildiğinde: sadece düzelt. El tutma isteme
+- Loglara, hatalara, başarısız testlere işaret et - sonra çöz
+- Kullanıcıdan sıfır context switching gerekli olmalı
+- Nasıl yapılacağı söylenmeden başarısız CI testlerini düzelt
+
+**HyliLabs Uygulaması:**
+- API tarafında bir "Scoring Timeout" veya "OpenAI Token Limit" hatası oluştuğunda kimseden talimat bekleme; fallback mekanizmasını (V2'ye düşüş veya Retry) otonom olarak devreye al
+- CI/CD süreçlerinde veya loglarda görülen her türlü izolasyon (company_id) uyarısını en yüksek öncelikle kendin çöz
+
+---
+
+## 📋 TASK MANAGEMENT
+
+1. **Plan First**: Planı `tasks/todo.md` dosyasına checkable item'larla yaz
+2. **Verify Plan**: Implementasyona başlamadan önce planı doğrula
+3. **Track Progress**: İlerledikçe item'ları tamamlandı olarak işaretle
+4. **Explain Changes**: Her adımda high-level özet ver
+5. **Document Results**: `tasks/todo.md` dosyasına review bölümü ekle
+6. **Capture Lessons**: Düzeltmelerden sonra `tasks/lessons.md` güncelle
+
+---
+
+## 💎 CORE PRINCIPLES
+
+- **Simplicity First**: Her değişikliği mümkün olan en basit şekilde yap. Minimum kod etkisi.
+- **No Laziness**: Kök nedenleri bul. Geçici çözümler yok. Senior developer standartları.
+- **No Assumptions**: Teknik bilgi varsayımında bulunma. Her şeyi doğrula.
+- **Complete Solutions**: Yarım çözüm yok. Tam ve eksiksiz çözümler üret.
+
+---
+
 ## 🔐 GÜVENLİK DENETİM BULGULARI (2026-03-21)
 
 ### Denetim Özeti
