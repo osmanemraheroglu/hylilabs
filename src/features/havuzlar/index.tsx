@@ -1831,21 +1831,21 @@ export default function Havuzlar() {
                         <div className="grid grid-cols-4 gap-2">
                           <div className="text-center p-2 bg-white rounded">
                             <p className="text-xs text-gray-500">Gemini</p>
-                            <p className="font-bold">{selectedCandidateDetail.gemini_score || '-'}%</p>
+                            <p className="font-bold">{selectedCandidateDetail.gemini_score || '-'}</p>
                           </div>
                           <div className="text-center p-2 bg-white rounded">
                             <p className="text-xs text-gray-500">Hermes</p>
-                            <p className="font-bold">{selectedCandidateDetail.hermes_score || '-'}%</p>
+                            <p className="font-bold">{selectedCandidateDetail.hermes_score || '-'}</p>
                           </div>
                           <div className="text-center p-2 bg-white rounded">
                             <p className="text-xs text-gray-500">OpenAI</p>
-                            <p className="font-bold">{selectedCandidateDetail.openai_score || '-'}%</p>
+                            <p className="font-bold">{selectedCandidateDetail.openai_score || '-'}</p>
                           </div>
                           <div className="text-center p-2 bg-white rounded">
                             <p className="text-xs text-gray-500">Ortalama</p>
                             <p className="font-bold">{(() => {
                               const scores = [selectedCandidateDetail.gemini_score, selectedCandidateDetail.hermes_score, selectedCandidateDetail.openai_score].filter((s): s is number => s != null && s > 0)
-                              return scores.length > 0 ? `${Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)}%` : '-%'
+                              return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : '-'
                             })()}</p>
                           </div>
                         </div>
@@ -1872,7 +1872,7 @@ export default function Havuzlar() {
                           </div>
                           {/* Final */}
                           <div className="text-center p-3 bg-green-50 rounded-lg shadow-sm border-2 border-green-200">
-                            <p className="text-xs text-gray-500 mb-1">=</p>
+                            <p className="text-xs text-gray-500 mb-1">Sonuç</p>
                             <p className="text-3xl font-bold text-green-600">
                               {(() => {
                                 const v2 = selectedCandidateDetail?.v2_score || selectedCandidateDetail?.keyword_score || 0
@@ -1881,12 +1881,14 @@ export default function Havuzlar() {
                                 return final_s || '-'
                               })()}
                             </p>
-                            <p className="text-xs text-gray-500">Final</p>
                           </div>
                         </div>
                         {/* Formül */}
                         <p className="text-xs text-center text-gray-400 mt-3">
-                          match_score = (v2_score × 0.40) + (v3_score × 0.60)
+                          sonuç_skor = (v2_skor × 0.40) + (v3_skor × 0.60)
+                        </p>
+                        <p className="text-xs text-center text-gray-400 mt-1">
+                          Tüm skorlar 100 üzerinden hesaplanmaktadır.
                         </p>
                       </div>
                     </div>
