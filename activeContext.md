@@ -1,6 +1,49 @@
 # HyliLabs — Aktif Bağlam
 
-Son güncelleme: 21.03.2026
+Son güncelleme: 21.03.2026 (oturum sonu)
+
+## ⚠️ YARIN İLK İŞ (22.03.2026)
+
+### 1. Deploy (KRİTİK)
+```bash
+cd /var/www/hylilabs && git pull origin main && npm run build && pm2 restart hylilabs-backend && pm2 restart hylilabs-frontend
+```
+Gemini model güncellemesi + tüm bugünkü değişiklikler sunucuya aktarılmalı.
+
+### 2. Mevcut Skorlanmamış Adayları Düzelt
+```bash
+sqlite3 /var/www/hylilabs/api/data/talentflow.db "UPDATE candidate_positions SET source = 'manual' WHERE match_score = 0 OR match_score IS NULL;"
+```
+Veya deploy sonrası "Skorlanmamışları Puanla" butonunu kullan.
+
+### 3. OpenAI API Kontrol
+- OpenAI 0 skor döndürüyor — API key veya model sorunu olabilir
+- ai_evaluator.py'deki OpenAI model adını kontrol et
+
+### 4. google.generativeai Deprecated Uyarısı
+- `google-generativeai` paketi deprecated, `google-genai`'ye geçiş gerekebilir
+- Şu an çalışıyorsa acil değil, ama takip edilmeli
+
+---
+
+## ✅ TAMAMLANAN OTURUM: 21.03.2026 — Aday Detay Modal + Manuel Atama
+
+### Commitler (11 adet)
+| Commit | Açıklama |
+|--------|----------|
+| bb1d7a7 | Ortalama AI skoru hesaplama (frontend dinamik) |
+| 17bb231 | Skor Detayı bölümü (V2 x0.4 + V3 x0.6 = Sonuç) |
+| a82877a | Final hesaplama, formül sırası, eski bölüm kaldırıldı |
+| a7a0bdf | Türkçe label'lar, % kaldırıldı, "100 üzerinden" açıklaması |
+| 41373d1 | Progress bar + Güçlü Yönler/Gelişim Alanları backend bağlantısı |
+| 86ab9a1 | Açıklama truncation kaldırıldı (line-clamp-2) |
+| feb8817 | Manuel atama sonrası V2+V3 skorlama tetikleme |
+| 6c3a66b | Toplu rescore endpoint + "Skorlanmamışları Puanla" butonu |
+| 006b25c | KeyError: 'claude_used' fix (cached.get()) |
+| 934c709 | source kolonu + manuel adaylar skor sınırı olmadan görünür |
+| 91d64de | TypeScript Candidate type'ına source eklendi |
+
+---
 
 ## ✅ TAMAMLANAN GÖREV: Senior Engineer Prensipleri Eklendi
 
