@@ -168,6 +168,82 @@ KATMAN 5 - DİĞER FAKTÖRLER (10 puan):
 - Lokasyon uyumu (not: eleme sebebi değil)
 
 ═══════════════════════════════════════════════════════════════════════════════
+📊 GÜVEN SKORU (CONFIDENCE) KURALLARI
+═══════════════════════════════════════════════════════════════════════════════
+
+Her kategori için 0.0-1.0 arası güven skoru (confidence) VERMELİSİN.
+Güven skoru = "Bu puandan ne kadar eminim?" sorusunun cevabı.
+
+───────────────────────────────────────────────────────────────────────────────
+YÜKSEK GÜVEN (0.85-1.0):
+───────────────────────────────────────────────────────────────────────────────
+- CV'de AÇIK ve NET bilgi var
+- Tarihler, şirket adları, pozisyon unvanları belirli
+- Teknik beceriler listelenmiş
+- Eğitim bilgisi tam (üniversite + bölüm + yıl)
+
+Örnek: "İTÜ Bilgisayar Mühendisliği 2018 mezunu" → education confidence: 0.95
+
+───────────────────────────────────────────────────────────────────────────────
+ORTA GÜVEN (0.50-0.84):
+───────────────────────────────────────────────────────────────────────────────
+- Bilgi var ama DETAYSIZ
+- Tarihler yuvarlak (sadece yıl, ay yok)
+- Pozisyon unvanı belirsiz ("Uzman" gibi genel terimler)
+- Beceriler listelenmemiş ama iş tanımından çıkarılabilir
+
+Örnek: "2018-2020 ABC Şirketi'nde çalıştı" → experience_quality confidence: 0.70
+
+───────────────────────────────────────────────────────────────────────────────
+DÜŞÜK GÜVEN (0.00-0.49):
+───────────────────────────────────────────────────────────────────────────────
+- Bilgi EKSİK veya BELİRSİZ
+- Örtük çıkarım yapıldı (izin verilen 3 kalıptan biri)
+- Tarih yok
+- evidence_from_cv = "Belirtilmemiş"
+
+Örnek: "10 kişilik ekip yönetti" → örtük Ekip Yönetimi çıkarımı → confidence: 0.45
+
+───────────────────────────────────────────────────────────────────────────────
+⚠️ AŞIRI GÜVEN (OVERCONFIDENCE) ÖNLEME:
+───────────────────────────────────────────────────────────────────────────────
+
+ASLA şu durumlarda yüksek confidence (0.85+) VERME:
+- evidence_from_cv = "Belirtilmemiş" ise → max confidence: 0.50
+- Örtük çıkarım yaptıysan → max confidence: 0.50
+- Tarih/süre belirsizse → max confidence: 0.70
+- Semantik eşleşme kullandıysan → max confidence: 0.80
+
+GÜVEN - KANIT İLİŞKİSİ:
+- evidence_from_cv BOŞ veya "Belirtilmemiş" → confidence ≤ 0.50
+- evidence_from_cv KISA (< 20 karakter) → confidence ≤ 0.70
+- evidence_from_cv DETAYLI (> 50 karakter) → confidence ≥ 0.80
+
+───────────────────────────────────────────────────────────────────────────────
+CONFIDENCE_SCORE HESAPLAMA:
+───────────────────────────────────────────────────────────────────────────────
+
+confidence_score = (
+    position_match.confidence + 
+    experience_quality.confidence + 
+    technical_skills.confidence + 
+    education.confidence + 
+    other.confidence
+) / 5
+
+low_confidence_areas = confidence < 0.50 olan kategori isimleri listesi
+
+Örnek:
+- position_match confidence: 0.90
+- experience_quality confidence: 0.75
+- technical_skills confidence: 0.40 (düşük - eksik beceri bilgisi)
+- education confidence: 0.95
+- other confidence: 0.60
+
+confidence_score = (0.90 + 0.75 + 0.40 + 0.95 + 0.60) / 5 = 0.72
+low_confidence_areas = ["technical_skills"]
+
+═══════════════════════════════════════════════════════════════════════════════
 SEMANTİK EŞLEŞTİRME KURALLARI
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -325,31 +401,38 @@ JSON_SCHEMA = """{
   "scores": {
     "position_match": {
       "score": 0-25 arası puan,
-      "reason": "Kısa açıklama"
+      "reason": "Kısa açıklama",
+      "confidence": 0.0-1.0 arası (bu puanın güvenilirliği)
     },
     "experience_quality": {
       "score": 0-25 arası puan,
       "reason": "Kısa açıklama",
-      "evidence_from_cv": "CV'den alıntı veya 'Belirtilmemiş'"
+      "evidence_from_cv": "CV'den alıntı veya 'Belirtilmemiş'",
+      "confidence": 0.0-1.0 arası (bu puanın güvenilirliği)
     },
     "technical_skills": {
       "score": 0-25 arası puan,
       "matched_skills": ["eşleşen", "beceriler"],
       "missing_skills": ["eksik", "beceriler"],
       "reason": "Kısa açıklama",
-      "evidence_from_cv": "CV'den alıntı veya 'Belirtilmemiş'"
+      "evidence_from_cv": "CV'den alıntı veya 'Belirtilmemiş'",
+      "confidence": 0.0-1.0 arası (bu puanın güvenilirliği)
     },
     "education": {
       "score": 0-15 arası puan,
       "reason": "Kısa açıklama",
-      "evidence_from_cv": "CV'den alıntı veya 'Belirtilmemiş'"
+      "evidence_from_cv": "CV'den alıntı veya 'Belirtilmemiş'",
+      "confidence": 0.0-1.0 arası (bu puanın güvenilirliği)
     },
     "other": {
       "score": 0-10 arası puan,
-      "reason": "Kısa açıklama (dil, sertifika, lokasyon)"
+      "reason": "Kısa açıklama (dil, sertifika, lokasyon)",
+      "confidence": 0.0-1.0 arası (bu puanın güvenilirliği)
     }
   },
   "total_score": 0-100 arası toplam puan,
+  "confidence_score": 0.0-1.0 arası (tüm değerlendirmenin ortalama güven skoru),
+  "low_confidence_areas": ["confidence < 0.50 olan kategoriler listesi"],
   "keyword_match_ratio": 0.0-1.0 arası (eşleşen keyword / toplam keyword),
   "strengths": ["Güçlü yön 1", "Güçlü yön 2", "Güçlü yön 3"],
   "weaknesses": ["Zayıf yön 1", "Zayıf yön 2"],
@@ -358,8 +441,10 @@ JSON_SCHEMA = """{
   "overall_assessment": "2-3 cümlelik genel değerlendirme",
 
   "⚠️ ZORUNLU ALANLAR": {
-    "scores": "MUTLAKA doldurulmalı - 5 kategorinin hepsi (position_match, experience_quality, technical_skills, education, other) için score ve reason yazılmalı",
+    "scores": "MUTLAKA doldurulmalı - 5 kategorinin hepsi (position_match, experience_quality, technical_skills, education, other) için score, reason ve confidence yazılmalı",
     "total_score": "scores içindeki 5 kategorinin toplamı olmalı (max 100)",
+    "confidence_score": "5 kategorinin confidence değerlerinin ortalaması",
+    "low_confidence_areas": "confidence < 0.50 olan kategori isimleri (boş array olabilir)",
     "uyari": "scores alanı BOŞ bırakılamaz, aksi halde değerlendirme GEÇERSİZ sayılır"
   }
 }"""
@@ -456,9 +541,11 @@ DEĞERLENDİRME TALİMATI
 
 ⚠️ KRİTİK TALİMAT:
 Aşağıdaki JSON şemasına TAMAMEN uymalısın. "scores" alanı ZORUNLUDUR.
-Her kategori için puan (score) ve gerekçe (reason) MUTLAKA yazılmalı.
+Her kategori için puan (score), gerekçe (reason) ve güven (confidence) MUTLAKA yazılmalı.
 scores alanını BOŞ bırakma, aksi halde değerlendirme geçersiz sayılır.
 total_score = position_match + experience_quality + technical_skills + education + other toplamı olmalıdır.
+confidence_score = 5 kategorinin confidence ortalaması olmalıdır.
+low_confidence_areas = confidence < 0.50 olan kategori isimleri listesi.
 
 {json_schema}
 """
@@ -1164,7 +1251,7 @@ class SmartPromptBuilder:
 
 if __name__ == "__main__":
     print("=" * 77)
-    print("SmartPromptBuilder Test (V2 Entegrasyonu)")
+    print("SmartPromptBuilder Test (V2 Entegrasyonu + Confidence)")
     print("=" * 77)
 
     builder = SmartPromptBuilder()

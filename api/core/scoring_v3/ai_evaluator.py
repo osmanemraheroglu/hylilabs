@@ -11,6 +11,8 @@ Fallback Zinciri:
 - SENARYO 3: Gemini OK + Hermes FAIL -> OpenAI cagrilir -> Gemini + OpenAI consensus
 - SENARYO 4: Gemini FAIL + Hermes FAIL -> OpenAI cagrilir -> Tek skor (son care)
 
+FAZ 3: Confidence Score desteği eklendi (22.03.2026)
+
 Kullanim:
     from ai_evaluator import AIEvaluator
     import asyncio
@@ -71,6 +73,9 @@ class EvaluationResult:
     raw_response: str
     parse_success: bool
     error: Optional[str] = None
+    # FAZ 3: Confidence Score
+    confidence_score: float = 0.0
+    low_confidence_areas: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         """Dict'e cevir"""
@@ -105,6 +110,10 @@ class FinalEvaluation:
     total_response_time: float
     total_tokens: Dict[str, int]
 
+    # FAZ 3: Confidence Score
+    confidence_score: float = 0.0
+    low_confidence_areas: List[str] = field(default_factory=list)
+
     # Debug bilgileri (opsiyonel)
     gemini_result: Optional[EvaluationResult] = None
     hermes_result: Optional[EvaluationResult] = None
@@ -123,6 +132,9 @@ class FinalEvaluation:
             "interview_questions": self.interview_questions,
             "overall_assessment": self.overall_assessment,
             "elimination_reason": self.elimination_reason,
+            # FAZ 3: Confidence Score
+            "confidence_score": self.confidence_score,
+            "low_confidence_areas": self.low_confidence_areas,
             "meta": {
                 "gemini_score": self.gemini_score,
                 "hermes_score": self.hermes_score,
@@ -956,7 +968,7 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
         elapsed: float,
         tokens: Dict[str, int]
     ) -> EvaluationResult:
-        """API yanitini parse eder (JSON repair destekli)"""
+        """API yanitini parse eder (JSON repair destekli, FAZ 3: Confidence desteği)"""
         try:
             # JSON blogunu cikar
             json_str = content
@@ -981,7 +993,7 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
                     # Repair de basarisiz, orijinal hatayi firlat
                     raise first_error
 
-            # FAZ 13.3: Scores validation
+            # FAZ 13.3: Scores validation + FAZ 3: Confidence parsing
             raw_scores = data.get("scores", {})
             validated_scores = {}
 
@@ -989,13 +1001,23 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
             required_categories = ["position_match", "experience_quality", "technical_skills", "education", "other"]
             max_scores = {"position_match": 25, "experience_quality": 25, "technical_skills": 25, "education": 15, "other": 10}
 
+            # FAZ 3: Confidence değerlerini topla
+            confidence_values = []
+
             for cat in required_categories:
                 if cat in raw_scores and isinstance(raw_scores[cat], dict):
                     score = raw_scores[cat].get("score", 0)
+                    # FAZ 3: Confidence parse (default 0.5)
+                    raw_confidence = raw_scores[cat].get("confidence", 0.5)
+                    confidence = min(1.0, max(0.0, float(raw_confidence) if raw_confidence else 0.5))
+                    confidence_values.append(confidence)
+
                     # Score'u min/max ile sinirla
                     validated_scores[cat] = {
                         "score": min(max_scores[cat], max(0, int(score) if score else 0)),
                         "reason": raw_scores[cat].get("reason", ""),
+                        "confidence": confidence,  # FAZ 3
+                        "evidence_from_cv": raw_scores[cat].get("evidence_from_cv", ""),  # FAZ 2
                         "matched_skills": raw_scores[cat].get("matched_skills", []),
                         "missing_skills": raw_scores[cat].get("missing_skills", [])
                     }
@@ -1008,16 +1030,28 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
                         validated_scores[cat] = {
                             "score": min(max_scores[cat], estimated),
                             "reason": "AI tarafindan detaylandirilmadi",
+                            "confidence": 0.5,  # FAZ 3: Default confidence
+                            "evidence_from_cv": "",
                             "matched_skills": [],
                             "missing_skills": []
                         }
+                        confidence_values.append(0.5)
                     else:
                         validated_scores[cat] = {
                             "score": 0,
                             "reason": "Degerlendirilemedi",
+                            "confidence": 0.0,  # FAZ 3: 0 skor = 0 confidence
+                            "evidence_from_cv": "",
                             "matched_skills": [],
                             "missing_skills": []
                         }
+                        confidence_values.append(0.0)
+
+            # FAZ 3: Ortalama confidence score hesapla
+            avg_confidence = sum(confidence_values) / len(confidence_values) if confidence_values else 0.5
+
+            # FAZ 3: Low confidence areas (confidence < 0.50)
+            low_conf_areas = [cat for cat in required_categories if validated_scores[cat].get("confidence", 0.5) < 0.50]
 
             # Log: scores bossa uyari
             if not raw_scores or len(raw_scores) < 5:
@@ -1037,7 +1071,10 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
                 response_time=round(elapsed, 2),
                 tokens_used=tokens,
                 raw_response=content,
-                parse_success=True
+                parse_success=True,
+                # FAZ 3: Confidence fields
+                confidence_score=round(avg_confidence, 2),
+                low_confidence_areas=low_conf_areas
             )
 
         except json.JSONDecodeError as e:
@@ -1057,7 +1094,10 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
                 tokens_used=tokens,
                 raw_response=content,
                 parse_success=False,
-                error=f"JSON parse hatasi: {str(e)}"
+                error=f"JSON parse hatasi: {str(e)}",
+                # FAZ 3: Default confidence for errors
+                confidence_score=0.0,
+                low_confidence_areas=[]
             )
 
     def _error_result(
@@ -1082,7 +1122,10 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
             tokens_used={"input": 0, "output": 0},
             raw_response="",
             parse_success=False,
-            error=error
+            error=error,
+            # FAZ 3: Default confidence for errors
+            confidence_score=0.0,
+            low_confidence_areas=[]
         )
 
     def _create_final_from_single(
@@ -1130,6 +1173,9 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
                 "input": success_result.tokens_used.get("input", 0),
                 "output": success_result.tokens_used.get("output", 0)
             },
+            # FAZ 3: Confidence from single model
+            confidence_score=success_result.confidence_score,
+            low_confidence_areas=success_result.low_confidence_areas,
             gemini_result=gemini_result,
             hermes_result=hermes_result,
             openai_result=openai_result,
@@ -1203,6 +1249,9 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
                 models_used=models_used,
                 total_response_time=round(total_time, 2),
                 total_tokens=total_tokens,
+                # FAZ 3: Confidence from Claude
+                confidence_score=claude_result.confidence_score,
+                low_confidence_areas=claude_result.low_confidence_areas,
                 gemini_result=gemini_result,
                 hermes_result=hermes_result,
                 openai_result=openai_result,
@@ -1221,6 +1270,11 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
 
         # Scores ortalamasi
         final_scores = self._average_scores(result1.scores, result2.scores)
+
+        # FAZ 3: Confidence ortalamasi
+        avg_confidence = (result1.confidence_score + result2.confidence_score) / 2
+        # FAZ 3: Low confidence areas birleştir (unique)
+        combined_low_conf = list(set(result1.low_confidence_areas + result2.low_confidence_areas))
 
         # Strengths/weaknesses birlestir (unique)
         final_strengths = list(dict.fromkeys(result1.strengths + result2.strengths))[:5]
@@ -1266,6 +1320,9 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
             models_used=models_used,
             total_response_time=round(total_time, 2),
             total_tokens=total_tokens,
+            # FAZ 3: Confidence average
+            confidence_score=round(avg_confidence, 2),
+            low_confidence_areas=combined_low_conf,
             gemini_result=gemini_result,
             hermes_result=hermes_result,
             openai_result=openai_result,
@@ -1277,7 +1334,7 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
         scores1: Dict[str, Any],
         scores2: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Iki skor setinin ortalamasini alir"""
+        """Iki skor setinin ortalamasini alir (FAZ 3: Confidence dahil)"""
         result = {}
 
         all_keys = set(scores1.keys()) | set(scores2.keys())
@@ -1289,13 +1346,17 @@ Kendi bagimsiz degerlendirmeni yap, sadece modellerin ortalamasini alma.
             if isinstance(s1, dict) and isinstance(s2, dict):
                 result[key] = {
                     "score": (s1.get("score", 0) + s2.get("score", 0)) // 2,
-                    "reason": f"{s1.get('reason', '')} | {s2.get('reason', '')}"
+                    "reason": f"{s1.get('reason', '')} | {s2.get('reason', '')}",
+                    # FAZ 3: Confidence ortalamasi
+                    "confidence": round((s1.get("confidence", 0.5) + s2.get("confidence", 0.5)) / 2, 2),
+                    # FAZ 2: evidence_from_cv birleştir
+                    "evidence_from_cv": s1.get("evidence_from_cv", "") or s2.get("evidence_from_cv", "")
                 }
 
                 # matched_skills ve missing_skills varsa birlestir
                 if "matched_skills" in s1 or "matched_skills" in s2:
                     result[key]["matched_skills"] = list(dict.fromkeys(
-                        s1.get("matched_skills", []) + s2.get("missing_skills", [])
+                        s1.get("matched_skills", []) + s2.get("matched_skills", [])
                     ))
                 if "missing_skills" in s1 or "missing_skills" in s2:
                     result[key]["missing_skills"] = list(dict.fromkeys(
@@ -1342,7 +1403,7 @@ if __name__ == "__main__":
     )
 
     print("\n" + "=" * 77)
-    print("AIEvaluator Modul Testi (Flash Model - Maliyet Optimize)")
+    print("AIEvaluator Modul Testi (Flash Model - Maliyet Optimize + Confidence)")
     print("=" * 77)
 
     print(f"\n API Key Durumu:")
@@ -1357,6 +1418,10 @@ if __name__ == "__main__":
     print(f"   Score fark esigi: {AIEvaluator.SCORE_DIFFERENCE_THRESHOLD} puan")
     print(f"   Max retry: {AIEvaluator.MAX_RETRIES}")
     print(f"   API timeout: {AIEvaluator.API_TIMEOUT}s")
+
+    print(f"\n FAZ 3 (Confidence Score):")
+    print(f"   confidence_score: Her değerlendirmede 0.0-1.0 arası güven skoru")
+    print(f"   low_confidence_areas: confidence < 0.50 olan kategoriler")
 
     print(f"\n Fallback Zinciri:")
     print(f"   1. Gemini + Hermes paralel -> basarili ise consensus")
