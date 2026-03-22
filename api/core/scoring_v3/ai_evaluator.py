@@ -518,7 +518,7 @@ class AIEvaluator:
                 }
             ],
             "generationConfig": {
-                "temperature": 0.3,
+                "temperature": 0.1,
                 "maxOutputTokens": 8192
             }
         }
@@ -611,7 +611,7 @@ class AIEvaluator:
                 {"role": "user", "content": evaluation_prompt}
             ],
             "max_tokens": 2048,
-            "temperature": 0.3
+            "temperature": 0.1
         }
 
         last_error = None
@@ -701,7 +701,7 @@ class AIEvaluator:
                 {"role": "user", "content": evaluation_prompt}
             ],
             "max_tokens": 4096,
-            "temperature": 0.3
+            "temperature": 0.1
         }
 
         last_error = None
