@@ -1444,3 +1444,84 @@ ORDER BY m.name;
 | 2026-03-21 | 53d2741 | P1: 3 tabloya company_id migration (ai_evaluations zaten vardı) | ✅ |
 | 2026-03-21 | 7584285 | P2: email_logs company_id + /api/test/db kaldırıldı | ✅ |
 
+
+
+---
+
+## ═══════════════════════════════════════════════════════════════
+## V3 SCORING FAZ 1 (22.03.2026) - KİLİTLİ
+## ═══════════════════════════════════════════════════════════════
+Commit: 51bce65
+
+### Değişiklikler
+
+| # | Değişiklik | Dosya | Satır |
+|---|------------|-------|-------|
+| 1 | Halüsinasyon Önleme Kuralları | smart_prompt_builder.py | 29-55 |
+| 2 | Temperature 0.3 → 0.1 | ai_evaluator.py | 521, 614, 704 |
+| 3 | Overqualified Matematiksel Sınır | smart_prompt_builder.py | 122-152 |
+
+### Halüsinasyon Önleme (5 Kural)
+
+1. SADECE CVde açıkça belirtilen bilgilere puan ver
+
+
+---
+
+## ═══════════════════════════════════════════════════════════════
+## V3 SCORING FAZ 1 (22.03.2026) - KİLİTLİ
+## ═══════════════════════════════════════════════════════════════
+Commit: 51bce65
+
+### Değişiklikler
+
+| # | Değişiklik | Dosya | Satır |
+|---|------------|-------|-------|
+| 1 | Halüsinasyon Önleme Kuralları | smart_prompt_builder.py | 29-55 |
+| 2 | Temperature 0.3 → 0.1 | ai_evaluator.py | 521, 614, 704 |
+| 3 | Overqualified Matematiksel Sınır | smart_prompt_builder.py | 122-152 |
+
+### Halüsinasyon Önleme (5 Kural)
+
+1. SADECE CV'de açıkça belirtilen bilgilere puan ver
+2. Çıkarım yapma, varsayımda bulunma (Python biliyor diye Git biliyordur çıkarımı YASAK)
+3. Belirsizlik durumunda 0 puan ver
+4. Örtük deneyim sadece 3 kalıp için kabul edilir:
+   - Ekip yönettim ifadesi → Ekip Yönetimi
+   - Projeyi baştan sona yönettim → Proje Yönetimi
+   - Bütçeyi planladım/yönettim → Bütçe Yönetimi
+5. Her verdiğin puan için CV'den somut kanıt göster
+
+### Temperature Ayarları
+
+| Model | Temperature | Neden |
+|-------|-------------|-------|
+| Gemini | 0.1 | Deterministik, tutarlı sonuçlar |
+| Hermes | 0.1 | Deterministik, tutarlı sonuçlar |
+| OpenAI | 0.1 | Deterministik, tutarlı sonuçlar |
+| Claude Judge | 0.3 | Tahkim için farklı perspektif gerekli (DEĞİŞMEDİ) |
+
+### Overqualified Tespit Kriterleri
+
+**A) Unvan Farkı (2+ seviye):**
+Hiyerarşi: Stajyer < Uzman < Kıdemli/Senior < Müdür < Direktör < Genel Müdür
+- Pozisyon: Uzman, Aday: Direktör (3 seviye) → OVERQUALIFIED
+- Pozisyon: Uzman, Aday: Müdür (2 seviye) → OVERQUALIFIED
+- Pozisyon: Uzman, Aday: Kıdemli (1 seviye) → NORMAL
+
+**B) Deneyim Farkı (3x fazla):**
+- Pozisyon: 3-5 yıl, Aday: 15+ yıl (3x+) → OVERQUALIFIED
+- Pozisyon: 5-7 yıl, Aday: 12 yıl (~2x) → NORMAL
+
+**Skor Etkisi:**
+- Normal aday: 20-25 puan (position_match)
+- Overqualified aday: 10-15 puan (motivasyon riski nedeniyle)
+
+### KİLİTLİ KURALLAR
+
+- Halüsinasyon önleme kuralları DEĞİŞTİRİLEMEZ
+- Temperature 0.1 ayarları DEĞİŞTİRİLEMEZ (Claude Judge hariç)
+- Overqualified formülü DEĞİŞTİRİLEMEZ (2+ seviye VEYA 3x deneyim)
+- Örtük deneyim 3 kalıbı GENİŞLETİLEMEZ
+
+Bu sistem KİLİTLİDİR. Değiştirilemez.
