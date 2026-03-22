@@ -1448,22 +1448,6 @@ ORDER BY m.name;
 
 ---
 
-## ═══════════════════════════════════════════════════════════════
-## V3 SCORING FAZ 1 (22.03.2026) - KİLİTLİ
-## ═══════════════════════════════════════════════════════════════
-Commit: 51bce65
-
-### Değişiklikler
-
-| # | Değişiklik | Dosya | Satır |
-|---|------------|-------|-------|
-| 1 | Halüsinasyon Önleme Kuralları | smart_prompt_builder.py | 29-55 |
-| 2 | Temperature 0.3 → 0.1 | ai_evaluator.py | 521, 614, 704 |
-| 3 | Overqualified Matematiksel Sınır | smart_prompt_builder.py | 122-152 |
-
-### Halüsinasyon Önleme (5 Kural)
-
-1. SADECE CVde açıkça belirtilen bilgilere puan ver
 
 
 ---
