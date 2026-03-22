@@ -55,6 +55,33 @@ GÖREV: Verilen adayı, verilen pozisyon için 0-100 puan üzerinden değerlendi
    - Kanıt gösteremiyorsan → O beceri için puan verme
 
 ═══════════════════════════════════════════════════════════════════════════════
+📝 EVIDENCE_FROM_CV (CV'DEN KANIT) KULLANIM KURALLARI
+═══════════════════════════════════════════════════════════════════════════════
+
+3 kategori için evidence_from_cv ZORUNLUDUR:
+- technical_skills
+- experience_quality
+- education
+
+NASIL YAZILMALI:
+
+✅ DOĞRU ÖRNEKLER:
+- "2019-2023: Senior Python Developer - FastAPI, PostgreSQL, Docker kullandı"
+- "İTÜ Bilgisayar Mühendisliği, 2018 mezunu"
+- "Turkcell'de 4 yıl sistem analisti olarak çalıştı"
+
+❌ YANLIŞ ÖRNEKLER:
+- "Python bildiği anlaşılıyor" (Varsayım - kabul edilmez)
+- "Muhtemelen proje yönetimi yapmıştır" (Tahmin - kabul edilmez)
+- "" (Boş bırakma - "Belirtilmemiş" yaz)
+
+CV'DE BİLGİ YOKSA:
+- evidence_from_cv = "Belirtilmemiş"
+- İlgili kategori için puan = 0 veya düşük
+
+NOT: position_match ve other için evidence_from_cv GEREKMİYOR.
+
+═══════════════════════════════════════════════════════════════════════════════
 PUANLAMA MATRİSİ (100 PUAN)
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -79,6 +106,50 @@ KATMAN 2 - DENEYİM KALİTESİ (25 puan):
 - İlgili deneyim süresi ne kadar?
 - Deneyim güncelliği (son 2 yıl daha değerli)
 - Şirket kalitesi/büyüklüğü
+
+───────────────────────────────────────────────────────────────────────────────
+📅 TARİH VE DENEYİM SÜRESİ HESAPLAMA KURALLARI
+───────────────────────────────────────────────────────────────────────────────
+
+TEMEL HESAPLAMA:
+- Başlangıç ve bitiş tarihlerini AY/YIL olarak değerlendir
+- Örnek: "Ocak 2020 - Mart 2023" = 3 yıl 2 ay = ~3.2 yıl
+- Örnek: "2018 - 2022" = 4 yıl (ay belirtilmemişse tam yıl say)
+
+ÇAKIŞAN TARİHLER:
+- Aynı anda 2 iş varsa → Süreleri TOPLAMA, tek süre olarak say
+- Örnek:
+  * İş A: 2020-2022 (2 yıl)
+  * İş B: 2021-2022 (1 yıl, çakışıyor)
+  * TOPLAM: 2 yıl (çakışan kısım tek sayılır)
+
+BELİRSİZ TARİHLER:
+- "Halen" veya "Devam ediyor" → Bugüne kadar say
+- Tarih yoksa → "Süre belirtilmemiş" yaz, TAHMİN YAPMA
+- "X yıl deneyim" yazıyorsa → Doğrudan kullan, hesaplama yapma
+
+YUVARLAMA:
+- 6 aydan az → 0.5 yıl
+- 6 ay ve üzeri → 1 yıl
+- Örnek: 2 yıl 8 ay → 3 yıl
+
+TOPLAM DENEYİM vs İLGİLİ DENEYİM:
+- Toplam Deneyim: Tüm iş geçmişi
+- İlgili Deneyim: Sadece pozisyonla alakalı roller
+- İKİSİNİ AYRI HESAPLA ve reason'da belirt
+
+ÖRNEK HESAPLAMA:
+CV'de:
+  2015-2018: Satış Temsilcisi (3 yıl)
+  2018-2021: Yazılım Geliştirici (3 yıl)
+  2021-2024: Senior Developer (3 yıl)
+
+Pozisyon: Senior Python Developer
+Hesaplama:
+  Toplam Deneyim: 9 yıl
+  İlgili Deneyim: 6 yıl (2018'den itibaren yazılım)
+  reason: "9 yıl toplam, 6 yıl ilgili yazılım deneyimi"
+───────────────────────────────────────────────────────────────────────────────
 
 KATMAN 3 - TEKNİK YETKİNLİK (25 puan):
 - Gerekli teknik beceriler var mı?
@@ -149,6 +220,88 @@ Transferable skills (aktarılabilir beceriler) için puan ver:
      * "Bu pozisyon sizin için kariyer olarak bir geri adım gibi görünüyor, motivasyonunuz nedir?"
      * "Uzun vadeli kariyer hedefleriniz neler, bu pozisyon bunlara nasıl uyuyor?"
 
+═══════════════════════════════════════════════════════════════════════════════
+⚠️ KARİYER UYARI MEKANİZMASI (PUAN ETKİSİ YOK - SADECE BİLGİLENDİRME)
+═══════════════════════════════════════════════════════════════════════════════
+
+DİKKAT: Bu bölümdeki tespitler PUAN DÜŞÜRMEZ!
+Sadece İK'yı bilgilendirir, karar İK'ya aittir.
+
+───────────────────────────────────────────────────────────────────────────────
+SIK İŞ DEĞİŞTİRME (JOB HOPPING) TESPİTİ
+───────────────────────────────────────────────────────────────────────────────
+
+TESPİT KRİTERİ:
+- Son 5 yılda 4 veya daha fazla iş değişikliği
+- VEYA ortalama iş süresi 1.5 yıldan az
+
+SEKTÖR İSTİSNALARI (Bu sektörlerde normal kabul edilir):
+- Startup / Teknoloji: 2 yılda 1 değişiklik normal
+- Danışmanlık / Proje bazlı: Proje süreleri kısa olabilir
+- Mevsimlik işler: Doğası gereği kısa süreli
+
+TESPİT EDİLDİĞİNDE:
+❌ PUAN DÜŞÜRME
+✅ weaknesses dizisine EKLE:
+   "Dikkat: Son 5 yılda [X] iş değişikliği (ortalama [Y] ay/iş)"
+✅ notes_for_hr dizisine EKLE:
+   "İş değişikliği sıklığı görüşmede sorulmalı - sebepleri öğrenilmeli"
+✅ interview_questions dizisine EKLE:
+   "Kariyer geçmişinizde sık iş değişikliği görüyoruz, bu değişikliklerin sebepleri nelerdi?"
+
+───────────────────────────────────────────────────────────────────────────────
+KARİYER BOŞLUĞU (EMPLOYMENT GAP) TESPİTİ
+───────────────────────────────────────────────────────────────────────────────
+
+TESPİT KRİTERİ:
+- 6 aydan uzun açıklanmayan boşluk
+
+MEŞRU SEBEPLER (Olumsuz değerlendirme YAPMA):
+- Eğitim / Yüksek lisans / Sertifika
+- Aile sorumluluğu (çocuk bakımı, yaşlı bakımı)
+- Sağlık
+- Gönüllü işler / Kişisel projeler
+- Ülke/şehir değişikliği
+
+TESPİT EDİLDİĞİNDE:
+❌ PUAN DÜŞÜRME (Sebep bilinmiyor, varsayım yapılamaz)
+✅ weaknesses dizisine EKLE:
+   "Dikkat: [Tarih1] - [Tarih2] arası kariyer boşluğu ([X] ay)"
+✅ notes_for_hr dizisine EKLE:
+   "Kariyer boşluğu sebepleri görüşmede netleştirilmeli"
+✅ interview_questions dizisine EKLE:
+   "[Tarih] aralığında iş geçmişinizde bir boşluk görünüyor, bu dönemde neler yaptınız?"
+
+───────────────────────────────────────────────────────────────────────────────
+ÖRNEK SENARYO
+───────────────────────────────────────────────────────────────────────────────
+
+CV Geçmişi:
+  2019-2020: A Şirketi (1 yıl)
+  2020-2021: B Şirketi (1 yıl)
+  2021: [BOŞLUK - 8 ay]
+  2022-2023: C Şirketi (1 yıl)
+  2023-2024: D Şirketi (1 yıl)
+
+TESPİT:
+- Job Hopping: Son 5 yılda 4 iş (ortalama 1 yıl/iş)
+- Kariyer Boşluğu: 2021'de 8 aylık boşluk
+
+ÇIKTI:
+- eligible: true (puan etkilenmez!)
+- weaknesses: [
+    "Dikkat: Son 5 yılda 4 iş değişikliği (ortalama 12 ay/iş)",
+    "Dikkat: 2021 yılında 8 aylık kariyer boşluğu"
+  ]
+- notes_for_hr: [
+    "İş değişikliği sıklığı ve kariyer boşluğu sebepleri görüşmede sorulmalı"
+  ]
+- interview_questions: [
+    "Kariyer geçmişinizde sık iş değişikliği görüyoruz, bu değişikliklerin sebepleri nelerdi?",
+    "2021 yılında iş geçmişinizde bir boşluk görünüyor, bu dönemde neler yaptınız?"
+  ]
+═══════════════════════════════════════════════════════════════════════════════
+
 2. KARİYER DEĞİŞİKLİĞİ adaylarını dikkatli değerlendir:
    - Eğer ilgili sertifika/kurs almışsa → geçiş motivasyonu var demektir
    - Tamamen alakasız ise → ELEME
@@ -176,17 +329,20 @@ JSON_SCHEMA = """{
     },
     "experience_quality": {
       "score": 0-25 arası puan,
-      "reason": "Kısa açıklama"
+      "reason": "Kısa açıklama",
+      "evidence_from_cv": "CV'den alıntı veya 'Belirtilmemiş'"
     },
     "technical_skills": {
       "score": 0-25 arası puan,
       "matched_skills": ["eşleşen", "beceriler"],
       "missing_skills": ["eksik", "beceriler"],
-      "reason": "Kısa açıklama"
+      "reason": "Kısa açıklama",
+      "evidence_from_cv": "CV'den alıntı veya 'Belirtilmemiş'"
     },
     "education": {
       "score": 0-15 arası puan,
-      "reason": "Kısa açıklama"
+      "reason": "Kısa açıklama",
+      "evidence_from_cv": "CV'den alıntı veya 'Belirtilmemiş'"
     },
     "other": {
       "score": 0-10 arası puan,
