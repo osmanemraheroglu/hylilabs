@@ -1509,3 +1509,63 @@ Hiyerarşi: Stajyer < Uzman < Kıdemli/Senior < Müdür < Direktör < Genel Müd
 - Örtük deneyim 3 kalıbı GENİŞLETİLEMEZ
 
 Bu sistem KİLİTLİDİR. Değiştirilemez.
+
+
+---
+
+## ═══════════════════════════════════════════════════════════════
+## V3 SCORING FAZ 2 (22.03.2026) - KİLİTLİ
+## ═══════════════════════════════════════════════════════════════
+Commit: 48ebe9b
+
+### Değişiklikler
+
+| # | Değişiklik | Dosya | Satır |
+|---|------------|-------|-------|
+| 4 | evidence_from_cv alanı | smart_prompt_builder.py | 57-82, 333, 340, 345 |
+| 5 | Tarih ve Deneyim Hesaplama | smart_prompt_builder.py | 110-152 |
+| 6 | Job Hopping / Kariyer Boşluğu | smart_prompt_builder.py | 223-303 |
+
+### evidence_from_cv (3 Kategori)
+
+JSON şemasında 3 kategori için CV kanıtı ZORUNLU:
+- technical_skills.evidence_from_cv
+- experience_quality.evidence_from_cv
+- education.evidence_from_cv
+
+Kurallar:
+- CV'den doğrudan alıntı yapılmalı
+- Varsayım/tahmin kabul edilmez
+- Bilgi yoksa: "Belirtilmemiş" + düşük puan
+- position_match ve other için GEREKMİYOR
+
+### Tarih ve Deneyim Hesaplama Kuralları
+
+| Kural | Açıklama |
+|-------|----------|
+| Temel | AY/YIL formatı, "2018-2022" = 4 yıl |
+| Çakışan | Aynı anda 2 iş → tek süre say |
+| Belirsiz | Tarih yoksa → TAHMİN YAPMA |
+| Yuvarlama | 6 ay eşik (2y8a → 3 yıl) |
+| Ayrım | Toplam vs İlgili Deneyim ayrı hesapla |
+
+### Kariyer Uyarı Mekanizması (PUAN ETKİSİ YOK)
+
+**Job Hopping Tespiti:**
+- Kriter: Son 5 yılda 4+ iş VEYA ortalama 1.5 yıldan az
+- İstisnalar: Startup, Danışmanlık, Mevsimlik
+- Çıktı: weaknesses + notes_for_hr + interview_questions
+
+**Kariyer Boşluğu Tespiti:**
+- Kriter: 6+ ay açıklanmayan boşluk
+- Meşru sebepler: Eğitim, Aile, Sağlık, Gönüllü iş
+- Çıktı: weaknesses + notes_for_hr + interview_questions
+
+### KİLİTLİ KURALLAR
+
+- evidence_from_cv 3 kategori için ZORUNLU (position_match ve other hariç)
+- Job Hopping/Boşluk tespiti PUAN DÜŞÜRMEZ
+- Tarih hesaplama kuralları DEĞİŞTİRİLEMEZ
+- Sektör istisnaları GENİŞLETİLEBİLİR (daraltılamaz)
+
+Bu sistem KİLİTLİDİR. Değiştirilemez.
