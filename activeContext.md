@@ -2,71 +2,76 @@
 
 Son güncelleme: 22.03.2026
 
-## ✅ TAMAMLANAN GÖREV: V3 Scoring Prompt İyileştirme - FAZ 2
+## TAMAMLANAN GÖREV: V3 Scoring Prompt İyileştirme - FAZ 3
 
 **Tarih:** 2026-03-22
-**Commit:** 48ebe9b
+**Commit:** 32d702a
 
 ### Yapılan Değişiklikler
 
-| # | Değişiklik | Dosya | Satır |
-|---|------------|-------|-------|
-| 4 | evidence_from_cv alanı | smart_prompt_builder.py | 57-82, 333, 340, 345 |
-| 5 | Tarih ve Deneyim Hesaplama | smart_prompt_builder.py | 110-152 |
-| 6 | Job Hopping / Kariyer Boşluğu Uyarı | smart_prompt_builder.py | 223-303 |
+- 7A: confidence alanları JSON_SCHEMA (smart_prompt_builder.py satır 57-95, 101-105)
+- 7B: GÜVEN SKORU kuralları SYSTEM_PROMPT (smart_prompt_builder.py satır 171-240)
+- 7C: confidence parse EvaluationResult (ai_evaluator.py dataclass, _parse_response)
 
-### DEĞİŞİKLİK 4: evidence_from_cv
+### DEĞİŞİKLİK 7A: JSON_SCHEMA confidence
 
-3 kategori için CV kanıtı ZORUNLU:
-- technical_skills.evidence_from_cv
-- experience_quality.evidence_from_cv
-- education.evidence_from_cv
+Her 5 kategori için confidence alanı (0.0-1.0):
+- position_match.confidence
+- technical_skills.confidence
+- experience_quality.confidence
+- education.confidence
+- elimination_factors.confidence
 
-### DEĞİŞİKLİK 5: Tarih Hesaplama Kuralları
+Üst seviye alanlar:
+- confidence_score: Ortalama güven skoru
+- low_confidence_areas: confidence < 0.50 olan kategoriler
 
-- Temel: AY/YIL formatı
-- Çakışan tarihler: Tek süre say
-- Belirsiz: TAHMİN YAPMA
-- Yuvarlama: 6 ay eşik
-- Toplam vs İlgili Deneyim ayrımı
+### DEĞİŞİKLİK 7B: GÜVEN SKORU Kuralları
 
-### DEĞİŞİKLİK 6: Kariyer Uyarı Mekanizması
+- YÜKSEK GÜVEN (0.85-1.0): CV'de açık ve net bilgi
+- ORTA GÜVEN (0.50-0.84): Bilgi var ama detaysız
+- DÜŞÜK GÜVEN (0.00-0.49): Bilgi eksik veya belirsiz
+- AŞIRI GÜVEN ÖNLEME: evidence_from_cv korelasyonu zorunlu
 
-- Job Hopping: 5 yılda 4+ iş → UYARI (puan düşmez)
-- Kariyer Boşluğu: 6+ ay → UYARI (puan düşmez)
-- Sektör istisnaları: Startup, Danışmanlık, Mevsimlik
+### DEĞİŞİKLİK 7C: ai_evaluator.py Parse
 
----
-
-## ✅ Son Commitler
-
-| Tarih | Commit | Açıklama |
-|-------|--------|----------|
-| 22.03.2026 | 48ebe9b | feat(v3-scoring): FAZ 2 - evidence_from_cv, tarih hesaplama, job hopping |
-| 22.03.2026 | 51bce65 | feat(v3-scoring): FAZ 1 - halüsinasyon önleme, temperature 0.1, overqualified |
-| 21.03.2026 | 542f4fc | Senior Engineer Prensipleri eklendi |
+- EvaluationResult: confidence_score, low_confidence_areas alanları
+- FinalEvaluation: confidence_score, low_confidence_areas alanları
+- _parse_response: Kategori bazlı confidence parse
+- _average_scores: Confidence ortalaması hesaplama
+- to_dict: confidence alanları dahil
 
 ---
 
-## 📋 Sonraki Görev
+## Son Commitler
 
-FAZ 3 veya kullanıcı yeni görev belirleyecek.
+- 22.03.2026 - 32d702a - feat(v3-scoring): FAZ 3 - confidence_score, GÜVEN SKORU
+- 22.03.2026 - 48ebe9b - feat(v3-scoring): FAZ 2 - evidence_from_cv, tarih hesaplama, job hopping
+- 22.03.2026 - 51bce65 - feat(v3-scoring): FAZ 1 - halüsinasyon önleme, temperature 0.1, overqualified
+- 21.03.2026 - 542f4fc - Senior Engineer Prensipleri eklendi
 
 ---
 
-## 📚 Referans
+## Sonraki Görev
+
+FAZ 4 (isteğe bağlı) veya kullanıcı yeni görev belirleyecek.
+
+---
+
+## Referans
 
 ### V3 Scoring Dosyaları
-- `api/core/scoring_v3/smart_prompt_builder.py` - AI prompt oluşturucu
-- `api/core/scoring_v3/ai_evaluator.py` - Multi-model evaluator
+- api/core/scoring_v3/smart_prompt_builder.py - AI prompt oluşturucu
+- api/core/scoring_v3/ai_evaluator.py - Multi-model evaluator
 
-### FAZ 1 + FAZ 2 Özet
+### FAZ 1 + FAZ 2 + FAZ 3 Özet
 
-| FAZ | Değişiklik | Satır |
-|-----|------------|-------|
-| 1.1 | Halüsinasyon Önleme | 29-55 |
-| 1.2 | Temperature 0.1 | ai_evaluator.py |
-| 1.3 | Overqualified Kuralları | 193-221 |
-| 2.4 | evidence_from_cv | 57-82, 333, 340, 345 |
-| 2.5 | Tarih Hesaplama | 110-152 |
-| 2.6 | Job Hopping / Boşluk | 223-303 |
+- FAZ 1.1: Halüsinasyon Önleme (satır 29-55)
+- FAZ 1.2: Temperature 0.1 (ai_evaluator.py)
+- FAZ 1.3: Overqualified Kuralları (satır 193-221)
+- FAZ 2.4: evidence_from_cv (satır 57-82, 333, 340, 345)
+- FAZ 2.5: Tarih Hesaplama (satır 110-152)
+- FAZ 2.6: Job Hopping / Boşluk (satır 223-303)
+- FAZ 3.7A: confidence JSON_SCHEMA (satır 57-95, 101-105)
+- FAZ 3.7B: GÜVEN SKORU kuralları (satır 171-240)
+- FAZ 3.7C: confidence parse (ai_evaluator.py)
